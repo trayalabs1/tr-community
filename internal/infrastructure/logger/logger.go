@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -43,4 +44,8 @@ func replaceGlobals(c config.Config, l *slog.Logger) {
 	// dependents most of the time using DI, the global logger is used
 	// in a couple of places during startup/shutdown.
 	slog.SetDefault(l)
+
+	// Log the configuration as it was read from environment variables
+	l.Info("Configuration loaded from environment variables",
+		slog.String("config", fmt.Sprintf("%+v", c)))
 }
