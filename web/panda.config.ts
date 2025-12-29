@@ -46,6 +46,12 @@ export default defineConfig({
   exclude: [],
 
   conditions: {
+    extend: {
+      // Override Panda's default OS-based conditions to support admin-controlled theme
+      // When data-color-mode is set, use that. Otherwise fall back to OS preference.
+      osLight: '[data-color-mode="light"] &, :where(:root:not([data-color-mode])) @media (prefers-color-scheme: light)',
+      osDark: '[data-color-mode="dark"] &, :where(:root:not([data-color-mode])) @media (prefers-color-scheme: dark)',
+    },
     target: "&:target",
     checked:
       "&:is(:checked, [data-checked], [aria-checked=true], [data-state=checked])",

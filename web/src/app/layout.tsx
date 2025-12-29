@@ -20,8 +20,19 @@ export default async function RootLayout({ children }: PropsWithChildren) {
   const session = await getServerSession();
   const settings = await getSettings();
 
+  const colorModeAttr =
+    settings.color_mode === "system"
+      ? undefined
+      : settings.color_mode === "dark"
+        ? "dark"
+        : "light";
+
   return (
-    <html lang="en" className={`${inter.variable} ${interDisplay.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${interDisplay.variable}`}
+      data-color-mode={colorModeAttr}
+    >
       <head>
         {/*
           NOTE: Because the browser side does not support dynamic environment

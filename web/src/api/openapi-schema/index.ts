@@ -153,6 +153,7 @@ export * from "./collectionUpdateBody";
 export * from "./collectionUpdateOKResponse";
 export * from "./collectionWithItems";
 export * from "./collectionWithItemsAllOf";
+export * from "./colorMode";
 export * from "./commonProperties";
 export * from "./commonPropertiesMisc";
 export * from "./credentialRequestOptions";
