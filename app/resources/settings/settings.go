@@ -12,6 +12,14 @@ import (
 	"github.com/Southclaws/storyden/internal/ent"
 )
 
+type ColorMode string
+
+const (
+	ColorModeLight  ColorMode = "light"
+	ColorModeDark   ColorMode = "dark"
+	ColorModeSystem ColorMode = "system"
+)
+
 // Settings is the global Storyden settings data that can be changed at runtime.
 type Settings struct {
 	// Title is the primary name of the instance, it's commonly used for things
@@ -27,6 +35,11 @@ type Settings struct {
 	// AccentColour is used for controlling frontend brand colour usage. Despite
 	// being frontend-specific, it may be used for backend email/SMS templates.
 	AccentColour opt.Optional[string]
+
+	// ColorMode controls the color theme for the entire instance. When set to
+	// "light" or "dark", all users see that theme. When set to "system" (default),
+	// the theme follows each user's operating system preference.
+	ColorMode opt.Optional[ColorMode]
 
 	// Public is intended to be used to configure public access to the API. If
 	// set to false any request to the API will require a verified user account.

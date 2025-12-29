@@ -3802,6 +3802,7 @@ components:
         - authentication_mode
         - capabilities
         - onboarding_status
+        - color_mode
       properties:
         title:
           type: string
@@ -3811,6 +3812,8 @@ components:
           $ref: "#/components/schemas/PostContent"
         accent_colour:
           type: string
+        color_mode:
+          $ref: "#/components/schemas/ColorMode"
         onboarding_status:
           $ref: "#/components/schemas/OnboardingStatus"
         authentication_mode:
@@ -4257,6 +4260,14 @@ components:
         - handle
         - email
         - phone
+
+    ColorMode:
+      type: string
+      enum:
+        - light
+        - dark
+        - system
+      default: system
 
     AuthProvider:
       type: object
