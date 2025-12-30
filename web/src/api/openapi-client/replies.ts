@@ -13,6 +13,8 @@ import type { SWRMutationConfiguration } from "swr/mutation";
 
 import { fetcher } from "../client";
 import type {
+  BadRequestResponse,
+  ForbiddenResponse,
   InternalServerErrorResponse,
   NotFoundResponse,
   ReplyCreateBody,
@@ -20,6 +22,82 @@ import type {
   UnauthorisedResponse,
 } from "../openapi-schema";
 
+/**
+ * Create a new reply within a thread in a channel.
+ */
+export const channelReplyCreate = (
+  channelID: string,
+  threadMark: string,
+  replyCreateBody: ReplyCreateBody,
+) => {
+  return fetcher<ReplyCreateOKResponse>({
+    url: `/channels/${channelID}/threads/${threadMark}/replies`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: replyCreateBody,
+  });
+};
+
+export const getChannelReplyCreateMutationFetcher = (
+  channelID: string,
+  threadMark: string,
+) => {
+  return (
+    _: Key,
+    { arg }: { arg: ReplyCreateBody },
+  ): Promise<ReplyCreateOKResponse> => {
+    return channelReplyCreate(channelID, threadMark, arg);
+  };
+};
+export const getChannelReplyCreateMutationKey = (
+  channelID: string,
+  threadMark: string,
+) => [`/channels/${channelID}/threads/${threadMark}/replies`] as const;
+
+export type ChannelReplyCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof channelReplyCreate>>
+>;
+export type ChannelReplyCreateMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelReplyCreate = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  threadMark: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof channelReplyCreate>>,
+      TError,
+      Key,
+      ReplyCreateBody,
+      Awaited<ReturnType<typeof channelReplyCreate>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ??
+    getChannelReplyCreateMutationKey(channelID, threadMark);
+  const swrFn = getChannelReplyCreateMutationFetcher(channelID, threadMark);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
 /**
  * Create a new post within a thread.
  */

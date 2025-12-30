@@ -40,6 +40,9 @@ func (Post) Fields() []ent.Field {
 		// Edges
 		field.String("account_posts").GoType(xid.ID{}),
 		field.String("category_id").GoType(xid.ID{}).Optional(),
+		field.String("channel_id").
+			GoType(xid.ID{}).
+			Comment("The channel this post belongs to"),
 		field.String("link_id").GoType(xid.ID{}).Optional(),
 	}
 }
@@ -51,6 +54,11 @@ func (Post) Indexes() []ent.Index {
 		// - last_reply_at always used for ordering (denormalized, always populated)
 		index.Fields("root_post_id", "deleted_at", "visibility", "last_reply_at"),
 		index.Fields("root_post_id", "deleted_at", "visibility", "category_id", "last_reply_at"),
+
+		// Channel-scoped queries:
+		// - channel + soft delete + visibility for filtering by channel
+		index.Fields("channel_id", "deleted_at", "visibility", "last_reply_at"),
+		index.Fields("channel_id", "deleted_at", "visibility", "category_id", "last_reply_at"),
 
 		// Reply queries:
 		// - root post + soft delete always used for filtering
@@ -73,6 +81,12 @@ func (Post) Edges() []ent.Edge {
 			Ref("posts").
 			Unique().
 			Comment("Category is only required for root posts. It should never be added to a child post."),
+
+		edge.From("channel", Channel.Type).
+			Field("channel_id").
+			Ref("posts").
+			Unique().
+			Required(),
 
 		edge.From("tags", Tag.Type).
 			Ref("posts").

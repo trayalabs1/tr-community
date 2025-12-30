@@ -8,7 +8,7 @@ import { withUndo } from "@/lib/thread/undo";
 
 export function useThreadCardModeration(thread: ThreadReference) {
   const router = useRouter();
-  const { updateThread, deleteThread, revalidate } = useFeedMutations();
+  const { updateThread, deleteThread, revalidate } = useFeedMutations(undefined, undefined, undefined, router);
 
   const {
     isConfirming: isConfirmingDelete,
@@ -38,24 +38,17 @@ export function useThreadCardModeration(thread: ThreadReference) {
   }
 
   async function handleDelete() {
-    await handle(
-      async () => {
-        await withUndo({
-          message: "Thread deleted",
-          duration: 5000,
-          toastId: `thread-${thread.id}`,
-          action: async () => {
-            await deleteThread(thread.id);
-          },
-          onUndo: () => {},
-        });
-      },
-      {
-        cleanup: async () => {
-          await revalidate();
+    await handle(async () => {
+      await withUndo({
+        message: "Thread deleted",
+        duration: 5000,
+        toastId: `thread-${thread.id}`,
+        action: async () => {
+          await deleteThread(thread.id);
         },
-      },
-    );
+        onUndo: () => {},
+      });
+    });
   }
 
   return {

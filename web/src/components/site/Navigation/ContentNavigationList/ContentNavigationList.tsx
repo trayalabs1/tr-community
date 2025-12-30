@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryListOKResponse, NodeListResult } from "@/api/openapi-schema";
+import { useChannelCategoryList } from "@/api/openapi-client/channels";
 import { CategoryList } from "@/components/category/CategoryList/CategoryList";
 import { LStack, styled } from "@/styled-system/jsx";
 
@@ -16,7 +17,19 @@ type Props = {
 };
 
 export function ContentNavigationList(props: Props) {
-  const { nodeSlug } = useNavigation();
+  const { nodeSlug, isChannelPage, channelID } = useNavigation();
+
+  // Fetch channel-specific categories if on a channel page
+  const { data: channelCategories } = useChannelCategoryList(channelID ?? "", {
+    swr: {
+      enabled: isChannelPage && !!channelID,
+    },
+  });
+
+  // Use channel categories if available, otherwise fall back to global categories
+  const categoriesToDisplay = isChannelPage && channelCategories
+    ? channelCategories
+    : props.initialCategoryList;
 
   return (
     <styled.nav
@@ -36,7 +49,10 @@ export function ContentNavigationList(props: Props) {
           scrollbarWidth: "none",
         }}
       >
-        <CategoryList initialCategoryList={props.initialCategoryList} />
+        <CategoryList
+          initialCategoryList={categoriesToDisplay}
+          channelID={isChannelPage ? channelID : undefined}
+        />
         <LibraryNavigationTree
           initialNodeList={props.initialNodeList}
           currentNode={nodeSlug}

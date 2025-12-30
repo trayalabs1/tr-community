@@ -32,6 +32,7 @@ type Category struct {
 	Colour      string
 	Sort        int
 	Admin       bool
+	ChannelID   xid.ID
 	ParentID    *CategoryID
 	CoverImage  opt.Optional[asset.Asset]
 	Children    []*Category
@@ -85,6 +86,7 @@ func FromModel(c *ent.Category) *Category {
 		Colour:      c.Colour,
 		Sort:        c.Sort,
 		Admin:       c.Admin,
+		ChannelID:   c.ChannelID,
 		ParentID:    parentID,
 		CoverImage:  coverImage,
 		Children:    children,

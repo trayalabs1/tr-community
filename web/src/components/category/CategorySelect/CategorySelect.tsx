@@ -9,17 +9,24 @@ import { HStack } from "@/styled-system/jsx";
 
 import { useCategorySelect } from "./useCategorySelect";
 
+export type CategorySelectProps<T extends FieldValues> = Omit<
+  SelectFieldProps<T, any>,
+  "collection" | "placeholder"
+> & {
+  channelID?: string;
+};
+
 export function CategorySelect<T extends FieldValues>(
-  props: Omit<SelectFieldProps<T, any>, "collection" | "placeholder">,
+  props: CategorySelectProps<T>,
 ) {
-  const result = useCategorySelect();
+  const { channelID, ...selectProps } = props;
+  const result = useCategorySelect(channelID);
   const { ready, collection, error } = result;
 
   return (
     <HStack gap="2" alignItems="center">
       <SelectField
-        control={props.control}
-        name={props.name}
+        {...selectProps}
         disabled={!ready}
         placeholder={ready ? "Category" : "Loading categories..."}
         collection={collection}

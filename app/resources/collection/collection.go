@@ -23,6 +23,7 @@ type Collection struct {
 	Owner       profile.Ref
 	Description opt.Optional[string]
 	Cover       opt.Optional[asset.Asset]
+	ChannelID   xid.ID
 
 	ItemCount      uint
 	HasQueriedItem bool
@@ -73,6 +74,7 @@ func Map(queriedItems []xid.ID) func(c *ent.Collection) (*Collection, error) {
 			Owner:          *pro,
 			Name:           c.Name,
 			Description:    opt.NewPtr(c.Description),
+			ChannelID:      c.ChannelID,
 			ItemCount:      uint(len(postsEdge) + len(nodesEdge)),
 			HasQueriedItem: hasQueriedItem,
 		}, nil

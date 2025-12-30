@@ -17,9 +17,10 @@ import { CategoryEditMenuItem } from "../CategoryEdit/CategoryEdit";
 
 type Props = {
   category: Category;
+  channelID?: string;
 };
 
-export function useCategoryMenu({ category }: Props) {
+export function useCategoryMenu({ category, channelID }: Props) {
   const account = useSession();
   const [, copyToClipboard] = useCopyToClipboard();
 
@@ -27,7 +28,9 @@ export function useCategoryMenu({ category }: Props) {
 
   const isSharingEnabled = useShare();
 
-  const permalink = `${WEB_ADDRESS}/d/${category.slug}`;
+  const permalink = channelID
+    ? `${WEB_ADDRESS}/channels/${channelID}/categories/${category.slug}`
+    : `${WEB_ADDRESS}/d/${category.slug}`;
 
   async function handleCopyLink() {
     await copyToClipboard(permalink);
@@ -104,7 +107,10 @@ export function CategoryMenu(props: Props) {
                 <Menu.Separator />
 
                 <Menu.ItemGroup id="manage">
-                  <CategoryCreateMenuItem parentCategory={category} />
+                  <CategoryCreateMenuItem
+                    parentCategory={category}
+                    channelID={props.channelID}
+                  />
                   <CategoryEditMenuItem {...category} />
                   <CategoryDeleteMenuItem {...category} />
                 </Menu.ItemGroup>

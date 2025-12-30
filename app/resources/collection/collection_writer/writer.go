@@ -52,6 +52,12 @@ func WithCoverImage(id asset.AssetID) Option {
 	}
 }
 
+func WithChannel(id xid.ID) Option {
+	return func(c *ent.CollectionMutation) {
+		c.SetChannelID(id)
+	}
+}
+
 func (w *Writer) Create(ctx context.Context, owner account.AccountID, name string, slug string, opts ...Option) (*collection.CollectionWithItems, error) {
 	create := w.db.Collection.Create()
 	mutate := create.Mutation()
@@ -62,6 +68,12 @@ func (w *Writer) Create(ctx context.Context, owner account.AccountID, name strin
 
 	for _, fn := range opts {
 		fn(mutate)
+	}
+
+	// Ensure channel_id is always set (required field).
+	// Default to empty ID for global collections if not specified.
+	if _, ok := mutate.ChannelID(); !ok {
+		mutate.SetChannelID(xid.ID{})
 	}
 
 	col, err := create.Save(ctx)

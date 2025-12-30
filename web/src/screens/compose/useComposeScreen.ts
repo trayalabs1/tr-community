@@ -5,7 +5,11 @@ import { Thread } from "src/api/openapi-schema";
 
 import { handle } from "@/api/client";
 
-export type Props = { editing?: string };
+export type Props = {
+  editing?: string;
+  channelID?: string;
+  categoryID?: string;
+};
 
 export function useComposeScreen({ editing }: Props) {
   const [loadingDraft, setLoadingDraft] = useState(editing !== undefined);

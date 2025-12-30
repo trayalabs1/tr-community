@@ -90,6 +90,12 @@ func WithLink(id xid.ID) Option {
 	}
 }
 
+func WithChannel(id xid.ID) Option {
+	return func(pm *ent.PostMutation) {
+		pm.SetChannelID(id)
+	}
+}
+
 func WithContentLinks(ids ...xid.ID) Option {
 	return func(pm *ent.PostMutation) {
 		pm.AddContentLinkIDs(ids...)
@@ -122,6 +128,12 @@ func (d *Writer) Create(
 
 	for _, fn := range opts {
 		fn(mutate)
+	}
+
+	// Ensure channel_id is always set (required field).
+	// Default to empty ID for global threads if not specified.
+	if _, ok := mutate.ChannelID(); !ok {
+		mutate.SetChannelID(xid.ID{})
 	}
 
 	// If a category was specified, check if it exists first.

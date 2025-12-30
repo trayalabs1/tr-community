@@ -15,6 +15,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/asset"
 	"github.com/Southclaws/storyden/internal/ent/category"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/event"
 	"github.com/Southclaws/storyden/internal/ent/likepost"
@@ -211,6 +212,12 @@ func (_c *PostCreate) SetNillableCategoryID(v *xid.ID) *PostCreate {
 	return _c
 }
 
+// SetChannelID sets the "channel_id" field.
+func (_c *PostCreate) SetChannelID(v xid.ID) *PostCreate {
+	_c.mutation.SetChannelID(v)
+	return _c
+}
+
 // SetLinkID sets the "link_id" field.
 func (_c *PostCreate) SetLinkID(v xid.ID) *PostCreate {
 	_c.mutation.SetLinkID(v)
@@ -253,6 +260,11 @@ func (_c *PostCreate) SetAuthor(v *Account) *PostCreate {
 // SetCategory sets the "category" edge to the Category entity.
 func (_c *PostCreate) SetCategory(v *Category) *PostCreate {
 	return _c.SetCategoryID(v.ID)
+}
+
+// SetChannel sets the "channel" edge to the Channel entity.
+func (_c *PostCreate) SetChannel(v *Channel) *PostCreate {
+	return _c.SetChannelID(v.ID)
 }
 
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
@@ -547,6 +559,9 @@ func (_c *PostCreate) check() error {
 	if _, ok := _c.mutation.AccountPosts(); !ok {
 		return &ValidationError{Name: "account_posts", err: errors.New(`ent: missing required field "Post.account_posts"`)}
 	}
+	if _, ok := _c.mutation.ChannelID(); !ok {
+		return &ValidationError{Name: "channel_id", err: errors.New(`ent: missing required field "Post.channel_id"`)}
+	}
 	if v, ok := _c.mutation.ID(); ok {
 		if err := post.IDValidator(v.String()); err != nil {
 			return &ValidationError{Name: "id", err: fmt.Errorf(`ent: validator failed for field "Post.id": %w`, err)}
@@ -554,6 +569,9 @@ func (_c *PostCreate) check() error {
 	}
 	if len(_c.mutation.AuthorIDs()) == 0 {
 		return &ValidationError{Name: "author", err: errors.New(`ent: missing required edge "Post.author"`)}
+	}
+	if len(_c.mutation.ChannelIDs()) == 0 {
+		return &ValidationError{Name: "channel", err: errors.New(`ent: missing required edge "Post.channel"`)}
 	}
 	return nil
 }
@@ -671,6 +689,23 @@ func (_c *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.CategoryID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ChannelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   post.ChannelTable,
+			Columns: []string{post.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ChannelID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.TagsIDs(); len(nodes) > 0 {
@@ -1180,6 +1215,18 @@ func (u *PostUpsert) ClearCategoryID() *PostUpsert {
 	return u
 }
 
+// SetChannelID sets the "channel_id" field.
+func (u *PostUpsert) SetChannelID(v xid.ID) *PostUpsert {
+	u.Set(post.FieldChannelID, v)
+	return u
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *PostUpsert) UpdateChannelID() *PostUpsert {
+	u.SetExcluded(post.FieldChannelID)
+	return u
+}
+
 // SetLinkID sets the "link_id" field.
 func (u *PostUpsert) SetLinkID(v xid.ID) *PostUpsert {
 	u.Set(post.FieldLinkID, v)
@@ -1512,6 +1559,20 @@ func (u *PostUpsertOne) UpdateCategoryID() *PostUpsertOne {
 func (u *PostUpsertOne) ClearCategoryID() *PostUpsertOne {
 	return u.Update(func(s *PostUpsert) {
 		s.ClearCategoryID()
+	})
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *PostUpsertOne) SetChannelID(v xid.ID) *PostUpsertOne {
+	return u.Update(func(s *PostUpsert) {
+		s.SetChannelID(v)
+	})
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *PostUpsertOne) UpdateChannelID() *PostUpsertOne {
+	return u.Update(func(s *PostUpsert) {
+		s.UpdateChannelID()
 	})
 }
 
@@ -2017,6 +2078,20 @@ func (u *PostUpsertBulk) UpdateCategoryID() *PostUpsertBulk {
 func (u *PostUpsertBulk) ClearCategoryID() *PostUpsertBulk {
 	return u.Update(func(s *PostUpsert) {
 		s.ClearCategoryID()
+	})
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *PostUpsertBulk) SetChannelID(v xid.ID) *PostUpsertBulk {
+	return u.Update(func(s *PostUpsert) {
+		s.SetChannelID(v)
+	})
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *PostUpsertBulk) UpdateChannelID() *PostUpsertBulk {
+	return u.Update(func(s *PostUpsert) {
+		s.UpdateChannelID()
 	})
 }
 

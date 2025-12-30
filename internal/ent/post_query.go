@@ -15,6 +15,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/asset"
 	"github.com/Southclaws/storyden/internal/ent/category"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/event"
 	"github.com/Southclaws/storyden/internal/ent/likepost"
@@ -37,6 +38,7 @@ type PostQuery struct {
 	predicates       []predicate.Post
 	withAuthor       *AccountQuery
 	withCategory     *CategoryQuery
+	withChannel      *ChannelQuery
 	withTags         *TagQuery
 	withRoot         *PostQuery
 	withPosts        *PostQuery
@@ -125,6 +127,28 @@ func (_q *PostQuery) QueryCategory() *CategoryQuery {
 			sqlgraph.From(post.Table, post.FieldID, selector),
 			sqlgraph.To(category.Table, category.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, post.CategoryTable, post.CategoryColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryChannel chains the current query on the "channel" edge.
+func (_q *PostQuery) QueryChannel() *ChannelQuery {
+	query := (&ChannelClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, selector),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, post.ChannelTable, post.ChannelColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -634,6 +658,7 @@ func (_q *PostQuery) Clone() *PostQuery {
 		predicates:       append([]predicate.Post{}, _q.predicates...),
 		withAuthor:       _q.withAuthor.Clone(),
 		withCategory:     _q.withCategory.Clone(),
+		withChannel:      _q.withChannel.Clone(),
 		withTags:         _q.withTags.Clone(),
 		withRoot:         _q.withRoot.Clone(),
 		withPosts:        _q.withPosts.Clone(),
@@ -674,6 +699,17 @@ func (_q *PostQuery) WithCategory(opts ...func(*CategoryQuery)) *PostQuery {
 		opt(query)
 	}
 	_q.withCategory = query
+	return _q
+}
+
+// WithChannel tells the query-builder to eager-load the nodes that are connected to
+// the "channel" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *PostQuery) WithChannel(opts ...func(*ChannelQuery)) *PostQuery {
+	query := (&ChannelClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withChannel = query
 	return _q
 }
 
@@ -909,9 +945,10 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 	var (
 		nodes       = []*Post{}
 		_spec       = _q.querySpec()
-		loadedTypes = [16]bool{
+		loadedTypes = [17]bool{
 			_q.withAuthor != nil,
 			_q.withCategory != nil,
+			_q.withChannel != nil,
 			_q.withTags != nil,
 			_q.withRoot != nil,
 			_q.withPosts != nil,
@@ -958,6 +995,12 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 	if query := _q.withCategory; query != nil {
 		if err := _q.loadCategory(ctx, query, nodes, nil,
 			func(n *Post, e *Category) { n.Edges.Category = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withChannel; query != nil {
+		if err := _q.loadChannel(ctx, query, nodes, nil,
+			func(n *Post, e *Channel) { n.Edges.Channel = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -1110,6 +1153,35 @@ func (_q *PostQuery) loadCategory(ctx context.Context, query *CategoryQuery, nod
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "category_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *PostQuery) loadChannel(ctx context.Context, query *ChannelQuery, nodes []*Post, init func(*Post), assign func(*Post, *Channel)) error {
+	ids := make([]xid.ID, 0, len(nodes))
+	nodeids := make(map[xid.ID][]*Post)
+	for i := range nodes {
+		fk := nodes[i].ChannelID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(channel.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "channel_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -1705,6 +1777,9 @@ func (_q *PostQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withCategory != nil {
 			_spec.Node.AddColumnOnce(post.FieldCategoryID)
+		}
+		if _q.withChannel != nil {
+			_spec.Node.AddColumnOnce(post.FieldChannelID)
 		}
 		if _q.withRoot != nil {
 			_spec.Node.AddColumnOnce(post.FieldRootPostID)

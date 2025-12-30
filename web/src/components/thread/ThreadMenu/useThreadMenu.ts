@@ -36,7 +36,7 @@ export function useThreadMenu({
   const pathname = usePathname();
   const isOnThreadPage = pathname?.includes(`/t/${thread.slug}`);
 
-  const { deleteThread, revalidate } = useFeedMutations();
+  const { deleteThread, revalidate } = useFeedMutations(undefined, undefined, undefined, router);
 
   const {
     isConfirming: isConfirmingDelete,
@@ -69,27 +69,22 @@ export function useThreadMenu({
   }
 
   async function handleDelete() {
-    await handle(
-      async () => {
-        await withUndo({
-          message: "Thread deleted",
-          duration: 5000,
-          toastId: `thread-${thread.id}`,
-          action: async () => {
-            await deleteThread(thread.id);
-            await resolveReport();
+    await handle(async () => {
+      await withUndo({
+        message: "Thread deleted",
+        duration: 5000,
+        toastId: `thread-${thread.id}`,
+        action: async () => {
+          await deleteThread(thread.id);
+          await resolveReport();
 
-            if (isOnThreadPage) {
-              router.push("/");
-            }
-          },
-          onUndo: () => {},
-        });
-      },
-      {
-        cleanup: async () => await revalidate(),
-      },
-    );
+          if (isOnThreadPage) {
+            router.push("/");
+          }
+        },
+        onUndo: () => {},
+      });
+    });
   }
 
   return {

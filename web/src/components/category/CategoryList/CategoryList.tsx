@@ -45,12 +45,14 @@ import { css, cx } from "@/styled-system/css";
 import { HStack, LStack } from "@/styled-system/jsx";
 import { treeView } from "@/styled-system/recipes";
 import { hasPermission } from "@/utils/permissions";
+import { useChannelPermissions } from "@/lib/channel/permissions";
 
 import { CategoryCreateTrigger } from "../CategoryCreate/CategoryCreateTrigger";
 
 export type Props = {
   initialCategoryList?: CategoryListOKResponse;
   currentCategorySlug?: string;
+  channelID?: string;
 };
 
 type PositionInList = "top" | "in" | "bottom" | "only";
@@ -58,19 +60,34 @@ type PositionInList = "top" | "in" | "bottom" | "only";
 export function CategoryList({
   initialCategoryList,
   currentCategorySlug,
+  channelID,
 }: Props) {
+  // Only fetch global categories if we're NOT on a channel page
+  // When on a channel page, we use the passed initialCategoryList directly
+  const shouldFetchGlobalCategories = !channelID;
+
   const { data, error, mutate } = useGetCategoryList({
-    swr: { fallbackData: initialCategoryList },
+    swr: {
+      fallbackData: initialCategoryList,
+      // Disable fetching if on channel page - use initialCategoryList only
+      revalidateOnMount: shouldFetchGlobalCategories,
+      revalidateOnFocus: shouldFetchGlobalCategories,
+      revalidateOnReconnect: shouldFetchGlobalCategories,
+    },
   });
 
-  if (!data) {
+  // For channel pages, use initialCategoryList directly if SWR hasn't fetched yet
+  const finalData = channelID && initialCategoryList ? initialCategoryList : data;
+
+  if (!finalData) {
     return <Unready error={error} />;
   }
 
   return (
     <CategoryListTree
-      categories={data.categories}
+      categories={finalData.categories}
       currentCategorySlug={currentCategorySlug}
+      channelID={channelID}
       mutate={mutate}
     />
   );
@@ -79,15 +96,21 @@ export function CategoryList({
 export function CategoryListTree({
   categories,
   currentCategorySlug,
+  channelID,
   mutate,
 }: {
   categories: Category[];
   currentCategorySlug?: string;
+  channelID?: string;
   mutate: KeyedMutator<CategoryListOKResponse>;
 }) {
   const session = useSession();
+  const channelPermissions = useChannelPermissions(channelID ?? "");
 
-  const canManageCategories = hasPermission(session, "MANAGE_CATEGORIES");
+  // Use channel permissions if on a channel page, otherwise use global permissions
+  const canManageCategories = channelID
+    ? channelPermissions.canManageChannel
+    : hasPermission(session, "MANAGE_CATEGORIES");
 
   const tree = buildCategoryTree(categories);
 
@@ -163,35 +186,38 @@ export function CategoryListTree({
         </HStack>
       </NavigationHeader>
 
-      <ArkTreeView.Root
-        className={styles.root}
-        collection={collection}
-        expandedValue={expandedValue}
-        onExpandedChange={handleExpandedChange}
-      >
-        <ArkTreeView.Tree className={styles.tree}>
-          <SortableContext
-            items={rootNodes.map((child) => child.id)}
-            strategy={rectSortingStrategy}
-          >
-            {rootNodes.map((cat, index) => (
-              <CategoryTreeNode
-                key={cat.id}
-                fullTree={tree}
-                currentCategorySlug={currentCategorySlug}
-                parentID={null}
-                category={cat}
-                styles={styles}
-                isRoot={true}
-                indexPath={[]}
-                positionInList={getPositionInList(rootNodes.length, index)}
-                handleExpandNode={handleExpandNode}
-                canManageCategories={canManageCategories}
-              />
-            ))}
-          </SortableContext>
-        </ArkTreeView.Tree>
-      </ArkTreeView.Root>
+      {rootNodes.length > 0 ? (
+        <ArkTreeView.Root
+          className={styles.root}
+          collection={collection}
+          expandedValue={expandedValue}
+          onExpandedChange={handleExpandedChange}
+        >
+          <ArkTreeView.Tree className={styles.tree}>
+            <SortableContext
+              items={rootNodes.map((child) => child.id)}
+              strategy={rectSortingStrategy}
+            >
+              {rootNodes.map((cat, index) => (
+                <CategoryTreeNode
+                  key={cat.id}
+                  fullTree={tree}
+                  currentCategorySlug={currentCategorySlug}
+                  channelID={channelID}
+                  parentID={null}
+                  category={cat}
+                  styles={styles}
+                  isRoot={true}
+                  indexPath={[]}
+                  positionInList={getPositionInList(rootNodes.length, index)}
+                  handleExpandNode={handleExpandNode}
+                  canManageCategories={canManageCategories}
+                />
+              ))}
+            </SortableContext>
+          </ArkTreeView.Tree>
+        </ArkTreeView.Root>
+      ) : null}
     </LStack>
   );
 }
@@ -199,6 +225,7 @@ export function CategoryListTree({
 type TreeNodeProps = {
   fullTree: CategoryTree[];
   currentCategorySlug: string | undefined;
+  channelID: string | undefined;
   parentID: Identifier | null;
   category: CategoryTree;
   styles: any;
@@ -212,6 +239,7 @@ type TreeNodeProps = {
 function CategoryTreeNode({
   fullTree,
   currentCategorySlug,
+  channelID,
   parentID,
   category,
   styles,
@@ -393,7 +421,7 @@ function CategoryTreeNode({
 
           <ArkTreeView.BranchText asChild className={styles.branchText}>
             <Anchor
-              href={`/d/${category.slug}`}
+              href={channelID ? `/channels/${channelID}/categories/${category.slug}` : `/d/${category.slug}`}
               className={css({
                 display: "flex",
                 alignItems: "center",
@@ -429,6 +457,7 @@ function CategoryTreeNode({
                 key={child.id}
                 fullTree={fullTree}
                 currentCategorySlug={currentCategorySlug}
+                channelID={channelID}
                 parentID={category.parent ?? null}
                 category={child}
                 indexPath={[...indexPath, childIndex]}

@@ -34,33 +34,9 @@ func NewCategories(
 }
 
 func (c Categories) CategoryCreate(ctx context.Context, request openapi.CategoryCreateRequestObject) (openapi.CategoryCreateResponseObject, error) {
-	parentID := opt.NewEmpty[category.CategoryID]()
-	if request.Body.Parent != nil {
-		parentID = opt.New(category.CategoryID(deserialiseID(*request.Body.Parent)))
-	}
-
-	coverImageAssetID := deletable.Value[*xid.ID]{}
-	if request.Body.CoverImageAssetId != nil {
-		xidValue := openapi.ParseID(*request.Body.CoverImageAssetId)
-		coverImageAssetID = deletable.Skip(opt.New(&xidValue))
-	}
-
-	cat, err := c.category_svc.Create(ctx, category_svc.Partial{
-		Name:              opt.New(request.Body.Name),
-		Slug:              opt.NewPtr(request.Body.Slug),
-		Description:       opt.New(request.Body.Description),
-		Colour:            opt.New(request.Body.Colour),
-		Parent:            parentID,
-		CoverImageAssetID: coverImageAssetID,
-		Meta:              opt.NewPtr((*map[string]any)(request.Body.Meta)),
-	})
-	if err != nil {
-		return nil, fault.Wrap(err, fctx.With(ctx))
-	}
-
-	return openapi.CategoryCreate200JSONResponse{
-		CategoryCreateOKJSONResponse: openapi.CategoryCreateOKJSONResponse(serialiseCategory(cat)),
-	}, nil
+	// Categories now require a channel_id. Use the channel-specific endpoint instead:
+	// POST /channels/{channelID}/categories
+	return nil, fault.Wrap(fault.New("categories must be created within a channel - use POST /channels/{channelID}/categories instead"), fctx.With(ctx))
 }
 
 func (c Categories) CategoryList(ctx context.Context, request openapi.CategoryListRequestObject) (openapi.CategoryListResponseObject, error) {
