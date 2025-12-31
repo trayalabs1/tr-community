@@ -57,7 +57,6 @@ export function useChannelPermissions(channelID: string) {
     canManageChannel: isOwner || isAdmin, // Can update channel settings
     canManageMembers: isOwner || isAdmin, // Can add/remove members
     canModerateContent: isOwner || isAdmin || isModerator, // Can moderate posts
-    canDeleteChannel: isOwner, // Only owners can delete
     role,
   };
 }
