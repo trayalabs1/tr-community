@@ -115,6 +115,7 @@ export function ChannelCategoryScreen(props: Props) {
               key={thread.id}
               thread={thread}
               hideCategoryBadge={true}
+              channelID={props.channel.id}
             />
           ))}
         </ol>

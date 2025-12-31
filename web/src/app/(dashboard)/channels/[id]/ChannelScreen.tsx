@@ -9,7 +9,6 @@ import {
   useChannelThreadList,
 } from "@/api/openapi-client/channels";
 import { Account, Channel } from "@/api/openapi-schema";
-import { useSession } from "@/auth";
 import { CategoryCreateTrigger } from "@/components/category/CategoryCreate/CategoryCreateTrigger";
 import { ThreadReferenceCard } from "@/components/post/ThreadCard";
 import { Button } from "@/components/ui/button";
@@ -130,7 +129,11 @@ export function ChannelScreen(props: Props) {
         {threads && threads.threads.length > 0 ? (
           <VStack alignItems="start" gap="4" width="full">
             {threads.threads.map((thread) => (
-              <ThreadReferenceCard key={thread.id} thread={thread} />
+              <ThreadReferenceCard
+                key={thread.id}
+                thread={thread}
+                channelID={props.channel.id}
+              />
             ))}
           </VStack>
         ) : (

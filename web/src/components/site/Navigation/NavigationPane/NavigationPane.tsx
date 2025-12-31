@@ -1,5 +1,10 @@
-import { CategoryListOKResponse, NodeListResult } from "@/api/openapi-schema";
+import {
+  CategoryListOKResponse,
+  ChannelListOKResponse,
+  NodeListResult,
+} from "@/api/openapi-schema";
 import { categoryList } from "@/api/openapi-server/categories";
+import { channelList } from "@/api/openapi-server/channels";
 import { nodeList } from "@/api/openapi-server/nodes";
 import { Box, styled } from "@/styled-system/jsx";
 import { Floating } from "@/styled-system/patterns";
@@ -15,11 +20,13 @@ export async function NavigationPane() {
       // visibility: ["draft", "review", "unlisted", "published"],
     });
     const { data: initialCategoryList } = await categoryList();
+    const { data: initialChannelList } = await channelList({});
 
     return (
       <NavigationPaneContent
         initialNodeList={initialNodeList}
         initialCategoryList={initialCategoryList}
+        initialChannelList={initialChannelList}
       />
     );
   } catch (e) {
@@ -30,11 +37,13 @@ export async function NavigationPane() {
 type Props = {
   initialNodeList?: NodeListResult;
   initialCategoryList?: CategoryListOKResponse;
+  initialChannelList?: ChannelListOKResponse;
 };
 
 function NavigationPaneContent({
   initialNodeList,
   initialCategoryList,
+  initialChannelList,
 }: Props) {
   return (
     <styled.header
@@ -50,6 +59,7 @@ function NavigationPaneContent({
         <ContentNavigationList
           initialNodeList={initialNodeList}
           initialCategoryList={initialCategoryList}
+          initialChannelList={initialChannelList}
         />
       </Box>
     </styled.header>

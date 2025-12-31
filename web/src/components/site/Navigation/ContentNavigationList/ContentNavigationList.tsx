@@ -1,8 +1,13 @@
 "use client";
 
-import { CategoryListOKResponse, NodeListResult } from "@/api/openapi-schema";
+import {
+  CategoryListOKResponse,
+  ChannelListOKResponse,
+  NodeListResult,
+} from "@/api/openapi-schema";
 import { useChannelCategoryList } from "@/api/openapi-client/channels";
 import { CategoryList } from "@/components/category/CategoryList/CategoryList";
+import { ChannelList } from "@/components/channel/ChannelList/ChannelList";
 import { LStack, styled } from "@/styled-system/jsx";
 
 import { CollectionsAnchor } from "../Anchors/Collections";
@@ -14,6 +19,7 @@ import { useNavigation } from "../useNavigation";
 type Props = {
   initialNodeList?: NodeListResult;
   initialCategoryList?: CategoryListOKResponse;
+  initialChannelList?: ChannelListOKResponse;
 };
 
 export function ContentNavigationList(props: Props) {
@@ -49,6 +55,10 @@ export function ContentNavigationList(props: Props) {
           scrollbarWidth: "none",
         }}
       >
+        <ChannelList
+          initialChannelList={props.initialChannelList}
+          currentChannelID={channelID}
+        />
         <CategoryList
           initialCategoryList={categoriesToDisplay}
           channelID={isChannelPage ? channelID : undefined}

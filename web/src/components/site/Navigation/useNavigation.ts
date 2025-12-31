@@ -18,7 +18,7 @@ export function useNavigation() {
 
   const nodeSlug = slug?.[0];
 
-  // Detect if we're on a channel page
+  // Detect if we're on any channel-related page (channel home, categories, threads)
   const isChannelPage = pathname?.startsWith("/channels/") ?? false;
   const channelID = isChannelPage ? (id as string | undefined) : undefined;
 

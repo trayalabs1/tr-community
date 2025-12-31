@@ -67,7 +67,11 @@ export function ThreadScreen(props: Props) {
           onSubmit={handlers.handleSave}
         >
           <WStack alignItems="start">
-            <Breadcrumbs thread={thread} />
+            <Breadcrumbs
+              thread={thread}
+              channelID={props.channelID}
+              channelName={props.channelName}
+            />
 
             <HStack>
               {isEditing && (
@@ -157,7 +161,11 @@ export function ThreadScreen(props: Props) {
         <VStack w="full">
           {data.thread.replies.total_pages > 1 && (
             <PaginationControls
-              path={`/t/${thread.slug}`}
+              path={
+                props.channelID
+                  ? `/channels/${props.channelID}/threads/${thread.slug}`
+                  : `/t/${thread.slug}`
+              }
               currentPage={data.thread.replies.current_page ?? 1}
               totalPages={data.thread.replies.total_pages}
               pageSize={data.thread.replies.page_size}
@@ -172,7 +180,11 @@ export function ThreadScreen(props: Props) {
 
           {data.thread.replies.total_pages > 1 && (
             <PaginationControls
-              path={`/t/${thread.slug}`}
+              path={
+                props.channelID
+                  ? `/channels/${props.channelID}/threads/${thread.slug}`
+                  : `/t/${thread.slug}`
+              }
               currentPage={data.thread.replies.current_page ?? 1}
               totalPages={data.thread.replies.total_pages}
               pageSize={data.thread.replies.page_size}
