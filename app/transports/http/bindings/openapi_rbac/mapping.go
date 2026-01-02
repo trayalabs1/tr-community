@@ -162,6 +162,10 @@ func (m *Mapping) PhoneSubmitCode() (bool, *rbac.Permission) {
 	return false, nil // Public
 }
 
+func (m *Mapping) AuthTrayaToken() (bool, *rbac.Permission) {
+	return false, nil // Public
+}
+
 func (m *Mapping) AccessKeyList() (bool, *rbac.Permission) {
 	return true, &rbac.PermissionUsePersonalAccessKeys
 }

@@ -92,6 +92,7 @@ export * from "./authProviderListOKResponse";
 export * from "./authProviderLogoutParams";
 export * from "./authSuccess";
 export * from "./authSuccessOKResponse";
+export * from "./authTrayaTokenParams";
 export * from "./authenticationExtensionsClientInputs";
 export * from "./authenticatorAttachment";
 export * from "./authenticatorResponse";

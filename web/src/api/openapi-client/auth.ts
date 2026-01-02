@@ -31,6 +31,7 @@ import type {
   AuthProviderListOKResponse,
   AuthProviderLogoutParams,
   AuthSuccessOKResponse,
+  AuthTrayaTokenParams,
   BadRequestResponse,
   ForbiddenResponse,
   InternalServerErrorResponse,
@@ -1196,6 +1197,67 @@ export const usePhoneSubmitCode = <
   const swrKey =
     swrOptions?.swrKey ?? getPhoneSubmitCodeMutationKey(accountHandle);
   const swrFn = getPhoneSubmitCodeMutationFetcher(accountHandle);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Authenticate with a Traya API token. This endpoint verifies the token
+with the Traya API server, creates or retrieves the user account, and
+assigns the user to appropriate channels based on their kit count.
+
+ */
+export const authTrayaToken = (params: AuthTrayaTokenParams) => {
+  return fetcher<AuthSuccessOKResponse>({
+    url: `/auth/traya`,
+    method: "POST",
+    params,
+  });
+};
+
+export const getAuthTrayaTokenMutationFetcher = (
+  params: AuthTrayaTokenParams,
+) => {
+  return (_: Key, __: { arg: Arguments }): Promise<AuthSuccessOKResponse> => {
+    return authTrayaToken(params);
+  };
+};
+export const getAuthTrayaTokenMutationKey = (params: AuthTrayaTokenParams) =>
+  [`/auth/traya`, ...(params ? [params] : [])] as const;
+
+export type AuthTrayaTokenMutationResult = NonNullable<
+  Awaited<ReturnType<typeof authTrayaToken>>
+>;
+export type AuthTrayaTokenMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | InternalServerErrorResponse;
+
+export const useAuthTrayaToken = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | InternalServerErrorResponse,
+>(
+  params: AuthTrayaTokenParams,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof authTrayaToken>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof authTrayaToken>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getAuthTrayaTokenMutationKey(params);
+  const swrFn = getAuthTrayaTokenMutationFetcher(params);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

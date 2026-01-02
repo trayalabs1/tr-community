@@ -4396,6 +4396,12 @@ type PhoneRequestCodeParams struct {
 	InvitationId *InvitationIDQueryParam `form:"invitation_id,omitempty" json:"invitation_id,omitempty"`
 }
 
+// AuthTrayaTokenParams defines parameters for AuthTrayaToken.
+type AuthTrayaTokenParams struct {
+	// Token Traya authentication token
+	Token string `form:"token" json:"token"`
+}
+
 // WebAuthnMakeCredentialParams defines parameters for WebAuthnMakeCredential.
 type WebAuthnMakeCredentialParams struct {
 	// InvitationId Unique invitation ID.
@@ -5393,6 +5399,9 @@ type ClientInterface interface {
 	PhoneSubmitCodeWithBody(ctx context.Context, accountHandle AccountHandleParam, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PhoneSubmitCode(ctx context.Context, accountHandle AccountHandleParam, body PhoneSubmitCodeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AuthTrayaToken request
+	AuthTrayaToken(ctx context.Context, params *AuthTrayaTokenParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// WebAuthnMakeAssertionWithBody request with any body
 	WebAuthnMakeAssertionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -6552,6 +6561,18 @@ func (c *Client) PhoneSubmitCodeWithBody(ctx context.Context, accountHandle Acco
 
 func (c *Client) PhoneSubmitCode(ctx context.Context, accountHandle AccountHandleParam, body PhoneSubmitCodeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPhoneSubmitCodeRequest(c.Server, accountHandle, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AuthTrayaToken(ctx context.Context, params *AuthTrayaTokenParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAuthTrayaTokenRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -10259,6 +10280,51 @@ func NewPhoneSubmitCodeRequestWithBody(server string, accountHandle AccountHandl
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAuthTrayaTokenRequest generates requests for AuthTrayaToken
+func NewAuthTrayaTokenRequest(server string, params *AuthTrayaTokenParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/traya")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "token", runtime.ParamLocationQuery, params.Token); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -16348,6 +16414,9 @@ type ClientWithResponsesInterface interface {
 
 	PhoneSubmitCodeWithResponse(ctx context.Context, accountHandle AccountHandleParam, body PhoneSubmitCodeJSONRequestBody, reqEditors ...RequestEditorFn) (*PhoneSubmitCodeResponse, error)
 
+	// AuthTrayaTokenWithResponse request
+	AuthTrayaTokenWithResponse(ctx context.Context, params *AuthTrayaTokenParams, reqEditors ...RequestEditorFn) (*AuthTrayaTokenResponse, error)
+
 	// WebAuthnMakeAssertionWithBodyWithResponse request with any body
 	WebAuthnMakeAssertionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*WebAuthnMakeAssertionResponse, error)
 
@@ -17725,6 +17794,29 @@ func (r PhoneSubmitCodeResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r PhoneSubmitCodeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AuthTrayaTokenResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AuthSuccessOK
+	JSONDefault  *InternalServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r AuthTrayaTokenResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AuthTrayaTokenResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -21084,6 +21176,15 @@ func (c *ClientWithResponses) PhoneSubmitCodeWithResponse(ctx context.Context, a
 	return ParsePhoneSubmitCodeResponse(rsp)
 }
 
+// AuthTrayaTokenWithResponse request returning *AuthTrayaTokenResponse
+func (c *ClientWithResponses) AuthTrayaTokenWithResponse(ctx context.Context, params *AuthTrayaTokenParams, reqEditors ...RequestEditorFn) (*AuthTrayaTokenResponse, error) {
+	rsp, err := c.AuthTrayaToken(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAuthTrayaTokenResponse(rsp)
+}
+
 // WebAuthnMakeAssertionWithBodyWithResponse request with arbitrary body returning *WebAuthnMakeAssertionResponse
 func (c *ClientWithResponses) WebAuthnMakeAssertionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*WebAuthnMakeAssertionResponse, error) {
 	rsp, err := c.WebAuthnMakeAssertionWithBody(ctx, contentType, body, reqEditors...)
@@ -23823,6 +23924,39 @@ func ParsePhoneSubmitCodeResponse(rsp *http.Response) (*PhoneSubmitCodeResponse,
 	}
 
 	response := &PhoneSubmitCodeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AuthSuccessOK
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAuthTrayaTokenResponse parses an HTTP response from a AuthTrayaTokenWithResponse call
+func ParseAuthTrayaTokenResponse(rsp *http.Response) (*AuthTrayaTokenResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AuthTrayaTokenResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -27913,6 +28047,9 @@ type ServerInterface interface {
 	// (PUT /auth/phone/{account_handle})
 	PhoneSubmitCode(ctx echo.Context, accountHandle AccountHandleParam) error
 
+	// (POST /auth/traya)
+	AuthTrayaToken(ctx echo.Context, params AuthTrayaTokenParams) error
+
 	// (POST /auth/webauthn/assert)
 	WebAuthnMakeAssertion(ctx echo.Context) error
 
@@ -29042,6 +29179,28 @@ func (w *ServerInterfaceWrapper) PhoneSubmitCode(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.PhoneSubmitCode(ctx, accountHandle)
+	return err
+}
+
+// AuthTrayaToken converts echo context to params.
+func (w *ServerInterfaceWrapper) AuthTrayaToken(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BrowserScopes, []string{})
+
+	ctx.Set(Access_keyScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AuthTrayaTokenParams
+	// ------------- Required query parameter "token" -------------
+
+	err = runtime.BindQueryParameter("form", true, true, "token", ctx.QueryParams(), &params.Token)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter token: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AuthTrayaToken(ctx, params)
 	return err
 }
 
@@ -31984,6 +32143,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/auth/password/signup", wrapper.AuthPasswordSignup)
 	router.POST(baseURL+"/auth/phone", wrapper.PhoneRequestCode)
 	router.PUT(baseURL+"/auth/phone/:account_handle", wrapper.PhoneSubmitCode)
+	router.POST(baseURL+"/auth/traya", wrapper.AuthTrayaToken)
 	router.POST(baseURL+"/auth/webauthn/assert", wrapper.WebAuthnMakeAssertion)
 	router.GET(baseURL+"/auth/webauthn/assert/:account_handle", wrapper.WebAuthnGetAssertion)
 	router.POST(baseURL+"/auth/webauthn/make", wrapper.WebAuthnMakeCredential)
@@ -34145,6 +34305,50 @@ type PhoneSubmitCodedefaultJSONResponse struct {
 }
 
 func (response PhoneSubmitCodedefaultJSONResponse) VisitPhoneSubmitCodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type AuthTrayaTokenRequestObject struct {
+	Params AuthTrayaTokenParams
+}
+
+type AuthTrayaTokenResponseObject interface {
+	VisitAuthTrayaTokenResponse(w http.ResponseWriter) error
+}
+
+type AuthTrayaToken200JSONResponse struct{ AuthSuccessOKJSONResponse }
+
+func (response AuthTrayaToken200JSONResponse) VisitAuthTrayaTokenResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Set-Cookie", fmt.Sprint(response.Headers.SetCookie))
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type AuthTrayaToken400Response = BadRequestResponse
+
+func (response AuthTrayaToken400Response) VisitAuthTrayaTokenResponse(w http.ResponseWriter) error {
+	w.WriteHeader(400)
+	return nil
+}
+
+type AuthTrayaToken401Response = UnauthorisedResponse
+
+func (response AuthTrayaToken401Response) VisitAuthTrayaTokenResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type AuthTrayaTokendefaultJSONResponse struct {
+	Body       APIError
+	StatusCode int
+}
+
+func (response AuthTrayaTokendefaultJSONResponse) VisitAuthTrayaTokenResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.StatusCode)
 
@@ -39874,6 +40078,9 @@ type StrictServerInterface interface {
 	// (PUT /auth/phone/{account_handle})
 	PhoneSubmitCode(ctx context.Context, request PhoneSubmitCodeRequestObject) (PhoneSubmitCodeResponseObject, error)
 
+	// (POST /auth/traya)
+	AuthTrayaToken(ctx context.Context, request AuthTrayaTokenRequestObject) (AuthTrayaTokenResponseObject, error)
+
 	// (POST /auth/webauthn/assert)
 	WebAuthnMakeAssertion(ctx context.Context, request WebAuthnMakeAssertionRequestObject) (WebAuthnMakeAssertionResponseObject, error)
 
@@ -41336,6 +41543,31 @@ func (sh *strictHandler) PhoneSubmitCode(ctx echo.Context, accountHandle Account
 		return err
 	} else if validResponse, ok := response.(PhoneSubmitCodeResponseObject); ok {
 		return validResponse.VisitPhoneSubmitCodeResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AuthTrayaToken operation middleware
+func (sh *strictHandler) AuthTrayaToken(ctx echo.Context, params AuthTrayaTokenParams) error {
+	var request AuthTrayaTokenRequestObject
+
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AuthTrayaToken(ctx.Request().Context(), request.(AuthTrayaTokenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AuthTrayaToken")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AuthTrayaTokenResponseObject); ok {
+		return validResponse.VisitAuthTrayaTokenResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
