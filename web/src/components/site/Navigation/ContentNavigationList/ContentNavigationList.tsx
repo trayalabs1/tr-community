@@ -32,11 +32,6 @@ export function ContentNavigationList(props: Props) {
     },
   });
 
-  // Use channel categories if available, otherwise fall back to global categories
-  const categoriesToDisplay = isChannelPage && channelCategories
-    ? channelCategories
-    : props.initialCategoryList;
-
   return (
     <styled.nav
       display="flex"
@@ -58,11 +53,15 @@ export function ContentNavigationList(props: Props) {
         <ChannelList
           initialChannelList={props.initialChannelList}
           currentChannelID={channelID}
+          channelCategories={channelCategories}
+          channelNodes={props.initialNodeList}
         />
-        <CategoryList
-          initialCategoryList={categoriesToDisplay}
-          channelID={isChannelPage ? channelID : undefined}
-        />
+        {!isChannelPage && (
+          <CategoryList
+            initialCategoryList={props.initialCategoryList}
+            channelID={undefined}
+          />
+        )}
         <LibraryNavigationTree
           initialNodeList={props.initialNodeList}
           currentNode={nodeSlug}

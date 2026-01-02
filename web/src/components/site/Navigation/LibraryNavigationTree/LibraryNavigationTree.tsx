@@ -10,28 +10,30 @@ import { NavigationHeader } from "../ContentNavigationList/NavigationHeader";
 
 import { Props, useLibraryNavigationTree } from "./useLibraryNavigationTree";
 
-export function LibraryNavigationTree(props: Props) {
+export function LibraryNavigationTree(props: Props & { hideHeader?: boolean }) {
   const { ready, data, canManageLibrary } = useLibraryNavigationTree(props);
   if (!ready) {
     // TODO: Render a small version of <Unready /> that's more suitable for this
     return null;
   }
 
-  const { currentNode } = props;
+  const { currentNode, hideHeader = false } = props;
 
   return (
     <LStack gap="1">
-      <NavigationHeader
-        href={LibraryRoute}
-        controls={
-          canManageLibrary && <CreatePageAction variant="ghost" hideLabel />
-        }
-      >
-        <HStack gap="1">
-          <LibraryIcon />
-          {LibraryLabel}
-        </HStack>
-      </NavigationHeader>
+      {!hideHeader && (
+        <NavigationHeader
+          href={LibraryRoute}
+          controls={
+            canManageLibrary && <CreatePageAction variant="ghost" hideLabel />
+          }
+        >
+          <HStack gap="1">
+            <LibraryIcon />
+            {LibraryLabel}
+          </HStack>
+        </NavigationHeader>
+      )}
 
       <LibraryPageTree
         currentNode={currentNode}

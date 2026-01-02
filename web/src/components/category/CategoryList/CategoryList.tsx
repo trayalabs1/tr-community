@@ -98,11 +98,13 @@ export function CategoryListTree({
   currentCategorySlug,
   channelID,
   mutate,
+  hideHeader = false,
 }: {
   categories: Category[];
   currentCategorySlug?: string;
   channelID?: string;
   mutate: KeyedMutator<CategoryListOKResponse>;
+  hideHeader?: boolean;
 }) {
   const session = useSession();
   const channelPermissions = useChannelPermissions(channelID ?? "");
@@ -176,15 +178,17 @@ export function CategoryListTree({
 
   return (
     <LStack gap="0">
-      <NavigationHeader
-        href={DiscussionRoute}
-        controls={canManageCategories && <CategoryCreateTrigger hideLabel />}
-      >
-        <HStack gap="1">
-          <DiscussionIcon />
-          Discussion
-        </HStack>
-      </NavigationHeader>
+      {!hideHeader && (
+        <NavigationHeader
+          href={DiscussionRoute}
+          controls={canManageCategories && <CategoryCreateTrigger hideLabel />}
+        >
+          <HStack gap="1">
+            <DiscussionIcon />
+            Discussion
+          </HStack>
+        </NavigationHeader>
+      )}
 
       {rootNodes.length > 0 ? (
         <ArkTreeView.Root
