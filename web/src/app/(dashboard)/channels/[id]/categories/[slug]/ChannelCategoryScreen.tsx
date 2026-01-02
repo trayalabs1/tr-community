@@ -113,7 +113,16 @@ export function ChannelCategoryScreen(props: Props) {
       />
 
       {/* Thread List */}
-      {threads && threads.threads.length > 0 ? (
+      {isThreadsLoading && !threads ? (
+        <styled.div
+          p="8"
+          textAlign="center"
+          color="fg.muted"
+          width="full"
+        >
+          Loading threads...
+        </styled.div>
+      ) : threads && threads.threads.length > 0 ? (
         <ol className={lstack()}>
           {threads.threads.map((thread) => (
             <ThreadReferenceCard

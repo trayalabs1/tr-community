@@ -133,7 +133,16 @@ export function ChannelScreen(props: Props) {
           </Button>
         </HStack>
 
-        {threads && threads.threads.length > 0 ? (
+        {isThreadsLoading && !threads ? (
+          <styled.div
+            p="8"
+            textAlign="center"
+            color="fg.muted"
+            width="full"
+          >
+            Loading threads...
+          </styled.div>
+        ) : threads && threads.threads.length > 0 ? (
           <VStack alignItems="start" gap="4" width="full">
             {threads.threads.map((thread) => (
               <ThreadReferenceCard
