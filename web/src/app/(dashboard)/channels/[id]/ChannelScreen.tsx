@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { Unready } from "src/components/site/Unready";
+import { LoadingBanner } from "@/components/site/Loading";
 
 import {
   useChannelCategoryList,
@@ -24,13 +25,13 @@ type Props = {
 export function ChannelScreen(props: Props) {
   const permissions = useChannelPermissions(props.channel.id);
 
-  const { data: categories } = useChannelCategoryList(props.channel.id, {
+  const { data: categories, isValidating: isCategoriesLoading } = useChannelCategoryList(props.channel.id, {
     swr: {
       revalidateOnFocus: false,
     },
   });
 
-  const { data: threads, error } = useChannelThreadList(
+  const { data: threads, error, isValidating: isThreadsLoading } = useChannelThreadList(
     props.channel.id,
     {},
     {
@@ -42,6 +43,12 @@ export function ChannelScreen(props: Props) {
 
   if (error) {
     return <Unready error={error} />;
+  }
+
+  const isLoading = isCategoriesLoading || isThreadsLoading;
+
+  if (isLoading && !categories && !threads) {
+    return <LoadingBanner />;
   }
 
   return (
