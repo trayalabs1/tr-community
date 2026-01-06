@@ -9,16 +9,19 @@ export type LibraryNavigationTreeProps = {
   initialNodeList?: NodeListResult;
   currentNode: string | undefined;
   visibility: Visibility[];
+  channelId?: string;
 };
 
 export function useLibraryNavigationTree({
   visibility,
   initialNodeList,
+  channelId,
 }: LibraryNavigationTreeProps) {
   const session = useSession();
   const { data, error } = useNodeList(
     {
       visibility,
+      channel: channelId,
     },
     {
       swr: {

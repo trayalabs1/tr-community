@@ -14,9 +14,9 @@ import {
 } from "./useLibraryNavigationTree";
 
 export function LibraryNavigationTree(
-  props: LibraryNavigationTreeProps & { hideHeader?: boolean; channelId?: string },
+  props: LibraryNavigationTreeProps & { hideHeader?: boolean },
 ) {
-  const { hideHeader = false, channelId, ...hookProps } = props;
+  const { hideHeader = false, ...hookProps } = props;
   const { ready, data, canManageLibrary } = useLibraryNavigationTree(hookProps);
   if (!ready) {
     // TODO: Render a small version of <Unready /> that's more suitable for this
@@ -45,7 +45,7 @@ export function LibraryNavigationTree(
         currentNode={currentNode}
         nodes={data.nodes}
         canManageLibrary={canManageLibrary}
-        channelId={channelId}
+        channelId={hookProps.channelId}
       />
     </LStack>
   );

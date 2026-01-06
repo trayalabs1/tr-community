@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useChannelList } from "@/api/openapi-client/channels";
 import { ChannelListOKResponse } from "@/api/openapi-schema";
 import { NavigationHeader } from "@/components/site/Navigation/ContentNavigationList/NavigationHeader";
@@ -50,8 +51,9 @@ export function ChannelList({
       {data.channels.length > 0 ? (
         <LStack gap="1">
           {data.channels.map((channel) => (
-            <button
+            <Link
               key={channel.id}
+              href={`/channels/${channel.id}`}
               onClick={() => onChannelSelect?.(channel.id)}
               className={css({
                 display: "flex",
@@ -87,7 +89,7 @@ export function ChannelList({
               >
                 {channel.name}
               </span>
-            </button>
+            </Link>
           ))}
         </LStack>
       ) : null}

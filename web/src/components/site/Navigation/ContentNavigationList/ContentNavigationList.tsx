@@ -51,6 +51,7 @@ export function ContentNavigationList(props: Props) {
   const { data: nodeListData } = useNodeList(
     {
       visibility: ["draft", "review", "unlisted", "published"],
+      channel: selectedChannelId,
     },
     {
       swr: {
