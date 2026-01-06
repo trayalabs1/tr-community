@@ -81,6 +81,9 @@ export const applyNodeChanges = produce(
           } satisfies NodeMetadata;
           return;
 
+        case "channel":
+          throw new Error("cannot mutate `channel` via applyNodeChanges");
+
         default:
           _exhaustiveCheck = key;
           return;

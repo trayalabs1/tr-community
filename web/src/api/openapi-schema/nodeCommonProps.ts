@@ -9,6 +9,7 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
  */
 import type { Asset } from "./asset";
 import type { AssetList } from "./assetList";
+import type { ChannelReference } from "./channelReference";
 import type { LinkReference } from "./linkReference";
 import type { Metadata } from "./metadata";
 import type { Node } from "./node";
@@ -26,6 +27,7 @@ import type { Visibility } from "./visibility";
  */
 export interface NodeCommonProps {
   assets: AssetList;
+  channel: ChannelReference;
   content?: PostContent;
   description: NodeDescription;
   /** A boolean indicating if the children of this node tree are hidden

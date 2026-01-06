@@ -7966,6 +7966,9 @@ type ChannelMutation struct {
 	posts              map[xid.ID]struct{}
 	removedposts       map[xid.ID]struct{}
 	clearedposts       bool
+	nodes              map[xid.ID]struct{}
+	removednodes       map[xid.ID]struct{}
+	clearednodes       bool
 	done               bool
 	oldValue           func(context.Context) (*Channel, error)
 	predicates         []predicate.Channel
@@ -8747,6 +8750,60 @@ func (m *ChannelMutation) ResetPosts() {
 	m.removedposts = nil
 }
 
+// AddNodeIDs adds the "nodes" edge to the Node entity by ids.
+func (m *ChannelMutation) AddNodeIDs(ids ...xid.ID) {
+	if m.nodes == nil {
+		m.nodes = make(map[xid.ID]struct{})
+	}
+	for i := range ids {
+		m.nodes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearNodes clears the "nodes" edge to the Node entity.
+func (m *ChannelMutation) ClearNodes() {
+	m.clearednodes = true
+}
+
+// NodesCleared reports if the "nodes" edge to the Node entity was cleared.
+func (m *ChannelMutation) NodesCleared() bool {
+	return m.clearednodes
+}
+
+// RemoveNodeIDs removes the "nodes" edge to the Node entity by IDs.
+func (m *ChannelMutation) RemoveNodeIDs(ids ...xid.ID) {
+	if m.removednodes == nil {
+		m.removednodes = make(map[xid.ID]struct{})
+	}
+	for i := range ids {
+		delete(m.nodes, ids[i])
+		m.removednodes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedNodes returns the removed IDs of the "nodes" edge to the Node entity.
+func (m *ChannelMutation) RemovedNodesIDs() (ids []xid.ID) {
+	for id := range m.removednodes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// NodesIDs returns the "nodes" edge IDs in the mutation.
+func (m *ChannelMutation) NodesIDs() (ids []xid.ID) {
+	for id := range m.nodes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetNodes resets all changes to the "nodes" edge.
+func (m *ChannelMutation) ResetNodes() {
+	m.nodes = nil
+	m.clearednodes = false
+	m.removednodes = nil
+}
+
 // Where appends a list predicates to the ChannelMutation builder.
 func (m *ChannelMutation) Where(ps ...predicate.Channel) {
 	m.predicates = append(m.predicates, ps...)
@@ -9043,7 +9100,7 @@ func (m *ChannelMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ChannelMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.cover_image != nil {
 		edges = append(edges, channel.EdgeCoverImage)
 	}
@@ -9061,6 +9118,9 @@ func (m *ChannelMutation) AddedEdges() []string {
 	}
 	if m.posts != nil {
 		edges = append(edges, channel.EdgePosts)
+	}
+	if m.nodes != nil {
+		edges = append(edges, channel.EdgeNodes)
 	}
 	return edges
 }
@@ -9101,13 +9161,19 @@ func (m *ChannelMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case channel.EdgeNodes:
+		ids := make([]ent.Value, 0, len(m.nodes))
+		for id := range m.nodes {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ChannelMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.removedmemberships != nil {
 		edges = append(edges, channel.EdgeMemberships)
 	}
@@ -9119,6 +9185,9 @@ func (m *ChannelMutation) RemovedEdges() []string {
 	}
 	if m.removedposts != nil {
 		edges = append(edges, channel.EdgePosts)
+	}
+	if m.removednodes != nil {
+		edges = append(edges, channel.EdgeNodes)
 	}
 	return edges
 }
@@ -9151,13 +9220,19 @@ func (m *ChannelMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case channel.EdgeNodes:
+		ids := make([]ent.Value, 0, len(m.removednodes))
+		for id := range m.removednodes {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ChannelMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.clearedcover_image {
 		edges = append(edges, channel.EdgeCoverImage)
 	}
@@ -9175,6 +9250,9 @@ func (m *ChannelMutation) ClearedEdges() []string {
 	}
 	if m.clearedposts {
 		edges = append(edges, channel.EdgePosts)
+	}
+	if m.clearednodes {
+		edges = append(edges, channel.EdgeNodes)
 	}
 	return edges
 }
@@ -9195,6 +9273,8 @@ func (m *ChannelMutation) EdgeCleared(name string) bool {
 		return m.clearedcollections
 	case channel.EdgePosts:
 		return m.clearedposts
+	case channel.EdgeNodes:
+		return m.clearednodes
 	}
 	return false
 }
@@ -9234,6 +9314,9 @@ func (m *ChannelMutation) ResetEdge(name string) error {
 		return nil
 	case channel.EdgePosts:
 		m.ResetPosts()
+		return nil
+	case channel.EdgeNodes:
+		m.ResetNodes()
 		return nil
 	}
 	return fmt.Errorf("unknown Channel edge %s", name)
@@ -18135,6 +18218,8 @@ type NodeMutation struct {
 	clearedFields          map[string]struct{}
 	owner                  *xid.ID
 	clearedowner           bool
+	channel                *xid.ID
+	clearedchannel         bool
 	parent                 *xid.ID
 	clearedparent          bool
 	nodes                  map[xid.ID]struct{}
@@ -18731,6 +18816,42 @@ func (m *NodeMutation) ResetAccountID() {
 	m.owner = nil
 }
 
+// SetChannelID sets the "channel_id" field.
+func (m *NodeMutation) SetChannelID(x xid.ID) {
+	m.channel = &x
+}
+
+// ChannelID returns the value of the "channel_id" field in the mutation.
+func (m *NodeMutation) ChannelID() (r xid.ID, exists bool) {
+	v := m.channel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannelID returns the old "channel_id" field's value of the Node entity.
+// If the Node object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NodeMutation) OldChannelID(ctx context.Context) (v xid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannelID: %w", err)
+	}
+	return oldValue.ChannelID, nil
+}
+
+// ResetChannelID resets all changes to the "channel_id" field.
+func (m *NodeMutation) ResetChannelID() {
+	m.channel = nil
+}
+
 // SetPropertySchemaID sets the "property_schema_id" field.
 func (m *NodeMutation) SetPropertySchemaID(x xid.ID) {
 	m.property_schema = &x
@@ -19037,6 +19158,33 @@ func (m *NodeMutation) OwnerIDs() (ids []xid.ID) {
 func (m *NodeMutation) ResetOwner() {
 	m.owner = nil
 	m.clearedowner = false
+}
+
+// ClearChannel clears the "channel" edge to the Channel entity.
+func (m *NodeMutation) ClearChannel() {
+	m.clearedchannel = true
+	m.clearedFields[node.FieldChannelID] = struct{}{}
+}
+
+// ChannelCleared reports if the "channel" edge to the Channel entity was cleared.
+func (m *NodeMutation) ChannelCleared() bool {
+	return m.clearedchannel
+}
+
+// ChannelIDs returns the "channel" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ChannelID instead. It exists only for internal usage by the builders.
+func (m *NodeMutation) ChannelIDs() (ids []xid.ID) {
+	if id := m.channel; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetChannel resets all changes to the "channel" edge.
+func (m *NodeMutation) ResetChannel() {
+	m.channel = nil
+	m.clearedchannel = false
 }
 
 // SetParentID sets the "parent" edge to the Node entity by id.
@@ -19531,7 +19679,7 @@ func (m *NodeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NodeMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, node.FieldCreatedAt)
 	}
@@ -19564,6 +19712,9 @@ func (m *NodeMutation) Fields() []string {
 	}
 	if m.owner != nil {
 		fields = append(fields, node.FieldAccountID)
+	}
+	if m.channel != nil {
+		fields = append(fields, node.FieldChannelID)
 	}
 	if m.property_schema != nil {
 		fields = append(fields, node.FieldPropertySchemaID)
@@ -19613,6 +19764,8 @@ func (m *NodeMutation) Field(name string) (ent.Value, bool) {
 		return m.HideChildTree()
 	case node.FieldAccountID:
 		return m.AccountID()
+	case node.FieldChannelID:
+		return m.ChannelID()
 	case node.FieldPropertySchemaID:
 		return m.PropertySchemaID()
 	case node.FieldPrimaryAssetID:
@@ -19656,6 +19809,8 @@ func (m *NodeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldHideChildTree(ctx)
 	case node.FieldAccountID:
 		return m.OldAccountID(ctx)
+	case node.FieldChannelID:
+		return m.OldChannelID(ctx)
 	case node.FieldPropertySchemaID:
 		return m.OldPropertySchemaID(ctx)
 	case node.FieldPrimaryAssetID:
@@ -19753,6 +19908,13 @@ func (m *NodeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAccountID(v)
+		return nil
+	case node.FieldChannelID:
+		v, ok := value.(xid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannelID(v)
 		return nil
 	case node.FieldPropertySchemaID:
 		v, ok := value.(xid.ID)
@@ -19935,6 +20097,9 @@ func (m *NodeMutation) ResetField(name string) error {
 	case node.FieldAccountID:
 		m.ResetAccountID()
 		return nil
+	case node.FieldChannelID:
+		m.ResetChannelID()
+		return nil
 	case node.FieldPropertySchemaID:
 		m.ResetPropertySchemaID()
 		return nil
@@ -19959,9 +20124,12 @@ func (m *NodeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *NodeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 11)
+	edges := make([]string, 0, 12)
 	if m.owner != nil {
 		edges = append(edges, node.EdgeOwner)
+	}
+	if m.channel != nil {
+		edges = append(edges, node.EdgeChannel)
 	}
 	if m.parent != nil {
 		edges = append(edges, node.EdgeParent)
@@ -20002,6 +20170,10 @@ func (m *NodeMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case node.EdgeOwner:
 		if id := m.owner; id != nil {
+			return []ent.Value{*id}
+		}
+	case node.EdgeChannel:
+		if id := m.channel; id != nil {
 			return []ent.Value{*id}
 		}
 	case node.EdgeParent:
@@ -20062,7 +20234,7 @@ func (m *NodeMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *NodeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 11)
+	edges := make([]string, 0, 12)
 	if m.removednodes != nil {
 		edges = append(edges, node.EdgeNodes)
 	}
@@ -20130,9 +20302,12 @@ func (m *NodeMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *NodeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 11)
+	edges := make([]string, 0, 12)
 	if m.clearedowner {
 		edges = append(edges, node.EdgeOwner)
+	}
+	if m.clearedchannel {
+		edges = append(edges, node.EdgeChannel)
 	}
 	if m.clearedparent {
 		edges = append(edges, node.EdgeParent)
@@ -20173,6 +20348,8 @@ func (m *NodeMutation) EdgeCleared(name string) bool {
 	switch name {
 	case node.EdgeOwner:
 		return m.clearedowner
+	case node.EdgeChannel:
+		return m.clearedchannel
 	case node.EdgeParent:
 		return m.clearedparent
 	case node.EdgeNodes:
@@ -20204,6 +20381,9 @@ func (m *NodeMutation) ClearEdge(name string) error {
 	case node.EdgeOwner:
 		m.ClearOwner()
 		return nil
+	case node.EdgeChannel:
+		m.ClearChannel()
+		return nil
 	case node.EdgeParent:
 		m.ClearParent()
 		return nil
@@ -20226,6 +20406,9 @@ func (m *NodeMutation) ResetEdge(name string) error {
 	switch name {
 	case node.EdgeOwner:
 		m.ResetOwner()
+		return nil
+	case node.EdgeChannel:
+		m.ResetChannel()
 		return nil
 	case node.EdgeParent:
 		m.ResetParent()

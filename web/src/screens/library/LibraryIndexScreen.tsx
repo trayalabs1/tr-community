@@ -9,7 +9,11 @@ import { VStack } from "@/styled-system/jsx";
 
 import { Props, useLibraryIndexScreen } from "./useLibraryIndexScreen";
 
-export function LibraryIndexScreen(props: Props) {
+export type LibraryIndexScreenProps = Props & {
+  channelName?: string;
+};
+
+export function LibraryIndexScreen(props: LibraryIndexScreenProps) {
   const { ready, data, error } = useLibraryIndexScreen(props);
 
   if (!ready) return <Unready error={error} />;
@@ -18,12 +22,23 @@ export function LibraryIndexScreen(props: Props) {
 
   return (
     <VStack gap="4">
-      <Breadcrumbs libraryPath={[]} visibility="draft" create="show" />
+      <Breadcrumbs
+        libraryPath={[]}
+        visibility="draft"
+        create="show"
+        channelName={props.channelName}
+        channelID={props.channelID}
+      />
 
       {nodes.data.nodes.length === 0 ? (
         <LibraryEmptyState />
       ) : (
-        <NodeCardGrid libraryPath={[]} context="library" {...nodes.data} />
+        <NodeCardGrid
+          libraryPath={[]}
+          context="library"
+          channelID={props.channelID}
+          {...nodes.data}
+        />
       )}
     </VStack>
   );

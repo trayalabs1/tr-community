@@ -17,6 +17,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/channelmembership"
 	"github.com/Southclaws/storyden/internal/ent/collection"
+	"github.com/Southclaws/storyden/internal/ent/node"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/rs/xid"
 )
@@ -241,6 +242,21 @@ func (_c *ChannelCreate) AddPosts(v ...*Post) *ChannelCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddPostIDs(ids...)
+}
+
+// AddNodeIDs adds the "nodes" edge to the Node entity by IDs.
+func (_c *ChannelCreate) AddNodeIDs(ids ...xid.ID) *ChannelCreate {
+	_c.mutation.AddNodeIDs(ids...)
+	return _c
+}
+
+// AddNodes adds the "nodes" edges to the Node entity.
+func (_c *ChannelCreate) AddNodes(v ...*Node) *ChannelCreate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddNodeIDs(ids...)
 }
 
 // Mutation returns the ChannelMutation object of the builder.
@@ -482,6 +498,22 @@ func (_c *ChannelCreate) createSpec() (*Channel, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.NodesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.NodesTable,
+			Columns: []string{channel.NodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(node.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

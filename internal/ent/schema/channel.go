@@ -66,5 +66,7 @@ func (Channel) Edges() []ent.Edge {
 		edge.To("collections", Collection.Type),
 
 		edge.To("posts", Post.Type),
+
+		edge.To("nodes", Node.Type),
 	}
 }

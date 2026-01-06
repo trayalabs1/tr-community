@@ -58,9 +58,11 @@ type ChannelEdges struct {
 	Collections []*Collection `json:"collections,omitempty"`
 	// Posts holds the value of the posts edge.
 	Posts []*Post `json:"posts,omitempty"`
+	// Nodes holds the value of the nodes edge.
+	Nodes []*Node `json:"nodes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 }
 
 // CoverImageOrErr returns the CoverImage value or an error if the edge
@@ -119,6 +121,15 @@ func (e ChannelEdges) PostsOrErr() ([]*Post, error) {
 		return e.Posts, nil
 	}
 	return nil, &NotLoadedError{edge: "posts"}
+}
+
+// NodesOrErr returns the Nodes value or an error if the edge
+// was not loaded in eager-loading.
+func (e ChannelEdges) NodesOrErr() ([]*Node, error) {
+	if e.loadedTypes[6] {
+		return e.Nodes, nil
+	}
+	return nil, &NotLoadedError{edge: "nodes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -256,6 +267,11 @@ func (_m *Channel) QueryCollections() *CollectionQuery {
 // QueryPosts queries the "posts" edge of the Channel entity.
 func (_m *Channel) QueryPosts() *PostQuery {
 	return NewChannelClient(_m.config).QueryPosts(_m)
+}
+
+// QueryNodes queries the "nodes" edge of the Channel entity.
+func (_m *Channel) QueryNodes() *NodeQuery {
+	return NewChannelClient(_m.config).QueryNodes(_m)
 }
 
 // Update returns a builder for updating this Channel.

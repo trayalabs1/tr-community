@@ -2124,6 +2124,22 @@ func (c *ChannelClient) QueryPosts(_m *Channel) *PostQuery {
 	return query
 }
 
+// QueryNodes queries the nodes edge of a Channel.
+func (c *ChannelClient) QueryNodes(_m *Channel) *NodeQuery {
+	query := (&NodeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(node.Table, node.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, channel.NodesTable, channel.NodesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ChannelClient) Hooks() []Hook {
 	return c.hooks.Channel
@@ -4143,6 +4159,22 @@ func (c *NodeClient) QueryOwner(_m *Node) *AccountQuery {
 			sqlgraph.From(node.Table, node.FieldID, id),
 			sqlgraph.To(account.Table, account.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, node.OwnerTable, node.OwnerColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryChannel queries the channel edge of a Node.
+func (c *NodeClient) QueryChannel(_m *Node) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(node.Table, node.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, node.ChannelTable, node.ChannelColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

@@ -676,6 +676,7 @@ var (
 		{Name: "sort", Type: field.TypeString},
 		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
 		{Name: "account_id", Type: field.TypeString, Size: 20},
+		{Name: "channel_id", Type: field.TypeString, Size: 20},
 		{Name: "link_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "parent_node_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "primary_asset_id", Type: field.TypeString, Nullable: true, Size: 20},
@@ -694,26 +695,32 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "nodes_links_nodes",
+				Symbol:     "nodes_channels_nodes",
 				Columns:    []*schema.Column{NodesColumns[14]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "nodes_links_nodes",
+				Columns:    []*schema.Column{NodesColumns[15]},
 				RefColumns: []*schema.Column{LinksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "nodes_nodes_nodes",
-				Columns:    []*schema.Column{NodesColumns[15]},
+				Columns:    []*schema.Column{NodesColumns[16]},
 				RefColumns: []*schema.Column{NodesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "nodes_assets_primary_image",
-				Columns:    []*schema.Column{NodesColumns[16]},
+				Columns:    []*schema.Column{NodesColumns[17]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "nodes_property_schemas_node",
-				Columns:    []*schema.Column{NodesColumns[17]},
+				Columns:    []*schema.Column{NodesColumns[18]},
 				RefColumns: []*schema.Column{PropertySchemasColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1418,10 +1425,11 @@ func init() {
 	MentionProfilesTable.ForeignKeys[0].RefTable = AccountsTable
 	MentionProfilesTable.ForeignKeys[1].RefTable = PostsTable
 	NodesTable.ForeignKeys[0].RefTable = AccountsTable
-	NodesTable.ForeignKeys[1].RefTable = LinksTable
-	NodesTable.ForeignKeys[2].RefTable = NodesTable
-	NodesTable.ForeignKeys[3].RefTable = AssetsTable
-	NodesTable.ForeignKeys[4].RefTable = PropertySchemasTable
+	NodesTable.ForeignKeys[1].RefTable = ChannelsTable
+	NodesTable.ForeignKeys[2].RefTable = LinksTable
+	NodesTable.ForeignKeys[3].RefTable = NodesTable
+	NodesTable.ForeignKeys[4].RefTable = AssetsTable
+	NodesTable.ForeignKeys[5].RefTable = PropertySchemasTable
 	NotificationsTable.ForeignKeys[0].RefTable = AccountsTable
 	NotificationsTable.ForeignKeys[1].RefTable = AccountsTable
 	PostsTable.ForeignKeys[0].RefTable = AccountsTable

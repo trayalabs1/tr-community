@@ -13,6 +13,7 @@ import (
 	"github.com/Southclaws/lexorank"
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/asset"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/link"
 	"github.com/Southclaws/storyden/internal/ent/node"
 	"github.com/Southclaws/storyden/internal/ent/propertyschema"
@@ -46,6 +47,8 @@ type Node struct {
 	HideChildTree bool `json:"hide_child_tree,omitempty"`
 	// AccountID holds the value of the "account_id" field.
 	AccountID xid.ID `json:"account_id,omitempty"`
+	// The channel this node belongs to
+	ChannelID xid.ID `json:"channel_id,omitempty"`
 	// PropertySchemaID holds the value of the "property_schema_id" field.
 	PropertySchemaID *xid.ID `json:"property_schema_id,omitempty"`
 	// PrimaryAssetID holds the value of the "primary_asset_id" field.
@@ -68,6 +71,8 @@ type Node struct {
 type NodeEdges struct {
 	// Owner holds the value of the owner edge.
 	Owner *Account `json:"owner,omitempty"`
+	// Channel holds the value of the channel edge.
+	Channel *Channel `json:"channel,omitempty"`
 	// A many-to-many recursive self reference. The parent node, if any.
 	Parent *Node `json:"parent,omitempty"`
 	// Nodes holds the value of the nodes edge.
@@ -92,7 +97,7 @@ type NodeEdges struct {
 	CollectionNodes []*CollectionNode `json:"collection_nodes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [12]bool
+	loadedTypes [13]bool
 }
 
 // OwnerOrErr returns the Owner value or an error if the edge
@@ -106,12 +111,23 @@ func (e NodeEdges) OwnerOrErr() (*Account, error) {
 	return nil, &NotLoadedError{edge: "owner"}
 }
 
+// ChannelOrErr returns the Channel value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e NodeEdges) ChannelOrErr() (*Channel, error) {
+	if e.Channel != nil {
+		return e.Channel, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: channel.Label}
+	}
+	return nil, &NotLoadedError{edge: "channel"}
+}
+
 // ParentOrErr returns the Parent value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e NodeEdges) ParentOrErr() (*Node, error) {
 	if e.Parent != nil {
 		return e.Parent, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: node.Label}
 	}
 	return nil, &NotLoadedError{edge: "parent"}
@@ -120,7 +136,7 @@ func (e NodeEdges) ParentOrErr() (*Node, error) {
 // NodesOrErr returns the Nodes value or an error if the edge
 // was not loaded in eager-loading.
 func (e NodeEdges) NodesOrErr() ([]*Node, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Nodes, nil
 	}
 	return nil, &NotLoadedError{edge: "nodes"}
@@ -131,7 +147,7 @@ func (e NodeEdges) NodesOrErr() ([]*Node, error) {
 func (e NodeEdges) PrimaryImageOrErr() (*Asset, error) {
 	if e.PrimaryImage != nil {
 		return e.PrimaryImage, nil
-	} else if e.loadedTypes[3] {
+	} else if e.loadedTypes[4] {
 		return nil, &NotFoundError{label: asset.Label}
 	}
 	return nil, &NotLoadedError{edge: "primary_image"}
@@ -140,7 +156,7 @@ func (e NodeEdges) PrimaryImageOrErr() (*Asset, error) {
 // AssetsOrErr returns the Assets value or an error if the edge
 // was not loaded in eager-loading.
 func (e NodeEdges) AssetsOrErr() ([]*Asset, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.Assets, nil
 	}
 	return nil, &NotLoadedError{edge: "assets"}
@@ -149,7 +165,7 @@ func (e NodeEdges) AssetsOrErr() ([]*Asset, error) {
 // TagsOrErr returns the Tags value or an error if the edge
 // was not loaded in eager-loading.
 func (e NodeEdges) TagsOrErr() ([]*Tag, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[6] {
 		return e.Tags, nil
 	}
 	return nil, &NotLoadedError{edge: "tags"}
@@ -158,7 +174,7 @@ func (e NodeEdges) TagsOrErr() ([]*Tag, error) {
 // PropertiesOrErr returns the Properties value or an error if the edge
 // was not loaded in eager-loading.
 func (e NodeEdges) PropertiesOrErr() ([]*Property, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[7] {
 		return e.Properties, nil
 	}
 	return nil, &NotLoadedError{edge: "properties"}
@@ -169,7 +185,7 @@ func (e NodeEdges) PropertiesOrErr() ([]*Property, error) {
 func (e NodeEdges) PropertySchemaOrErr() (*PropertySchema, error) {
 	if e.PropertySchema != nil {
 		return e.PropertySchema, nil
-	} else if e.loadedTypes[7] {
+	} else if e.loadedTypes[8] {
 		return nil, &NotFoundError{label: propertyschema.Label}
 	}
 	return nil, &NotLoadedError{edge: "property_schema"}
@@ -180,7 +196,7 @@ func (e NodeEdges) PropertySchemaOrErr() (*PropertySchema, error) {
 func (e NodeEdges) LinkOrErr() (*Link, error) {
 	if e.Link != nil {
 		return e.Link, nil
-	} else if e.loadedTypes[8] {
+	} else if e.loadedTypes[9] {
 		return nil, &NotFoundError{label: link.Label}
 	}
 	return nil, &NotLoadedError{edge: "link"}
@@ -189,7 +205,7 @@ func (e NodeEdges) LinkOrErr() (*Link, error) {
 // ContentLinksOrErr returns the ContentLinks value or an error if the edge
 // was not loaded in eager-loading.
 func (e NodeEdges) ContentLinksOrErr() ([]*Link, error) {
-	if e.loadedTypes[9] {
+	if e.loadedTypes[10] {
 		return e.ContentLinks, nil
 	}
 	return nil, &NotLoadedError{edge: "content_links"}
@@ -198,7 +214,7 @@ func (e NodeEdges) ContentLinksOrErr() ([]*Link, error) {
 // CollectionsOrErr returns the Collections value or an error if the edge
 // was not loaded in eager-loading.
 func (e NodeEdges) CollectionsOrErr() ([]*Collection, error) {
-	if e.loadedTypes[10] {
+	if e.loadedTypes[11] {
 		return e.Collections, nil
 	}
 	return nil, &NotLoadedError{edge: "collections"}
@@ -207,7 +223,7 @@ func (e NodeEdges) CollectionsOrErr() ([]*Collection, error) {
 // CollectionNodesOrErr returns the CollectionNodes value or an error if the edge
 // was not loaded in eager-loading.
 func (e NodeEdges) CollectionNodesOrErr() ([]*CollectionNode, error) {
-	if e.loadedTypes[11] {
+	if e.loadedTypes[12] {
 		return e.CollectionNodes, nil
 	}
 	return nil, &NotLoadedError{edge: "collection_nodes"}
@@ -230,7 +246,7 @@ func (*Node) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case node.FieldCreatedAt, node.FieldUpdatedAt, node.FieldDeletedAt, node.FieldIndexedAt:
 			values[i] = new(sql.NullTime)
-		case node.FieldID, node.FieldParentNodeID, node.FieldAccountID, node.FieldLinkID:
+		case node.FieldID, node.FieldParentNodeID, node.FieldAccountID, node.FieldChannelID, node.FieldLinkID:
 			values[i] = new(xid.ID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -323,6 +339,12 @@ func (_m *Node) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.AccountID = *value
 			}
+		case node.FieldChannelID:
+			if value, ok := values[i].(*xid.ID); !ok {
+				return fmt.Errorf("unexpected type %T for field channel_id", values[i])
+			} else if value != nil {
+				_m.ChannelID = *value
+			}
 		case node.FieldPropertySchemaID:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field property_schema_id", values[i])
@@ -379,6 +401,11 @@ func (_m *Node) Value(name string) (ent.Value, error) {
 // QueryOwner queries the "owner" edge of the Node entity.
 func (_m *Node) QueryOwner() *AccountQuery {
 	return NewNodeClient(_m.config).QueryOwner(_m)
+}
+
+// QueryChannel queries the "channel" edge of the Node entity.
+func (_m *Node) QueryChannel() *ChannelQuery {
+	return NewNodeClient(_m.config).QueryChannel(_m)
 }
 
 // QueryParent queries the "parent" edge of the Node entity.
@@ -499,6 +526,9 @@ func (_m *Node) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("account_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AccountID))
+	builder.WriteString(", ")
+	builder.WriteString("channel_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ChannelID))
 	builder.WriteString(", ")
 	if v := _m.PropertySchemaID; v != nil {
 		builder.WriteString("property_schema_id=")

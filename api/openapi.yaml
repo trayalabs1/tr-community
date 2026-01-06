@@ -2224,6 +2224,11 @@ paths:
       parameters:
         - $ref: "#/components/parameters/SearchQuery"
         - $ref: "#/components/parameters/PaginationQuery"
+        - name: channel
+          description: Filter nodes by channel ID.
+          required: false
+          in: query
+          schema: { $ref: "#/components/schemas/Identifier" }
         - name: node_id
           description: List this node and all child nodes.
           required: false
@@ -5693,6 +5698,19 @@ components:
             meta:
               $ref: "#/components/schemas/Metadata"
 
+    ChannelReference:
+      type: object
+      description: A minimal reference to a channel.
+      required: [id, name, slug]
+      properties:
+        id: { $ref: "#/components/schemas/Identifier" }
+        name:
+          type: string
+          description: The display name of the channel
+        slug:
+          type: string
+          description: URL-friendly identifier for the channel
+
     ChannelList:
       type: array
       items:
@@ -6675,6 +6693,7 @@ components:
         - assets
         - description
         - owner
+        - channel
         - hide_child_tree
         - tags
         - visibility
@@ -6688,6 +6707,7 @@ components:
         primary_image: { $ref: "#/components/schemas/Asset" }
         content: { $ref: "#/components/schemas/PostContent" }
         owner: { $ref: "#/components/schemas/ProfileReference" }
+        channel: { $ref: "#/components/schemas/ChannelReference" }
         parent: { $ref: "#/components/schemas/Node" }
         hide_child_tree:
           description: |
@@ -6730,6 +6750,10 @@ components:
         description: { $ref: "#/components/schemas/NodeDescription" }
         primary_image_asset_id: { $ref: "#/components/schemas/AssetID" }
         content: { $ref: "#/components/schemas/PostContent" }
+        channel:
+          allOf:
+            - { $ref: "#/components/schemas/Identifier" }
+          nullable: true
         parent: { $ref: "#/components/schemas/NodeSlug" }
         hide_child_tree:
           type: boolean
@@ -6755,6 +6779,7 @@ components:
         primary_image_asset_id:
           { $ref: "#/components/schemas/NullableIdentifier" }
         content: { $ref: "#/components/schemas/PostContent" }
+        channel: { $ref: "#/components/schemas/Slug" }
         parent: { $ref: "#/components/schemas/NodeSlug" }
         hide_child_tree:
           type: boolean

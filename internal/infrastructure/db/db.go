@@ -127,7 +127,7 @@ func newEntClient(lc fx.Lifecycle, tf tracing.Factory, cfg config.Config, db *sq
 				schema.WithDropColumn(true),
 				schema.WithApplyHook(populateLastReplyAt()),
 				schema.WithApplyHook(migrateReplyVisibility()),
-				// schema.WithApplyHook(migrateToChannels()), // Disabled - manual migration
+				// schema.WithApplyHook(migrateNodesToChannels()), // Disabled - manual migration
 			); err != nil {
 				return fault.Wrap(err, fctx.With(ctx))
 			}

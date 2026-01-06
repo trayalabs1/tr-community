@@ -25,6 +25,7 @@ import type { TagNameList } from "./tagNameList";
 export interface NodeMutableProps {
   asset_ids?: AssetIDs;
   asset_sources?: AssetSourceList;
+  channel?: Slug;
   content?: PostContent;
   description?: NodeDescription;
   hide_child_tree?: boolean;

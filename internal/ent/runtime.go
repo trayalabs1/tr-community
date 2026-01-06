@@ -804,7 +804,7 @@ func init() {
 	// node.DefaultHideChildTree holds the default value on creation for the hide_child_tree field.
 	node.DefaultHideChildTree = nodeDescHideChildTree.Default.(bool)
 	// nodeDescSort is the schema descriptor for sort field.
-	nodeDescSort := nodeFields[11].Descriptor()
+	nodeDescSort := nodeFields[12].Descriptor()
 	// node.DefaultSort holds the default value on creation for the sort field.
 	node.DefaultSort = nodeDescSort.Default.(func() lexorank.Key)
 	// nodeDescID is the schema descriptor for id field.

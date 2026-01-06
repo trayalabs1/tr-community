@@ -16,6 +16,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/channelmembership"
 	"github.com/Southclaws/storyden/internal/ent/collection"
+	"github.com/Southclaws/storyden/internal/ent/node"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/predicate"
 	"github.com/rs/xid"
@@ -253,6 +254,21 @@ func (_u *ChannelUpdate) AddPosts(v ...*Post) *ChannelUpdate {
 	return _u.AddPostIDs(ids...)
 }
 
+// AddNodeIDs adds the "nodes" edge to the Node entity by IDs.
+func (_u *ChannelUpdate) AddNodeIDs(ids ...xid.ID) *ChannelUpdate {
+	_u.mutation.AddNodeIDs(ids...)
+	return _u
+}
+
+// AddNodes adds the "nodes" edges to the Node entity.
+func (_u *ChannelUpdate) AddNodes(v ...*Node) *ChannelUpdate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddNodeIDs(ids...)
+}
+
 // Mutation returns the ChannelMutation object of the builder.
 func (_u *ChannelUpdate) Mutation() *ChannelMutation {
 	return _u.mutation
@@ -352,6 +368,27 @@ func (_u *ChannelUpdate) RemovePosts(v ...*Post) *ChannelUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePostIDs(ids...)
+}
+
+// ClearNodes clears all "nodes" edges to the Node entity.
+func (_u *ChannelUpdate) ClearNodes() *ChannelUpdate {
+	_u.mutation.ClearNodes()
+	return _u
+}
+
+// RemoveNodeIDs removes the "nodes" edge to Node entities by IDs.
+func (_u *ChannelUpdate) RemoveNodeIDs(ids ...xid.ID) *ChannelUpdate {
+	_u.mutation.RemoveNodeIDs(ids...)
+	return _u
+}
+
+// RemoveNodes removes "nodes" edges to Node entities.
+func (_u *ChannelUpdate) RemoveNodes(v ...*Node) *ChannelUpdate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveNodeIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -680,6 +717,51 @@ func (_u *ChannelUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.NodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.NodesTable,
+			Columns: []string{channel.NodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(node.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedNodesIDs(); len(nodes) > 0 && !_u.mutation.NodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.NodesTable,
+			Columns: []string{channel.NodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(node.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NodesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.NodesTable,
+			Columns: []string{channel.NodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(node.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -920,6 +1002,21 @@ func (_u *ChannelUpdateOne) AddPosts(v ...*Post) *ChannelUpdateOne {
 	return _u.AddPostIDs(ids...)
 }
 
+// AddNodeIDs adds the "nodes" edge to the Node entity by IDs.
+func (_u *ChannelUpdateOne) AddNodeIDs(ids ...xid.ID) *ChannelUpdateOne {
+	_u.mutation.AddNodeIDs(ids...)
+	return _u
+}
+
+// AddNodes adds the "nodes" edges to the Node entity.
+func (_u *ChannelUpdateOne) AddNodes(v ...*Node) *ChannelUpdateOne {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddNodeIDs(ids...)
+}
+
 // Mutation returns the ChannelMutation object of the builder.
 func (_u *ChannelUpdateOne) Mutation() *ChannelMutation {
 	return _u.mutation
@@ -1019,6 +1116,27 @@ func (_u *ChannelUpdateOne) RemovePosts(v ...*Post) *ChannelUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePostIDs(ids...)
+}
+
+// ClearNodes clears all "nodes" edges to the Node entity.
+func (_u *ChannelUpdateOne) ClearNodes() *ChannelUpdateOne {
+	_u.mutation.ClearNodes()
+	return _u
+}
+
+// RemoveNodeIDs removes the "nodes" edge to Node entities by IDs.
+func (_u *ChannelUpdateOne) RemoveNodeIDs(ids ...xid.ID) *ChannelUpdateOne {
+	_u.mutation.RemoveNodeIDs(ids...)
+	return _u
+}
+
+// RemoveNodes removes "nodes" edges to Node entities.
+func (_u *ChannelUpdateOne) RemoveNodes(v ...*Node) *ChannelUpdateOne {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveNodeIDs(ids...)
 }
 
 // Where appends a list predicates to the ChannelUpdate builder.
@@ -1370,6 +1488,51 @@ func (_u *ChannelUpdateOne) sqlSave(ctx context.Context) (_node *Channel, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.NodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.NodesTable,
+			Columns: []string{channel.NodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(node.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedNodesIDs(); len(nodes) > 0 && !_u.mutation.NodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.NodesTable,
+			Columns: []string{channel.NodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(node.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.NodesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   channel.NodesTable,
+			Columns: []string{channel.NodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(node.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
