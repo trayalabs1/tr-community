@@ -1,36 +1,23 @@
 "use client";
 
 import { useChannelList } from "@/api/openapi-client/channels";
-import {
-  Channel,
-  ChannelListOKResponse,
-  CategoryListOKResponse,
-  NodeListResult,
-} from "@/api/openapi-schema";
-import { Anchor } from "@/components/site/Anchor";
+import { ChannelListOKResponse } from "@/api/openapi-schema";
 import { NavigationHeader } from "@/components/site/Navigation/ContentNavigationList/NavigationHeader";
-import { LibraryNavigationTree } from "@/components/site/Navigation/LibraryNavigationTree/LibraryNavigationTree";
 import { Unready } from "@/components/site/Unready";
-import { BulletIcon } from "@/components/ui/icons/Bullet";
 import { CategoryIcon } from "@/components/ui/icons/Category";
-import { DiscussionIcon } from "@/components/ui/icons/Discussion";
-import { LibraryIcon } from "@/components/ui/icons/Library";
 import { css } from "@/styled-system/css";
 import { HStack, LStack } from "@/styled-system/jsx";
-import { CategoryListTree } from "@/components/category/CategoryList/CategoryList";
 
 export type Props = {
   initialChannelList?: ChannelListOKResponse;
-  currentChannelID?: string;
-  channelCategories?: CategoryListOKResponse;
-  channelNodes?: NodeListResult;
+  selectedChannelID?: string;
+  onChannelSelect?: (channelId: string) => void;
 };
 
 export function ChannelList({
   initialChannelList,
-  currentChannelID,
-  channelCategories,
-  channelNodes,
+  selectedChannelID,
+  onChannelSelect,
 }: Props) {
   const { data, error } = useChannelList({
     swr: {
@@ -47,172 +34,63 @@ export function ChannelList({
       <NavigationHeader href="/channels">
         <HStack gap="1">
           <CategoryIcon />
-          Channels
+          <span
+            className={css({
+              textTransform: "uppercase",
+              fontSize: "xs",
+              fontWeight: "semibold",
+              letterSpacing: "wider",
+            })}
+          >
+            Channels
+          </span>
         </HStack>
       </NavigationHeader>
 
       {data.channels.length > 0 ? (
         <LStack gap="1">
           {data.channels.map((channel) => (
-            <ChannelListItem
+            <button
               key={channel.id}
-              channel={channel}
-              isHighlighted={channel.id === currentChannelID}
-              isExpanded={channel.id === currentChannelID}
-              categories={
-                channel.id === currentChannelID ? channelCategories : undefined
-              }
-              nodes={channel.id === currentChannelID ? channelNodes : undefined}
-            />
+              onClick={() => onChannelSelect?.(channel.id)}
+              className={css({
+                display: "flex",
+                alignItems: "center",
+                gap: "2",
+                ps: "6",
+                py: "1.5",
+                pr: "2",
+                h: "10",
+                fontSize: "sm",
+                fontWeight: channel.id === selectedChannelID ? "bold" : "medium",
+                borderRadius: "md",
+                color: channel.id === selectedChannelID ? "fg.emphasized" : "fg.subtle",
+                background: channel.id === selectedChannelID ? "bg.emphasized" : undefined,
+                cursor: "pointer",
+                w: "full",
+                textAlign: "left",
+                _hover: {
+                  textDecoration: "none",
+                  background: channel.id === selectedChannelID ? "bg.emphasized" : "bg.muted",
+                  color: channel.id === selectedChannelID ? "fg.emphasized" : "fg.subtle",
+                },
+              })}
+            >
+              <span
+                className={css({
+                  fontSize: "xs",
+                  width: "full",
+                  textWrap: "nowrap",
+                  textOverflow: "ellipsis",
+                  overflowX: "hidden",
+                })}
+              >
+                {channel.name}
+              </span>
+            </button>
           ))}
         </LStack>
       ) : null}
-    </LStack>
-  );
-}
-
-type ChannelListItemProps = {
-  channel: Channel;
-  isHighlighted: boolean;
-  isExpanded: boolean;
-  categories?: CategoryListOKResponse;
-  nodes?: NodeListResult;
-};
-
-function ChannelListItem({
-  channel,
-  isHighlighted,
-  isExpanded,
-  categories,
-  nodes,
-}: ChannelListItemProps) {
-  return (
-    <LStack gap="1">
-      <Anchor
-        href={`/channels/${channel.id}`}
-        className={css({
-          display: "flex",
-          alignItems: "center",
-          gap: "1",
-          ps: "6",
-          py: "1",
-          pr: "1",
-          h: "8",
-          fontSize: "sm",
-          fontWeight: "medium",
-          borderRadius: "l2",
-          color: "fg.subtle",
-          background: isHighlighted ? "bg.selected" : undefined,
-          _hover: {
-            textDecoration: "none",
-            background: "bg.emphasized",
-            color: "fg.emphasized",
-          },
-        })}
-      >
-        <BulletIcon width="4" height="4" />
-        <span
-          className={css({
-            fontSize: "xs",
-            width: "full",
-            textWrap: "nowrap",
-            textOverflow: "ellipsis",
-            overflowX: "hidden",
-          })}
-        >
-          {channel.name}
-        </span>
-      </Anchor>
-
-      {isExpanded && (
-        <div
-          className={css({
-            ps: "8",
-            ms: "6",
-            py: "1",
-          })}
-          style={{
-            borderLeft: "2px solid var(--colors-border-subtle)",
-          }}
-        >
-          <ChannelContentNavigation
-            channelID={channel.id}
-            categories={categories}
-            nodes={nodes}
-          />
-        </div>
-      )}
-    </LStack>
-  );
-}
-
-type ChannelContentNavigationProps = {
-  channelID: string;
-  categories?: CategoryListOKResponse;
-  nodes?: NodeListResult;
-};
-
-function ChannelContentNavigation({
-  channelID,
-  categories,
-  nodes,
-}: ChannelContentNavigationProps) {
-  return (
-    <LStack gap="2">
-      {categories && categories.categories.length > 0 && (
-        <LStack gap="1">
-          <div
-            className={css({
-              display: "flex",
-              alignItems: "center",
-              gap: "1",
-              ps: "2",
-              py: "1",
-              fontSize: "xs",
-              fontWeight: "semibold",
-              color: "fg.muted",
-              textTransform: "uppercase",
-              letterSpacing: "wider",
-            })}
-          >
-            <DiscussionIcon width="3" height="3" />
-            <span>Categories</span>
-          </div>
-          <CategoryListTree
-            categories={categories.categories}
-            channelID={channelID}
-            mutate={async () => undefined}
-            hideHeader={true}
-          />
-        </LStack>
-      )}
-      {nodes && nodes.nodes.length > 0 && (
-        <LStack gap="1">
-          <div
-            className={css({
-              display: "flex",
-              alignItems: "center",
-              gap: "1",
-              ps: "2",
-              py: "1",
-              fontSize: "xs",
-              fontWeight: "semibold",
-              color: "fg.muted",
-              textTransform: "uppercase",
-              letterSpacing: "wider",
-            })}
-          >
-            <LibraryIcon width="3" height="3" />
-            <span>Library</span>
-          </div>
-          <LibraryNavigationTree
-            initialNodeList={nodes}
-            currentNode={undefined}
-            visibility={["draft", "review", "unlisted", "published"]}
-            hideHeader={true}
-          />
-        </LStack>
-      )}
     </LStack>
   );
 }

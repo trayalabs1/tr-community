@@ -8,6 +8,7 @@ import { CategoryMenu } from "@/components/category/CategoryMenu/CategoryMenu";
 import { QuickShare } from "@/components/feed/QuickShare/QuickShare";
 import { ThreadReferenceCard } from "@/components/post/ThreadCard";
 import { Unready } from "@/components/site/Unready";
+import { LoadingBanner } from "@/components/site/Loading";
 import { Heading } from "@/components/ui/heading";
 import { HStack, LStack, WStack, styled } from "@/styled-system/jsx";
 import { lstack } from "@/styled-system/patterns";
@@ -25,7 +26,7 @@ export function ChannelCategoryScreen(props: Props) {
   const session = useSession(props.session);
   const coverImageURL = getAssetURL(props.category.cover_image?.path);
 
-  const { data: threads, error } = useChannelThreadList(
+  const { data: threads, error, isValidating: isThreadsLoading } = useChannelThreadList(
     props.channel.id,
     {
       categories: [props.category.slug],
@@ -39,6 +40,10 @@ export function ChannelCategoryScreen(props: Props) {
 
   if (error) {
     return <Unready error={error} />;
+  }
+
+  if (isThreadsLoading && !threads) {
+    return <LoadingBanner />;
   }
 
   return (
@@ -108,7 +113,16 @@ export function ChannelCategoryScreen(props: Props) {
       />
 
       {/* Thread List */}
-      {threads && threads.threads.length > 0 ? (
+      {isThreadsLoading && !threads ? (
+        <styled.div
+          p="8"
+          textAlign="center"
+          color="fg.muted"
+          width="full"
+        >
+          Loading threads...
+        </styled.div>
+      ) : threads && threads.threads.length > 0 ? (
         <ol className={lstack()}>
           {threads.threads.map((thread) => (
             <ThreadReferenceCard

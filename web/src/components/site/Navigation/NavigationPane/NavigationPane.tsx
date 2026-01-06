@@ -41,7 +41,6 @@ type Props = {
 };
 
 function NavigationPaneContent({
-  initialNodeList,
   initialCategoryList,
   initialChannelList,
 }: Props) {
@@ -57,7 +56,6 @@ function NavigationPaneContent({
       <AdminZone />
       <Box id="desktop-nav-box" w="full" height="full" minH="0" p="2">
         <ContentNavigationList
-          initialNodeList={initialNodeList}
           initialCategoryList={initialCategoryList}
           initialChannelList={initialChannelList}
         />

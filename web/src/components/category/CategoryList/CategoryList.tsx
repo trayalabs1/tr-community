@@ -372,6 +372,7 @@ function CategoryTreeNode({
 
   const highlightStyles = css({
     background: isHighlighted ? "bg.selected" : undefined,
+    color: isHighlighted ? "fg.emphasized" : undefined,
   });
 
   return (

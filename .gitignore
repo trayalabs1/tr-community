@@ -19,3 +19,5 @@ backend
 clean
 migrate
 seed
+.serena
+*.md
