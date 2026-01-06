@@ -134,6 +134,7 @@ export function ContentNavigationList(props: Props) {
                 currentNode={undefined}
                 visibility={["draft", "review", "unlisted", "published"]}
                 hideHeader={true}
+                channelId={selectedChannelId}
               />
             </div>
           </LStack>

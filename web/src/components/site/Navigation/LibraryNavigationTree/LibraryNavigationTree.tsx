@@ -8,16 +8,22 @@ import { HStack, LStack } from "@/styled-system/jsx";
 import { LibraryLabel, LibraryRoute } from "../Anchors/Library";
 import { NavigationHeader } from "../ContentNavigationList/NavigationHeader";
 
-import { Props, useLibraryNavigationTree } from "./useLibraryNavigationTree";
+import {
+  LibraryNavigationTreeProps,
+  useLibraryNavigationTree,
+} from "./useLibraryNavigationTree";
 
-export function LibraryNavigationTree(props: Props & { hideHeader?: boolean }) {
-  const { ready, data, canManageLibrary } = useLibraryNavigationTree(props);
+export function LibraryNavigationTree(
+  props: LibraryNavigationTreeProps & { hideHeader?: boolean; channelId?: string },
+) {
+  const { hideHeader = false, channelId, ...hookProps } = props;
+  const { ready, data, canManageLibrary } = useLibraryNavigationTree(hookProps);
   if (!ready) {
     // TODO: Render a small version of <Unready /> that's more suitable for this
     return null;
   }
 
-  const { currentNode, hideHeader = false } = props;
+  const { currentNode } = hookProps;
 
   return (
     <LStack gap="1">
@@ -39,6 +45,7 @@ export function LibraryNavigationTree(props: Props & { hideHeader?: boolean }) {
         currentNode={currentNode}
         nodes={data.nodes}
         canManageLibrary={canManageLibrary}
+        channelId={channelId}
       />
     </LStack>
   );

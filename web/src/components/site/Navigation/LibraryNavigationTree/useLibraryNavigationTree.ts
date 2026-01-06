@@ -5,7 +5,7 @@ import { NodeListResult, Visibility } from "@/api/openapi-schema";
 import { useSession } from "@/auth";
 import { hasPermission } from "@/utils/permissions";
 
-export type Props = {
+export type LibraryNavigationTreeProps = {
   initialNodeList?: NodeListResult;
   currentNode: string | undefined;
   visibility: Visibility[];
@@ -14,7 +14,7 @@ export type Props = {
 export function useLibraryNavigationTree({
   visibility,
   initialNodeList,
-}: Props) {
+}: LibraryNavigationTreeProps) {
   const session = useSession();
   const { data, error } = useNodeList(
     {
