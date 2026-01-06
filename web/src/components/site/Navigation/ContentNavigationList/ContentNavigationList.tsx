@@ -100,44 +100,62 @@ export function ContentNavigationList(props: Props) {
           }}
         />
         {selectedChannelId && selectedChannelCategories && (
-          <TopicsSection
-            categories={selectedChannelCategories}
-            channelID={selectedChannelId}
-            currentCategorySlug={currentCategorySlug}
-          />
+          <div
+            style={{
+              width: "calc(100% + 1rem)",
+              marginLeft: "calc(-1rem)",
+              paddingLeft: "1rem",
+              paddingRight: "0.25rem",
+            }}
+          >
+            <TopicsSection
+              categories={selectedChannelCategories}
+              channelID={selectedChannelId}
+              currentCategorySlug={currentCategorySlug}
+            />
+          </div>
         )}
         {nodeListData?.nodes && nodeListData.nodes.length > 0 && (
-          <LStack gap="1">
-            <div
-              className={css({
-                display: "flex",
-                alignItems: "center",
-                gap: "1",
-                py: "1",
-                fontSize: "xs",
-                fontWeight: "semibold",
-                color: "fg.muted",
-                textTransform: "uppercase",
-                letterSpacing: "wider",
-              })}
-            >
-              <LibraryIcon width="3" height="3" />
-              <span>Library</span>
-            </div>
-            <div
-              className={css({
-                ps: "4",
-              })}
-            >
-              <LibraryNavigationTree
-                initialNodeList={nodeListData}
-                currentNode={undefined}
-                visibility={["draft", "review", "unlisted", "published"]}
-                hideHeader={true}
-                channelId={selectedChannelId}
-              />
-            </div>
-          </LStack>
+          <div
+            style={{
+              width: "calc(100% + 1rem)",
+              marginLeft: "calc(-1rem)",
+              paddingLeft: "1rem",
+              paddingRight: "0.25rem",
+            }}
+          >
+            <LStack gap="1">
+              <div
+                className={css({
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "1",
+                  py: "1",
+                  fontSize: "xs",
+                  fontWeight: "semibold",
+                  color: "fg.muted",
+                  textTransform: "uppercase",
+                  letterSpacing: "wider",
+                })}
+              >
+                <LibraryIcon width="3" height="3" />
+                <span>Library</span>
+              </div>
+              <div
+                className={css({
+                  w: "full",
+                })}
+              >
+                <LibraryNavigationTree
+                  initialNodeList={nodeListData}
+                  currentNode={undefined}
+                  visibility={["draft", "review", "unlisted", "published"]}
+                  hideHeader={true}
+                  channelId={selectedChannelId}
+                />
+              </div>
+            </LStack>
+          </div>
         )}
       </LStack>
 
