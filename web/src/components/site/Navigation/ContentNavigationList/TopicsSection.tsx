@@ -65,7 +65,7 @@ export function TopicsSection({ categories, channelID, currentCategorySlug }: Pr
       {isExpanded && (
         <div
           className={css({
-            ps: "4",
+            w: "full",
           })}
         >
           <CategoryListTree
