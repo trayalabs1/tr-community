@@ -209,7 +209,7 @@ func setupMockTrayaAPI() *httptest.Server {
 				TotalKitCount:          5,
 				RunningMonthForHairKit: 5,
 				CustomerSlug: struct {
-					SlugName string `json:"slugName"`
+					SlugName any `json:"slugName"`
 				}{
 					SlugName: "o5_o_to_d",
 				},
@@ -255,7 +255,7 @@ func setupMockTrayaAPI() *httptest.Server {
 				TotalKitCount:          8,
 				RunningMonthForHairKit: 8,
 				CustomerSlug: struct {
-					SlugName string `json:"slugName"`
+					SlugName any `json:"slugName"`
 				}{
 					SlugName: "o8_o_to_d",
 				},

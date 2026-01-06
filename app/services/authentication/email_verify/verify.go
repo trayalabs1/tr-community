@@ -49,7 +49,7 @@ func (s *Verifier) BeginEmailVerification(
 	address mail.Address,
 	code string,
 ) (*account.EmailAddress, error) {
-	ae, err := s.emailRepo.Add(ctx, accountID, address, code)
+	ae, err := s.emailRepo.Add(ctx, accountID, address, code, false)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}

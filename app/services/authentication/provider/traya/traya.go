@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"math/rand"
 	"net/http"
@@ -98,7 +99,7 @@ type TrayaUserResponse struct {
 	TotalKitCount          int    `json:"totalKitCount"`
 	RunningMonthForHairKit int    `json:"runningMonthForHairKit"`
 	CustomerSlug           struct {
-		SlugName string `json:"slugName"`
+		SlugName any `json:"slugName"`
 	} `json:"customerSlug"`
 }
 
@@ -108,10 +109,11 @@ var channelsByKitCount = []struct {
 	minKitCount int
 	channels    []string
 }{
+	{0, []string{"general"}},
 	{1, []string{"general", "month-0-to-3"}},
-	{4, []string{"month-3-to-6"}},
-	{7, []string{"month-6-to-9"}},
-	{10, []string{"month-9-to-12"}},
+	{4, []string{"general", "month-3-to-6"}},
+	{7, []string{"general", "month-6-to-9"}},
+	{10, []string{"general", "month-9-to-12"}},
 }
 
 func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*account.Account, error) {
@@ -168,6 +170,15 @@ func (p *Provider) fetchTrayaUserData(ctx context.Context, token string) (*Traya
 	}
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx), fmsg.With("failed to read Traya API response body"))
+	}
+
+	p.logger.Debug("received raw response from Traya API",
+		slog.Int("status", resp.StatusCode),
+		slog.String("body", string(body)))
+
 	if resp.StatusCode == http.StatusUnauthorized {
 		return nil, fault.Wrap(ErrInvalidToken, fctx.With(ctx))
 	}
@@ -179,7 +190,7 @@ func (p *Provider) fetchTrayaUserData(ctx context.Context, token string) (*Traya
 	}
 
 	var userData TrayaUserResponse
-	if err := json.NewDecoder(resp.Body).Decode(&userData); err != nil {
+	if err := json.Unmarshal(body, &userData); err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx), fmsg.With("failed to decode Traya API response"))
 	}
 
@@ -223,7 +234,7 @@ func (p *Provider) getOrCreateAccount(
 
 	handle := generateHandle(firstName, phoneNumber)
 
-	newAccount, err := p.register.GetOrCreateViaEmail(ctx, service, email.Address, trayaUserID, trayaUserID, handle, name, email)
+	newAccount, err := p.register.GetOrCreateViaEmail(ctx, service, email.Address, trayaUserID, trayaUserID, handle, name, email, true)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
