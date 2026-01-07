@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthTrayaToken } from "@/api/openapi-client/auth";
-import { Center, VStack, styled } from "@/styled-system/jsx";
+import { VStack, styled } from "@/styled-system/jsx";
 import { handle } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { MembersIcon } from "@/components/ui/icons/Members";
@@ -38,54 +38,74 @@ export function LandingScreen({ token }: { token: string }) {
   };
 
   return (
-    <Center h="screen" p="6" style={{ background: "#f5f5f5" }}>
-      <styled.div maxW="md" textAlign="center">
+    <styled.div
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+      minH="screen"
+      p="6"
+      style={{ background: "#f5f5f5" }}
+    >
+      <styled.div w="full" maxW="sm">
         {/* Icon Container */}
         <styled.div
-          w="20"
-          h="20"
+          w="16"
+          h="16"
           rounded="2xl"
           display="flex"
           alignItems="center"
           justifyContent="center"
           mx="auto"
-          mb="6"
+          mb="8"
           style={{
             background: "#4a9d6f",
           }}
         >
-          <MembersIcon width="10" height="10" style={{ color: "#ffffff" }} />
+          <MembersIcon width="8" height="8" style={{ color: "#ffffff" }} />
         </styled.div>
 
         {/* Heading */}
-        <styled.h1 fontSize="2xl" fontWeight="bold" color="fg.default" mb="3">
+        <styled.h1
+          fontSize="2xl"
+          fontWeight="bold"
+          color="fg.default"
+          mb="3"
+          textAlign="center"
+        >
           Welcome to Traya Community
         </styled.h1>
 
         {/* Description */}
-        <styled.p color="fg.muted" mb="8">
+        <styled.p
+          fontSize="sm"
+          color="fg.muted"
+          mb="8"
+          textAlign="center"
+        >
           Join thousands of hair warriors supporting each other on their
           transformation journey
         </styled.p>
 
         {/* Feature Cards */}
-        <VStack gap="4" mb="8">
+        <VStack gap="3" mb="8" w="full">
           {/* Real Support Card */}
           <styled.div
             display="flex"
-            alignItems="flex-start"
-            gap="3"
-            bg="bg.subtle"
-            rounded="xl"
+            alignItems="center"
+            gap="4"
+            bg="white"
+            rounded="lg"
             p="4"
             borderWidth="thin"
             borderColor="border.default"
-            textAlign="left"
+            w="full"
+            style={{ minHeight: "80px" }}
           >
             <styled.div
               w="10"
               h="10"
-              rounded="xl"
+              rounded="lg"
               display="flex"
               alignItems="center"
               justifyContent="center"
@@ -94,11 +114,11 @@ export function LandingScreen({ token }: { token: string }) {
             >
               <LikeIcon width="5" height="5" style={{ color: "#4a9d6f" }} />
             </styled.div>
-            <VStack gap="1">
-              <styled.h4 fontWeight="medium" color="fg.default">
+            <VStack gap="0.5" w="full" alignItems="flex-start">
+              <styled.h4 fontWeight="bold" color="fg.default" fontSize="sm" textAlign="left">
                 Real Support
               </styled.h4>
-              <styled.p fontSize="sm" color="fg.muted">
+              <styled.p fontSize="xs" color="fg.muted" style={{ lineHeight: "1.3" }} textAlign="left">
                 Connect with others who truly understand
               </styled.p>
             </VStack>
@@ -107,19 +127,20 @@ export function LandingScreen({ token }: { token: string }) {
           {/* Share Your Journey Card */}
           <styled.div
             display="flex"
-            alignItems="flex-start"
-            gap="3"
-            bg="bg.subtle"
-            rounded="xl"
+            alignItems="center"
+            gap="4"
+            bg="white"
+            rounded="lg"
             p="4"
             borderWidth="thin"
             borderColor="border.default"
-            textAlign="left"
+            w="full"
+            style={{ minHeight: "80px" }}
           >
             <styled.div
               w="10"
               h="10"
-              rounded="xl"
+              rounded="lg"
               display="flex"
               alignItems="center"
               justifyContent="center"
@@ -128,11 +149,11 @@ export function LandingScreen({ token }: { token: string }) {
             >
               <DiscussionIcon width="5" height="5" style={{ color: "#4a9d6f" }} />
             </styled.div>
-            <VStack gap="1">
-              <styled.h4 fontWeight="medium" color="fg.default">
+            <VStack gap="0.5" w="full" alignItems="flex-start">
+              <styled.h4 fontWeight="bold" color="fg.default" fontSize="sm" textAlign="left">
                 Share Your Journey
               </styled.h4>
-              <styled.p fontSize="sm" color="fg.muted">
+              <styled.p fontSize="xs" color="fg.muted" style={{ lineHeight: "1.3" }} textAlign="left">
                 Exchange tips and celebrate progress together
               </styled.p>
             </VStack>
@@ -141,19 +162,20 @@ export function LandingScreen({ token }: { token: string }) {
           {/* Expert Access Card */}
           <styled.div
             display="flex"
-            alignItems="flex-start"
-            gap="3"
-            bg="bg.subtle"
-            rounded="xl"
+            alignItems="center"
+            gap="4"
+            bg="white"
+            rounded="lg"
             p="4"
             borderWidth="thin"
             borderColor="border.default"
-            textAlign="left"
+            w="full"
+            style={{ minHeight: "80px" }}
           >
             <styled.div
               w="10"
               h="10"
-              rounded="xl"
+              rounded="lg"
               display="flex"
               alignItems="center"
               justifyContent="center"
@@ -162,11 +184,11 @@ export function LandingScreen({ token }: { token: string }) {
             >
               <IntelligenceIcon width="5" height="5" style={{ color: "#4a9d6f" }} />
             </styled.div>
-            <VStack gap="1">
-              <styled.h4 fontWeight="medium" color="fg.default">
+            <VStack gap="0.5" w="full" alignItems="flex-start">
+              <styled.h4 fontWeight="bold" color="fg.default" fontSize="sm" textAlign="left">
                 Expert Access
               </styled.h4>
-              <styled.p fontSize="sm" color="fg.muted">
+              <styled.p fontSize="xs" color="fg.muted" style={{ lineHeight: "1.3" }} textAlign="left">
                 Get advice from Traya doctors and coaches
               </styled.p>
             </VStack>
@@ -176,18 +198,23 @@ export function LandingScreen({ token }: { token: string }) {
         {/* Join Button */}
         <Button
           w="full"
-          size="lg"
           onClick={handleJoinCommunity}
           loading={isLoading}
           disabled={isLoading}
           style={{
             background: "#4a9d6f",
             color: "#ffffff",
+            padding: "12px 24px",
+            borderRadius: "8px",
+            fontSize: "16px",
+            fontWeight: "500",
+            border: "none",
+            cursor: isLoading ? "not-allowed" : "pointer",
           }}
         >
           {isLoading ? "Authenticating..." : "Join Community"}
         </Button>
       </styled.div>
-    </Center>
+    </styled.div>
   );
 }
