@@ -11,6 +11,7 @@ import (
 	"net/mail"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
@@ -103,17 +104,47 @@ type TrayaUserResponse struct {
 	} `json:"customerSlug"`
 }
 
-// channelsByKitCount maps kit count thresholds to the list of channels users should be added to
-// Users are added to all channels where their kit count meets or exceeds the threshold
-var channelsByKitCount = []struct {
-	minKitCount int
-	channels    []string
-}{
-	{0, []string{"general"}},
-	{1, []string{"general", "month-0-to-3"}},
-	{4, []string{"general", "month-3-to-6"}},
-	{7, []string{"general", "month-6-to-9"}},
-	{10, []string{"general", "month-9-to-12"}},
+type cohortChannelRule struct {
+	orderCount  int
+	channelSlug string
+	gender      string
+}
+
+var cohortChannelRules = []cohortChannelRule{
+	{1, "month-1-warriors", "male"},
+	{2, "month-2-titans", "male"},
+	{3, "month-3-pioneers", "male"},
+	{4, "month-4-mavericks", "male"},
+	{5, "month-5-masters", "male"},
+	{6, "month-6-8-veterans", "male"},
+	{7, "month-6-8-veterans", "male"},
+	{8, "month-6-8-veterans", "male"},
+	{9, "month-8-plus-legends", "male"},
+
+	{1, "month-1-heroines", "female"},
+	{2, "month-2-divas", "female"},
+	{3, "month-3-icons", "female"},
+	{4, "month-4-anchors", "female"},
+	{5, "month-5-elites", "female"},
+	{6, "month-6-8-champions", "female"},
+	{7, "month-6-8-champions", "female"},
+	{8, "month-6-8-champions", "female"},
+	{9, "month-8-plus-queens", "female"},
+}
+
+var topicChannelsByGender = map[string][]string{
+	"male": {
+
+		"stress-sleep-nutrition",
+		"digestion-metabolism-gut-health",
+		"dandruff-hair-health",
+	},
+	"female": {
+		"hormones-pcos",
+		"stress-sleep-nutrition-female",
+		"digestion-metabolism-gut-female",
+		"dandruff-hair-health-female",
+	},
 }
 
 func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*account.Account, error) {
@@ -131,9 +162,9 @@ func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*ac
 		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.InvalidArgument))
 	}
 
-	kitCount := userData.Case.LatestOrderCount
-	if kitCount == 0 {
-		kitCount = userData.TotalKitCount
+	orderCount := userData.Case.LatestOrderCount
+	if orderCount == 0 {
+		orderCount = userData.TotalKitCount
 	}
 
 	acc, err := p.getOrCreateAccount(ctx, userData.User.ID, *emailAddress, userData.User.FirstName, userData.User.LastName, userData.User.PhoneNumber)
@@ -141,10 +172,11 @@ func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*ac
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
-	if err := p.ensureChannelMemberships(ctx, acc.ID, kitCount); err != nil {
+	if err := p.ensureChannelMemberships(ctx, acc.ID, userData.User.Gender, orderCount, userData.Case.LatestOrderDate); err != nil {
 		p.logger.Warn("failed to ensure channel memberships",
 			slog.String("account_id", acc.ID.String()),
-			slog.Int("kit_count", kitCount),
+			slog.Int("order_count", orderCount),
+			slog.String("gender", userData.User.Gender),
 			slog.String("error", err.Error()))
 	}
 
@@ -263,19 +295,41 @@ func generateHandle(firstName string, phoneNumber string) string {
 	return fmt.Sprintf("%s%s%s", namePrefix, phonePrefix, randomDigits)
 }
 
-func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, kitCount int) error {
-	// Collect all channels the user should be added to based on their kit count
+func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string) error {
 	channelsToAdd := make(map[string]bool)
 
-	for _, entry := range channelsByKitCount {
-		if kitCount >= entry.minKitCount {
-			for _, channelSlug := range entry.channels {
-				channelsToAdd[channelSlug] = true
+	normalizedGender := normalizeGender(gender)
+
+	isWithin60Days, err := isLastOrderWithin60Days(latestOrderDate)
+	if err != nil {
+		p.logger.Warn("failed to parse latest order date",
+			slog.String("date", latestOrderDate),
+			slog.String("error", err.Error()))
+		isWithin60Days = false
+	}
+
+	if isWithin60Days {
+		for _, rule := range cohortChannelRules {
+			if rule.gender == normalizedGender && rule.orderCount == orderCount {
+				channelsToAdd[rule.channelSlug] = true
+			}
+		}
+
+		if orderCount > 8 {
+			if normalizedGender == "male" {
+				channelsToAdd["month-8-plus-legends"] = true
+			} else if normalizedGender == "female" {
+				channelsToAdd["month-8-plus-queens"] = true
 			}
 		}
 	}
 
-	// Add user to all eligible channels
+	if topicChannels, ok := topicChannelsByGender[normalizedGender]; ok {
+		for _, channelSlug := range topicChannels {
+			channelsToAdd[channelSlug] = true
+		}
+	}
+
 	for channelSlug := range channelsToAdd {
 		channel, err := p.channelRepo.GetBySlug(ctx, channelSlug)
 		if err != nil {
@@ -303,11 +357,41 @@ func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID accou
 			p.logger.Info("added user to channel",
 				slog.String("channel", channelSlug),
 				slog.String("account_id", accountID.String()),
-				slog.Int("kit_count", kitCount))
+				slog.Int("order_count", orderCount),
+				slog.String("gender", gender))
 		}
 	}
 
 	return nil
+}
+
+func normalizeGender(gender string) string {
+	gender = strings.ToUpper(strings.TrimSpace(gender))
+	switch gender {
+	case "M":
+		return "male"
+	case "F":
+		return "female"
+	default:
+		return strings.ToLower(gender)
+	}
+}
+
+func isLastOrderWithin60Days(latestOrderDate string) (bool, error) {
+	if latestOrderDate == "" {
+		return false, nil
+	}
+
+	orderDate, err := time.Parse(time.RFC3339, latestOrderDate)
+	if err != nil {
+		orderDate, err = time.Parse("2006-01-02", latestOrderDate)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	daysSinceOrder := time.Since(orderDate).Hours() / 24
+	return daysSinceOrder <= 60, nil
 }
 
 func (p *Provider) Enabled(ctx context.Context) (bool, error) {
