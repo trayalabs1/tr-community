@@ -42,6 +42,7 @@ type OperationPermissions interface {
 	WebAuthnMakeAssertion() (bool, *rbac.Permission)
 	PhoneRequestCode() (bool, *rbac.Permission)
 	PhoneSubmitCode() (bool, *rbac.Permission)
+	AuthTrayaToken() (bool, *rbac.Permission)
 	AccessKeyList() (bool, *rbac.Permission)
 	AccessKeyCreate() (bool, *rbac.Permission)
 	AccessKeyDelete() (bool, *rbac.Permission)
@@ -250,6 +251,8 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.PhoneRequestCode()
 	case "PhoneSubmitCode":
 		return optable.PhoneSubmitCode()
+	case "AuthTrayaToken":
+		return optable.AuthTrayaToken()
 	case "AccessKeyList":
 		return optable.AccessKeyList()
 	case "AccessKeyCreate":

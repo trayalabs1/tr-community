@@ -25,6 +25,7 @@ import type {
   AuthProviderListOKResponse,
   AuthProviderLogoutParams,
   AuthSuccessOKResponse,
+  AuthTrayaTokenParams,
   NoContentResponse,
   OAuthProviderCallbackBody,
   PhoneRequestCodeBody,
@@ -633,6 +634,44 @@ export const phoneSubmitCode = async (
       method: "PUT",
       headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(phoneSubmitCodeBody),
+    },
+  );
+};
+
+/**
+ * Authenticate with a Traya API token. This endpoint verifies the token
+with the Traya API server, creates or retrieves the user account, and
+assigns the user to appropriate channels based on their kit count.
+
+ */
+export type authTrayaTokenResponse = {
+  data: AuthSuccessOKResponse;
+  status: number;
+};
+
+export const getAuthTrayaTokenUrl = (params: AuthTrayaTokenParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/auth/traya?${normalizedParams.toString()}`
+    : `/auth/traya`;
+};
+
+export const authTrayaToken = async (
+  params: AuthTrayaTokenParams,
+  options?: RequestInit,
+): Promise<authTrayaTokenResponse> => {
+  return fetcher<Promise<authTrayaTokenResponse>>(
+    getAuthTrayaTokenUrl(params),
+    {
+      ...options,
+      method: "POST",
     },
   );
 };

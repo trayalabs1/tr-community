@@ -680,6 +680,27 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "200": { $ref: "#/components/responses/AuthSuccessOK" }
 
+  /auth/traya:
+    post:
+      operationId: AuthTrayaToken
+      description: |
+        Authenticate with a Traya API token. This endpoint verifies the token
+        with the Traya API server, creates or retrieves the user account, and
+        assigns the user to appropriate channels based on their kit count.
+      tags: [auth]
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Traya authentication token
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/AuthSuccessOK" }
+
   /auth/access-keys:
     get:
       operationId: AccessKeyList
