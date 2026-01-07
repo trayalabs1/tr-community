@@ -15,12 +15,14 @@ export function LandingScreen({ token }: { token: string }) {
   const router = useRouter();
   const { trigger } = useAuthTrayaToken({ token });
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const triggered = useRef(false);
 
   const handleJoinCommunity = async () => {
     if (triggered.current) return;
     triggered.current = true;
     setIsLoading(true);
+    setError(null);
 
     handle(
       async () => {
@@ -28,10 +30,26 @@ export function LandingScreen({ token }: { token: string }) {
         router.push("/");
       },
       {
-        onError: async () => {
+        errorToast: false,
+        onError: async (err) => {
+
+          let errorMessage = "Unknown error";
+          let statusCode = undefined;
+
+          if (err instanceof Error) {
+            errorMessage = err.message;
+            if ("status" in err) {
+              statusCode = (err as any).status;
+            }
+          } else if (typeof err === "string") {
+            errorMessage = err;
+          } else {
+            errorMessage = JSON.stringify(err);
+          }
+
           triggered.current = false;
           setIsLoading(false);
-          router.push("/login");
+          setError("Authentication failed. Please try again.");
         },
       }
     );
@@ -194,6 +212,20 @@ export function LandingScreen({ token }: { token: string }) {
             </VStack>
           </styled.div>
         </VStack>
+
+        {/* Error Message */}
+        {error && (
+          <styled.div
+            p="4"
+            mb="6"
+            rounded="lg"
+            style={{ background: "#fee2e2", borderColor: "#fca5a5", borderWidth: "1px" }}
+          >
+            <styled.p fontSize="sm" style={{ color: "#dc2626" }}>
+              {error}
+            </styled.p>
+          </styled.div>
+        )}
 
         {/* Join Button */}
         <Button
