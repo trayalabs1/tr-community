@@ -15,7 +15,6 @@ import "./global.css";
 import { Providers } from "./providers";
 
 export default async function RootLayout({ children }: PropsWithChildren) {
-  const { API_ADDRESS, WEB_ADDRESS } = serverEnvironment();
   const session = await getServerSession();
   const settings = await getSettings();
 
@@ -25,14 +24,6 @@ export default async function RootLayout({ children }: PropsWithChildren) {
       : settings.color_mode === "dark"
         ? "dark"
         : "light";
-
-  // Safely serialize config for injection into script tag
-  // JSON.stringify properly escapes quotes, slashes, and other special chars
-  const configJson = JSON.stringify({
-    API_ADDRESS,
-    WEB_ADDRESS,
-    source: "script",
-  });
 
   return (
     <html
@@ -44,23 +35,14 @@ export default async function RootLayout({ children }: PropsWithChildren) {
         {/*
           NOTE: Because the browser side does not support dynamic environment
           variables (obviously, it's a browser script) we hack around Next.js'
-          build-time variables by providing a direct reference to these inside
-          the window object. This allows us to set the API/frontend addresses
-          without rebuilding the entire app.
+          build-time variables by loading a dynamic script that sets the
+          API_ADDRESS and WEB_ADDRESS. The script is served from /config.js
+          which is a dynamic route that reads env vars at request time.
 
-          This MUST be in <head> and use dangerouslySetInnerHTML to ensure it
-          executes before any client-side JavaScript. The config is properly
-          JSON-escaped to prevent XSS vulnerabilities.
+          This must be a blocking script (no async/defer) to ensure it executes
+          before any React code that might try to read the config.
         */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              console.log('[Config Script] Executing inline config script');
-              window.__storyden__ = ${configJson};
-              console.log('[Config Script] Set window.__storyden__:', window.__storyden__);
-            `,
-          }}
-        />
+        <script src="/config.js" />
 
         {/*
             NOTE: This stylesheet is fully server-side rendered but it's not
