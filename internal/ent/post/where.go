@@ -86,9 +86,9 @@ func Slug(v string) predicate.Post {
 	return predicate.Post(sql.FieldEQ(FieldSlug, v))
 }
 
-// Pinned applies equality check predicate on the "pinned" field. It's identical to PinnedEQ.
-func Pinned(v bool) predicate.Post {
-	return predicate.Post(sql.FieldEQ(FieldPinned, v))
+// PinnedRank applies equality check predicate on the "pinned_rank" field. It's identical to PinnedRankEQ.
+func PinnedRank(v int) predicate.Post {
+	return predicate.Post(sql.FieldEQ(FieldPinnedRank, v))
 }
 
 // LastReplyAt applies equality check predicate on the "last_reply_at" field. It's identical to LastReplyAtEQ.
@@ -466,14 +466,44 @@ func SlugContainsFold(v string) predicate.Post {
 	return predicate.Post(sql.FieldContainsFold(FieldSlug, v))
 }
 
-// PinnedEQ applies the EQ predicate on the "pinned" field.
-func PinnedEQ(v bool) predicate.Post {
-	return predicate.Post(sql.FieldEQ(FieldPinned, v))
+// PinnedRankEQ applies the EQ predicate on the "pinned_rank" field.
+func PinnedRankEQ(v int) predicate.Post {
+	return predicate.Post(sql.FieldEQ(FieldPinnedRank, v))
 }
 
-// PinnedNEQ applies the NEQ predicate on the "pinned" field.
-func PinnedNEQ(v bool) predicate.Post {
-	return predicate.Post(sql.FieldNEQ(FieldPinned, v))
+// PinnedRankNEQ applies the NEQ predicate on the "pinned_rank" field.
+func PinnedRankNEQ(v int) predicate.Post {
+	return predicate.Post(sql.FieldNEQ(FieldPinnedRank, v))
+}
+
+// PinnedRankIn applies the In predicate on the "pinned_rank" field.
+func PinnedRankIn(vs ...int) predicate.Post {
+	return predicate.Post(sql.FieldIn(FieldPinnedRank, vs...))
+}
+
+// PinnedRankNotIn applies the NotIn predicate on the "pinned_rank" field.
+func PinnedRankNotIn(vs ...int) predicate.Post {
+	return predicate.Post(sql.FieldNotIn(FieldPinnedRank, vs...))
+}
+
+// PinnedRankGT applies the GT predicate on the "pinned_rank" field.
+func PinnedRankGT(v int) predicate.Post {
+	return predicate.Post(sql.FieldGT(FieldPinnedRank, v))
+}
+
+// PinnedRankGTE applies the GTE predicate on the "pinned_rank" field.
+func PinnedRankGTE(v int) predicate.Post {
+	return predicate.Post(sql.FieldGTE(FieldPinnedRank, v))
+}
+
+// PinnedRankLT applies the LT predicate on the "pinned_rank" field.
+func PinnedRankLT(v int) predicate.Post {
+	return predicate.Post(sql.FieldLT(FieldPinnedRank, v))
+}
+
+// PinnedRankLTE applies the LTE predicate on the "pinned_rank" field.
+func PinnedRankLTE(v int) predicate.Post {
+	return predicate.Post(sql.FieldLTE(FieldPinnedRank, v))
 }
 
 // LastReplyAtEQ applies the EQ predicate on the "last_reply_at" field.

@@ -112,16 +112,16 @@ func (_c *PostCreate) SetNillableSlug(v *string) *PostCreate {
 	return _c
 }
 
-// SetPinned sets the "pinned" field.
-func (_c *PostCreate) SetPinned(v bool) *PostCreate {
-	_c.mutation.SetPinned(v)
+// SetPinnedRank sets the "pinned_rank" field.
+func (_c *PostCreate) SetPinnedRank(v int) *PostCreate {
+	_c.mutation.SetPinnedRank(v)
 	return _c
 }
 
-// SetNillablePinned sets the "pinned" field if the given value is not nil.
-func (_c *PostCreate) SetNillablePinned(v *bool) *PostCreate {
+// SetNillablePinnedRank sets the "pinned_rank" field if the given value is not nil.
+func (_c *PostCreate) SetNillablePinnedRank(v *int) *PostCreate {
 	if v != nil {
-		_c.SetPinned(*v)
+		_c.SetPinnedRank(*v)
 	}
 	return _c
 }
@@ -514,9 +514,9 @@ func (_c *PostCreate) defaults() {
 		v := post.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
 	}
-	if _, ok := _c.mutation.Pinned(); !ok {
-		v := post.DefaultPinned
-		_c.mutation.SetPinned(v)
+	if _, ok := _c.mutation.PinnedRank(); !ok {
+		v := post.DefaultPinnedRank
+		_c.mutation.SetPinnedRank(v)
 	}
 	if _, ok := _c.mutation.Visibility(); !ok {
 		v := post.DefaultVisibility
@@ -536,8 +536,8 @@ func (_c *PostCreate) check() error {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Post.updated_at"`)}
 	}
-	if _, ok := _c.mutation.Pinned(); !ok {
-		return &ValidationError{Name: "pinned", err: errors.New(`ent: missing required field "Post.pinned"`)}
+	if _, ok := _c.mutation.PinnedRank(); !ok {
+		return &ValidationError{Name: "pinned_rank", err: errors.New(`ent: missing required field "Post.pinned_rank"`)}
 	}
 	if _, ok := _c.mutation.LastReplyAt(); !ok {
 		return &ValidationError{Name: "last_reply_at", err: errors.New(`ent: missing required field "Post.last_reply_at"`)}
@@ -633,9 +633,9 @@ func (_c *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 		_spec.SetField(post.FieldSlug, field.TypeString, value)
 		_node.Slug = value
 	}
-	if value, ok := _c.mutation.Pinned(); ok {
-		_spec.SetField(post.FieldPinned, field.TypeBool, value)
-		_node.Pinned = value
+	if value, ok := _c.mutation.PinnedRank(); ok {
+		_spec.SetField(post.FieldPinnedRank, field.TypeInt, value)
+		_node.PinnedRank = value
 	}
 	if value, ok := _c.mutation.LastReplyAt(); ok {
 		_spec.SetField(post.FieldLastReplyAt, field.TypeTime, value)
@@ -1071,15 +1071,21 @@ func (u *PostUpsert) ClearSlug() *PostUpsert {
 	return u
 }
 
-// SetPinned sets the "pinned" field.
-func (u *PostUpsert) SetPinned(v bool) *PostUpsert {
-	u.Set(post.FieldPinned, v)
+// SetPinnedRank sets the "pinned_rank" field.
+func (u *PostUpsert) SetPinnedRank(v int) *PostUpsert {
+	u.Set(post.FieldPinnedRank, v)
 	return u
 }
 
-// UpdatePinned sets the "pinned" field to the value that was provided on create.
-func (u *PostUpsert) UpdatePinned() *PostUpsert {
-	u.SetExcluded(post.FieldPinned)
+// UpdatePinnedRank sets the "pinned_rank" field to the value that was provided on create.
+func (u *PostUpsert) UpdatePinnedRank() *PostUpsert {
+	u.SetExcluded(post.FieldPinnedRank)
+	return u
+}
+
+// AddPinnedRank adds v to the "pinned_rank" field.
+func (u *PostUpsert) AddPinnedRank(v int) *PostUpsert {
+	u.Add(post.FieldPinnedRank, v)
 	return u
 }
 
@@ -1394,17 +1400,24 @@ func (u *PostUpsertOne) ClearSlug() *PostUpsertOne {
 	})
 }
 
-// SetPinned sets the "pinned" field.
-func (u *PostUpsertOne) SetPinned(v bool) *PostUpsertOne {
+// SetPinnedRank sets the "pinned_rank" field.
+func (u *PostUpsertOne) SetPinnedRank(v int) *PostUpsertOne {
 	return u.Update(func(s *PostUpsert) {
-		s.SetPinned(v)
+		s.SetPinnedRank(v)
 	})
 }
 
-// UpdatePinned sets the "pinned" field to the value that was provided on create.
-func (u *PostUpsertOne) UpdatePinned() *PostUpsertOne {
+// AddPinnedRank adds v to the "pinned_rank" field.
+func (u *PostUpsertOne) AddPinnedRank(v int) *PostUpsertOne {
 	return u.Update(func(s *PostUpsert) {
-		s.UpdatePinned()
+		s.AddPinnedRank(v)
+	})
+}
+
+// UpdatePinnedRank sets the "pinned_rank" field to the value that was provided on create.
+func (u *PostUpsertOne) UpdatePinnedRank() *PostUpsertOne {
+	return u.Update(func(s *PostUpsert) {
+		s.UpdatePinnedRank()
 	})
 }
 
@@ -1913,17 +1926,24 @@ func (u *PostUpsertBulk) ClearSlug() *PostUpsertBulk {
 	})
 }
 
-// SetPinned sets the "pinned" field.
-func (u *PostUpsertBulk) SetPinned(v bool) *PostUpsertBulk {
+// SetPinnedRank sets the "pinned_rank" field.
+func (u *PostUpsertBulk) SetPinnedRank(v int) *PostUpsertBulk {
 	return u.Update(func(s *PostUpsert) {
-		s.SetPinned(v)
+		s.SetPinnedRank(v)
 	})
 }
 
-// UpdatePinned sets the "pinned" field to the value that was provided on create.
-func (u *PostUpsertBulk) UpdatePinned() *PostUpsertBulk {
+// AddPinnedRank adds v to the "pinned_rank" field.
+func (u *PostUpsertBulk) AddPinnedRank(v int) *PostUpsertBulk {
 	return u.Update(func(s *PostUpsert) {
-		s.UpdatePinned()
+		s.AddPinnedRank(v)
+	})
+}
+
+// UpdatePinnedRank sets the "pinned_rank" field to the value that was provided on create.
+func (u *PostUpsertBulk) UpdatePinnedRank() *PostUpsertBulk {
+	return u.Update(func(s *PostUpsert) {
+		s.UpdatePinnedRank()
 	})
 }
 

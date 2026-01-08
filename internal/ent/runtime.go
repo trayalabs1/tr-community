@@ -10,6 +10,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/accountfollow"
 	"github.com/Southclaws/storyden/internal/ent/accountroles"
 	"github.com/Southclaws/storyden/internal/ent/asset"
+	"github.com/Southclaws/storyden/internal/ent/auditlog"
 	"github.com/Southclaws/storyden/internal/ent/authentication"
 	"github.com/Southclaws/storyden/internal/ent/category"
 	"github.com/Southclaws/storyden/internal/ent/channel"
@@ -185,6 +186,37 @@ func init() {
 	// asset.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	asset.IDValidator = func() func(string) error {
 		validators := assetDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	auditlogMixin := schema.AuditLog{}.Mixin()
+	auditlogMixinFields0 := auditlogMixin[0].Fields()
+	_ = auditlogMixinFields0
+	auditlogMixinFields1 := auditlogMixin[1].Fields()
+	_ = auditlogMixinFields1
+	auditlogFields := schema.AuditLog{}.Fields()
+	_ = auditlogFields
+	// auditlogDescCreatedAt is the schema descriptor for created_at field.
+	auditlogDescCreatedAt := auditlogMixinFields1[0].Descriptor()
+	// auditlog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	auditlog.DefaultCreatedAt = auditlogDescCreatedAt.Default.(func() time.Time)
+	// auditlogDescID is the schema descriptor for id field.
+	auditlogDescID := auditlogMixinFields0[0].Descriptor()
+	// auditlog.DefaultID holds the default value on creation for the id field.
+	auditlog.DefaultID = auditlogDescID.Default.(func() xid.ID)
+	// auditlog.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	auditlog.IDValidator = func() func(string) error {
+		validators := auditlogDescID.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),
@@ -869,10 +901,10 @@ func init() {
 	postDescCreatedAt := postMixinFields1[0].Descriptor()
 	// post.DefaultCreatedAt holds the default value on creation for the created_at field.
 	post.DefaultCreatedAt = postDescCreatedAt.Default.(func() time.Time)
-	// postDescPinned is the schema descriptor for pinned field.
-	postDescPinned := postFields[2].Descriptor()
-	// post.DefaultPinned holds the default value on creation for the pinned field.
-	post.DefaultPinned = postDescPinned.Default.(bool)
+	// postDescPinnedRank is the schema descriptor for pinned_rank field.
+	postDescPinnedRank := postFields[2].Descriptor()
+	// post.DefaultPinnedRank holds the default value on creation for the pinned_rank field.
+	post.DefaultPinnedRank = postDescPinnedRank.Default.(int)
 	// postDescID is the schema descriptor for id field.
 	postDescID := postMixinFields0[0].Descriptor()
 	// post.DefaultID holds the default value on creation for the id field.

@@ -151,6 +151,31 @@ var (
 			},
 		},
 	}
+	// AuditLogsColumns holds the columns for the "audit_logs" table.
+	AuditLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "target_id", Type: field.TypeString, Nullable: true},
+		{Name: "target_kind", Type: field.TypeString, Nullable: true},
+		{Name: "type", Type: field.TypeString},
+		{Name: "error", Type: field.TypeString, Nullable: true},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "enacted_by_id", Type: field.TypeString, Nullable: true, Size: 20},
+	}
+	// AuditLogsTable holds the schema information for the "audit_logs" table.
+	AuditLogsTable = &schema.Table{
+		Name:       "audit_logs",
+		Columns:    AuditLogsColumns,
+		PrimaryKey: []*schema.Column{AuditLogsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "audit_logs_accounts_audit_logs",
+				Columns:    []*schema.Column{AuditLogsColumns[7]},
+				RefColumns: []*schema.Column{AccountsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// AuthenticationsColumns holds the columns for the "authentications" table.
 	AuthenticationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Size: 20},
@@ -774,7 +799,7 @@ var (
 		{Name: "indexed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "title", Type: field.TypeString, Nullable: true},
 		{Name: "slug", Type: field.TypeString, Nullable: true},
-		{Name: "pinned", Type: field.TypeBool, Default: false},
+		{Name: "pinned_rank", Type: field.TypeInt, Default: 0},
 		{Name: "last_reply_at", Type: field.TypeTime},
 		{Name: "body", Type: field.TypeString},
 		{Name: "short", Type: field.TypeString},
@@ -832,24 +857,14 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "post_root_post_id_deleted_at_visibility_last_reply_at",
+				Name:    "post_root_post_id_deleted_at_visibility_pinned_rank_last_reply_at",
 				Unique:  false,
-				Columns: []*schema.Column{PostsColumns[17], PostsColumns[3], PostsColumns[12], PostsColumns[8]},
+				Columns: []*schema.Column{PostsColumns[17], PostsColumns[3], PostsColumns[12], PostsColumns[7], PostsColumns[8]},
 			},
 			{
-				Name:    "post_root_post_id_deleted_at_visibility_category_id_last_reply_at",
+				Name:    "post_root_post_id_deleted_at_visibility_category_id_pinned_rank_last_reply_at",
 				Unique:  false,
-				Columns: []*schema.Column{PostsColumns[17], PostsColumns[3], PostsColumns[12], PostsColumns[14], PostsColumns[8]},
-			},
-			{
-				Name:    "post_channel_id_deleted_at_visibility_last_reply_at",
-				Unique:  false,
-				Columns: []*schema.Column{PostsColumns[15], PostsColumns[3], PostsColumns[12], PostsColumns[8]},
-			},
-			{
-				Name:    "post_channel_id_deleted_at_visibility_category_id_last_reply_at",
-				Unique:  false,
-				Columns: []*schema.Column{PostsColumns[15], PostsColumns[3], PostsColumns[12], PostsColumns[14], PostsColumns[8]},
+				Columns: []*schema.Column{PostsColumns[17], PostsColumns[3], PostsColumns[12], PostsColumns[14], PostsColumns[7], PostsColumns[8]},
 			},
 			{
 				Name:    "post_root_post_id_deleted_at_created_at",
@@ -1349,6 +1364,7 @@ var (
 		AccountFollowsTable,
 		AccountRolesTable,
 		AssetsTable,
+		AuditLogsTable,
 		AuthenticationsTable,
 		CategoriesTable,
 		ChannelsTable,
@@ -1396,6 +1412,7 @@ func init() {
 	AccountRolesTable.ForeignKeys[1].RefTable = RolesTable
 	AssetsTable.ForeignKeys[0].RefTable = AccountsTable
 	AssetsTable.ForeignKeys[1].RefTable = AssetsTable
+	AuditLogsTable.ForeignKeys[0].RefTable = AccountsTable
 	AuthenticationsTable.ForeignKeys[0].RefTable = AccountsTable
 	CategoriesTable.ForeignKeys[0].RefTable = CategoriesTable
 	CategoriesTable.ForeignKeys[1].RefTable = AssetsTable
