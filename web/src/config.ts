@@ -89,7 +89,9 @@ export function getAPIAddress() {
     isClient,
     result,
     envAPIAddress: env.API_ADDRESS,
-    ssrAPIAddress: global.process.env["SSR_API_ADDRESS"],
+    ssrAPIAddress: isClient
+      ? "N/A (client)"
+      : global.process.env["SSR_API_ADDRESS"],
     windowConfig: isClient ? (window as any).__storyden__ : "N/A (server)",
   });
 
