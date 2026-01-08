@@ -35,8 +35,8 @@ type Post struct {
 	Title string `json:"title,omitempty"`
 	// Slug holds the value of the "slug" field.
 	Slug string `json:"slug,omitempty"`
-	// Pinned holds the value of the "pinned" field.
-	Pinned bool `json:"pinned,omitempty"`
+	// PinnedRank holds the value of the "pinned_rank" field.
+	PinnedRank int `json:"pinned_rank,omitempty"`
 	// LastReplyAt holds the value of the "last_reply_at" field.
 	LastReplyAt time.Time `json:"last_reply_at,omitempty"`
 	// RootPostID holds the value of the "root_post_id" field.
@@ -280,8 +280,8 @@ func (*Post) scanValues(columns []string) ([]any, error) {
 			values[i] = &sql.NullScanner{S: new(xid.ID)}
 		case post.FieldMetadata:
 			values[i] = new([]byte)
-		case post.FieldPinned:
-			values[i] = new(sql.NullBool)
+		case post.FieldPinnedRank:
+			values[i] = new(sql.NullInt64)
 		case post.FieldTitle, post.FieldSlug, post.FieldBody, post.FieldShort, post.FieldVisibility:
 			values[i] = new(sql.NullString)
 		case post.FieldCreatedAt, post.FieldUpdatedAt, post.FieldDeletedAt, post.FieldIndexedAt, post.FieldLastReplyAt:
@@ -347,11 +347,11 @@ func (_m *Post) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Slug = value.String
 			}
-		case post.FieldPinned:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field pinned", values[i])
+		case post.FieldPinnedRank:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field pinned_rank", values[i])
 			} else if value.Valid {
-				_m.Pinned = value.Bool
+				_m.PinnedRank = int(value.Int64)
 			}
 		case post.FieldLastReplyAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -566,8 +566,8 @@ func (_m *Post) String() string {
 	builder.WriteString("slug=")
 	builder.WriteString(_m.Slug)
 	builder.WriteString(", ")
-	builder.WriteString("pinned=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Pinned))
+	builder.WriteString("pinned_rank=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PinnedRank))
 	builder.WriteString(", ")
 	builder.WriteString("last_reply_at=")
 	builder.WriteString(_m.LastReplyAt.Format(time.ANSIC))

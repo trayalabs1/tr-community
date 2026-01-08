@@ -30,7 +30,7 @@ type Thread struct {
 	Title       string
 	Slug        string
 	Short       string
-	Pinned      bool
+	Pinned      int
 	LastReplyAt opt.Optional[time.Time]
 
 	ReadStatus  opt.Optional[post.ReadStatus]
@@ -46,7 +46,7 @@ type ThreadRef struct {
 	Title       string
 	Slug        string
 	Short       string
-	Pinned      bool
+	Pinned      int
 	LastReplyAt opt.Optional[time.Time]
 }
 
@@ -123,7 +123,7 @@ func Map(m *ent.Post) (*Thread, error) {
 		Title:       m.Title,
 		Slug:        m.Slug,
 		Short:       m.Short,
-		Pinned:      m.Pinned,
+		Pinned:      m.PinnedRank,
 		LastReplyAt: opt.New(m.LastReplyAt),
 
 		Category: category,
@@ -199,7 +199,7 @@ func Mapper(
 			Title:  m.Title,
 			Slug:   m.Slug,
 			Short:  m.Short,
-			Pinned: m.Pinned,
+			Pinned: m.PinnedRank,
 			// Only populate the last-reply-at if there are replies.
 			LastReplyAt: opt.NewSafe(m.LastReplyAt, rs.Status(m.ID).Count > 0),
 
@@ -232,7 +232,7 @@ func MapRef(m *ent.Post) *ThreadRef {
 		Title:       m.Title,
 		Slug:        m.Slug,
 		Short:       m.Short,
-		Pinned:      m.Pinned,
+		Pinned:      m.PinnedRank,
 		LastReplyAt: opt.New(m.LastReplyAt),
 	}
 }

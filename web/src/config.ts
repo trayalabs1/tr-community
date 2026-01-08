@@ -11,6 +11,12 @@ export const ConfigSchema = z.object({
 export type Config = z.infer<typeof ConfigSchema>;
 
 export function serverEnvironment() {
+  console.log("[Config] Environment variables:", {
+    PUBLIC_API_ADDRESS: global.process.env["PUBLIC_API_ADDRESS"],
+    PUBLIC_WEB_ADDRESS: global.process.env["PUBLIC_WEB_ADDRESS"],
+    SSR_API_ADDRESS: global.process.env["SSR_API_ADDRESS"],
+  });
+
   return {
     API_ADDRESS:
       global.process.env["NEXT_PUBLIC_API_ADDRESS"] ??

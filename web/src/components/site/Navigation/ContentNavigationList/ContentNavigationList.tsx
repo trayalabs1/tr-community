@@ -18,6 +18,7 @@ import { css } from "@/styled-system/css";
 import { CollectionsAnchor } from "../Anchors/Collections";
 import { LinksAnchor } from "../Anchors/Link";
 import { MembersAnchor } from "../Anchors/Members";
+import { RolesAnchor } from "../Anchors/Roles";
 
 type Props = {
   initialCategoryList?: CategoryListOKResponse;
@@ -164,6 +165,7 @@ export function ContentNavigationList(props: Props) {
         <CollectionsAnchor />
         <LinksAnchor />
         <MembersAnchor />
+        <RolesAnchor />
       </LStack>
     </styled.nav>
   );
