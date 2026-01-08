@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { PropsWithChildren } from "react";
 
 import { getColourAsHex } from "src/utils/colour";
@@ -33,18 +34,6 @@ export default async function RootLayout({ children }: PropsWithChildren) {
     >
       <head>
         {/*
-          NOTE: Because the browser side does not support dynamic environment
-          variables (obviously, it's a browser script) we hack around Next.js'
-          build-time variables by loading a dynamic script that sets the
-          API_ADDRESS and WEB_ADDRESS. The script is served from /config.js
-          which is a dynamic route that reads env vars at request time.
-
-          This must be a blocking script (no async/defer) to ensure it executes
-          before any React code that might try to read the config.
-        */}
-        <script src="/config.js" />
-
-        {/*
             NOTE: This stylesheet is fully server-side rendered but it's not
             static because it uses data from the API to be generated. But we
             don't want this to require client-side render or CSS-in-JS.
@@ -54,6 +43,18 @@ export default async function RootLayout({ children }: PropsWithChildren) {
       </head>
 
       <body>
+        {/*
+          NOTE: Because the browser side does not support dynamic environment
+          variables (obviously, it's a browser script) we hack around Next.js'
+          build-time variables by loading a dynamic script that sets the
+          API_ADDRESS and WEB_ADDRESS. The script is served from /config.js
+          which is a dynamic route that reads env vars at request time.
+
+          Using beforeInteractive strategy ensures this loads and executes
+          before any Next.js hydration or client-side JavaScript.
+        */}
+        <Script src="/config.js" strategy="beforeInteractive" />
+
         <SettingsContext initialSession={session} initialSettings={settings}>
           <Providers>{children}</Providers>
         </SettingsContext>
