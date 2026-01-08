@@ -82,11 +82,6 @@ function getEnv(): Config {
   return cachedEnv;
 }
 
-// Deprecated: Use getAPIAddress() and getWEBAddress() instead
-// These are kept for backward compatibility but may return stale values
-export const API_ADDRESS = getAPIAddress();
-export const WEB_ADDRESS = getWEBAddress();
-
 export function getWEBAddress() {
   return getEnv().WEB_ADDRESS;
 }
@@ -110,3 +105,8 @@ export function getAPIAddress() {
 
   return result;
 }
+
+// Deprecated: Use getAPIAddress() and getWEBAddress() instead
+// These are kept for backward compatibility using lazy getters
+export const API_ADDRESS = getAPIAddress();
+export const WEB_ADDRESS = getWEBAddress();

@@ -14,9 +14,8 @@ import "./global.css";
 
 import { Providers } from "./providers";
 
-const { API_ADDRESS, WEB_ADDRESS } = serverEnvironment();
-
 export default async function RootLayout({ children }: PropsWithChildren) {
+  const { API_ADDRESS, WEB_ADDRESS } = serverEnvironment();
   const session = await getServerSession();
   const settings = await getSettings();
 
@@ -26,6 +25,14 @@ export default async function RootLayout({ children }: PropsWithChildren) {
       : settings.color_mode === "dark"
         ? "dark"
         : "light";
+
+  // Safely serialize config for injection into script tag
+  // JSON.stringify properly escapes quotes, slashes, and other special chars
+  const configJson = JSON.stringify({
+    API_ADDRESS,
+    WEB_ADDRESS,
+    source: "script",
+  });
 
   return (
     <html
@@ -40,11 +47,20 @@ export default async function RootLayout({ children }: PropsWithChildren) {
           build-time variables by providing a direct reference to these inside
           the window object. This allows us to set the API/frontend addresses
           without rebuilding the entire app.
+
+          This MUST be in <head> and use dangerouslySetInnerHTML to ensure it
+          executes before any client-side JavaScript. The config is properly
+          JSON-escaped to prevent XSS vulnerabilities.
         */}
-        <script>{`
-          window.__storyden__ = {"API_ADDRESS":"${API_ADDRESS}", "WEB_ADDRESS":"${WEB_ADDRESS}", "source": "script"};
-          console.log("set up window config", window.__storyden__);
-        `}</script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              console.log('[Config Script] Executing inline config script');
+              window.__storyden__ = ${configJson};
+              console.log('[Config Script] Set window.__storyden__:', window.__storyden__);
+            `,
+          }}
+        />
 
         {/*
             NOTE: This stylesheet is fully server-side rendered but it's not
@@ -80,6 +96,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const iconURL = getIconURL("512x512");
 
+  const { WEB_ADDRESS } = serverEnvironment();
   const canonical = WEB_ADDRESS;
 
   // TODO: Add another settings field for this.
