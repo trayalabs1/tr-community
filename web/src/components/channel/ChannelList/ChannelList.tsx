@@ -27,6 +27,10 @@ export function ChannelList({
   });
 
   if (!data) {
+    const isUnauthorized = error && "status" in error && error.status === 401;
+    if (isUnauthorized) {
+      return null;
+    }
     return <Unready error={error} />;
   }
 

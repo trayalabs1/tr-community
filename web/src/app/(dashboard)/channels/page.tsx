@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { channelList } from "@/api/openapi-server/channels";
 import { getServerSession } from "@/auth/server-session";
@@ -9,6 +10,7 @@ import { canCreateChannels } from "@/lib/channel/server-permissions";
 
 export default async function ChannelsPage() {
   const session = await getServerSession();
+  if (!session) redirect("/");
   const { data: channels } = await channelList({});
   const userCanCreateChannels = canCreateChannels(session);
 

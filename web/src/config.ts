@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+// const isProduction = process.env.NODE_ENV === "production";
+
 export const DEFAULT_API_ADDRESS = "https://discourse-api.dev.hav-g.in";
 
 export const DEFAULT_WEB_ADDRESS = "https://discourse.dev.hav-g.in";
