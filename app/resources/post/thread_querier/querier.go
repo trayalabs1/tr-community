@@ -107,8 +107,8 @@ func HasCategories(cf CategoryFilter) Query {
 }
 
 func HasChannel(channelID xid.ID) Query {
-	return func(q *ent.PostQuery) {
-		q.Where(ent_post.ChannelID(channelID))
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.ChannelID(channelID))
 	}
 }
 
