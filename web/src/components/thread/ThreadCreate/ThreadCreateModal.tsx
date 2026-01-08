@@ -2,11 +2,12 @@ import { ModalDrawer } from "src/components/site/Modaldrawer/Modaldrawer";
 
 import { ChannelListOKResponse } from "@/api/openapi-schema";
 import { ComposeForm } from "@/screens/compose/components/ComposeForm/ComposeForm";
+import { OpenChangeEvent } from "@/utils/useDisclosure";
 
 export type ThreadCreateModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (event: OpenChangeEvent) => void;
   channelID: string;
   initialChannelList?: ChannelListOKResponse;
 };
