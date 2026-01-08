@@ -21,6 +21,9 @@ func (Collection) Fields() []ent.Field {
 		field.String("slug"),
 		field.String("description").Optional().Nillable(),
 		field.String("cover_asset_id").GoType(xid.ID{}).Optional().Nillable(),
+		field.String("channel_id").
+			GoType(xid.ID{}).
+			Comment("The channel this collection belongs to"),
 		field.Enum("visibility").Values(VisibilityTypes...).Default(VisibilityTypesDraft),
 	}
 }
@@ -34,6 +37,12 @@ func (Collection) Edges() []ent.Edge {
 		edge.To("cover_image", Asset.Type).
 			Field("cover_asset_id").
 			Unique(),
+
+		edge.From("channel", Channel.Type).
+			Field("channel_id").
+			Ref("collections").
+			Unique().
+			Required(),
 
 		edge.To("posts", Post.Type).
 			Through("collection_posts", CollectionPost.Type),

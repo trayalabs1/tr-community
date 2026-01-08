@@ -30,12 +30,16 @@ const (
 	FieldDescription = "description"
 	// FieldCoverAssetID holds the string denoting the cover_asset_id field in the database.
 	FieldCoverAssetID = "cover_asset_id"
+	// FieldChannelID holds the string denoting the channel_id field in the database.
+	FieldChannelID = "channel_id"
 	// FieldVisibility holds the string denoting the visibility field in the database.
 	FieldVisibility = "visibility"
 	// EdgeOwner holds the string denoting the owner edge name in mutations.
 	EdgeOwner = "owner"
 	// EdgeCoverImage holds the string denoting the cover_image edge name in mutations.
 	EdgeCoverImage = "cover_image"
+	// EdgeChannel holds the string denoting the channel edge name in mutations.
+	EdgeChannel = "channel"
 	// EdgePosts holds the string denoting the posts edge name in mutations.
 	EdgePosts = "posts"
 	// EdgeNodes holds the string denoting the nodes edge name in mutations.
@@ -60,6 +64,13 @@ const (
 	CoverImageInverseTable = "assets"
 	// CoverImageColumn is the table column denoting the cover_image relation/edge.
 	CoverImageColumn = "cover_asset_id"
+	// ChannelTable is the table that holds the channel relation/edge.
+	ChannelTable = "collections"
+	// ChannelInverseTable is the table name for the Channel entity.
+	// It exists in this package in order to avoid circular dependency with the "channel" package.
+	ChannelInverseTable = "channels"
+	// ChannelColumn is the table column denoting the channel relation/edge.
+	ChannelColumn = "channel_id"
 	// PostsTable is the table that holds the posts relation/edge. The primary key declared below.
 	PostsTable = "collection_posts"
 	// PostsInverseTable is the table name for the Post entity.
@@ -96,6 +107,7 @@ var Columns = []string{
 	FieldSlug,
 	FieldDescription,
 	FieldCoverAssetID,
+	FieldChannelID,
 	FieldVisibility,
 }
 
@@ -213,6 +225,11 @@ func ByCoverAssetID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCoverAssetID, opts...).ToFunc()
 }
 
+// ByChannelID orders the results by the channel_id field.
+func ByChannelID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldChannelID, opts...).ToFunc()
+}
+
 // ByVisibility orders the results by the visibility field.
 func ByVisibility(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVisibility, opts...).ToFunc()
@@ -229,6 +246,13 @@ func ByOwnerField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByCoverImageField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newCoverImageStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByChannelField orders the results by channel field.
+func ByChannelField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newChannelStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -299,6 +323,13 @@ func newCoverImageStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CoverImageInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, CoverImageTable, CoverImageColumn),
+	)
+}
+func newChannelStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ChannelInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ChannelTable, ChannelColumn),
 	)
 }
 func newPostsStep() *sqlgraph.Step {

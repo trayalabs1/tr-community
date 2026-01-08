@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/asset"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/collectionnode"
 	"github.com/Southclaws/storyden/internal/ent/link"
@@ -33,6 +34,7 @@ type NodeQuery struct {
 	inters              []Interceptor
 	predicates          []predicate.Node
 	withOwner           *AccountQuery
+	withChannel         *ChannelQuery
 	withParent          *NodeQuery
 	withNodes           *NodeQuery
 	withPrimaryImage    *AssetQuery
@@ -96,6 +98,28 @@ func (_q *NodeQuery) QueryOwner() *AccountQuery {
 			sqlgraph.From(node.Table, node.FieldID, selector),
 			sqlgraph.To(account.Table, account.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, node.OwnerTable, node.OwnerColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryChannel chains the current query on the "channel" edge.
+func (_q *NodeQuery) QueryChannel() *ChannelQuery {
+	query := (&ChannelClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(node.Table, node.FieldID, selector),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, node.ChannelTable, node.ChannelColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -538,6 +562,7 @@ func (_q *NodeQuery) Clone() *NodeQuery {
 		inters:              append([]Interceptor{}, _q.inters...),
 		predicates:          append([]predicate.Node{}, _q.predicates...),
 		withOwner:           _q.withOwner.Clone(),
+		withChannel:         _q.withChannel.Clone(),
 		withParent:          _q.withParent.Clone(),
 		withNodes:           _q.withNodes.Clone(),
 		withPrimaryImage:    _q.withPrimaryImage.Clone(),
@@ -564,6 +589,17 @@ func (_q *NodeQuery) WithOwner(opts ...func(*AccountQuery)) *NodeQuery {
 		opt(query)
 	}
 	_q.withOwner = query
+	return _q
+}
+
+// WithChannel tells the query-builder to eager-load the nodes that are connected to
+// the "channel" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *NodeQuery) WithChannel(opts ...func(*ChannelQuery)) *NodeQuery {
+	query := (&ChannelClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withChannel = query
 	return _q
 }
 
@@ -766,8 +802,9 @@ func (_q *NodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Node, e
 	var (
 		nodes       = []*Node{}
 		_spec       = _q.querySpec()
-		loadedTypes = [12]bool{
+		loadedTypes = [13]bool{
 			_q.withOwner != nil,
+			_q.withChannel != nil,
 			_q.withParent != nil,
 			_q.withNodes != nil,
 			_q.withPrimaryImage != nil,
@@ -805,6 +842,12 @@ func (_q *NodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Node, e
 	if query := _q.withOwner; query != nil {
 		if err := _q.loadOwner(ctx, query, nodes, nil,
 			func(n *Node, e *Account) { n.Edges.Owner = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withChannel; query != nil {
+		if err := _q.loadChannel(ctx, query, nodes, nil,
+			func(n *Node, e *Channel) { n.Edges.Channel = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -906,6 +949,35 @@ func (_q *NodeQuery) loadOwner(ctx context.Context, query *AccountQuery, nodes [
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "account_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *NodeQuery) loadChannel(ctx context.Context, query *ChannelQuery, nodes []*Node, init func(*Node), assign func(*Node, *Channel)) error {
+	ids := make([]xid.ID, 0, len(nodes))
+	nodeids := make(map[xid.ID][]*Node)
+	for i := range nodes {
+		fk := nodes[i].ChannelID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(channel.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "channel_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -1400,6 +1472,9 @@ func (_q *NodeQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withOwner != nil {
 			_spec.Node.AddColumnOnce(node.FieldAccountID)
+		}
+		if _q.withChannel != nil {
+			_spec.Node.AddColumnOnce(node.FieldChannelID)
 		}
 		if _q.withParent != nil {
 			_spec.Node.AddColumnOnce(node.FieldParentNodeID)

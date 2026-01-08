@@ -42,6 +42,7 @@ type OperationPermissions interface {
 	WebAuthnMakeAssertion() (bool, *rbac.Permission)
 	PhoneRequestCode() (bool, *rbac.Permission)
 	PhoneSubmitCode() (bool, *rbac.Permission)
+	AuthTrayaToken() (bool, *rbac.Permission)
 	AccessKeyList() (bool, *rbac.Permission)
 	AccessKeyCreate() (bool, *rbac.Permission)
 	AccessKeyDelete() (bool, *rbac.Permission)
@@ -75,6 +76,34 @@ type OperationPermissions interface {
 	ProfileFollowersAdd() (bool, *rbac.Permission)
 	ProfileFollowersRemove() (bool, *rbac.Permission)
 	ProfileFollowingGet() (bool, *rbac.Permission)
+	ChannelList() (bool, *rbac.Permission)
+	ChannelCreate() (bool, *rbac.Permission)
+	ChannelGet() (bool, *rbac.Permission)
+	ChannelUpdate() (bool, *rbac.Permission)
+	ChannelDelete() (bool, *rbac.Permission)
+	ChannelMemberList() (bool, *rbac.Permission)
+	ChannelMemberAdd() (bool, *rbac.Permission)
+	ChannelMemberUpdateRole() (bool, *rbac.Permission)
+	ChannelMemberRemove() (bool, *rbac.Permission)
+	ChannelJoin() (bool, *rbac.Permission)
+	ChannelLeave() (bool, *rbac.Permission)
+	ChannelCategoryList() (bool, *rbac.Permission)
+	ChannelCategoryCreate() (bool, *rbac.Permission)
+	ChannelCategoryGet() (bool, *rbac.Permission)
+	ChannelCategoryUpdate() (bool, *rbac.Permission)
+	ChannelCategoryDelete() (bool, *rbac.Permission)
+	ChannelCategoryUpdatePosition() (bool, *rbac.Permission)
+	ChannelThreadCreate() (bool, *rbac.Permission)
+	ChannelThreadList() (bool, *rbac.Permission)
+	ChannelThreadGet() (bool, *rbac.Permission)
+	ChannelThreadUpdate() (bool, *rbac.Permission)
+	ChannelThreadDelete() (bool, *rbac.Permission)
+	ChannelReplyCreate() (bool, *rbac.Permission)
+	ChannelCollectionCreate() (bool, *rbac.Permission)
+	ChannelCollectionList() (bool, *rbac.Permission)
+	ChannelCollectionGet() (bool, *rbac.Permission)
+	ChannelCollectionUpdate() (bool, *rbac.Permission)
+	ChannelCollectionDelete() (bool, *rbac.Permission)
 	CategoryCreate() (bool, *rbac.Permission)
 	CategoryList() (bool, *rbac.Permission)
 	CategoryGet() (bool, *rbac.Permission)
@@ -222,6 +251,8 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.PhoneRequestCode()
 	case "PhoneSubmitCode":
 		return optable.PhoneSubmitCode()
+	case "AuthTrayaToken":
+		return optable.AuthTrayaToken()
 	case "AccessKeyList":
 		return optable.AccessKeyList()
 	case "AccessKeyCreate":
@@ -288,6 +319,62 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.ProfileFollowersRemove()
 	case "ProfileFollowingGet":
 		return optable.ProfileFollowingGet()
+	case "ChannelList":
+		return optable.ChannelList()
+	case "ChannelCreate":
+		return optable.ChannelCreate()
+	case "ChannelGet":
+		return optable.ChannelGet()
+	case "ChannelUpdate":
+		return optable.ChannelUpdate()
+	case "ChannelDelete":
+		return optable.ChannelDelete()
+	case "ChannelMemberList":
+		return optable.ChannelMemberList()
+	case "ChannelMemberAdd":
+		return optable.ChannelMemberAdd()
+	case "ChannelMemberUpdateRole":
+		return optable.ChannelMemberUpdateRole()
+	case "ChannelMemberRemove":
+		return optable.ChannelMemberRemove()
+	case "ChannelJoin":
+		return optable.ChannelJoin()
+	case "ChannelLeave":
+		return optable.ChannelLeave()
+	case "ChannelCategoryList":
+		return optable.ChannelCategoryList()
+	case "ChannelCategoryCreate":
+		return optable.ChannelCategoryCreate()
+	case "ChannelCategoryGet":
+		return optable.ChannelCategoryGet()
+	case "ChannelCategoryUpdate":
+		return optable.ChannelCategoryUpdate()
+	case "ChannelCategoryDelete":
+		return optable.ChannelCategoryDelete()
+	case "ChannelCategoryUpdatePosition":
+		return optable.ChannelCategoryUpdatePosition()
+	case "ChannelThreadCreate":
+		return optable.ChannelThreadCreate()
+	case "ChannelThreadList":
+		return optable.ChannelThreadList()
+	case "ChannelThreadGet":
+		return optable.ChannelThreadGet()
+	case "ChannelThreadUpdate":
+		return optable.ChannelThreadUpdate()
+	case "ChannelThreadDelete":
+		return optable.ChannelThreadDelete()
+	case "ChannelReplyCreate":
+		return optable.ChannelReplyCreate()
+	case "ChannelCollectionCreate":
+		return optable.ChannelCollectionCreate()
+	case "ChannelCollectionList":
+		return optable.ChannelCollectionList()
+	case "ChannelCollectionGet":
+		return optable.ChannelCollectionGet()
+	case "ChannelCollectionUpdate":
+		return optable.ChannelCollectionUpdate()
+	case "ChannelCollectionDelete":
+		return optable.ChannelCollectionDelete()
 	case "CategoryCreate":
 		return optable.CategoryCreate()
 	case "CategoryList":

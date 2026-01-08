@@ -81,7 +81,7 @@ export function useLibraryPageMenu(props: Props) {
   async function handleVisibilityChange(visibility: Visibility) {
     await handle(
       async () => {
-        await updateNodeVisibility(props.node.slug, visibility, props.parentID);
+        await updateNodeVisibility(props.node.id, visibility, props.parentID);
       },
       {
         promiseToast: {

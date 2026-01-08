@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/asset"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/collectionnode"
 	"github.com/Southclaws/storyden/internal/ent/collectionpost"
@@ -32,6 +33,7 @@ type CollectionQuery struct {
 	predicates          []predicate.Collection
 	withOwner           *AccountQuery
 	withCoverImage      *AssetQuery
+	withChannel         *ChannelQuery
 	withPosts           *PostQuery
 	withNodes           *NodeQuery
 	withCollectionPosts *CollectionPostQuery
@@ -111,6 +113,28 @@ func (_q *CollectionQuery) QueryCoverImage() *AssetQuery {
 			sqlgraph.From(collection.Table, collection.FieldID, selector),
 			sqlgraph.To(asset.Table, asset.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, collection.CoverImageTable, collection.CoverImageColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryChannel chains the current query on the "channel" edge.
+func (_q *CollectionQuery) QueryChannel() *ChannelQuery {
+	query := (&ChannelClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(collection.Table, collection.FieldID, selector),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, collection.ChannelTable, collection.ChannelColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -400,6 +424,7 @@ func (_q *CollectionQuery) Clone() *CollectionQuery {
 		predicates:          append([]predicate.Collection{}, _q.predicates...),
 		withOwner:           _q.withOwner.Clone(),
 		withCoverImage:      _q.withCoverImage.Clone(),
+		withChannel:         _q.withChannel.Clone(),
 		withPosts:           _q.withPosts.Clone(),
 		withNodes:           _q.withNodes.Clone(),
 		withCollectionPosts: _q.withCollectionPosts.Clone(),
@@ -430,6 +455,17 @@ func (_q *CollectionQuery) WithCoverImage(opts ...func(*AssetQuery)) *Collection
 		opt(query)
 	}
 	_q.withCoverImage = query
+	return _q
+}
+
+// WithChannel tells the query-builder to eager-load the nodes that are connected to
+// the "channel" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *CollectionQuery) WithChannel(opts ...func(*ChannelQuery)) *CollectionQuery {
+	query := (&ChannelClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withChannel = query
 	return _q
 }
 
@@ -556,9 +592,10 @@ func (_q *CollectionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*C
 		nodes       = []*Collection{}
 		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [7]bool{
 			_q.withOwner != nil,
 			_q.withCoverImage != nil,
+			_q.withChannel != nil,
 			_q.withPosts != nil,
 			_q.withNodes != nil,
 			_q.withCollectionPosts != nil,
@@ -601,6 +638,12 @@ func (_q *CollectionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*C
 	if query := _q.withCoverImage; query != nil {
 		if err := _q.loadCoverImage(ctx, query, nodes, nil,
 			func(n *Collection, e *Asset) { n.Edges.CoverImage = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withChannel; query != nil {
+		if err := _q.loadChannel(ctx, query, nodes, nil,
+			func(n *Collection, e *Channel) { n.Edges.Channel = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -692,6 +735,35 @@ func (_q *CollectionQuery) loadCoverImage(ctx context.Context, query *AssetQuery
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "cover_asset_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *CollectionQuery) loadChannel(ctx context.Context, query *ChannelQuery, nodes []*Collection, init func(*Collection), assign func(*Collection, *Channel)) error {
+	ids := make([]xid.ID, 0, len(nodes))
+	nodeids := make(map[xid.ID][]*Collection)
+	for i := range nodes {
+		fk := nodes[i].ChannelID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(channel.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "channel_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -912,6 +984,9 @@ func (_q *CollectionQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withCoverImage != nil {
 			_spec.Node.AddColumnOnce(collection.FieldCoverAssetID)
+		}
+		if _q.withChannel != nil {
+			_spec.Node.AddColumnOnce(collection.FieldChannelID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

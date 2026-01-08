@@ -31,6 +31,7 @@ func New(db *ent.Client) *Querier {
 type listOption struct {
 	ownerID               opt.Optional[string]
 	queryForIncludedItems opt.Optional[[]xid.ID]
+	channelID             opt.Optional[xid.ID]
 }
 
 type (
@@ -47,6 +48,12 @@ func WithOwnerHandle(v string) Option {
 func WithItemPresenceQuery(id xid.ID) Option {
 	return func(lo *listOption) {
 		lo.queryForIncludedItems = opt.New([]xid.ID{id})
+	}
+}
+
+func WithChannel(id xid.ID) Option {
+	return func(lo *listOption) {
+		lo.channelID = opt.New(id)
 	}
 }
 
@@ -82,6 +89,10 @@ func (d *Querier) List(ctx context.Context, filters ...Option) ([]*collection.Co
 
 	opts.ownerID.Call(func(v string) {
 		q.Where(ent_collection.HasOwnerWith(ent_account.Handle(v)))
+	})
+
+	opts.channelID.Call(func(v xid.ID) {
+		q.Where(ent_collection.ChannelID(v))
 	})
 
 	cols, err := q.All(ctx)

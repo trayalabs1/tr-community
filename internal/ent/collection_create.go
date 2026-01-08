@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/asset"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/node"
 	"github.com/Southclaws/storyden/internal/ent/post"
@@ -110,6 +111,12 @@ func (_c *CollectionCreate) SetNillableCoverAssetID(v *xid.ID) *CollectionCreate
 	return _c
 }
 
+// SetChannelID sets the "channel_id" field.
+func (_c *CollectionCreate) SetChannelID(v xid.ID) *CollectionCreate {
+	_c.mutation.SetChannelID(v)
+	return _c
+}
+
 // SetVisibility sets the "visibility" field.
 func (_c *CollectionCreate) SetVisibility(v collection.Visibility) *CollectionCreate {
 	_c.mutation.SetVisibility(v)
@@ -174,6 +181,11 @@ func (_c *CollectionCreate) SetNillableCoverImageID(id *xid.ID) *CollectionCreat
 // SetCoverImage sets the "cover_image" edge to the Asset entity.
 func (_c *CollectionCreate) SetCoverImage(v *Asset) *CollectionCreate {
 	return _c.SetCoverImageID(v.ID)
+}
+
+// SetChannel sets the "channel" edge to the Channel entity.
+func (_c *CollectionCreate) SetChannel(v *Channel) *CollectionCreate {
+	return _c.SetChannelID(v.ID)
 }
 
 // AddPostIDs adds the "posts" edge to the Post entity by IDs.
@@ -273,6 +285,9 @@ func (_c *CollectionCreate) check() error {
 	if _, ok := _c.mutation.Slug(); !ok {
 		return &ValidationError{Name: "slug", err: errors.New(`ent: missing required field "Collection.slug"`)}
 	}
+	if _, ok := _c.mutation.ChannelID(); !ok {
+		return &ValidationError{Name: "channel_id", err: errors.New(`ent: missing required field "Collection.channel_id"`)}
+	}
 	if _, ok := _c.mutation.Visibility(); !ok {
 		return &ValidationError{Name: "visibility", err: errors.New(`ent: missing required field "Collection.visibility"`)}
 	}
@@ -285,6 +300,9 @@ func (_c *CollectionCreate) check() error {
 		if err := collection.IDValidator(v.String()); err != nil {
 			return &ValidationError{Name: "id", err: fmt.Errorf(`ent: validator failed for field "Collection.id": %w`, err)}
 		}
+	}
+	if len(_c.mutation.ChannelIDs()) == 0 {
+		return &ValidationError{Name: "channel", err: errors.New(`ent: missing required edge "Collection.channel"`)}
 	}
 	return nil
 }
@@ -382,6 +400,23 @@ func (_c *CollectionCreate) createSpec() (*Collection, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.CoverAssetID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ChannelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   collection.ChannelTable,
+			Columns: []string{collection.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ChannelID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.PostsIDs(); len(nodes) > 0 {
@@ -566,6 +601,18 @@ func (u *CollectionUpsert) ClearCoverAssetID() *CollectionUpsert {
 	return u
 }
 
+// SetChannelID sets the "channel_id" field.
+func (u *CollectionUpsert) SetChannelID(v xid.ID) *CollectionUpsert {
+	u.Set(collection.FieldChannelID, v)
+	return u
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *CollectionUpsert) UpdateChannelID() *CollectionUpsert {
+	u.SetExcluded(collection.FieldChannelID)
+	return u
+}
+
 // SetVisibility sets the "visibility" field.
 func (u *CollectionUpsert) SetVisibility(v collection.Visibility) *CollectionUpsert {
 	u.Set(collection.FieldVisibility, v)
@@ -731,6 +778,20 @@ func (u *CollectionUpsertOne) UpdateCoverAssetID() *CollectionUpsertOne {
 func (u *CollectionUpsertOne) ClearCoverAssetID() *CollectionUpsertOne {
 	return u.Update(func(s *CollectionUpsert) {
 		s.ClearCoverAssetID()
+	})
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *CollectionUpsertOne) SetChannelID(v xid.ID) *CollectionUpsertOne {
+	return u.Update(func(s *CollectionUpsert) {
+		s.SetChannelID(v)
+	})
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *CollectionUpsertOne) UpdateChannelID() *CollectionUpsertOne {
+	return u.Update(func(s *CollectionUpsert) {
+		s.UpdateChannelID()
 	})
 }
 
@@ -1068,6 +1129,20 @@ func (u *CollectionUpsertBulk) UpdateCoverAssetID() *CollectionUpsertBulk {
 func (u *CollectionUpsertBulk) ClearCoverAssetID() *CollectionUpsertBulk {
 	return u.Update(func(s *CollectionUpsert) {
 		s.ClearCoverAssetID()
+	})
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *CollectionUpsertBulk) SetChannelID(v xid.ID) *CollectionUpsertBulk {
+	return u.Update(func(s *CollectionUpsert) {
+		s.SetChannelID(v)
+	})
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *CollectionUpsertBulk) UpdateChannelID() *CollectionUpsertBulk {
+	return u.Update(func(s *CollectionUpsert) {
+		s.UpdateChannelID()
 	})
 }
 

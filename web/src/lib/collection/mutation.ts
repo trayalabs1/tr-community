@@ -1,3 +1,4 @@
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { uniqueId } from "lodash";
 import { Arguments, MutatorCallback, useSWRConfig } from "swr";
 
@@ -122,9 +123,9 @@ export function useCollectionMutations(session?: Account) {
   };
 }
 
-export function useCollectionItemMutations(session: Account) {
+export function useCollectionItemMutations(session: Account, router?: AppRouterInstance) {
   const { mutate } = useSWRConfig();
-  const { revalidate: revalidateFeed } = useFeedMutations();
+  const { revalidate: revalidateFeed } = useFeedMutations(undefined, undefined, undefined, router);
 
   const threadQueryMutationKey = getThreadListKey()[0];
   function threadListKeyFilterFn(key: Arguments) {

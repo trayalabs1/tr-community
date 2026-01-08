@@ -101,6 +101,12 @@ func HasCategories(cf CategoryFilter) Query {
 	}
 }
 
+func HasChannel(channelID xid.ID) Query {
+	return func(q *ent.PostQuery) {
+		q.Where(ent_post.ChannelID(channelID))
+	}
+}
+
 func HasStatus(status ...visibility.Visibility) Query {
 	pv := dt.Map(status, func(v visibility.Visibility) ent_post.Visibility { return ent_post.Visibility(v.String()) })
 	return func(q *ent.PostQuery) {

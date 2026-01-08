@@ -35,7 +35,11 @@ export function ComposeForm(props: Props) {
           }}
         >
           <HStack width="full">
-            <CategorySelect control={form.control} name="category" />
+            <CategorySelect
+              control={form.control}
+              name="category"
+              channelID={props.channelID}
+            />
             <TagListField
               name="tags"
               control={form.control}

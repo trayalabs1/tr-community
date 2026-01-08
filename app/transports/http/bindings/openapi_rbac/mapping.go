@@ -162,6 +162,10 @@ func (m *Mapping) PhoneSubmitCode() (bool, *rbac.Permission) {
 	return false, nil // Public
 }
 
+func (m *Mapping) AuthTrayaToken() (bool, *rbac.Permission) {
+	return false, nil // Public
+}
+
 func (m *Mapping) AccessKeyList() (bool, *rbac.Permission) {
 	return true, &rbac.PermissionUsePersonalAccessKeys
 }
@@ -292,6 +296,120 @@ func (m *Mapping) ProfileFollowersRemove() (bool, *rbac.Permission) {
 
 func (m *Mapping) ProfileFollowingGet() (bool, *rbac.Permission) {
 	return false, nil
+}
+
+func (m *Mapping) ChannelList() (bool, *rbac.Permission) {
+	return true, nil
+}
+
+func (m *Mapping) ChannelCreate() (bool, *rbac.Permission) {
+	return true, nil // Any authenticated user can create a channel
+}
+
+func (m *Mapping) ChannelGet() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be member
+}
+
+func (m *Mapping) ChannelUpdate() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be owner/admin
+}
+
+func (m *Mapping) ChannelDelete() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be owner
+}
+
+func (m *Mapping) ChannelMemberList() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be member
+}
+
+func (m *Mapping) ChannelMemberAdd() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be owner/admin
+}
+
+func (m *Mapping) ChannelMemberUpdateRole() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be owner/admin
+}
+
+func (m *Mapping) ChannelMemberRemove() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be owner/admin
+}
+
+func (m *Mapping) ChannelJoin() (bool, *rbac.Permission) {
+	return true, nil // Any authenticated user can join public channels
+}
+
+func (m *Mapping) ChannelLeave() (bool, *rbac.Permission) {
+	return true, nil // Any member can leave (except last owner)
+}
+
+func (m *Mapping) ChannelCategoryList() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be member
+}
+
+func (m *Mapping) ChannelCategoryCreate() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be owner/admin
+}
+
+func (m *Mapping) ChannelCategoryGet() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be member
+}
+
+func (m *Mapping) ChannelCategoryUpdate() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be owner/admin
+}
+
+func (m *Mapping) ChannelCategoryDelete() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be owner/admin
+}
+
+func (m *Mapping) ChannelCategoryUpdatePosition() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be owner/admin
+}
+
+// Channel-scoped thread endpoints
+func (m *Mapping) ChannelThreadCreate() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be member
+}
+
+func (m *Mapping) ChannelThreadList() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be member
+}
+
+func (m *Mapping) ChannelThreadGet() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be member
+}
+
+func (m *Mapping) ChannelThreadUpdate() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be owner/admin or thread author
+}
+
+func (m *Mapping) ChannelThreadDelete() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be owner/admin or thread author
+}
+
+func (m *Mapping) ChannelReplyCreate() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be member
+}
+
+// Channel-scoped collection endpoints
+func (m *Mapping) ChannelCollectionCreate() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be member
+}
+
+func (m *Mapping) ChannelCollectionList() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be member
+}
+
+func (m *Mapping) ChannelCollectionGet() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be member
+}
+
+func (m *Mapping) ChannelCollectionUpdate() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be owner/admin or collection owner
+}
+
+func (m *Mapping) ChannelCollectionDelete() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be owner/admin or collection owner
 }
 
 func (m *Mapping) CategoryCreate() (bool, *rbac.Permission) {

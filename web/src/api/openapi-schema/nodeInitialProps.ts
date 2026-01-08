@@ -12,6 +12,7 @@ import type { AssetSourceList } from "./assetSourceList";
 import type { Identifier } from "./identifier";
 import type { Metadata } from "./metadata";
 import type { NodeDescription } from "./nodeDescription";
+import type { NodeInitialPropsChannel } from "./nodeInitialPropsChannel";
 import type { NodeName } from "./nodeName";
 import type { PostContent } from "./postContent";
 import type { PropertyMutationList } from "./propertyMutationList";
@@ -23,6 +24,8 @@ import type { Visibility } from "./visibility";
 export interface NodeInitialProps {
   asset_ids?: AssetIDs;
   asset_sources?: AssetSourceList;
+  /** @nullable */
+  channel?: NodeInitialPropsChannel;
   content?: PostContent;
   description?: NodeDescription;
   hide_child_tree?: boolean;

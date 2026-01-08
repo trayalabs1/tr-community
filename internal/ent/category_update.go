@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Southclaws/storyden/internal/ent/asset"
 	"github.com/Southclaws/storyden/internal/ent/category"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/predicate"
 	"github.com/rs/xid"
@@ -169,6 +170,20 @@ func (_u *CategoryUpdate) ClearCoverImageAssetID() *CategoryUpdate {
 	return _u
 }
 
+// SetChannelID sets the "channel_id" field.
+func (_u *CategoryUpdate) SetChannelID(v xid.ID) *CategoryUpdate {
+	_u.mutation.SetChannelID(v)
+	return _u
+}
+
+// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
+func (_u *CategoryUpdate) SetNillableChannelID(v *xid.ID) *CategoryUpdate {
+	if v != nil {
+		_u.SetChannelID(*v)
+	}
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *CategoryUpdate) SetMetadata(v map[string]interface{}) *CategoryUpdate {
 	_u.mutation.SetMetadata(v)
@@ -249,6 +264,11 @@ func (_u *CategoryUpdate) SetCoverImage(v *Asset) *CategoryUpdate {
 	return _u.SetCoverImageID(v.ID)
 }
 
+// SetChannel sets the "channel" edge to the Channel entity.
+func (_u *CategoryUpdate) SetChannel(v *Channel) *CategoryUpdate {
+	return _u.SetChannelID(v.ID)
+}
+
 // Mutation returns the CategoryMutation object of the builder.
 func (_u *CategoryUpdate) Mutation() *CategoryMutation {
 	return _u.mutation
@@ -308,6 +328,12 @@ func (_u *CategoryUpdate) ClearCoverImage() *CategoryUpdate {
 	return _u
 }
 
+// ClearChannel clears the "channel" edge to the Channel entity.
+func (_u *CategoryUpdate) ClearChannel() *CategoryUpdate {
+	_u.mutation.ClearChannel()
+	return _u
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *CategoryUpdate) Save(ctx context.Context) (int, error) {
 	_u.defaults()
@@ -344,6 +370,14 @@ func (_u *CategoryUpdate) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *CategoryUpdate) check() error {
+	if _u.mutation.ChannelCleared() && len(_u.mutation.ChannelIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Category.channel"`)
+	}
+	return nil
+}
+
 // Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
 func (_u *CategoryUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *CategoryUpdate {
 	_u.modifiers = append(_u.modifiers, modifiers...)
@@ -351,6 +385,9 @@ func (_u *CategoryUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *Categ
 }
 
 func (_u *CategoryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(category.Table, category.Columns, sqlgraph.NewFieldSpec(category.FieldID, field.TypeString))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -537,6 +574,35 @@ func (_u *CategoryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ChannelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   category.ChannelTable,
+			Columns: []string{category.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ChannelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   category.ChannelTable,
+			Columns: []string{category.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -696,6 +762,20 @@ func (_u *CategoryUpdateOne) ClearCoverImageAssetID() *CategoryUpdateOne {
 	return _u
 }
 
+// SetChannelID sets the "channel_id" field.
+func (_u *CategoryUpdateOne) SetChannelID(v xid.ID) *CategoryUpdateOne {
+	_u.mutation.SetChannelID(v)
+	return _u
+}
+
+// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
+func (_u *CategoryUpdateOne) SetNillableChannelID(v *xid.ID) *CategoryUpdateOne {
+	if v != nil {
+		_u.SetChannelID(*v)
+	}
+	return _u
+}
+
 // SetMetadata sets the "metadata" field.
 func (_u *CategoryUpdateOne) SetMetadata(v map[string]interface{}) *CategoryUpdateOne {
 	_u.mutation.SetMetadata(v)
@@ -776,6 +856,11 @@ func (_u *CategoryUpdateOne) SetCoverImage(v *Asset) *CategoryUpdateOne {
 	return _u.SetCoverImageID(v.ID)
 }
 
+// SetChannel sets the "channel" edge to the Channel entity.
+func (_u *CategoryUpdateOne) SetChannel(v *Channel) *CategoryUpdateOne {
+	return _u.SetChannelID(v.ID)
+}
+
 // Mutation returns the CategoryMutation object of the builder.
 func (_u *CategoryUpdateOne) Mutation() *CategoryMutation {
 	return _u.mutation
@@ -835,6 +920,12 @@ func (_u *CategoryUpdateOne) ClearCoverImage() *CategoryUpdateOne {
 	return _u
 }
 
+// ClearChannel clears the "channel" edge to the Channel entity.
+func (_u *CategoryUpdateOne) ClearChannel() *CategoryUpdateOne {
+	_u.mutation.ClearChannel()
+	return _u
+}
+
 // Where appends a list predicates to the CategoryUpdate builder.
 func (_u *CategoryUpdateOne) Where(ps ...predicate.Category) *CategoryUpdateOne {
 	_u.mutation.Where(ps...)
@@ -884,6 +975,14 @@ func (_u *CategoryUpdateOne) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *CategoryUpdateOne) check() error {
+	if _u.mutation.ChannelCleared() && len(_u.mutation.ChannelIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Category.channel"`)
+	}
+	return nil
+}
+
 // Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
 func (_u *CategoryUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *CategoryUpdateOne {
 	_u.modifiers = append(_u.modifiers, modifiers...)
@@ -891,6 +990,9 @@ func (_u *CategoryUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *Ca
 }
 
 func (_u *CategoryUpdateOne) sqlSave(ctx context.Context) (_node *Category, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(category.Table, category.Columns, sqlgraph.NewFieldSpec(category.FieldID, field.TypeString))
 	id, ok := _u.mutation.ID()
 	if !ok {
@@ -1087,6 +1189,35 @@ func (_u *CategoryUpdateOne) sqlSave(ctx context.Context) (_node *Category, err 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ChannelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   category.ChannelTable,
+			Columns: []string{category.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ChannelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   category.ChannelTable,
+			Columns: []string{category.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

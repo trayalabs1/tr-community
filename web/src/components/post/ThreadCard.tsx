@@ -30,13 +30,18 @@ import { useThreadCardModeration } from "./useThreadCardModeration";
 type Props = {
   thread: ThreadReference;
   hideCategoryBadge?: boolean;
+  channelID?: string;
 };
 
 export const ThreadReferenceCard = memo(
-  ({ thread, hideCategoryBadge = false }: Props) => {
+  ({ thread, hideCategoryBadge = false, channelID }: Props) => {
     const session = useSession();
     const isDraft = thread.visibility === Visibility.draft;
-    const permalink = isDraft ? `/new?id=${thread.id}` : `/t/${thread.slug}`;
+    const permalink = isDraft
+      ? `/new?id=${thread.id}`
+      : channelID
+        ? `/channels/${channelID}/threads/${thread.slug}`
+        : `/t/${thread.slug}`;
     const isModerator = hasPermission(
       session,
       Permission.MANAGE_POSTS,

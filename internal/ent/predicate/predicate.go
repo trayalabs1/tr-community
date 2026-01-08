@@ -24,6 +24,12 @@ type Authentication func(*sql.Selector)
 // Category is the predicate function for category builders.
 type Category func(*sql.Selector)
 
+// Channel is the predicate function for channel builders.
+type Channel func(*sql.Selector)
+
+// ChannelMembership is the predicate function for channelmembership builders.
+type ChannelMembership func(*sql.Selector)
+
 // Collection is the predicate function for collection builders.
 type Collection func(*sql.Selector)
 

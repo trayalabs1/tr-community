@@ -8,6 +8,7 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
  * OpenAPI spec version: v1.25.13-canary
  */
 import type {
+  ChannelCollectionListParams,
   CollectionAddNodeOKResponse,
   CollectionAddPostOKResponse,
   CollectionCreateBody,
@@ -21,6 +22,163 @@ import type {
   CollectionUpdateOKResponse,
 } from "../openapi-schema";
 import { fetcher } from "../server";
+
+/**
+ * Create a collection within a channel for curating posts.
+ */
+export type channelCollectionCreateResponse = {
+  data: CollectionCreateOKResponse;
+  status: number;
+};
+
+export const getChannelCollectionCreateUrl = (channelID: string) => {
+  return `/channels/${channelID}/collections`;
+};
+
+export const channelCollectionCreate = async (
+  channelID: string,
+  collectionCreateBody: CollectionCreateBody,
+  options?: RequestInit,
+): Promise<channelCollectionCreateResponse> => {
+  return fetcher<Promise<channelCollectionCreateResponse>>(
+    getChannelCollectionCreateUrl(channelID),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(collectionCreateBody),
+    },
+  );
+};
+
+/**
+ * Get a list of collections within a channel.
+ */
+export type channelCollectionListResponse = {
+  data: CollectionListOKResponse;
+  status: number;
+};
+
+export const getChannelCollectionListUrl = (
+  channelID: string,
+  params?: ChannelCollectionListParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/channels/${channelID}/collections?${normalizedParams.toString()}`
+    : `/channels/${channelID}/collections`;
+};
+
+export const channelCollectionList = async (
+  channelID: string,
+  params?: ChannelCollectionListParams,
+  options?: RequestInit,
+): Promise<channelCollectionListResponse> => {
+  return fetcher<Promise<channelCollectionListResponse>>(
+    getChannelCollectionListUrl(channelID, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Get a collection by its ID within a channel.
+ */
+export type channelCollectionGetResponse = {
+  data: CollectionGetOKResponse;
+  status: number;
+};
+
+export const getChannelCollectionGetUrl = (
+  channelID: string,
+  collectionMark: string,
+) => {
+  return `/channels/${channelID}/collections/${collectionMark}`;
+};
+
+export const channelCollectionGet = async (
+  channelID: string,
+  collectionMark: string,
+  options?: RequestInit,
+): Promise<channelCollectionGetResponse> => {
+  return fetcher<Promise<channelCollectionGetResponse>>(
+    getChannelCollectionGetUrl(channelID, collectionMark),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Update a collection within a channel.
+ */
+export type channelCollectionUpdateResponse = {
+  data: CollectionUpdateOKResponse;
+  status: number;
+};
+
+export const getChannelCollectionUpdateUrl = (
+  channelID: string,
+  collectionMark: string,
+) => {
+  return `/channels/${channelID}/collections/${collectionMark}`;
+};
+
+export const channelCollectionUpdate = async (
+  channelID: string,
+  collectionMark: string,
+  collectionUpdateBody: CollectionUpdateBody,
+  options?: RequestInit,
+): Promise<channelCollectionUpdateResponse> => {
+  return fetcher<Promise<channelCollectionUpdateResponse>>(
+    getChannelCollectionUpdateUrl(channelID, collectionMark),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(collectionUpdateBody),
+    },
+  );
+};
+
+/**
+ * Delete a collection within a channel.
+ */
+export type channelCollectionDeleteResponse = {
+  data: void;
+  status: number;
+};
+
+export const getChannelCollectionDeleteUrl = (
+  channelID: string,
+  collectionMark: string,
+) => {
+  return `/channels/${channelID}/collections/${collectionMark}`;
+};
+
+export const channelCollectionDelete = async (
+  channelID: string,
+  collectionMark: string,
+  options?: RequestInit,
+): Promise<channelCollectionDeleteResponse> => {
+  return fetcher<Promise<channelCollectionDeleteResponse>>(
+    getChannelCollectionDeleteUrl(channelID, collectionMark),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
 
 /**
  * Create a collection for curating posts under the authenticated account.

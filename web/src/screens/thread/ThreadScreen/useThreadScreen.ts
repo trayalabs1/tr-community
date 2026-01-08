@@ -26,6 +26,8 @@ export type Props = {
   initialPage?: number;
   slug: string;
   thread: ThreadGetResponse;
+  channelID?: string;
+  channelName?: string;
 };
 
 export const FormSchema = z.object({

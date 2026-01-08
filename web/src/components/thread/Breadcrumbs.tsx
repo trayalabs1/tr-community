@@ -14,13 +14,22 @@ import { DiscussionRoute } from "../site/Navigation/Anchors/Discussion";
 
 type Props = {
   thread?: Thread;
+  channelID?: string;
+  channelName?: string;
 };
 
 type Breadcrumb =
   | {
+      type: "channel";
+      key: string;
+      channelID: string;
+      channelName: string;
+    }
+  | {
       type: "category";
       key: string;
       category: CategoryReference;
+      channelID?: string;
     }
   | {
       type: "thread";
@@ -28,13 +37,25 @@ type Breadcrumb =
       thread: ThreadReference;
     };
 
-export function Breadcrumbs({ thread }: Props) {
+export function Breadcrumbs({ thread, channelID, channelName }: Props) {
+  const channel = channelID && channelName
+    ? [
+        {
+          type: "channel" as const,
+          key: channelID,
+          channelID: channelID,
+          channelName: channelName,
+        },
+      ]
+    : [];
+
   const category = thread?.category
     ? [
         {
           type: "category" as const,
           key: thread.category.id,
           category: thread.category,
+          channelID: channelID,
         },
       ]
     : [];
@@ -42,6 +63,7 @@ export function Breadcrumbs({ thread }: Props) {
   // This is a list as we may do nested categories in future.
   const crumbs: Breadcrumb[] = thread
     ? [
+        ...channel,
         ...category,
         {
           type: "thread",
@@ -85,8 +107,7 @@ export function Breadcrumbs({ thread }: Props) {
 
 function BreadcrumbButton({ breadcrumb }: { breadcrumb: Breadcrumb }) {
   switch (breadcrumb.type) {
-    case "category":
-      // TODO: Explore using the CategoryBadge component with subtle colour.
+    case "channel":
       return (
         <LinkButton
           size="xs"
@@ -94,7 +115,25 @@ function BreadcrumbButton({ breadcrumb }: { breadcrumb: Breadcrumb }) {
           flexShrink="0"
           maxW="64"
           overflow="hidden"
-          href={`/d/${breadcrumb.category.slug}`}
+          href={`/channels/${breadcrumb.channelID}`}
+        >
+          {breadcrumb.channelName}
+        </LinkButton>
+      );
+
+    case "category":
+      // TODO: Explore using the CategoryBadge component with subtle colour.
+      const categoryHref = breadcrumb.channelID
+        ? `/channels/${breadcrumb.channelID}/categories/${breadcrumb.category.slug}`
+        : `/d/${breadcrumb.category.slug}`;
+      return (
+        <LinkButton
+          size="xs"
+          variant="subtle"
+          flexShrink="0"
+          maxW="64"
+          overflow="hidden"
+          href={categoryHref}
         >
           {breadcrumb.category.name}
         </LinkButton>

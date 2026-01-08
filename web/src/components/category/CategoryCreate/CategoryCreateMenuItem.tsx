@@ -7,9 +7,10 @@ import { CategoryCreateModal } from "./CategoryCreateModal";
 
 type Props = {
   parentCategory?: Category;
+  channelID?: string;
 };
 
-export function CategoryCreateMenuItem({ parentCategory }: Props) {
+export function CategoryCreateMenuItem({ parentCategory, channelID }: Props) {
   const useDisclosureProps = useDisclosure();
 
   return (
@@ -19,6 +20,7 @@ export function CategoryCreateMenuItem({ parentCategory }: Props) {
       </Item>
       <CategoryCreateModal
         defaultParent={parentCategory?.id}
+        channelID={channelID}
         {...useDisclosureProps}
       />
     </>

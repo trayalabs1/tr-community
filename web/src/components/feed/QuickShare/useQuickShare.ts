@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -15,6 +16,7 @@ export type Props = {
   initialSession?: Account;
   initialCategory?: Category | null;
   showCategorySelect: boolean;
+  channelID?: string;
 };
 
 export const FormSchema = z.object({
@@ -23,7 +25,8 @@ export const FormSchema = z.object({
 });
 export type Form = z.infer<typeof FormSchema>;
 
-export function useQuickShare({ initialCategory }: Props) {
+export function useQuickShare({ initialCategory, channelID }: Props) {
+  const router = useRouter();
   const session = useSession();
   const [editing, setEditing] = useState(false);
   const [postURL, setPostURL] = useState<string | null>(null);
@@ -72,14 +75,19 @@ export function useQuickShare({ initialCategory }: Props) {
     }
   }, [postURL]);
 
-  const { createThread, revalidate } = useFeedMutations(session, {
-    categories:
-      initialCategory === undefined
-        ? undefined
-        : initialCategory === null
-          ? ["null"]
-          : [initialCategory.slug],
-  });
+  const { createThread, revalidate } = useFeedMutations(
+    session,
+    {
+      categories:
+        initialCategory === undefined
+          ? undefined
+          : initialCategory === null
+            ? ["null"]
+            : [initialCategory.slug],
+    },
+    channelID,
+    router,
+  );
 
   const handlePost = form.handleSubmit((data: Form) => {
     handle(

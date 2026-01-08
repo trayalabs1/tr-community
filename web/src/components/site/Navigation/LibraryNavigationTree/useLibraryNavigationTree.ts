@@ -5,20 +5,23 @@ import { NodeListResult, Visibility } from "@/api/openapi-schema";
 import { useSession } from "@/auth";
 import { hasPermission } from "@/utils/permissions";
 
-export type Props = {
+export type LibraryNavigationTreeProps = {
   initialNodeList?: NodeListResult;
   currentNode: string | undefined;
   visibility: Visibility[];
+  channelId?: string;
 };
 
 export function useLibraryNavigationTree({
   visibility,
   initialNodeList,
-}: Props) {
+  channelId,
+}: LibraryNavigationTreeProps) {
   const session = useSession();
   const { data, error } = useNodeList(
     {
       visibility,
+      channel: channelId,
     },
     {
       swr: {

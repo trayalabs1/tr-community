@@ -1,9 +1,10 @@
 import { useNodeList } from "src/api/openapi-client/nodes";
-import { NodeListOKResponse } from "src/api/openapi-schema";
+import { Identifier, NodeListOKResponse } from "src/api/openapi-schema";
 import { useSession } from "src/auth";
 
 export type Props = {
   nodes: NodeListOKResponse;
+  channelID?: Identifier;
 };
 
 export function useLibraryIndexScreen(props: Props) {
@@ -13,7 +14,9 @@ export function useLibraryIndexScreen(props: Props) {
     mutate: mutateNodes,
     error: errorNodes,
   } = useNodeList(
-    {},
+    {
+      channel: props.channelID,
+    },
     {
       swr: {
         fallbackData: props.nodes,

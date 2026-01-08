@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/asset"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/rs/xid"
 )
@@ -34,6 +35,8 @@ type Collection struct {
 	Description *string `json:"description,omitempty"`
 	// CoverAssetID holds the value of the "cover_asset_id" field.
 	CoverAssetID *xid.ID `json:"cover_asset_id,omitempty"`
+	// The channel this collection belongs to
+	ChannelID xid.ID `json:"channel_id,omitempty"`
 	// Visibility holds the value of the "visibility" field.
 	Visibility collection.Visibility `json:"visibility,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -49,6 +52,8 @@ type CollectionEdges struct {
 	Owner *Account `json:"owner,omitempty"`
 	// CoverImage holds the value of the cover_image edge.
 	CoverImage *Asset `json:"cover_image,omitempty"`
+	// Channel holds the value of the channel edge.
+	Channel *Channel `json:"channel,omitempty"`
 	// Posts holds the value of the posts edge.
 	Posts []*Post `json:"posts,omitempty"`
 	// Nodes holds the value of the nodes edge.
@@ -59,7 +64,7 @@ type CollectionEdges struct {
 	CollectionNodes []*CollectionNode `json:"collection_nodes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 }
 
 // OwnerOrErr returns the Owner value or an error if the edge
@@ -84,10 +89,21 @@ func (e CollectionEdges) CoverImageOrErr() (*Asset, error) {
 	return nil, &NotLoadedError{edge: "cover_image"}
 }
 
+// ChannelOrErr returns the Channel value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e CollectionEdges) ChannelOrErr() (*Channel, error) {
+	if e.Channel != nil {
+		return e.Channel, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: channel.Label}
+	}
+	return nil, &NotLoadedError{edge: "channel"}
+}
+
 // PostsOrErr returns the Posts value or an error if the edge
 // was not loaded in eager-loading.
 func (e CollectionEdges) PostsOrErr() ([]*Post, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Posts, nil
 	}
 	return nil, &NotLoadedError{edge: "posts"}
@@ -96,7 +112,7 @@ func (e CollectionEdges) PostsOrErr() ([]*Post, error) {
 // NodesOrErr returns the Nodes value or an error if the edge
 // was not loaded in eager-loading.
 func (e CollectionEdges) NodesOrErr() ([]*Node, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Nodes, nil
 	}
 	return nil, &NotLoadedError{edge: "nodes"}
@@ -105,7 +121,7 @@ func (e CollectionEdges) NodesOrErr() ([]*Node, error) {
 // CollectionPostsOrErr returns the CollectionPosts value or an error if the edge
 // was not loaded in eager-loading.
 func (e CollectionEdges) CollectionPostsOrErr() ([]*CollectionPost, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.CollectionPosts, nil
 	}
 	return nil, &NotLoadedError{edge: "collection_posts"}
@@ -114,7 +130,7 @@ func (e CollectionEdges) CollectionPostsOrErr() ([]*CollectionPost, error) {
 // CollectionNodesOrErr returns the CollectionNodes value or an error if the edge
 // was not loaded in eager-loading.
 func (e CollectionEdges) CollectionNodesOrErr() ([]*CollectionNode, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[6] {
 		return e.CollectionNodes, nil
 	}
 	return nil, &NotLoadedError{edge: "collection_nodes"}
@@ -131,7 +147,7 @@ func (*Collection) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case collection.FieldCreatedAt, collection.FieldUpdatedAt, collection.FieldIndexedAt:
 			values[i] = new(sql.NullTime)
-		case collection.FieldID:
+		case collection.FieldID, collection.FieldChannelID:
 			values[i] = new(xid.ID)
 		case collection.ForeignKeys[0]: // account_collections
 			values[i] = &sql.NullScanner{S: new(xid.ID)}
@@ -201,6 +217,12 @@ func (_m *Collection) assignValues(columns []string, values []any) error {
 				_m.CoverAssetID = new(xid.ID)
 				*_m.CoverAssetID = *value.S.(*xid.ID)
 			}
+		case collection.FieldChannelID:
+			if value, ok := values[i].(*xid.ID); !ok {
+				return fmt.Errorf("unexpected type %T for field channel_id", values[i])
+			} else if value != nil {
+				_m.ChannelID = *value
+			}
 		case collection.FieldVisibility:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field visibility", values[i])
@@ -235,6 +257,11 @@ func (_m *Collection) QueryOwner() *AccountQuery {
 // QueryCoverImage queries the "cover_image" edge of the Collection entity.
 func (_m *Collection) QueryCoverImage() *AssetQuery {
 	return NewCollectionClient(_m.config).QueryCoverImage(_m)
+}
+
+// QueryChannel queries the "channel" edge of the Collection entity.
+func (_m *Collection) QueryChannel() *ChannelQuery {
+	return NewCollectionClient(_m.config).QueryChannel(_m)
 }
 
 // QueryPosts queries the "posts" edge of the Collection entity.
@@ -306,6 +333,9 @@ func (_m *Collection) String() string {
 		builder.WriteString("cover_asset_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("channel_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ChannelID))
 	builder.WriteString(", ")
 	builder.WriteString("visibility=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Visibility))

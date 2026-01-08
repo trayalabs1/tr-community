@@ -38,6 +38,7 @@ export interface LibraryPageTreeProps {
   nodes: NodeWithChildren[];
   currentNode: string | undefined;
   canManageLibrary: boolean;
+  channelId?: string | undefined;
 }
 
 const visibilitySortKey: Record<Visibility, number> = {
@@ -191,6 +192,7 @@ export const LibraryPageTree = (props: LibraryPageTreeProps) => {
                   positionInList={getPositionInList(rootNodes.length, index)}
                   handleExpandNode={handleExpandNode}
                   canManageLibrary={props.canManageLibrary}
+                  channelId={props.channelId}
                 />
               </Fragment>
             );
@@ -212,6 +214,7 @@ type TreeNodeProps = {
   positionInList: PositionInList;
   handleExpandNode: (id: string) => void;
   canManageLibrary: boolean;
+  channelId?: string | undefined;
 };
 
 const linkStyles = css({
@@ -232,6 +235,7 @@ function TreeNode({
   positionInList,
   handleExpandNode,
   canManageLibrary,
+  channelId,
 }: TreeNodeProps) {
   const {
     attributes,
@@ -416,7 +420,11 @@ function TreeNode({
               className={linkStyles}
               onClick={handleLinkClick}
               onTouchStart={handleLinkTouchStart}
-              href={`/l/${node.slug}`}
+              href={
+                channelId
+                  ? `/channels/${channelId}/library/${node.slug}`
+                  : `/l/${node.slug}`
+              }
             >
               {label}
             </Link>
@@ -464,6 +472,7 @@ function TreeNode({
                   )}
                   handleExpandNode={handleExpandNode}
                   canManageLibrary={canManageLibrary}
+                  channelId={channelId}
                 />
               );
             })}

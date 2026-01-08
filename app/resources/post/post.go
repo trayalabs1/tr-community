@@ -26,8 +26,9 @@ type ID xid.ID
 func (u ID) String() string { return xid.ID(u).String() }
 
 type Post struct {
-	ID   ID
-	Root ID // Identical to ID if this is the root.
+	ID        ID
+	Root      ID // Identical to ID if this is the root.
+	ChannelID xid.ID
 
 	Title       string
 	Slug        string
@@ -110,8 +111,9 @@ func Map(in *ent.Post) (*Post, error) {
 	}
 
 	return &Post{
-		ID:   ID(in.ID),
-		Root: rootID,
+		ID:        ID(in.ID),
+		Root:      rootID,
+		ChannelID: in.ChannelID,
 
 		Title:      title,
 		Slug:       slug,

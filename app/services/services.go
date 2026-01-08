@@ -16,6 +16,8 @@ import (
 	"github.com/Southclaws/storyden/app/services/beacon_listener"
 	"github.com/Southclaws/storyden/app/services/branding"
 	"github.com/Southclaws/storyden/app/services/category"
+	"github.com/Southclaws/storyden/app/services/channel"
+	"github.com/Southclaws/storyden/app/services/channel_membership"
 	"github.com/Southclaws/storyden/app/services/collection"
 	"github.com/Southclaws/storyden/app/services/comms"
 	"github.com/Southclaws/storyden/app/services/event"
@@ -51,6 +53,8 @@ func Build() fx.Option {
 		account_suspension.Build(),
 		authentication.Build(),
 		category.Build(),
+		channel.Build(),
+		channel_membership.Build(),
 		thread.Build(),
 		reply.Build(),
 		report.Build(),

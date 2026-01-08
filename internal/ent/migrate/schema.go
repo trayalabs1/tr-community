@@ -205,6 +205,7 @@ var (
 		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
 		{Name: "parent_category_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "cover_image_asset_id", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "channel_id", Type: field.TypeString, Size: 20},
 	}
 	// CategoriesTable holds the schema information for the "categories" table.
 	CategoriesTable = &schema.Table{
@@ -224,6 +225,97 @@ var (
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
+			{
+				Symbol:     "categories_channels_categories",
+				Columns:    []*schema.Column{CategoriesColumns[12]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// ChannelsColumns holds the columns for the "channels" table.
+	ChannelsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "slug", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"public", "private"}, Default: "public"},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "cover_image_asset_id", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "icon_asset_id", Type: field.TypeString, Nullable: true, Size: 20},
+	}
+	// ChannelsTable holds the schema information for the "channels" table.
+	ChannelsTable = &schema.Table{
+		Name:       "channels",
+		Columns:    ChannelsColumns,
+		PrimaryKey: []*schema.Column{ChannelsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "channels_assets_cover_image",
+				Columns:    []*schema.Column{ChannelsColumns[8]},
+				RefColumns: []*schema.Column{AssetsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "channels_assets_icon",
+				Columns:    []*schema.Column{ChannelsColumns[9]},
+				RefColumns: []*schema.Column{AssetsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// ChannelMembershipsColumns holds the columns for the "channel_memberships" table.
+	ChannelMembershipsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "role", Type: field.TypeEnum, Enums: []string{"owner", "admin", "moderator", "member"}, Default: "member"},
+		{Name: "channel_memberships", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "channel_id", Type: field.TypeString, Size: 20},
+		{Name: "account_id", Type: field.TypeString, Size: 20},
+	}
+	// ChannelMembershipsTable holds the schema information for the "channel_memberships" table.
+	ChannelMembershipsTable = &schema.Table{
+		Name:       "channel_memberships",
+		Columns:    ChannelMembershipsColumns,
+		PrimaryKey: []*schema.Column{ChannelMembershipsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "channel_memberships_channels_memberships",
+				Columns:    []*schema.Column{ChannelMembershipsColumns[3]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "channel_memberships_channels_channel",
+				Columns:    []*schema.Column{ChannelMembershipsColumns[4]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "channel_memberships_accounts_account",
+				Columns:    []*schema.Column{ChannelMembershipsColumns[5]},
+				RefColumns: []*schema.Column{AccountsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "unique_channel_member",
+				Unique:  true,
+				Columns: []*schema.Column{ChannelMembershipsColumns[4], ChannelMembershipsColumns[5]},
+			},
+			{
+				Name:    "channelmembership_account_id",
+				Unique:  false,
+				Columns: []*schema.Column{ChannelMembershipsColumns[5]},
+			},
+			{
+				Name:    "channelmembership_channel_id_role",
+				Unique:  false,
+				Columns: []*schema.Column{ChannelMembershipsColumns[4], ChannelMembershipsColumns[2]},
+			},
 		},
 	}
 	// CollectionsColumns holds the columns for the "collections" table.
@@ -237,6 +329,7 @@ var (
 		{Name: "description", Type: field.TypeString, Nullable: true},
 		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"draft", "unlisted", "review", "published"}, Default: "draft"},
 		{Name: "account_collections", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "channel_id", Type: field.TypeString, Size: 20},
 		{Name: "cover_asset_id", Type: field.TypeString, Nullable: true, Size: 20},
 	}
 	// CollectionsTable holds the schema information for the "collections" table.
@@ -252,8 +345,14 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "collections_assets_cover_image",
+				Symbol:     "collections_channels_collections",
 				Columns:    []*schema.Column{CollectionsColumns[9]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "collections_assets_cover_image",
+				Columns:    []*schema.Column{CollectionsColumns[10]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -577,6 +676,7 @@ var (
 		{Name: "sort", Type: field.TypeString},
 		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
 		{Name: "account_id", Type: field.TypeString, Size: 20},
+		{Name: "channel_id", Type: field.TypeString, Size: 20},
 		{Name: "link_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "parent_node_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "primary_asset_id", Type: field.TypeString, Nullable: true, Size: 20},
@@ -595,26 +695,32 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "nodes_links_nodes",
+				Symbol:     "nodes_channels_nodes",
 				Columns:    []*schema.Column{NodesColumns[14]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "nodes_links_nodes",
+				Columns:    []*schema.Column{NodesColumns[15]},
 				RefColumns: []*schema.Column{LinksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "nodes_nodes_nodes",
-				Columns:    []*schema.Column{NodesColumns[15]},
+				Columns:    []*schema.Column{NodesColumns[16]},
 				RefColumns: []*schema.Column{NodesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "nodes_assets_primary_image",
-				Columns:    []*schema.Column{NodesColumns[16]},
+				Columns:    []*schema.Column{NodesColumns[17]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "nodes_property_schemas_node",
-				Columns:    []*schema.Column{NodesColumns[17]},
+				Columns:    []*schema.Column{NodesColumns[18]},
 				RefColumns: []*schema.Column{PropertySchemasColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -676,6 +782,7 @@ var (
 		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"draft", "unlisted", "review", "published"}, Default: "draft"},
 		{Name: "account_posts", Type: field.TypeString, Size: 20},
 		{Name: "category_id", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "channel_id", Type: field.TypeString, Size: 20},
 		{Name: "link_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "root_post_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "reply_to_post_id", Type: field.TypeString, Nullable: true, Size: 20},
@@ -699,20 +806,26 @@ var (
 				OnDelete:   schema.SetNull,
 			},
 			{
-				Symbol:     "posts_links_posts",
+				Symbol:     "posts_channels_posts",
 				Columns:    []*schema.Column{PostsColumns[15]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "posts_links_posts",
+				Columns:    []*schema.Column{PostsColumns[16]},
 				RefColumns: []*schema.Column{LinksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "posts_posts_posts",
-				Columns:    []*schema.Column{PostsColumns[16]},
+				Columns:    []*schema.Column{PostsColumns[17]},
 				RefColumns: []*schema.Column{PostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "posts_posts_replies",
-				Columns:    []*schema.Column{PostsColumns[17]},
+				Columns:    []*schema.Column{PostsColumns[18]},
 				RefColumns: []*schema.Column{PostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -721,17 +834,27 @@ var (
 			{
 				Name:    "post_root_post_id_deleted_at_visibility_last_reply_at",
 				Unique:  false,
-				Columns: []*schema.Column{PostsColumns[16], PostsColumns[3], PostsColumns[12], PostsColumns[8]},
+				Columns: []*schema.Column{PostsColumns[17], PostsColumns[3], PostsColumns[12], PostsColumns[8]},
 			},
 			{
 				Name:    "post_root_post_id_deleted_at_visibility_category_id_last_reply_at",
 				Unique:  false,
-				Columns: []*schema.Column{PostsColumns[16], PostsColumns[3], PostsColumns[12], PostsColumns[14], PostsColumns[8]},
+				Columns: []*schema.Column{PostsColumns[17], PostsColumns[3], PostsColumns[12], PostsColumns[14], PostsColumns[8]},
+			},
+			{
+				Name:    "post_channel_id_deleted_at_visibility_last_reply_at",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[15], PostsColumns[3], PostsColumns[12], PostsColumns[8]},
+			},
+			{
+				Name:    "post_channel_id_deleted_at_visibility_category_id_last_reply_at",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[15], PostsColumns[3], PostsColumns[12], PostsColumns[14], PostsColumns[8]},
 			},
 			{
 				Name:    "post_root_post_id_deleted_at_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{PostsColumns[16], PostsColumns[3], PostsColumns[1]},
+				Columns: []*schema.Column{PostsColumns[17], PostsColumns[3], PostsColumns[1]},
 			},
 		},
 	}
@@ -1228,6 +1351,8 @@ var (
 		AssetsTable,
 		AuthenticationsTable,
 		CategoriesTable,
+		ChannelsTable,
+		ChannelMembershipsTable,
 		CollectionsTable,
 		CollectionNodesTable,
 		CollectionPostsTable,
@@ -1274,8 +1399,15 @@ func init() {
 	AuthenticationsTable.ForeignKeys[0].RefTable = AccountsTable
 	CategoriesTable.ForeignKeys[0].RefTable = CategoriesTable
 	CategoriesTable.ForeignKeys[1].RefTable = AssetsTable
+	CategoriesTable.ForeignKeys[2].RefTable = ChannelsTable
+	ChannelsTable.ForeignKeys[0].RefTable = AssetsTable
+	ChannelsTable.ForeignKeys[1].RefTable = AssetsTable
+	ChannelMembershipsTable.ForeignKeys[0].RefTable = ChannelsTable
+	ChannelMembershipsTable.ForeignKeys[1].RefTable = ChannelsTable
+	ChannelMembershipsTable.ForeignKeys[2].RefTable = AccountsTable
 	CollectionsTable.ForeignKeys[0].RefTable = AccountsTable
-	CollectionsTable.ForeignKeys[1].RefTable = AssetsTable
+	CollectionsTable.ForeignKeys[1].RefTable = ChannelsTable
+	CollectionsTable.ForeignKeys[2].RefTable = AssetsTable
 	CollectionNodesTable.ForeignKeys[0].RefTable = CollectionsTable
 	CollectionNodesTable.ForeignKeys[1].RefTable = NodesTable
 	CollectionPostsTable.ForeignKeys[0].RefTable = CollectionsTable
@@ -1293,17 +1425,19 @@ func init() {
 	MentionProfilesTable.ForeignKeys[0].RefTable = AccountsTable
 	MentionProfilesTable.ForeignKeys[1].RefTable = PostsTable
 	NodesTable.ForeignKeys[0].RefTable = AccountsTable
-	NodesTable.ForeignKeys[1].RefTable = LinksTable
-	NodesTable.ForeignKeys[2].RefTable = NodesTable
-	NodesTable.ForeignKeys[3].RefTable = AssetsTable
-	NodesTable.ForeignKeys[4].RefTable = PropertySchemasTable
+	NodesTable.ForeignKeys[1].RefTable = ChannelsTable
+	NodesTable.ForeignKeys[2].RefTable = LinksTable
+	NodesTable.ForeignKeys[3].RefTable = NodesTable
+	NodesTable.ForeignKeys[4].RefTable = AssetsTable
+	NodesTable.ForeignKeys[5].RefTable = PropertySchemasTable
 	NotificationsTable.ForeignKeys[0].RefTable = AccountsTable
 	NotificationsTable.ForeignKeys[1].RefTable = AccountsTable
 	PostsTable.ForeignKeys[0].RefTable = AccountsTable
 	PostsTable.ForeignKeys[1].RefTable = CategoriesTable
-	PostsTable.ForeignKeys[2].RefTable = LinksTable
-	PostsTable.ForeignKeys[3].RefTable = PostsTable
+	PostsTable.ForeignKeys[2].RefTable = ChannelsTable
+	PostsTable.ForeignKeys[3].RefTable = LinksTable
 	PostsTable.ForeignKeys[4].RefTable = PostsTable
+	PostsTable.ForeignKeys[5].RefTable = PostsTable
 	PostReadsTable.ForeignKeys[0].RefTable = AccountsTable
 	PostReadsTable.ForeignKeys[1].RefTable = PostsTable
 	PropertiesTable.ForeignKeys[0].RefTable = NodesTable

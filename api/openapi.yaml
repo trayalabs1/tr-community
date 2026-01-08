@@ -680,6 +680,27 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "200": { $ref: "#/components/responses/AuthSuccessOK" }
 
+  /auth/traya:
+    post:
+      operationId: AuthTrayaToken
+      description: |
+        Authenticate with a Traya API token. This endpoint verifies the token
+        with the Traya API server, creates or retrieves the user account, and
+        assigns the user to appropriate channels based on their kit count.
+      tags: [auth]
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Traya authentication token
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/AuthSuccessOK" }
+
   /auth/access-keys:
     get:
       operationId: AccessKeyList
@@ -1235,6 +1256,409 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorised" }
         "200": { $ref: "#/components/responses/ProfileFollowingGetOK" }
         "304": { $ref: "#/components/responses/NotModified" }
+
+  #
+  #          888                                        888
+  #          888                                        888
+  #          888                                        888
+  #  .d8888b 88888b.   8888b.  88888b.  88888b.   .d88888 .d8888b
+  # d88P"    888 "88b     "88b 888 "88b 888 "88b d88" 888 88K
+  # 888      888  888 .d888888 888  888 888  888 888  888 "Y8888b.
+  # Y88b.    888  888 888  888 888  888 888  888 Y88b 888      X88
+  #  "Y8888P 888  888 "Y888888 888  888 888  888  "Y88888  88888P'
+  #
+
+  /channels:
+    get:
+      operationId: ChannelList
+      description: Get all channels that the authenticated user has access to.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/ChannelListOK" }
+    post:
+      operationId: ChannelCreate
+      description: Create a new channel. The creator automatically becomes the channel owner.
+      tags: [channels]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelInitialProps"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/ChannelGetOK" }
+
+  /channels/{channelID}:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    get:
+      operationId: ChannelGet
+      description: Get a specific channel by ID.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelGetOK" }
+    patch:
+      operationId: ChannelUpdate
+      description: Update a channel's properties. Requires owner or admin role.
+      tags: [channels]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelMutableProps"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelGetOK" }
+    delete:
+      operationId: ChannelDelete
+      description: Delete a channel. Requires owner role. This will also delete all associated content.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { description: OK }
+
+  /channels/{channelID}/members:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    get:
+      operationId: ChannelMemberList
+      description: List all members of a channel. Requires membership in the channel.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelMemberListOK" }
+    post:
+      operationId: ChannelMemberAdd
+      description: Add a member to a channel. Requires owner or admin role.
+      tags: [channels]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelMemberAdd"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelMemberOK" }
+
+  /channels/{channelID}/members/{accountID}:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+      - $ref: "#/components/parameters/AccountID"
+    patch:
+      operationId: ChannelMemberUpdateRole
+      description: Update a member's role in a channel. Requires owner or admin role.
+      tags: [channels]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelMemberRoleUpdate"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelMemberOK" }
+    delete:
+      operationId: ChannelMemberRemove
+      description: Remove a member from a channel. Requires owner or admin role.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { description: OK }
+
+  /channels/{channelID}/join:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    post:
+      operationId: ChannelJoin
+      description: Join a public channel as a member. Only works for public channels.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelMemberOK" }
+
+  /channels/{channelID}/leave:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    post:
+      operationId: ChannelLeave
+      description: Leave a channel. Cannot leave if you are the only owner.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { description: OK }
+
+  /channels/{channelID}/categories:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    get:
+      operationId: ChannelCategoryList
+      description: Get all categories in a channel.
+      tags: [channels, categories]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "200": { $ref: "#/components/responses/CategoryListOK" }
+    post:
+      operationId: ChannelCategoryCreate
+      description: Create a category in a channel.
+      tags: [channels, categories]
+      requestBody: { $ref: "#/components/requestBodies/CategoryCreate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "200": { $ref: "#/components/responses/CategoryCreateOK" }
+
+  /channels/{channelID}/categories/{category_slug}:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+      - $ref: "#/components/parameters/CategorySlugParam"
+    get:
+      operationId: ChannelCategoryGet
+      description: Get a specific category in a channel.
+      tags: [channels, categories]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "304": { $ref: "#/components/responses/NotModified" }
+        "200": { $ref: "#/components/responses/CategoryGetOK" }
+    patch:
+      operationId: ChannelCategoryUpdate
+      description: Update a category in a channel.
+      tags: [channels, categories]
+      requestBody: { $ref: "#/components/requestBodies/CategoryUpdate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/CategoryUpdateOK" }
+    delete:
+      operationId: ChannelCategoryDelete
+      description: Delete a category. Posts will be moved to target category.
+      tags: [channels, categories]
+      requestBody: { $ref: "#/components/requestBodies/CategoryDelete" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/CategoryDeleteOK" }
+
+  /channels/{channelID}/categories/{category_slug}/position:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+      - $ref: "#/components/parameters/CategorySlugParam"
+    patch:
+      operationId: ChannelCategoryUpdatePosition
+      description: Update category position in the tree for drag-and-drop.
+      tags: [channels, categories]
+      requestBody: { $ref: "#/components/requestBodies/CategoryUpdatePosition" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/CategoryListOK" }
+
+  /channels/{channelID}/threads:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    post:
+      operationId: ChannelThreadCreate
+      description: Create a new thread within a channel category.
+      tags: [channels, threads]
+      requestBody: { $ref: "#/components/requestBodies/ThreadCreate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadCreateOK" }
+    get:
+      operationId: ChannelThreadList
+      description: Get a list of threads in a channel.
+      tags: [channels, threads]
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PaginationQuery"
+        - name: author
+          description: Show only results created by this user.
+          required: false
+          in: query
+          schema: { $ref: "#/components/schemas/AccountHandle" }
+        - $ref: "#/components/parameters/VisibilityParam"
+        - name: tags
+          description: Show only results with these tags
+          required: false
+          in: query
+          schema: { $ref: "#/components/schemas/TagListIDs" }
+        - $ref: "#/components/parameters/CategorySlugListQuery"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadListOK" }
+
+  /channels/{channelID}/threads/{thread_mark}:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+      - $ref: "#/components/parameters/ThreadMarkParam"
+    get:
+      operationId: ChannelThreadGet
+      summary: Get a thread from a channel.
+      description: Get information about a thread in a channel including its posts.
+      tags: [channels, threads]
+      parameters:
+        - $ref: "#/components/parameters/PaginationQuery"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadGet" }
+        "304": { $ref: "#/components/responses/NotModified" }
+    patch:
+      operationId: ChannelThreadUpdate
+      description: Update a thread in a channel.
+      tags: [channels, threads]
+      requestBody: { $ref: "#/components/requestBodies/ThreadUpdate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadUpdateOK" }
+    delete:
+      operationId: ChannelThreadDelete
+      description: Delete a thread in a channel.
+      tags: [channels, threads]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { description: OK }
+
+  /channels/{channelID}/threads/{thread_mark}/replies:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+      - $ref: "#/components/parameters/ThreadMarkParam"
+    post:
+      operationId: ChannelReplyCreate
+      description: Create a new reply within a thread in a channel.
+      tags: [channels, threads, replies]
+      requestBody: { $ref: "#/components/requestBodies/ReplyCreate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ReplyCreateOK" }
+
+  /channels/{channelID}/collections:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    post:
+      operationId: ChannelCollectionCreate
+      description: Create a collection within a channel for curating posts.
+      tags: [channels, collections]
+      requestBody: { $ref: "#/components/requestBodies/CollectionCreate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/CollectionCreateOK" }
+    get:
+      operationId: ChannelCollectionList
+      description: Get a list of collections within a channel.
+      tags: [channels, collections]
+      parameters:
+        - { $ref: "#/components/parameters/AccountHandleQueryParam" }
+        - { $ref: "#/components/parameters/CollectionHasItemQueryParam" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/CollectionListOK" }
+
+  /channels/{channelID}/collections/{collection_mark}:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+      - $ref: "#/components/parameters/CollectionMarkParam"
+    get:
+      operationId: ChannelCollectionGet
+      description: Get a collection by its ID within a channel.
+      tags: [channels, collections]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/CollectionGetOK" }
+    patch:
+      operationId: ChannelCollectionUpdate
+      description: Update a collection within a channel.
+      tags: [channels, collections]
+      requestBody: { $ref: "#/components/requestBodies/CollectionUpdate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/CollectionUpdateOK" }
+    delete:
+      operationId: ChannelCollectionDelete
+      description: Delete a collection within a channel.
+      tags: [channels, collections]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { description: OK }
 
   #
   #                   888                                      d8b
@@ -1821,6 +2245,11 @@ paths:
       parameters:
         - $ref: "#/components/parameters/SearchQuery"
         - $ref: "#/components/parameters/PaginationQuery"
+        - name: channel
+          description: Filter nodes by channel ID.
+          required: false
+          in: query
+          schema: { $ref: "#/components/schemas/Identifier" }
         - name: node_id
           description: List this node and all child nodes.
           required: false
@@ -2403,6 +2832,22 @@ components:
       description: Access key ID.
       in: path
       name: access_key_id
+      required: true
+      schema:
+        $ref: "#/components/schemas/Identifier"
+
+    ChannelID:
+      description: Channel ID.
+      in: path
+      name: channelID
+      required: true
+      schema:
+        $ref: "#/components/schemas/Identifier"
+
+    AccountID:
+      description: Account ID.
+      in: path
+      name: accountID
       required: true
       schema:
         $ref: "#/components/schemas/Identifier"
@@ -3387,6 +3832,34 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Category"
+
+    ChannelListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ChannelListResult"
+
+    ChannelGetOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Channel"
+
+    ChannelMemberListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ChannelMemberListResult"
+
+    ChannelMemberOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ChannelMember"
 
     CategoryListOK:
       description: OK
@@ -5209,6 +5682,181 @@ components:
 
     #
     #  .d8888b.           888
+    #  .d8888b 888                                        888
+    # d88P  Y88b888                                        888
+    # 888    888888                                        888
+    # 888       88888b.  8888b. 88888b. 88888b.  .d88b. 888 .d8888b
+    # 888       888 "88b    "88b888 "88b888 "88bd8P  Y8b888 88K
+    # 888    888888  888.d888888888  888888  88888888888888 "Y8888b.
+    # Y88b  d88P888  888888  888888  888888  888Y8b.    888      X88
+    #  "Y8888P" 888  888"Y888888888  888888  888 "Y8888 888  88888P'
+    #
+
+    Channel:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/CommonProperties"
+        - type: object
+          required: [name, slug, description, visibility]
+          properties:
+            name:
+              type: string
+              description: The display name of the channel
+            slug:
+              type: string
+              description: URL-friendly identifier for the channel
+            description:
+              type: string
+              description: Description of the channel's purpose
+            visibility:
+              type: string
+              enum: [public, private]
+              description: Channel visibility - public channels are discoverable, private are invite-only
+            cover_image:
+              $ref: "#/components/schemas/Asset"
+            icon:
+              $ref: "#/components/schemas/Asset"
+            meta:
+              $ref: "#/components/schemas/Metadata"
+
+    ChannelReference:
+      type: object
+      description: A minimal reference to a channel.
+      required: [id, name, slug]
+      properties:
+        id: { $ref: "#/components/schemas/Identifier" }
+        name:
+          type: string
+          description: The display name of the channel
+        slug:
+          type: string
+          description: URL-friendly identifier for the channel
+
+    ChannelList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Channel"
+
+    ChannelListResult:
+      type: object
+      required: [channels]
+      properties:
+        channels:
+          $ref: "#/components/schemas/ChannelList"
+
+    ChannelInitialProps:
+      type: object
+      required: [name, slug, description]
+      properties:
+        name:
+          type: string
+          description: The display name of the channel
+          minLength: 1
+          maxLength: 100
+        slug:
+          type: string
+          description: URL-friendly identifier for the channel
+          minLength: 1
+          maxLength: 100
+          pattern: "^[a-z0-9-]+$"
+        description:
+          type: string
+          description: Description of the channel's purpose
+          maxLength: 500
+        visibility:
+          type: string
+          enum: [public, private]
+          default: public
+          description: Channel visibility - public channels are discoverable, private are invite-only
+
+    ChannelMutableProps:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The display name of the channel
+          minLength: 1
+          maxLength: 100
+        slug:
+          type: string
+          description: URL-friendly identifier for the channel
+          minLength: 1
+          maxLength: 100
+          pattern: "^[a-z0-9-]+$"
+        description:
+          type: string
+          description: Description of the channel's purpose
+          maxLength: 500
+        visibility:
+          type: string
+          enum: [public, private]
+          description: Channel visibility
+        cover_image:
+          type: string
+          description: Asset ID for cover image. Set to null to remove.
+          nullable: true
+        icon:
+          type: string
+          description: Asset ID for icon. Set to null to remove.
+          nullable: true
+
+    ChannelMember:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/CommonProperties"
+        - type: object
+          required: [channel_id, account, role]
+          properties:
+            channel_id:
+              $ref: "#/components/schemas/Identifier"
+              description: The channel this membership belongs to
+            account:
+              $ref: "#/components/schemas/ProfileReference"
+              description: The account that is a member
+            role:
+              type: string
+              enum: [owner, admin, moderator, member]
+              description: >
+                The role of the member in the channel.
+                - owner: Full control, can delete channel
+                - admin: Can manage members and settings
+                - moderator: Can moderate content
+                - member: Basic membership
+
+    ChannelMemberList:
+      type: array
+      items:
+        $ref: "#/components/schemas/ChannelMember"
+
+    ChannelMemberListResult:
+      type: object
+      required: [members]
+      properties:
+        members:
+          $ref: "#/components/schemas/ChannelMemberList"
+
+    ChannelMemberAdd:
+      type: object
+      required: [account_id, role]
+      properties:
+        account_id:
+          $ref: "#/components/schemas/Identifier"
+          description: The account ID to add as a member
+        role:
+          type: string
+          enum: [admin, moderator, member]
+          default: member
+          description: The role to assign to the new member. Cannot assign owner role.
+
+    ChannelMemberRoleUpdate:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [owner, admin, moderator, member]
+          description: The new role for the member
+
     # d88P  Y88b          888
     # 888    888          888
     # 888         8888b.  888888 .d88b.   .d88b.   .d88b.  888d888 888  888
@@ -6066,6 +6714,7 @@ components:
         - assets
         - description
         - owner
+        - channel
         - hide_child_tree
         - tags
         - visibility
@@ -6079,6 +6728,7 @@ components:
         primary_image: { $ref: "#/components/schemas/Asset" }
         content: { $ref: "#/components/schemas/PostContent" }
         owner: { $ref: "#/components/schemas/ProfileReference" }
+        channel: { $ref: "#/components/schemas/ChannelReference" }
         parent: { $ref: "#/components/schemas/Node" }
         hide_child_tree:
           description: |
@@ -6121,6 +6771,10 @@ components:
         description: { $ref: "#/components/schemas/NodeDescription" }
         primary_image_asset_id: { $ref: "#/components/schemas/AssetID" }
         content: { $ref: "#/components/schemas/PostContent" }
+        channel:
+          allOf:
+            - { $ref: "#/components/schemas/Identifier" }
+          nullable: true
         parent: { $ref: "#/components/schemas/NodeSlug" }
         hide_child_tree:
           type: boolean
@@ -6146,6 +6800,7 @@ components:
         primary_image_asset_id:
           { $ref: "#/components/schemas/NullableIdentifier" }
         content: { $ref: "#/components/schemas/PostContent" }
+        channel: { $ref: "#/components/schemas/Slug" }
         parent: { $ref: "#/components/schemas/NodeSlug" }
         hide_child_tree:
           type: boolean

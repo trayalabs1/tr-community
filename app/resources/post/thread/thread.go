@@ -95,9 +95,18 @@ func Map(m *ent.Post) (*Thread, error) {
 
 	tags := dt.Map(m.Edges.Tags, tag_ref.Map(nil))
 
+	rootID := func() post.ID {
+		if m.RootPostID == nil {
+			return post.ID(m.ID)
+		}
+		return post.ID(*m.RootPostID)
+	}()
+
 	return &Thread{
 		Post: post.Post{
-			ID: post.ID(m.ID),
+			ID:        post.ID(m.ID),
+			Root:      rootID,
+			ChannelID: m.ChannelID,
 
 			Content:    content,
 			Author:     *pro,
@@ -160,9 +169,18 @@ func Mapper(
 
 		reacts := rl[xid.ID(m.ID)]
 
+		rootID := func() post.ID {
+			if m.RootPostID == nil {
+				return post.ID(m.ID)
+			}
+			return post.ID(*m.RootPostID)
+		}()
+
 		return &Thread{
 			Post: post.Post{
-				ID: post.ID(m.ID),
+				ID:        post.ID(m.ID),
+				Root:      rootID,
+				ChannelID: m.ChannelID,
 
 				Content:     content,
 				Author:      *pro,
@@ -193,9 +211,18 @@ func Mapper(
 }
 
 func MapRef(m *ent.Post) *ThreadRef {
+	rootID := func() post.ID {
+		if m.RootPostID == nil {
+			return post.ID(m.ID)
+		}
+		return post.ID(*m.RootPostID)
+	}()
+
 	return &ThreadRef{
 		Post: post.Post{
-			ID: post.ID(m.ID),
+			ID:        post.ID(m.ID),
+			Root:      rootID,
+			ChannelID: m.ChannelID,
 
 			CreatedAt: m.CreatedAt,
 			UpdatedAt: m.UpdatedAt,
@@ -216,9 +243,19 @@ func ItemRef(t *ent.Post) (datagraph.Item, error) {
 		return nil, fault.Wrap(err)
 	}
 
+	rootID := func() post.ID {
+		if t.RootPostID == nil {
+			return post.ID(t.ID)
+		}
+		return post.ID(*t.RootPostID)
+	}()
+
 	return &Thread{
 		Post: post.Post{
-			ID:      post.ID(t.ID),
+			ID:        post.ID(t.ID),
+			Root:      rootID,
+			ChannelID: t.ChannelID,
+
 			Content: content,
 			Meta:    t.Metadata,
 			Author: profile.Ref{

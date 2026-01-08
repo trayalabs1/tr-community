@@ -4,13 +4,19 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { channelThreadCreate } from "src/api/openapi-client/channels";
 import { threadCreate, threadUpdate } from "src/api/openapi-client/threads";
 import { Thread, ThreadInitialProps, Visibility } from "src/api/openapi-schema";
 
 import { handle } from "@/api/client";
 import { NO_CATEGORY_VALUE } from "@/components/category/CategorySelect/useCategorySelect";
 
-export type Props = { editing?: string; initialDraft?: Thread };
+export type Props = {
+  editing?: string;
+  initialDraft?: Thread;
+  channelID?: string;
+  categoryID?: string;
+};
 
 export const FormShapeSchema = z.object({
   title: z.string().default(""),
@@ -21,7 +27,12 @@ export const FormShapeSchema = z.object({
 });
 export type FormShape = z.infer<typeof FormShapeSchema>;
 
-export function useComposeForm({ initialDraft, editing }: Props) {
+export function useComposeForm({
+  initialDraft,
+  editing,
+  channelID,
+  categoryID,
+}: Props) {
   const router = useRouter();
 
   const [isPublishing, setIsPublishing] = useState(false);
@@ -36,8 +47,11 @@ export function useComposeForm({ initialDraft, editing }: Props) {
           body: initialDraft.body,
           tags: initialDraft.tags.map((t) => t.name),
           url: initialDraft.link?.url,
+          category: initialDraft.category?.id,
         }
-      : {},
+      : {
+          category: categoryID,
+        },
   });
 
   const saveDraft = async (data: FormShape) => {
@@ -57,8 +71,13 @@ export function useComposeForm({ initialDraft, editing }: Props) {
     if (editing) {
       await threadUpdate(editing, payload);
     } else {
-      const { id } = await threadCreate(payload);
-      router.push(`/new?id=${id}`);
+      if (channelID) {
+        const { id } = await channelThreadCreate(channelID, payload);
+        router.push(`/new?id=${id}&channel=${channelID}`);
+      } else {
+        const { id } = await threadCreate(payload);
+        router.push(`/new?id=${id}`);
+      }
     }
   };
 
@@ -70,26 +89,26 @@ export function useComposeForm({ initialDraft, editing }: Props) {
       return;
     }
 
+    const payload = {
+      title,
+      body,
+      category: category === NO_CATEGORY_VALUE ? undefined : category,
+      visibility: Visibility.published,
+      tags,
+      url,
+    };
+
     if (editing) {
-      const { slug } = await threadUpdate(editing, {
-        title,
-        body,
-        category: category === NO_CATEGORY_VALUE ? undefined : category,
-        visibility: Visibility.published,
-        tags,
-        url,
-      });
+      const { slug } = await threadUpdate(editing, payload);
       router.push(`/t/${slug}`);
     } else {
-      const { slug } = await threadCreate({
-        title,
-        body,
-        category: category === NO_CATEGORY_VALUE ? undefined : category,
-        visibility: Visibility.published,
-        tags,
-        url,
-      });
-      router.push(`/t/${slug}`);
+      if (channelID) {
+        await channelThreadCreate(channelID, payload);
+        router.push(`/channels/${channelID}`);
+      } else {
+        const { slug } = await threadCreate(payload);
+        router.push(`/t/${slug}`);
+      }
     }
   };
 

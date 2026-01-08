@@ -27,6 +27,7 @@ func (r *Repository) Add(ctx context.Context,
 	accountID account.AccountID,
 	email mail.Address,
 	code string,
+	verified bool,
 ) (*account.EmailAddress, error) {
 	// Check for unclaimed but existing email addresses. Email addresses may be
 	// added by admins or integrations for newsletters without being associated
@@ -45,7 +46,8 @@ func (r *Repository) Add(ctx context.Context,
 		// Already claimed by this account, update the record
 		update := r.db.Email.UpdateOne(existing).
 			Where(email_ent.EmailAddress(email.Address)).
-			SetVerificationCode(code)
+			SetVerificationCode(code).
+			SetVerified(verified)
 
 		if existing.AccountID == nil {
 			update.SetAccountID(xid.ID(accountID))
@@ -64,7 +66,8 @@ func (r *Repository) Add(ctx context.Context,
 	create := r.db.Email.Create().
 		SetAccountID(xid.ID(accountID)).
 		SetEmailAddress(email.Address).
-		SetVerificationCode(code)
+		SetVerificationCode(code).
+		SetVerified(verified)
 
 	result, err := create.Save(ctx)
 	if err != nil {

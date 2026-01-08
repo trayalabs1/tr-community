@@ -34,6 +34,7 @@ type Partial struct {
 	Description       opt.Optional[string]
 	Colour            opt.Optional[string]
 	Parent            opt.Optional[category.CategoryID]
+	ChannelID         opt.Optional[xid.ID]
 	CoverImageAssetID deletable.Value[*xid.ID]
 	Meta              opt.Optional[map[string]any]
 }
@@ -77,6 +78,10 @@ func (s *service) Create(ctx context.Context, partial Partial) (*category.Catego
 		opts = append(opts, category.WithParent(&pid))
 	}
 
+	if v, ok := partial.ChannelID.Get(); ok {
+		opts = append(opts, category.WithChannelID(v))
+	}
+
 	if v, ok := partial.Slug.Get(); ok {
 		opts = append(opts, category.WithSlug(v))
 	}
@@ -105,7 +110,12 @@ func (s *service) Create(ctx context.Context, partial Partial) (*category.Catego
 		return nil, fault.Wrap(errInvalidCategoryCreate, fctx.With(ctx), fmsg.WithDesc("missing colour", "Category colour is required."))
 	}
 
-	cat, err := s.category_repo.CreateCategory(ctx, name, description, colour, 0, false, opts...)
+	channelID, ok := partial.ChannelID.Get()
+	if !ok {
+		return nil, fault.Wrap(errInvalidCategoryCreate, fctx.With(ctx), fmsg.WithDesc("missing channel_id", "Channel ID is required."))
+	}
+
+	cat, err := s.category_repo.CreateCategory(ctx, name, description, colour, 0, false, channelID, opts...)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}

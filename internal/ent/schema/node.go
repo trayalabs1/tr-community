@@ -33,6 +33,9 @@ func (Node) Fields() []ent.Field {
 			}),
 		),
 		field.String("account_id").GoType(xid.ID{}),
+		field.String("channel_id").
+			GoType(xid.ID{}).
+			Comment("The channel this node belongs to"),
 		field.String("property_schema_id").GoType(xid.ID{}).Optional().Nillable(),
 		field.String("primary_asset_id").GoType(xid.ID{}).Optional().Nillable(),
 		field.String("link_id").GoType(xid.ID{}).Optional(),
@@ -55,6 +58,12 @@ func (Node) Edges() []ent.Edge {
 		edge.From("owner", Account.Type).
 			Ref("nodes").
 			Field("account_id").
+			Unique().
+			Required(),
+
+		edge.From("channel", Channel.Type).
+			Field("channel_id").
+			Ref("nodes").
 			Unique().
 			Required(),
 
