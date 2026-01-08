@@ -1,7 +1,8 @@
 import { z } from "zod";
 
-export const DEFAULT_API_ADDRESS = "http://localhost:8000";
-export const DEFAULT_WEB_ADDRESS = "http://localhost:3000";
+export const DEFAULT_API_ADDRESS = "https://discourse-api.dev.hav-g.in";
+
+export const DEFAULT_WEB_ADDRESS = "https://discourse.dev.hav-g.in";
 
 export const ConfigSchema = z.object({
   API_ADDRESS: z.string(),
