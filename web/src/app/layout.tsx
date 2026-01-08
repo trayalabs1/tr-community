@@ -14,8 +14,6 @@ import "./global.css";
 
 import { Providers } from "./providers";
 
-const { API_ADDRESS, WEB_ADDRESS } = serverEnvironment();
-
 export default async function RootLayout({ children }: PropsWithChildren) {
   const session = await getServerSession();
   const settings = await getSettings();
@@ -37,14 +35,14 @@ export default async function RootLayout({ children }: PropsWithChildren) {
         {/*
           NOTE: Because the browser side does not support dynamic environment
           variables (obviously, it's a browser script) we hack around Next.js'
-          build-time variables by providing a direct reference to these inside
-          the window object. This allows us to set the API/frontend addresses
-          without rebuilding the entire app.
+          build-time variables by loading a dynamic script that sets the
+          API_ADDRESS and WEB_ADDRESS. The script is served from /config.js
+          which is a dynamic route that reads env vars at request time.
+
+          This must be a blocking script (no async/defer) to ensure it executes
+          before any React code that might try to read the config.
         */}
-        <script>{`
-          window.__storyden__ = {"API_ADDRESS":"${API_ADDRESS}", "WEB_ADDRESS":"${WEB_ADDRESS}", "source": "script"};
-          console.log("set up window config", window.__storyden__);
-        `}</script>
+        <script src="/config.js" />
 
         {/*
             NOTE: This stylesheet is fully server-side rendered but it's not
@@ -80,6 +78,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const iconURL = getIconURL("512x512");
 
+  const { WEB_ADDRESS } = serverEnvironment();
   const canonical = WEB_ADDRESS;
 
   // TODO: Add another settings field for this.
