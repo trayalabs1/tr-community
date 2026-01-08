@@ -88,18 +88,20 @@ export function ContentNavigationList(props: Props) {
           selectedChannelID={selectedChannelId}
           onChannelSelect={setSelectedChannelId}
         />
-        <div
-          className={css({
-            mt: "4",
-            mb: "4",
-            bg: "border.default",
-          })}
-          style={{
-            width: "calc(100% + 2rem)",
-            marginLeft: "calc(-1rem)",
-            height: "0.5px",
-          }}
-        />
+        {channelListData?.channels && channelListData.channels.length > 0 && (
+          <div
+            className={css({
+              mt: "4",
+              mb: "4",
+              bg: "border.default",
+            })}
+            style={{
+              width: "calc(100% + 2rem)",
+              marginLeft: "calc(-1rem)",
+              height: "0.5px",
+            }}
+          />
+        )}
         {selectedChannelId && selectedChannelCategories && (
           <div
             style={{
