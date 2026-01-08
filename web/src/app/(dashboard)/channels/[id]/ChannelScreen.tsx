@@ -11,6 +11,7 @@ import {
 } from "@/api/openapi-client/channels";
 import { Account, Channel } from "@/api/openapi-schema";
 import { CategoryCreateTrigger } from "@/components/category/CategoryCreate/CategoryCreateTrigger";
+import { ThreadCreateTrigger } from "@/components/thread/ThreadCreate/ThreadCreateTrigger";
 import { ThreadReferenceCard } from "@/components/post/ThreadCard";
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
@@ -128,9 +129,7 @@ export function ChannelScreen(props: Props) {
           <Heading as="h2" size="lg">
             Threads
           </Heading>
-          <Button asChild size="sm">
-            <Link href={`/new?channel=${props.channel.id}`}>New Thread</Link>
-          </Button>
+          <ThreadCreateTrigger channelID={props.channel.id} />
         </HStack>
 
         {isThreadsLoading && !threads ? (

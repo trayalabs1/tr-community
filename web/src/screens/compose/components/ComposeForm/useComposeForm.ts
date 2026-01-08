@@ -16,6 +16,7 @@ export type Props = {
   initialDraft?: Thread;
   channelID?: string;
   categoryID?: string;
+  onSuccess?: () => void;
 };
 
 export const FormShapeSchema = z.object({
@@ -32,6 +33,7 @@ export function useComposeForm({
   editing,
   channelID,
   categoryID,
+  onSuccess,
 }: Props) {
   const router = useRouter();
 
@@ -104,7 +106,11 @@ export function useComposeForm({
     } else {
       if (channelID) {
         await channelThreadCreate(channelID, payload);
-        router.push(`/channels/${channelID}`);
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push(`/channels/${channelID}`);
+        }
       } else {
         const { slug } = await threadCreate(payload);
         router.push(`/t/${slug}`);
