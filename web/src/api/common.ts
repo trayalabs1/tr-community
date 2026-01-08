@@ -36,6 +36,14 @@ export function buildRequest({
   const address = `${apiAddress}/api${url}${cleanQuery(params)}`;
   const _method = method.toUpperCase();
 
+  console.log("[API Request]", {
+    url,
+    apiAddress,
+    fullAddress: address,
+    isClient: typeof window !== "undefined",
+    method: _method,
+  });
+
   const tags = buildNextTagsFromURL(address);
 
   return new Request(address, {
