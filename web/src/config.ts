@@ -11,21 +11,27 @@ export const ConfigSchema = z.object({
 export type Config = z.infer<typeof ConfigSchema>;
 
 export function serverEnvironment() {
+  const apiAddress =
+    global.process.env["NEXT_PUBLIC_API_ADDRESS"] ??
+    global.process.env["PUBLIC_API_ADDRESS"] ??
+    DEFAULT_API_ADDRESS;
+
+  const webAddress =
+    global.process.env["NEXT_PUBLIC_WEB_ADDRESS"] ??
+    global.process.env["PUBLIC_WEB_ADDRESS"] ??
+    DEFAULT_WEB_ADDRESS;
+
   console.log("[Config] Environment variables:", {
     PUBLIC_API_ADDRESS: global.process.env["PUBLIC_API_ADDRESS"],
     PUBLIC_WEB_ADDRESS: global.process.env["PUBLIC_WEB_ADDRESS"],
     SSR_API_ADDRESS: global.process.env["SSR_API_ADDRESS"],
+    resolved_API_ADDRESS: apiAddress,
+    resolved_WEB_ADDRESS: webAddress,
   });
 
   return {
-    API_ADDRESS:
-      global.process.env["NEXT_PUBLIC_API_ADDRESS"] ??
-      global.process.env["PUBLIC_API_ADDRESS"] ??
-      DEFAULT_API_ADDRESS,
-    WEB_ADDRESS:
-      global.process.env["NEXT_PUBLIC_WEB_ADDRESS"] ??
-      global.process.env["PUBLIC_WEB_ADDRESS"] ??
-      DEFAULT_WEB_ADDRESS,
+    API_ADDRESS: apiAddress,
+    WEB_ADDRESS: webAddress,
     source: "server" as const,
   };
 }
@@ -74,19 +80,20 @@ export const API_ADDRESS = env.API_ADDRESS;
 export const WEB_ADDRESS = env.WEB_ADDRESS;
 
 export function getAPIAddress() {
-  if (typeof window !== "undefined") {
-    // When called on the client, return the public API address, such as:
-    // https://api.mystorydencommunity.com
-    return env.API_ADDRESS;
-  } else {
-    // When called on the server side, we may be running in a container beside
-    // the API (the "fullstack" container image) so return the internal address
-    // if it's set, otherwise the regular API_ADDRESS configuration value.
-    return (
-      // The default fullstack image will set this value automatically to :8000.
-      global.process.env["SSR_API_ADDRESS"] ??
-      // There's no SSR address set so just use the public API address.
-      env.API_ADDRESS
-    );
-  }
+  const isClient = typeof window !== "undefined";
+  const result = isClient
+    ? env.API_ADDRESS
+    : global.process.env["SSR_API_ADDRESS"] ?? env.API_ADDRESS;
+
+  console.log("[getAPIAddress]", {
+    isClient,
+    result,
+    envAPIAddress: env.API_ADDRESS,
+    ssrAPIAddress: isClient
+      ? "N/A (client)"
+      : global.process.env["SSR_API_ADDRESS"],
+    windowConfig: isClient ? (window as any).__storyden__ : "N/A (server)",
+  });
+
+  return result;
 }
