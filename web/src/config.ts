@@ -73,13 +73,26 @@ If you see this, please open an issue at https://github.com/Southclaws/storyden/
   }
 }
 
-const env = isomorphicEnvironment();
+let cachedEnv: Config | null = null;
 
-export const API_ADDRESS = env.API_ADDRESS;
+function getEnv(): Config {
+  if (cachedEnv === null) {
+    cachedEnv = isomorphicEnvironment();
+  }
+  return cachedEnv;
+}
 
-export const WEB_ADDRESS = env.WEB_ADDRESS;
+// Deprecated: Use getAPIAddress() and getWEBAddress() instead
+// These are kept for backward compatibility but may return stale values
+export const API_ADDRESS = getAPIAddress();
+export const WEB_ADDRESS = getWEBAddress();
+
+export function getWEBAddress() {
+  return getEnv().WEB_ADDRESS;
+}
 
 export function getAPIAddress() {
+  const env = getEnv();
   const isClient = typeof window !== "undefined";
   const result = isClient
     ? env.API_ADDRESS
