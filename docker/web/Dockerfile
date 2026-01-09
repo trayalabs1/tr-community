@@ -66,8 +66,8 @@ ENV HOSTNAME="0.0.0.0"
 
 # Frontend connects directly to the API server
 # Change these via -e when deploying
-ENV PUBLIC_API_ADDRESS="http://localhost:8000"
-ENV PUBLIC_WEB_ADDRESS="http://localhost:3000"
+ENV NEXT_PUBLIC_API_ADDRESS="http://localhost:8000"
+ENV NEXT_PUBLIC_WEB_ADDRESS="http://localhost:3000"
 
 # SSR requests go directly to the API server
 ENV SSR_API_ADDRESS="http://localhost:8000"

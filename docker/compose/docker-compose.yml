@@ -2,7 +2,7 @@
 # This assumes you already have a reverse proxy pointing at
 # localhost:8000 which handles SSL termination for HTTPS.
 #
-# To run this: set the PUBLIC_WEB_ADDRESS and PUBLIC_API_ADDRESS
+# To run this: set the NEXT_PUBLIC_WEB_ADDRESS and NEXT_PUBLIC_API_ADDRESS
 # environment variables to the public URL of your server. Remember that these
 # are full URLs, scheme included, so ensure `https://` is included.
 #
@@ -14,5 +14,5 @@ services:
     volumes:
       - ./data:/storyden/data
     environment:
-      - PUBLIC_WEB_ADDRESS=${PUBLIC_WEB_ADDRESS}
-      - PUBLIC_API_ADDRESS=${PUBLIC_API_ADDRESS}
+      - NEXT_PUBLIC_WEB_ADDRESS=${NEXT_PUBLIC_WEB_ADDRESS}
+      - NEXT_PUBLIC_API_ADDRESS=${NEXT_PUBLIC_API_ADDRESS}
