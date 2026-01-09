@@ -2,14 +2,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useSWRConfig } from "swr";
 import { z } from "zod";
 
-import { channelThreadCreate } from "src/api/openapi-client/channels";
+import {
+  channelThreadCreate,
+  getChannelThreadListKey,
+} from "src/api/openapi-client/channels";
 import { threadCreate, threadUpdate } from "src/api/openapi-client/threads";
-import { Thread, ThreadInitialProps, Visibility } from "src/api/openapi-schema";
+import { Thread, ThreadInitialProps, Visibility, Permission } from "src/api/openapi-schema";
 
 import { handle } from "@/api/client";
 import { NO_CATEGORY_VALUE } from "@/components/category/CategorySelect/useCategorySelect";
+import { hasPermission } from "@/utils/permissions";
+import { useSession } from "@/auth";
 
 export type Props = {
   editing?: string;
@@ -20,7 +26,7 @@ export type Props = {
 };
 
 export const FormShapeSchema = z.object({
-  title: z.string().default(""),
+  title: z.string().min(1, "Your post must have a title to be published"),
   body: z.string().min(1),
   category: z.string().optional(),
   tags: z.string().array().optional(),
@@ -36,6 +42,8 @@ export function useComposeForm({
   onSuccess,
 }: Props) {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
+  const session = useSession();
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -52,6 +60,8 @@ export function useComposeForm({
           category: initialDraft.category?.id,
         }
       : {
+          title: "",
+          body: "",
           category: categoryID,
         },
   });
@@ -84,36 +94,46 @@ export function useComposeForm({
   };
 
   const publish = async ({ title, body, category, tags, url }: FormShape) => {
-    if (title.length < 1) {
-      form.setError("title", {
-        message: "Your post must have a title to be published",
-      });
-      return;
-    }
+    const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
+    const targetVisibility = isAdmin ? Visibility.published : Visibility.review;
 
     const payload = {
       title,
       body,
       category: category === NO_CATEGORY_VALUE ? undefined : category,
-      visibility: Visibility.published,
+      visibility: targetVisibility,
       tags,
       url,
     };
 
     if (editing) {
       const { slug } = await threadUpdate(editing, payload);
-      router.push(`/t/${slug}`);
+      if (targetVisibility === Visibility.review) {
+        router.back();
+      } else {
+        router.push(`/t/${slug}`);
+      }
     } else {
       if (channelID) {
         await channelThreadCreate(channelID, payload);
+        const threadListKey = getChannelThreadListKey(channelID, {});
+        await mutate(threadListKey);
         if (onSuccess) {
           onSuccess();
         } else {
-          router.push(`/channels/${channelID}`);
+          if (targetVisibility === Visibility.review) {
+            router.push(`/channels/${channelID}`);
+          } else {
+            router.push(`/channels/${channelID}`);
+          }
         }
       } else {
         const { slug } = await threadCreate(payload);
-        router.push(`/t/${slug}`);
+        if (targetVisibility === Visibility.review) {
+          router.back();
+        } else {
+          router.push(`/t/${slug}`);
+        }
       }
     }
   };
@@ -144,8 +164,12 @@ export function useComposeForm({
       },
       {
         promiseToast: {
-          loading: "Publishing post...",
-          success: "Post published!",
+          loading: session && hasPermission(session, Permission.ADMINISTRATOR)
+            ? "Publishing post..."
+            : "Submitting for review...",
+          success: session && hasPermission(session, Permission.ADMINISTRATOR)
+            ? "Post published!"
+            : "Submitted for review! Your post will be visible once approved by a moderator.",
         },
         cleanup: async () => {
           setIsPublishing(false);
