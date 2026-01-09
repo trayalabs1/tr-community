@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { Filter } from "lucide-react";
 
 import { Unready } from "src/components/site/Unready";
 import { LoadingBanner } from "@/components/site/Loading";
@@ -25,6 +27,8 @@ type Props = {
 
 export function ChannelScreen(props: Props) {
   const permissions = useChannelPermissions(props.channel.id);
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const { data: categories, isValidating: isCategoriesLoading } = useChannelCategoryList(props.channel.id, {
     swr: {
@@ -34,7 +38,7 @@ export function ChannelScreen(props: Props) {
 
   const { data: threads, error, isValidating: isThreadsLoading } = useChannelThreadList(
     props.channel.id,
-    {},
+    selectedCategorySlug ? { categories: [selectedCategorySlug] } : {},
     {
       swr: {
         revalidateOnFocus: false,
@@ -72,65 +76,83 @@ export function ChannelScreen(props: Props) {
         )}
       </VStack>
 
-      {/* Categories Section */}
-      <VStack alignItems="start" gap="4" width="full">
-        <HStack justifyContent="space-between" width="full">
-          <Heading as="h2" size="lg">
-            Categories
-          </Heading>
-          {permissions.canManageChannel && (
-            <CategoryCreateTrigger channelID={props.channel.id} />
-          )}
-        </HStack>
-
-        {categories && categories.categories.length > 0 ? (
-          <HStack gap="2" flexWrap="wrap">
-            {categories.categories.map((category) => (
-              <Link
-                key={category.id}
-                href={`/channels/${props.channel.id}/categories/${category.slug}`}
-              >
-                <styled.span
-                  display="block"
-                  px="3"
-                  py="2"
-                  borderRadius="md"
-                  fontSize="sm"
-                  fontWeight="medium"
-                  cursor="pointer"
-                  style={{
-                    backgroundColor: category.colour || "#8577ce",
-                    color: "white",
-                  }}
-                >
-                  {category.name}
-                </styled.span>
-              </Link>
-            ))}
-          </HStack>
-        ) : (
-          <styled.div
-            p="4"
-            textAlign="center"
-            color="fg.muted"
-            borderRadius="md"
-            width="full"
-            fontSize="sm"
-            style={{ border: "1px solid var(--colors-border-default)" }}
-          >
-            No categories yet. Create one to organize threads.
-          </styled.div>
-        )}
-      </VStack>
-
       {/* Threads Section */}
       <VStack alignItems="start" gap="4" width="full">
-        <HStack justifyContent="space-between" width="full">
+        <HStack justifyContent="space-between" width="full" alignItems="center">
           <Heading as="h2" size="lg">
             Threads
           </Heading>
-          <ThreadCreateTrigger channelID={props.channel.id} />
+          <HStack gap="3" alignItems="center">
+            <styled.button
+              onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+              display="flex"
+              alignItems="center"
+              gap="2"
+              fontSize="sm"
+              fontWeight="semibold"
+              cursor="pointer"
+              style={{
+                backgroundColor: "transparent",
+                color: "var(--colors-fg-default)",
+                border: "none",
+                padding: "0",
+              }}
+            >
+              <Filter size={18} strokeWidth={2} />
+              <styled.span>Filters</styled.span>
+            </styled.button>
+            <ThreadCreateTrigger channelID={props.channel.id} />
+          </HStack>
         </HStack>
+
+        {isFiltersOpen && categories && categories.categories.length > 0 && (
+          <VStack alignItems="start" gap="3" width="full" style={{
+            border: "1px solid var(--colors-border-default)",
+            borderRadius: "0.5rem",
+            padding: "1rem",
+          }}>
+            <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase" style={{ letterSpacing: "0.05em" }}>
+              Topic
+            </styled.label>
+            <HStack gap="4" flexWrap="wrap">
+              <styled.button
+                onClick={() => setSelectedCategorySlug(null)}
+                fontSize="sm"
+                cursor="pointer"
+                transition="all"
+                style={{
+                  backgroundColor: "transparent",
+                  color: selectedCategorySlug === null ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
+                  border: "none",
+                  borderBottom: selectedCategorySlug === null ? "2px solid var(--colors-fg-default)" : "2px solid transparent",
+                  padding: "4px 0",
+                  fontWeight: selectedCategorySlug === null ? "600" : "400",
+                }}
+              >
+                All
+              </styled.button>
+              {categories.categories.map((category) => (
+                <styled.button
+                  key={category.id}
+                  onClick={() => setSelectedCategorySlug(category.slug)}
+                  fontSize="sm"
+                  cursor="pointer"
+                  transition="all"
+                  style={{
+                    backgroundColor: "transparent",
+                    color: selectedCategorySlug === category.slug ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
+                    border: "none",
+                    borderBottom: selectedCategorySlug === category.slug ? `2px solid ${category.colour || "#8577ce"}` : "2px solid transparent",
+                    padding: "4px 0",
+                    fontWeight: selectedCategorySlug === category.slug ? "600" : "400",
+                  }}
+                >
+                  {category.name}
+                </styled.button>
+              ))}
+            </HStack>
+          </VStack>
+        )}
 
         {isThreadsLoading && !threads ? (
           <styled.div
