@@ -2,9 +2,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useSWRConfig } from "swr";
 import { z } from "zod";
 
-import { channelThreadCreate } from "src/api/openapi-client/channels";
+import {
+  channelThreadCreate,
+  getChannelThreadListKey,
+} from "src/api/openapi-client/channels";
 import { threadCreate, threadUpdate } from "src/api/openapi-client/threads";
 import { Thread, ThreadInitialProps, Visibility } from "src/api/openapi-schema";
 
@@ -36,6 +40,7 @@ export function useComposeForm({
   onSuccess,
 }: Props) {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -106,6 +111,8 @@ export function useComposeForm({
     } else {
       if (channelID) {
         await channelThreadCreate(channelID, payload);
+        const threadListKey = getChannelThreadListKey(channelID, {});
+        await mutate(threadListKey);
         if (onSuccess) {
           onSuccess();
         } else {

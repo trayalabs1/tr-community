@@ -1,9 +1,9 @@
 import { FormProvider } from "react-hook-form";
 
-import { CategorySelect } from "@/components/category/CategorySelect/CategorySelect";
-import { TagListField } from "@/components/thread/ThreadTagList";
+import { CategorySelectFlat } from "@/components/category/CategorySelect/CategorySelectFlat";
+// import { TagListField } from "@/components/thread/ThreadTagList";
 import { Button } from "@/components/ui/button";
-import { HStack, WStack, styled } from "@/styled-system/jsx";
+import { HStack, VStack, LStack, styled } from "@/styled-system/jsx";
 
 import { BodyInput } from "../BodyInput/BodyInput";
 import { TitleInput } from "../TitleInput/TitleInput";
@@ -20,63 +20,93 @@ export function ComposeForm(props: Props) {
       alignItems="start"
       w="full"
       h="full"
-      gap="2"
+      gap="4"
       onSubmit={handlers.handlePublish}
+      borderRadius={{ base: "lg", md: "2xl" }}
+      overflow="hidden"
+      style={{
+        backgroundColor: "var(--colors-bg-surface)",
+        border: "1px solid var(--colors-border-default)",
+        boxShadow: "var(--shadows-lg)",
+      }}
     >
       <FormProvider {...form}>
-        <WStack
-          flexDir={{
-            base: "column-reverse",
-            md: "row",
-          }}
-          alignItems={{
-            base: "end",
-            md: "center",
-          }}
-        >
-          <HStack width="full">
-            <CategorySelect
-              control={form.control}
-              name="category"
-              channelID={props.channelID}
-            />
-            <TagListField
-              name="tags"
-              control={form.control}
-              initialTags={props.initialDraft?.tags}
-            />
-          </HStack>
-
-          <HStack>
-            <Button
-              variant="ghost"
-              size="xs"
-              disabled={!form.formState.isValid || state.isSavingDraft}
-              onClick={handlers.handleSaveDraft}
-              loading={state.isSavingDraft}
-            >
-              Save draft
-            </Button>
-
-            <Button
-              variant="subtle"
-              size="xs"
-              type="submit"
-              disabled={!form.formState.isValid || state.isPublishing}
-              loading={state.isPublishing}
-            >
-              Post
-            </Button>
-          </HStack>
-        </WStack>
-
-        <HStack width="full" justifyContent="space-between" alignItems="start">
-          <HStack width="full">
+        <LStack gap="4" w="full" p={{ base: "3", md: "4" }}>
+          {/* Title Input */}
+          <styled.div w="full">
             <TitleInput />
-          </HStack>
-        </HStack>
+          </styled.div>
 
-        <BodyInput onAssetUpload={handlers.handleAssetUpload} />
+          {/* Body Input */}
+          <styled.div w="full" flex="1">
+            <BodyInput onAssetUpload={handlers.handleAssetUpload} />
+          </styled.div>
+
+          {/* Category Selection */}
+          <VStack gap="2" w="full" alignItems="start">
+            <styled.label fontSize="sm" fontWeight="medium" color="fg.muted">
+              Topic
+            </styled.label>
+            <styled.div w="full">
+              <CategorySelectFlat
+                control={form.control}
+                name="category"
+                channelID={props.channelID}
+              />
+            </styled.div>
+          </VStack>
+
+          {/* Tags Selection - Disabled */}
+          {/* <VStack gap="2" w="full" alignItems="start">
+            <styled.label fontSize="sm" fontWeight="medium" color="fg.muted">
+              Tags
+            </styled.label>
+            <styled.div w="full">
+              <TagListField
+                name="tags"
+                control={form.control}
+                initialTags={props.initialDraft?.tags}
+              />
+            </styled.div>
+          </VStack> */}
+
+          {/* Action Bar */}
+          <HStack
+            w="full"
+            justifyContent="flex-end"
+            alignItems="center"
+            pt="2"
+            gap="2"
+            style={{
+              borderTop: "1px solid var(--colors-border-default)",
+            }}
+          >
+            {/* Submit Buttons */}
+            <HStack gap="2" w={{ base: "full", md: "auto" }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                disabled={!form.formState.isValid || state.isSavingDraft}
+                onClick={handlers.handleSaveDraft}
+                loading={state.isSavingDraft}
+                display={{ base: "none", md: "block" }}
+              >
+                Save draft
+              </Button>
+
+              <Button
+                size="sm"
+                type="submit"
+                disabled={!form.formState.isValid || state.isPublishing}
+                loading={state.isPublishing}
+                w={{ base: "full", md: "auto" }}
+              >
+                Post
+              </Button>
+            </HStack>
+          </HStack>
+        </LStack>
       </FormProvider>
     </styled.form>
   );
