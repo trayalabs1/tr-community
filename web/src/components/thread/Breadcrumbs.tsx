@@ -80,6 +80,7 @@ export function Breadcrumbs({ thread, channelID, channelName }: Props) {
       overflowX="scroll"
       pt="scrollGutter"
       mt="-scrollGutter"
+      display={{ base: "none", md: "flex" }}
     >
       <LinkButton
         size="xs"
