@@ -1,6 +1,6 @@
 # A super simple Compose setup with Caddy as the reverse proxy to handle HTTPS.
 #
-# To run this: set the PUBLIC_WEB_ADDRESS and PUBLIC_API_ADDRESS
+# To run this: set the NEXT_PUBLIC_WEB_ADDRESS and NEXT_PUBLIC_API_ADDRESS
 # environment variables to the public URL of your server. Remember that these
 # are full URLs, scheme included, so ensure `https://` is included.
 #
@@ -13,8 +13,8 @@ services:
     volumes:
       - ./data:/storyden/data
     environment:
-      - PUBLIC_WEB_ADDRESS=https://secret-agent.club
-      - PUBLIC_API_ADDRESS=https://secret-agent.club
+      - NEXT_PUBLIC_WEB_ADDRESS=https://secret-agent.club
+      - NEXT_PUBLIC_API_ADDRESS=https://secret-agent.club
 
   caddy:
     image: caddy:alpine
