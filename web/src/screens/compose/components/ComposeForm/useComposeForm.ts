@@ -26,7 +26,7 @@ export type Props = {
 };
 
 export const FormShapeSchema = z.object({
-  title: z.string().default(""),
+  title: z.string().min(1, "Your post must have a title to be published"),
   body: z.string().min(1),
   category: z.string().optional(),
   tags: z.string().array().optional(),
@@ -60,6 +60,8 @@ export function useComposeForm({
           category: initialDraft.category?.id,
         }
       : {
+          title: "",
+          body: "",
           category: categoryID,
         },
   });
@@ -92,13 +94,6 @@ export function useComposeForm({
   };
 
   const publish = async ({ title, body, category, tags, url }: FormShape) => {
-    if (title.length < 1) {
-      form.setError("title", {
-        message: "Your post must have a title to be published",
-      });
-      return;
-    }
-
     const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
     const targetVisibility = isAdmin ? Visibility.published : Visibility.review;
 
