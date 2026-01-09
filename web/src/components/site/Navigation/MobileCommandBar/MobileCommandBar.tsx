@@ -48,7 +48,7 @@ export function MobileCommandBar() {
               <SiteIcon borderRadius="md" w="8" h="8" />
             )}
             <HomeAnchor hideLabel size="sm" />
-            {account ? <ComposeAnchor hideLabel size="sm" /> : <LoginAnchor />}
+            {/* {account ? <ComposeAnchor hideLabel size="sm" /> : <LoginAnchor />} */}
             <LibraryAnchor hideLabel size="sm" />
             <ExpandTrigger onClick={onExpand} />
           </>
