@@ -17,8 +17,10 @@ import { ThreadCreateTrigger } from "@/components/thread/ThreadCreate/ThreadCrea
 import { ThreadReferenceCard } from "@/components/post/ThreadCard";
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
+import { MembersIcon } from "@/components/ui/icons/Members";
 import { HStack, LStack, VStack, styled } from "@/styled-system/jsx";
 import { useChannelPermissions } from "@/lib/channel/permissions";
+import { getAssetURL } from "@/utils/asset";
 
 type Props = {
   session?: Account;
@@ -58,7 +60,55 @@ export function ChannelScreen(props: Props) {
 
   return (
     <LStack gap="6" p="4">
-      <VStack alignItems="start" gap="2" width="full">
+      {/* Mobile Channel Header */}
+      <HStack
+        display={{ base: "flex", md: "none" }}
+        alignItems="center"
+        gap="3"
+        width="full"
+        pb="2"
+        borderBottomWidth="thin"
+        borderBottomColor="border.default"
+      >
+        {props.channel.icon ? (
+          <styled.img
+            src={getAssetURL(props.channel.icon.path)}
+            alt={props.channel.name}
+            w="12"
+            h="12"
+            rounded="lg"
+            objectFit="cover"
+            flexShrink="0"
+          />
+        ) : (
+          <styled.div
+            w="12"
+            h="12"
+            rounded="lg"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            flexShrink="0"
+            style={{
+              background: "#4a9d6f",
+            }}
+          >
+            <MembersIcon width="6" height="6" style={{ color: "#ffffff" }} />
+          </styled.div>
+        )}
+        <VStack alignItems="start" gap="0.5" width="full">
+          <Heading as="h2" size="md">
+            {props.channel.name}
+          </Heading>
+          {props.channel.description && (
+            <styled.p fontSize="xs" color="fg.muted">
+              {props.channel.description}
+            </styled.p>
+          )}
+        </VStack>
+      </HStack>
+
+      <VStack alignItems="start" gap="2" width="full" display={{ base: "none", md: "flex" }}>
         <HStack justifyContent="space-between" width="full">
           <Heading as="h1" size="2xl">
             {props.channel.name}
