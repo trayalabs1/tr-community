@@ -50,7 +50,7 @@ export function MobileCommandBar() {
             <HomeAnchor hideLabel size="sm" />
             {/* {account ? <ComposeAnchor hideLabel size="sm" /> : <LoginAnchor />} */}
             <LibraryAnchor hideLabel size="sm" />
-            <ExpandTrigger onClick={onExpand} />
+            {/* <ExpandTrigger onClick={onExpand} /> */}
           </>
         )}
       </WStack>
