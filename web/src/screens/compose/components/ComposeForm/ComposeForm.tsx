@@ -1,9 +1,12 @@
 import { FormProvider } from "react-hook-form";
 
+import { Permission } from "src/api/openapi-schema";
 import { CategorySelectFlat } from "@/components/category/CategorySelect/CategorySelectFlat";
 // import { TagListField } from "@/components/thread/ThreadTagList";
 import { Button } from "@/components/ui/button";
 import { HStack, VStack, LStack, styled } from "@/styled-system/jsx";
+import { hasPermission } from "@/utils/permissions";
+import { useSession } from "@/auth";
 
 import { BodyInput } from "../BodyInput/BodyInput";
 import { TitleInput } from "../TitleInput/TitleInput";
@@ -12,6 +15,8 @@ import { Props, useComposeForm } from "./useComposeForm";
 
 export function ComposeForm(props: Props) {
   const { form, state, handlers } = useComposeForm(props);
+  const session = useSession();
+  const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
 
   return (
     <styled.form
@@ -102,7 +107,7 @@ export function ComposeForm(props: Props) {
                 loading={state.isPublishing}
                 w={{ base: "full", md: "auto" }}
               >
-                Post
+                {isAdmin ? "Post" : "Submit for review"}
               </Button>
             </HStack>
           </HStack>
