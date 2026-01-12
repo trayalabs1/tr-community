@@ -21,6 +21,7 @@ import (
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/account/account_querier"
+	"github.com/Southclaws/storyden/app/resources/account/account_writer"
 	"github.com/Southclaws/storyden/app/resources/account/authentication"
 	"github.com/Southclaws/storyden/app/resources/account/email"
 	"github.com/Southclaws/storyden/app/resources/channel"
@@ -43,6 +44,7 @@ type Provider struct {
 	cfg            config.Config
 	authRepo       authentication.Repository
 	accountQuery   *account_querier.Querier
+	accountWriter  *account_writer.Writer
 	emailRepo      *email.Repository
 	register       *register.Registrar
 	channelRepo    *channel.Repository
@@ -55,6 +57,7 @@ func New(
 	cfg config.Config,
 	authRepo authentication.Repository,
 	accountQuery *account_querier.Querier,
+	accountWriter *account_writer.Writer,
 	emailRepo *email.Repository,
 	register *register.Registrar,
 	channelRepo *channel.Repository,
@@ -65,6 +68,7 @@ func New(
 		cfg:            cfg,
 		authRepo:       authRepo,
 		accountQuery:   accountQuery,
+		accountWriter:  accountWriter,
 		emailRepo:      emailRepo,
 		register:       register,
 		channelRepo:    channelRepo,
@@ -170,6 +174,26 @@ func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*ac
 	acc, err := p.getOrCreateAccount(ctx, userData.User.ID, *emailAddress, userData.User.FirstName, userData.User.LastName, userData.User.PhoneNumber)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	// Update account metadata with case_id from Traya API (only if not already set)
+	if acc.Metadata == nil || acc.Metadata["case_id"] == nil {
+		metadata := acc.Metadata
+		if metadata == nil {
+			metadata = make(map[string]any)
+		}
+		metadata["case_id"] = userData.Case.ID
+
+		accWithMetadata, err := p.accountWriter.Update(ctx, acc.ID, account_writer.SetMetadata(metadata))
+		if err != nil {
+			p.logger.Warn("failed to update account metadata",
+				slog.String("account_id", acc.ID.String()),
+				slog.String("case_id", userData.Case.ID),
+				slog.String("error", err.Error()))
+			// Continue with authentication even if metadata update fails
+		} else {
+			acc = &accWithMetadata.Account
+		}
 	}
 
 	if err := p.ensureChannelMemberships(ctx, acc.ID, userData.User.Gender, orderCount, userData.Case.LatestOrderDate); err != nil {

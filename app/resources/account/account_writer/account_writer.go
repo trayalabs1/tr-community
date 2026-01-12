@@ -63,6 +63,12 @@ func WithInvitedBy(id xid.ID) Option {
 	}
 }
 
+func WithMetadata(m map[string]any) Option {
+	return func(a *ent.AccountMutation) {
+		a.SetMetadata(m)
+	}
+}
+
 func SetHandle(handle string) Mutation {
 	return func(u *ent.AccountUpdateOne) {
 		u.SetHandle(handle)
