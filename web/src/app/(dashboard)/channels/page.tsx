@@ -2,10 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { channelList } from "@/api/openapi-server/channels";
+import { notificationList } from "@/api/openapi-server/notifications";
 import { getServerSession } from "@/auth/server-session";
+import { BookmarkButton } from "@/components/channel/BookmarkButton";
 import { ChannelCreateTrigger } from "@/components/channel/ChannelCreate/ChannelCreateTrigger";
+import { NotificationButton } from "@/components/channel/NotificationButton";
 import { Heading } from "@/components/ui/heading";
 import { MembersIcon } from "@/components/ui/icons/Members";
+import { NotificationIcon } from "@/components/ui/icons/Notification";
 import { HStack, LStack, VStack, styled } from "@/styled-system/jsx";
 import { canCreateChannels } from "@/lib/channel/server-permissions";
 import { getAssetURL } from "@/utils/asset";
@@ -14,6 +18,8 @@ export default async function ChannelsPage() {
   const session = await getServerSession();
   if (!session) redirect("/");
   const { data: channels } = await channelList({});
+  const { data: notifications } = await notificationList({ status: ["unread"] });
+  const hasUnreadNotifications = (notifications?.notifications?.length ?? 0) > 0;
   const userCanCreateChannels = canCreateChannels(session);
 
   return (
@@ -26,7 +32,7 @@ export default async function ChannelsPage() {
         p="4"
         borderBottomWidth="thin"
         borderBottomColor="border.default"
-        justifyContent="flex-start"
+        justifyContent="space-between"
         mt="0"
         style={{
           backgroundColor: "#f0f8f5",
@@ -62,6 +68,10 @@ export default async function ChannelsPage() {
             </styled.p>
           </VStack>
         </HStack>
+        <HStack gap="2" flexShrink="0">
+          <BookmarkButton />
+          <NotificationButton hasUnread={hasUnreadNotifications} />
+        </HStack>
       </HStack>
 
       {/* Mobile Create Button - Fixed Bottom Right */}
@@ -95,11 +105,15 @@ export default async function ChannelsPage() {
 
       <LStack gap="6" p="4" width="full">
         {/* Desktop Header */}
-        <HStack justifyContent="space-between" width="full" display={{ base: "none", md: "flex" }}>
+        <HStack justifyContent="space-between" width="full" display={{ base: "none", md: "flex" }} alignItems="center">
           <Heading as="h1" size="2xl">
             Channels
           </Heading>
-          {userCanCreateChannels && <ChannelCreateTrigger size="sm" />}
+          <HStack gap="3" alignItems="center">
+            <BookmarkButton />
+            <NotificationButton hasUnread={hasUnreadNotifications} />
+            {userCanCreateChannels && <ChannelCreateTrigger size="sm" />}
+          </HStack>
         </HStack>
 
         {channels.channels.length > 0 ? (
