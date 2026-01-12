@@ -88,7 +88,7 @@ export function ThreadScreen(props: Props) {
                 </>
               )}
 
-              <ThreadMenu thread={thread} editingEnabled movingEnabled />
+              <ThreadMenu thread={thread} editingEnabled movingEnabled onPinChange={handlers.handlePinChange} />
             </HStack>
           </WStack>
 
