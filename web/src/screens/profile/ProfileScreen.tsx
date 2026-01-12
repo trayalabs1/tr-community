@@ -2,6 +2,7 @@
 
 import { formatDistanceToNow } from "date-fns";
 
+import { Permission } from "@/api/openapi-schema";
 import { Unready } from "src/components/site/Unready";
 
 import { ContentFormField } from "@/components/content/ContentComposer/ContentField";
@@ -18,6 +19,7 @@ import { SaveAction } from "@/components/site/Action/Save";
 import { DotSeparator } from "@/components/site/Dot";
 import { LikeIcon } from "@/components/ui/icons/Like";
 import { Input } from "@/components/ui/input";
+import { hasPermission } from "@/utils/permissions";
 import {
   Box,
   CardBox,
@@ -153,6 +155,51 @@ export function ProfileScreen(props: Props) {
         {profile.deletedAt && (
           <Box p="3">
             <ProfileSuspendedBanner date={new Date(profile.deletedAt)} />
+          </Box>
+        )}
+
+        {session && hasPermission(session, Permission.ADMINISTRATOR) && (
+          <Box p="3" style={{ borderTop: "1px solid var(--colors-border-subtle)" }}>
+            <LStack gap="2">
+              <styled.h3 fontSize="sm" fontWeight="semibold" color="fg.default">
+                CRM View
+              </styled.h3>
+              <styled.a
+                href={`https://erp.traya.health/lead-details/${profile.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                display="inline-flex"
+                alignItems="center"
+                gap="2"
+                px="3"
+                py="2"
+                borderRadius="md"
+                backgroundColor="bg.subtle"
+                style={{
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease-in-out",
+                  color: "var(--colors-blue-600)",
+                }}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLElement;
+                  el.style.backgroundColor = "var(--colors-bg-default)";
+                  el.style.color = "var(--colors-blue-700)";
+                  el.style.border = "1px solid var(--colors-blue-600)";
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLElement;
+                  el.style.backgroundColor = "var(--colors-bg-subtle)";
+                  el.style.color = "var(--colors-blue-600)";
+                  el.style.border = "1px solid transparent";
+                }}
+              >
+                View in ERP → {profile.name}
+              </styled.a>
+              <styled.p fontSize="xs" color="fg.muted">
+                Opens member details in the ERP system for CRM management and lead tracking.
+              </styled.p>
+            </LStack>
           </Box>
         )}
 
