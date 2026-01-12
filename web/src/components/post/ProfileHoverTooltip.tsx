@@ -58,62 +58,23 @@ export function ProfileHoverTooltip({ profile, children }: Props) {
         >
           <styled.div display="flex" flexDir="column" gap="2">
             <styled.div
-              fontSize="xs"
-              fontWeight="semibold"
-              color="fg.muted"
-              textTransform="uppercase"
-              letterSpacing="wider"
-            >
-              CRM View
-            </styled.div>
-            <styled.a
-              href={`https://erp.traya.health/lead-details/71bd3c6b-18e7-4258-b890-d4fa60c8e366`}
-              target="_blank"
-              rel="noopener noreferrer"
-              fontSize="sm"
-              fontWeight="medium"
-              style={{
-                textDecoration: "none",
-                cursor: "pointer",
-                transition: "color 0.2s ease-in-out",
-                color: "var(--colors-blue-600)",
-                display: "block",
-                padding: "0.25rem 0",
-                pointerEvents: "auto",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color =
-                  "var(--colors-blue-700)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color =
-                  "var(--colors-blue-600)";
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            >
-              View in CRM →
-            </styled.a>
-
-            <styled.div
               display="flex"
               flexDir="column"
               gap="1"
-              mt="2"
-              pt="2"
               style={{
-                borderTop: "1px solid var(--colors-border-subtle)",
+                borderBottom: "1px solid var(--colors-border-subtle)",
+                paddingBottom: "0.5rem",
               }}
             >
-              <styled.div fontSize="xs" color="fg.muted">
-                <styled.span fontWeight="semibold">Name:</styled.span>{" "}
+              <styled.div fontSize="xs" fontWeight="semibold" color="fg.default">
                 {profile.name}
               </styled.div>
               <styled.div fontSize="xs" color="fg.muted">
-                <styled.span fontWeight="semibold">Handle:</styled.span>{" "}
-                {profile.handle}
+                @{profile.handle}
               </styled.div>
+            </styled.div>
+            <styled.div fontSize="xs" color="fg.muted">
+              Joined {profile.joined}
             </styled.div>
           </styled.div>
         </styled.div>

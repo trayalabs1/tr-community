@@ -158,14 +158,14 @@ export function ProfileScreen(props: Props) {
           </Box>
         )}
 
-        {session && hasPermission(session, Permission.ADMINISTRATOR) && (
+        {session && hasPermission(session, Permission.ADMINISTRATOR) && (profile.meta as any)?.case_id && (
           <Box p="3" style={{ borderTop: "1px solid var(--colors-border-subtle)" }}>
             <LStack gap="2">
               <styled.h3 fontSize="sm" fontWeight="semibold" color="fg.default">
                 CRM View
               </styled.h3>
               <styled.a
-                href={`https://erp.traya.health/lead-details/${profile.id}`}
+                href={`https://erp.traya.health/lead-details/${(profile.meta as any).case_id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 display="inline-flex"
