@@ -210,9 +210,11 @@ export const ThreadReferenceCard = memo(
             </styled.p>
           )}
 
-          {!hideCategoryBadge && thread.category && (
+          {(!hideCategoryBadge && thread.category) || isInReview ? (
             <styled.div display="flex" gap="2" flexWrap="wrap">
-              <CategoryBadge category={thread.category} />
+              {!hideCategoryBadge && thread.category && (
+                <CategoryBadge category={thread.category} />
+              )}
               {isInReview && (
                 <PostReviewBadge
                   isModerator={isModerator}
@@ -225,7 +227,7 @@ export const ThreadReferenceCard = memo(
                 />
               )}
             </styled.div>
-          )}
+          ) : null}
         </styled.div>
 
         {!isInReview && session && (
