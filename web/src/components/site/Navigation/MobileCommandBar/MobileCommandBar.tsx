@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
+
 import { CommandDock } from "@/components/site/CommandDock/CommandDock";
 import { ButtonProps } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
 import { MenuIcon } from "@/components/ui/icons/Menu";
+import { SearchIcon } from "@/components/ui/icons/Search";
 import { SiteIcon } from "@/components/ui/icons/Site";
 import { WStack } from "@/styled-system/jsx";
 
@@ -48,9 +51,14 @@ export function MobileCommandBar() {
               <SiteIcon borderRadius="md" w="8" h="8" />
             )}
             <HomeAnchor hideLabel size="sm" />
-            {account ? <ComposeAnchor hideLabel size="sm" /> : <LoginAnchor />}
+            <Link href="/search" title="Search">
+              <IconButton variant="ghost" size="sm">
+                <SearchIcon />
+              </IconButton>
+            </Link>
+            {/* {account ? <ComposeAnchor hideLabel size="sm" /> : <LoginAnchor />} */}
             <LibraryAnchor hideLabel size="sm" />
-            <ExpandTrigger onClick={onExpand} />
+            {/* <ExpandTrigger onClick={onExpand} /> */}
           </>
         )}
       </WStack>

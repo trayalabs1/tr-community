@@ -7,12 +7,10 @@ import {
   Visibility,
 } from "src/api/openapi-schema";
 import { useSession } from "src/auth";
-import { Byline } from "src/components/content/Byline";
 import { CollectionMenu } from "src/components/content/CollectionMenu/CollectionMenu";
+import { MemberAvatar } from "src/components/member/MemberBadge/MemberAvatar";
 
-import { Card } from "@/components/ui/rich-card";
-import { Box, HStack, styled } from "@/styled-system/jsx";
-import { getAssetURL } from "@/utils/asset";
+import { styled } from "@/styled-system/jsx";
 import { timestamp } from "@/utils/date";
 import { hasPermission } from "@/utils/permissions";
 
@@ -23,7 +21,6 @@ import {
   DiscussionIcon,
   DiscussionParticipatingIcon,
 } from "../ui/icons/Discussion";
-import { PinIcon } from "../ui/icons/Pin";
 
 import { LikeButton } from "./LikeButton/LikeButton";
 import { useThreadCardModeration } from "./useThreadCardModeration";
@@ -62,107 +59,243 @@ export const ThreadReferenceCard = memo(
       ? `${replyCountLabel} (including you!)`
       : replyCountLabel;
 
-    const newRepliesCount = thread.read_status?.replies_since ?? 0;
-    const lastReadAt = thread.read_status?.last_read_at;
-    const newRepliesLabel =
-      newRepliesCount > 0 && lastReadAt
-        ? `${newRepliesCount} ${newRepliesCount === 1 ? "reply" : "replies"} since you last visited ${timestamp(lastReadAt, false)} ago`
-        : undefined;
-
     const isInReview = thread.visibility === Visibility.review;
-    const isPinned = (thread.pinned ?? 0) > 0;
-    const cardBackground = isPinned ? "emphasized" : "default";
-
-    // Don't show images for in-review threads, too noisy.
-    const image = isInReview
-      ? undefined
-      : getAssetURL(
-          thread.assets?.[0]?.path ?? thread.link?.primary_image?.path,
-        );
 
     return (
-      <Card
-        shape="responsive"
-        backgroundColor={cardBackground}
-        id={thread.id}
-        title={title}
-        titleIcon={isPinned ? <PinIcon w="4" /> : undefined}
-        text={thread.description}
-        url={permalink}
-        image={image}
-        controls={
-          session && (
-            <HStack>
-              {!hideCategoryBadge && thread.category && (
-                <CategoryBadge category={thread.category} />
-              )}
-              {isInReview ? (
-                <>
-                  <PostReviewBadge
-                    isModerator={isModerator}
-                    postId={thread.id}
-                    onAccept={handlers.handleAcceptThread}
-                    onEditAndAccept={handlers.handleEditAndAccept}
-                    onDelete={handlers.handleConfirmDelete}
-                    isConfirmingDelete={isConfirmingDelete}
-                    onCancelDelete={handlers.handleCancelDelete}
-                  />
-                </>
-              ) : (
-                <>
-                  <LikeButton thread={thread} showCount />
-                  <CollectionMenu account={session} thread={thread} />
-                </>
-              )}
-              <ThreadMenu thread={thread} />
-            </HStack>
-          )
-        }
+      <styled.div
+        display="flex"
+        flexDir="column"
+        w="full"
+        // maxW="2xl"
+        borderRadius="lg"
+        overflow="hidden"
+        backgroundColor="bg.default"
+        style={{
+          border: "1px solid var(--colors-border-subtle)",
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)",
+          transition: "all 0.2s ease-in-out",
+        }}
+        onMouseEnter={(e) => {
+          const el = e.currentTarget as HTMLElement;
+          el.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.12)";
+          el.style.borderColor = "var(--colors-border-default)";
+        }}
+        onMouseLeave={(e) => {
+          const el = e.currentTarget as HTMLElement;
+          el.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.08)";
+          el.style.borderColor = "var(--colors-border-subtle)";
+        }}
       >
-        <Byline
-          href={permalink}
-          author={thread.author}
-          time={new Date(thread.createdAt)}
-          updated={new Date(thread.updatedAt)}
-          more={
-            <Box
-              className="thread-byline__more"
-              flexShrink="0"
-              overflow="hidden"
-            >
-              <Link
-                className="thread-byline__anchor"
-                href={permalink}
-                title={replyStatusLabel}
+        <styled.div
+          display="flex"
+          alignItems="flex-start"
+          justifyContent="space-between"
+          gap="4"
+          p="5"
+          style={{
+            borderBottom: "1px solid var(--colors-border-subtle)",
+          }}
+        >
+          <Link href={`/m/${thread.author.handle}`}>
+            <styled.div display="flex" alignItems="center" gap="3" flex="1">
+              <styled.div
+                style={{
+                  transition: "transform 0.2s ease-in-out",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.transform =
+                    "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.transform =
+                    "scale(1)";
+                }}
               >
-                <styled.span
-                  className="thread-byline__reply-status-label"
-                  color="fg.muted"
+                <MemberAvatar profile={thread.author} size="md" />
+              </styled.div>
+              <styled.div display="flex" flexDir="column" gap="1" flex="1">
+                <styled.p
+                  fontSize="sm"
+                  fontWeight="semibold"
+                  color="fg.default"
+                  style={{
+                    transition: "color 0.2s ease-in-out",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.color =
+                      "var(--colors-fg-subtle)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.color =
+                      "var(--colors-fg-default)";
+                  }}
+                >
+                  {thread.author.handle}
+                </styled.p>
+                <styled.p fontSize="xs" color="fg.muted">
+                  {timestamp(new Date(thread.createdAt), false)}
+                </styled.p>
+              </styled.div>
+            </styled.div>
+          </Link>
+          {session && (
+            <styled.div
+              style={{
+                opacity: "0.7",
+                transition: "opacity 0.2s ease-in-out",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.opacity = "1";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.opacity = "0.7";
+              }}
+            >
+              <ThreadMenu thread={thread} />
+            </styled.div>
+          )}
+        </styled.div>
+
+        <styled.div
+          display="flex"
+          flexDir="column"
+          gap="4"
+          p="5"
+          flex="1"
+          style={{
+            borderBottom: "1px solid var(--colors-border-subtle)",
+          }}
+        >
+          <Link href={permalink}>
+            <styled.h3
+              fontSize="lg"
+              fontWeight="bold"
+              color="fg.default"
+              style={{
+                lineHeight: "1.6",
+                transition: "color 0.2s ease-in-out",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.color =
+                  "var(--colors-fg-subtle)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.color =
+                  "var(--colors-fg-default)";
+              }}
+            >
+              {title}
+            </styled.h3>
+          </Link>
+
+          {thread.description && (
+            <styled.p
+              fontSize="sm"
+              color="fg.muted"
+              style={{
+                lineHeight: "1.6",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {thread.description}
+            </styled.p>
+          )}
+
+          {!hideCategoryBadge && thread.category && (
+            <styled.div display="flex" gap="2" flexWrap="wrap">
+              <CategoryBadge category={thread.category} />
+              {isInReview && (
+                <PostReviewBadge
+                  isModerator={isModerator}
+                  postId={thread.id}
+                  onAccept={handlers.handleAcceptThread}
+                  onEditAndAccept={handlers.handleEditAndAccept}
+                  onDelete={handlers.handleConfirmDelete}
+                  isConfirmingDelete={isConfirmingDelete}
+                  onCancelDelete={handlers.handleCancelDelete}
+                />
+              )}
+            </styled.div>
+          )}
+        </styled.div>
+
+        {!isInReview && session && (
+          <styled.div
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            gap="4"
+            p="5"
+            backgroundColor="bg.subtle"
+          >
+            <styled.div display="flex" alignItems="center" gap="8">
+              <styled.div
+                display="flex"
+                alignItems="center"
+                gap="2"
+                style={{
+                  transition: "opacity 0.2s ease-in-out",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.opacity = "0.8";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.opacity = "1";
+                }}
+              >
+                <LikeButton thread={thread} showCount />
+              </styled.div>
+
+              <Link href={permalink} title={replyStatusLabel}>
+                <styled.div
                   display="flex"
-                  gap="0.5"
                   alignItems="center"
+                  gap="2"
+                  color="fg.muted"
+                  style={{
+                    transition: "color 0.2s ease-in-out",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.color =
+                      "var(--colors-fg-default)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.color =
+                      "var(--colors-fg-muted)";
+                  }}
                 >
                   {hasReplied ? (
-                    <DiscussionParticipatingIcon width="4" />
+                    <DiscussionParticipatingIcon width="5" />
                   ) : (
-                    <DiscussionIcon width="4" />
+                    <DiscussionIcon width="5" />
                   )}
-                  {replyCount}
-                  {newRepliesCount > 0 && (
-                    <styled.span
-                      color="fg.muted"
-                      fontSize="xs"
-                      title={newRepliesLabel}
-                    >
-                      +{newRepliesCount}
-                    </styled.span>
-                  )}
-                </styled.span>
+                  <styled.span fontSize="sm" fontWeight="medium">
+                    {replyCount}
+                  </styled.span>
+                </styled.div>
               </Link>
-            </Box>
-          }
-        />
-      </Card>
+            </styled.div>
+
+            <styled.div
+              style={{
+                opacity: "0.7",
+                transition: "opacity 0.2s ease-in-out",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.opacity = "1";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.opacity = "0.7";
+              }}
+            >
+              <CollectionMenu account={session} thread={thread} />
+            </styled.div>
+          </styled.div>
+        )}
+      </styled.div>
     );
   },
 );

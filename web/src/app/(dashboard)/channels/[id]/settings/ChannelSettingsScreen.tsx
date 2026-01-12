@@ -7,9 +7,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { mutate } from "swr";
 import { createListCollection } from "@ark-ui/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-import { Account, Channel } from "@/api/openapi-schema";
+import { Account, Channel, Asset } from "@/api/openapi-schema";
 import { useSession } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { FormControl } from "@/components/ui/form/FormControl";
@@ -26,7 +26,10 @@ import {
 } from "@/api/openapi-client/channels";
 import { handle } from "@/api/client";
 import { useChannelPermissions } from "@/lib/channel/permissions";
+import { AssetUploadEditor } from "@/components/asset/AssetUploadEditor/AssetUploadEditor";
+import { getAssetURL } from "@/utils/asset";
 
+import { revalidateChannels } from "@/app/(dashboard)/channels/actions";
 import { MembersSection } from "./MembersSection";
 
 type Props = {
@@ -56,13 +59,17 @@ export function ChannelSettingsScreen(props: Props) {
   const router = useRouter();
   const hostname = new URL(WEB_ADDRESS).host;
   const permissions = useChannelPermissions(props.channel.id);
+  const [selectedIcon, setSelectedIcon] = useState<Asset | undefined>(props.channel.icon);
 
-  // Redirect if user doesn't have permission to manage channel
   useEffect(() => {
     if (permissions.role !== null && !permissions.canManageChannel) {
       router.push(`/channels/${props.channel.id}`);
     }
   }, [permissions.canManageChannel, permissions.role, props.channel.id, router]);
+
+  useEffect(() => {
+    setSelectedIcon(props.channel.icon);
+  }, [props.channel.id]);
 
   const { register, handleSubmit, control, formState } = useForm<Form>({
     resolver: zodResolver(FormSchema),
@@ -83,14 +90,21 @@ export function ChannelSettingsScreen(props: Props) {
 
   const onSubmit = handleSubmit(async (data) => {
     await handle(async () => {
-      await channelUpdate(props.channel.id, data);
+      const updateData = {
+        ...data,
+        icon: selectedIcon?.id || null,
+      };
+
+      await channelUpdate(props.channel.id, updateData);
+
       mutate(getChannelListKey());
-      router.refresh(); // Invalidate Next.js router cache for server components
+      mutate([`/channels/${props.channel.id}`]);
+      await revalidateChannels();
+      router.refresh();
       router.push(`/channels/${props.channel.id}`);
     });
   });
 
-  // Don't render anything while checking permissions
   if (permissions.role === null || !permissions.canManageChannel) {
     return null;
   }
@@ -176,6 +190,17 @@ export function ChannelSettingsScreen(props: Props) {
           <FormHelperText>
             Public channels are discoverable, private channels are invite-only
           </FormHelperText>
+        </FormControl>
+
+        <FormControl>
+          <FormLabel>Channel Icon</FormLabel>
+          <AssetUploadEditor
+            width={200}
+            height={200}
+            onUpload={setSelectedIcon}
+            value={selectedIcon}
+          />
+          <FormHelperText>Upload a custom icon for your channel</FormHelperText>
         </FormControl>
 
         <WStack>

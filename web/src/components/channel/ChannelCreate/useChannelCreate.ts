@@ -10,6 +10,7 @@ import {
   getChannelListKey,
 } from "@/api/openapi-client/channels";
 import { UseDisclosureProps } from "@/utils/useDisclosure";
+import { revalidateChannels } from "@/app/(dashboard)/channels/actions";
 
 export const FormSchema = z.object({
   name: z
@@ -45,7 +46,8 @@ export function useChannelCreate(props: ChannelCreateProps) {
       const channel = await channelCreate(data);
       props.onClose?.();
       mutate(getChannelListKey());
-      router.refresh(); // Invalidate Next.js router cache for server components
+      await revalidateChannels();
+      router.refresh();
       router.push(`/channels/${channel.id}`);
     });
   });
