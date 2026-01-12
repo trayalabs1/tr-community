@@ -163,12 +163,12 @@ export function ContentNavigationList(props: Props) {
         )}
       </LStack>
 
-      <LStack gap="1">
+      {/* <LStack gap="1">
         <CollectionsAnchor />
         <LinksAnchor />
         <MembersAnchor />
         <RolesAnchor />
-      </LStack>
+      </LStack> */}
     </styled.nav>
   );
 }
