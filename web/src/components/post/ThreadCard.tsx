@@ -22,6 +22,8 @@ import {
   DiscussionParticipatingIcon,
 } from "../ui/icons/Discussion";
 
+import { PinIcon } from "../ui/icons/Pin";
+
 import { LikeButton } from "./LikeButton/LikeButton";
 import { useThreadCardModeration } from "./useThreadCardModeration";
 
@@ -60,6 +62,7 @@ export const ThreadReferenceCard = memo(
       : replyCountLabel;
 
     const isInReview = thread.visibility === Visibility.review;
+    const isPinned = (thread.pinned ?? 0) > 0;
 
     return (
       <styled.div
@@ -167,25 +170,28 @@ export const ThreadReferenceCard = memo(
           }}
         >
           <Link href={permalink}>
-            <styled.h3
-              fontSize="lg"
-              fontWeight="bold"
-              color="fg.default"
-              style={{
-                lineHeight: "1.6",
-                transition: "color 0.2s ease-in-out",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color =
-                  "var(--colors-fg-subtle)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color =
-                  "var(--colors-fg-default)";
-              }}
-            >
-              {title}
-            </styled.h3>
+            <styled.div display="flex" alignItems="center" gap="2">
+              {isPinned && <PinIcon w="4" h="4" />}
+              <styled.h3
+                fontSize="lg"
+                fontWeight="bold"
+                color="fg.default"
+                style={{
+                  lineHeight: "1.6",
+                  transition: "color 0.2s ease-in-out",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.color =
+                    "var(--colors-fg-subtle)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.color =
+                    "var(--colors-fg-default)";
+                }}
+              >
+                {title}
+              </styled.h3>
+            </styled.div>
           </Link>
 
           {thread.description && (
@@ -204,9 +210,11 @@ export const ThreadReferenceCard = memo(
             </styled.p>
           )}
 
-          {!hideCategoryBadge && thread.category && (
+          {(!hideCategoryBadge && thread.category) || isInReview ? (
             <styled.div display="flex" gap="2" flexWrap="wrap">
-              <CategoryBadge category={thread.category} />
+              {!hideCategoryBadge && thread.category && (
+                <CategoryBadge category={thread.category} />
+              )}
               {isInReview && (
                 <PostReviewBadge
                   isModerator={isModerator}
@@ -219,7 +227,7 @@ export const ThreadReferenceCard = memo(
                 />
               )}
             </styled.div>
-          )}
+          ) : null}
         </styled.div>
 
         {!isInReview && session && (

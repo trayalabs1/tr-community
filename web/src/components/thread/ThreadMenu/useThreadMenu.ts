@@ -22,12 +22,14 @@ export type Props = {
   thread: ThreadReference;
   editingEnabled?: boolean;
   movingEnabled?: boolean;
+  onPinChange?: (pinned: boolean) => Promise<void>;
 };
 
 export function useThreadMenu({
   thread,
   editingEnabled,
   movingEnabled,
+  onPinChange,
 }: Props) {
   const router = useRouter();
   const account = useSession();
@@ -93,7 +95,11 @@ export function useThreadMenu({
   async function handlePinThread() {
     await handle(
       async () => {
-        await updateThread(thread.id, { pinned: 1 });
+        if (onPinChange) {
+          await onPinChange(true);
+        } else {
+          await updateThread(thread.id, { pinned: 1 });
+        }
       },
       {
         cleanup: async () => await revalidate(),
@@ -104,7 +110,11 @@ export function useThreadMenu({
   async function handleUnpinThread() {
     await handle(
       async () => {
-        await updateThread(thread.id, { pinned: 0 });
+        if (onPinChange) {
+          await onPinChange(false);
+        } else {
+          await updateThread(thread.id, { pinned: 0 });
+        }
       },
       {
         cleanup: async () => await revalidate(),
