@@ -70,6 +70,7 @@ type Bindings struct {
 	WebAuthn
 	PhoneAuth
 	TrayaAuth
+	Username
 	Accounts
 	Invitations
 	Notifications
@@ -106,6 +107,7 @@ func bindingsProviders() fx.Option {
 		NewWebAuthn,
 		NewPhoneAuth,
 		NewTrayaAuth,
+		NewUsername,
 		NewAccounts,
 		NewInvitations,
 		NewNotifications,

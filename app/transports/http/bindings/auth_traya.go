@@ -2,6 +2,7 @@ package bindings
 
 import (
 	"context"
+	"strings"
 
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
@@ -33,9 +34,15 @@ func (i *TrayaAuth) AuthTrayaToken(ctx context.Context, request openapi.AuthTray
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
+	// Check if user needs to set a username (temporary handle)
+	needsUsername := strings.HasPrefix(acc.Handle, "temp_")
+
 	return openapi.AuthTrayaToken200JSONResponse{
 		AuthSuccessOKJSONResponse: openapi.AuthSuccessOKJSONResponse{
-			Body: openapi.AuthSuccess{Id: acc.ID.String()},
+			Body: openapi.AuthSuccess{
+				Id:            acc.ID.String(),
+				NeedsUsername: &needsUsername,
+			},
 			Headers: openapi.AuthSuccessOKResponseHeaders{
 				SetCookie: i.cj.Create(*t).String(),
 			},

@@ -26,8 +26,14 @@ export function LandingScreen({ token }: { token: string }) {
 
     handle(
       async () => {
-        await trigger();
-        router.push("/");
+        const response = await trigger();
+
+        // Check if user needs to set a username
+        if (response?.needs_username) {
+          router.push("/auth/username");
+        } else {
+          router.push("/");
+        }
       },
       {
         errorToast: false,

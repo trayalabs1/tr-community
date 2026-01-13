@@ -17,6 +17,7 @@ import type {
   AccessKeyCreateBody,
   AccessKeyCreateOKResponse,
   AccessKeyListOKResponse,
+  AccountUpdateOKResponse,
   AuthEmailBody,
   AuthEmailPasswordBody,
   AuthEmailPasswordResetBody,
@@ -42,6 +43,9 @@ import type {
   PhoneRequestCodeParams,
   PhoneSubmitCodeBody,
   UnauthorisedResponse,
+  UsernameCheck200,
+  UsernameCheckParams,
+  UsernameSetBody,
   WebAuthnGetAssertionOKResponse,
   WebAuthnMakeAssertionBody,
   WebAuthnMakeCredentialBody,
@@ -1258,6 +1262,116 @@ export const useAuthTrayaToken = <
 
   const swrKey = swrOptions?.swrKey ?? getAuthTrayaTokenMutationKey(params);
   const swrFn = getAuthTrayaTokenMutationFetcher(params);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Check if a username is available
+ */
+export const usernameCheck = (params: UsernameCheckParams) => {
+  return fetcher<UsernameCheck200>({
+    url: `/auth/username/check`,
+    method: "GET",
+    params,
+  });
+};
+
+export const getUsernameCheckKey = (params: UsernameCheckParams) =>
+  [`/auth/username/check`, ...(params ? [params] : [])] as const;
+
+export type UsernameCheckQueryResult = NonNullable<
+  Awaited<ReturnType<typeof usernameCheck>>
+>;
+export type UsernameCheckQueryError =
+  | BadRequestResponse
+  | InternalServerErrorResponse;
+
+export const useUsernameCheck = <
+  TError = BadRequestResponse | InternalServerErrorResponse,
+>(
+  params: UsernameCheckParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof usernameCheck>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getUsernameCheckKey(params) : null));
+  const swrFn = () => usernameCheck(params);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Set username for the authenticated account (first-time only).
+This endpoint can only be used once per account to set a permanent
+username, replacing the temporary handle assigned during signup.
+
+ */
+export const usernameSet = (usernameSetBody: UsernameSetBody) => {
+  return fetcher<AccountUpdateOKResponse>({
+    url: `/auth/username`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: usernameSetBody,
+  });
+};
+
+export const getUsernameSetMutationFetcher = () => {
+  return (
+    _: Key,
+    { arg }: { arg: UsernameSetBody },
+  ): Promise<AccountUpdateOKResponse> => {
+    return usernameSet(arg);
+  };
+};
+export const getUsernameSetMutationKey = () => [`/auth/username`] as const;
+
+export type UsernameSetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof usernameSet>>
+>;
+export type UsernameSetMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | InternalServerErrorResponse;
+
+export const useUsernameSet = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | InternalServerErrorResponse,
+>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof usernameSet>>,
+    TError,
+    Key,
+    UsernameSetBody,
+    Awaited<ReturnType<typeof usernameSet>>
+  > & { swrKey?: string };
+}) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getUsernameSetMutationKey();
+  const swrFn = getUsernameSetMutationFetcher();
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

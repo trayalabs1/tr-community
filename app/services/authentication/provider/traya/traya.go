@@ -138,12 +138,13 @@ var cohortChannelRules = []cohortChannelRule{
 
 var topicChannelsByGender = map[string][]string{
 	"male": {
-
+		"general",
 		"stress-sleep-nutrition",
 		"digestion-metabolism-gut-health",
 		"dandruff-hair-health",
 	},
 	"female": {
+		"general",
 		"hormones-pcos",
 		"stress-sleep-nutrition-female",
 		"digestion-metabolism-gut-female",
@@ -288,7 +289,9 @@ func (p *Provider) getOrCreateAccount(
 		name = fmt.Sprintf("%s %s", firstName, *lastName)
 	}
 
-	handle := generateHandle(firstName, phoneNumber)
+	// Use temporary handle that user will replace during onboarding
+	// Generate short unique handle: temp_ (5 chars) + xid (20 chars) = 25 chars (under 30 limit)
+	handle := fmt.Sprintf("temp_%s", xid.New().String())
 
 	newAccount, err := p.register.GetOrCreateViaEmail(ctx, service, email.Address, trayaUserID, trayaUserID, handle, name, email, true)
 	if err != nil {

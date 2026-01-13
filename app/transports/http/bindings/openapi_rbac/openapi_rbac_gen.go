@@ -46,6 +46,8 @@ type OperationPermissions interface {
 	PhoneRequestCode() (bool, *rbac.Permission)
 	PhoneSubmitCode() (bool, *rbac.Permission)
 	AuthTrayaToken() (bool, *rbac.Permission)
+	UsernameCheck() (bool, *rbac.Permission)
+	UsernameSet() (bool, *rbac.Permission)
 	AccessKeyList() (bool, *rbac.Permission)
 	AccessKeyCreate() (bool, *rbac.Permission)
 	AccessKeyDelete() (bool, *rbac.Permission)
@@ -262,6 +264,10 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.PhoneSubmitCode()
 	case "AuthTrayaToken":
 		return optable.AuthTrayaToken()
+	case "UsernameCheck":
+		return optable.UsernameCheck()
+	case "UsernameSet":
+		return optable.UsernameSet()
 	case "AccessKeyList":
 		return optable.AccessKeyList()
 	case "AccessKeyCreate":
