@@ -127,10 +127,15 @@ func getCookieDomain(backend, frontend url.URL) (string, error) {
 		return "", err
 	}
 
-	// If frontend and backend are on different subdomains use backend's domain.
-	// example: api.cats.com and site.cats.com
+	// If frontend and backend are on different subdomains, use the common parent domain.
+	// This allows cookies to work across both subdomains and for SSR requests.
+	// example: api.cats.com and site.cats.com -> cats.com
+	// example: discourse-api.dev.hav-g.in and discourse.dev.hav-g.in -> dev.hav-g.in
 	if frontendDomain.IsSiblingOf(backendDomain) {
-		return backendDomain.String(), nil
+		// Get the common parent by removing the last (most specific) part
+		commonParent := make(Domain, len(backendDomain)-1)
+		copy(commonParent, backendDomain[:len(backendDomain)-1])
+		return commonParent.String(), nil
 	}
 
 	// If frontend is on a lower level domain than the backend use TLD+1.
