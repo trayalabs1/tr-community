@@ -94,6 +94,7 @@ func serialiseThreadReference(t *thread.Thread) openapi.ThreadReference {
 		LastReplyAt: t.LastReplyAt.Ptr(),
 
 		Category:    opt.Map(t.Category, serialiseCategoryReference).Ptr(),
+		ChannelId:   openapi.Identifier(t.ChannelID.String()),
 		Visibility:  serialiseVisibility(t.Visibility),
 		Pinned:      t.Pinned,
 		ReadStatus:  opt.PtrMap(t.ReadStatus, serialiseReadStatus),
@@ -117,6 +118,7 @@ func serialiseThread(t *thread.Thread) openapi.Thread {
 		Author:         serialiseProfileReference(t.Author),
 		Body:           serialiseContentHTML(t.Content),
 		Category:       opt.Map(t.Category, serialiseCategoryReference).Ptr(),
+		ChannelId:      openapi.Identifier(t.ChannelID.String()),
 		Likes:          serialiseLikeStatus(&t.Likes),
 		Collections:    serialiseCollectionStatus(t.Collections),
 		CreatedAt:      t.CreatedAt,

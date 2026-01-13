@@ -26,6 +26,7 @@ import { PinIcon } from "../ui/icons/Pin";
 
 import { LikeButton } from "./LikeButton/LikeButton";
 import { useThreadCardModeration } from "./useThreadCardModeration";
+import { ProfileHoverTooltip } from "./ProfileHoverTooltip";
 
 type Props = {
   thread: ThreadReference;
@@ -63,6 +64,7 @@ export const ThreadReferenceCard = memo(
 
     const isInReview = thread.visibility === Visibility.review;
     const isPinned = (thread.pinned ?? 0) > 0;
+    const isAdmin = hasPermission(session, Permission.ADMINISTRATOR);
 
     return (
       <styled.div
@@ -101,21 +103,42 @@ export const ThreadReferenceCard = memo(
         >
           <Link href={`/m/${thread.author.handle}`}>
             <styled.div display="flex" alignItems="center" gap="3" flex="1">
-              <styled.div
-                style={{
-                  transition: "transform 0.2s ease-in-out",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform =
-                    "scale(1.05)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform =
-                    "scale(1)";
-                }}
-              >
-                <MemberAvatar profile={thread.author} size="md" />
-              </styled.div>
+              {isAdmin ? (
+                <ProfileHoverTooltip profile={thread.author}>
+                  <styled.div
+                    style={{
+                      transition: "transform 0.2s ease-in-out",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.transform =
+                        "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.transform =
+                        "scale(1)";
+                    }}
+                  >
+                    <MemberAvatar profile={thread.author} size="md" />
+                  </styled.div>
+                </ProfileHoverTooltip>
+              ) : (
+                <styled.div
+                  style={{
+                    transition: "transform 0.2s ease-in-out",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.transform =
+                      "scale(1.05)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.transform =
+                      "scale(1)";
+                  }}
+                >
+                  <MemberAvatar profile={thread.author} size="md" />
+                </styled.div>
+              )}
               <styled.div display="flex" flexDir="column" gap="1" flex="1">
                 <styled.p
                   fontSize="sm"

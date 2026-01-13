@@ -11,7 +11,7 @@ import {
   useChannelCategoryList,
   useChannelThreadList,
 } from "@/api/openapi-client/channels";
-import { Account, Channel } from "@/api/openapi-schema";
+import { Account, Channel, Visibility } from "@/api/openapi-schema";
 import { CategoryCreateTrigger } from "@/components/category/CategoryCreate/CategoryCreateTrigger";
 import { ThreadCreateTrigger } from "@/components/thread/ThreadCreate/ThreadCreateTrigger";
 import { ThreadReferenceCard } from "@/components/post/ThreadCard";
@@ -30,6 +30,7 @@ type Props = {
 export function ChannelScreen(props: Props) {
   const permissions = useChannelPermissions(props.channel.id);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
+  const [selectedVisibility, setSelectedVisibility] = useState<string | null>(null);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const { data: categories, isValidating: isCategoriesLoading } = useChannelCategoryList(props.channel.id, {
@@ -38,9 +39,17 @@ export function ChannelScreen(props: Props) {
     },
   });
 
+  const threadParams: Record<string, any> = {};
+  if (selectedCategorySlug) {
+    threadParams['categories'] = [selectedCategorySlug];
+  }
+  if (selectedVisibility) {
+    threadParams['visibility'] = [selectedVisibility];
+  }
+
   const { data: threads, error, isValidating: isThreadsLoading } = useChannelThreadList(
     props.channel.id,
-    selectedCategorySlug ? { categories: [selectedCategorySlug] } : {},
+    threadParams,
     {
       swr: {
         revalidateOnFocus: false,
@@ -155,51 +164,93 @@ export function ChannelScreen(props: Props) {
           </HStack>
         </HStack>
 
-        {isFiltersOpen && categories && categories.categories.length > 0 && (
+        {isFiltersOpen && (
           <VStack alignItems="start" gap="3" width="full" style={{
             border: "1px solid var(--colors-border-default)",
             borderRadius: "0.5rem",
             padding: "1rem",
           }}>
-            <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase" style={{ letterSpacing: "0.05em" }}>
-              Topic
+            {categories && categories.categories.length > 0 && (
+              <>
+                <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase" style={{ letterSpacing: "0.05em" }}>
+                  Topic
+                </styled.label>
+                <HStack gap="4" flexWrap="wrap">
+                  <styled.button
+                    onClick={() => setSelectedCategorySlug(null)}
+                    fontSize="sm"
+                    cursor="pointer"
+                    transition="all"
+                    style={{
+                      backgroundColor: "transparent",
+                      color: selectedCategorySlug === null ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
+                      border: "none",
+                      borderBottom: selectedCategorySlug === null ? "2px solid var(--colors-fg-default)" : "2px solid transparent",
+                      padding: "4px 0",
+                      fontWeight: selectedCategorySlug === null ? "600" : "400",
+                    }}
+                  >
+                    All
+                  </styled.button>
+                  {categories.categories.map((category) => (
+                    <styled.button
+                      key={category.id}
+                      onClick={() => setSelectedCategorySlug(category.slug)}
+                      fontSize="sm"
+                      cursor="pointer"
+                      transition="all"
+                      style={{
+                        backgroundColor: "transparent",
+                        color: selectedCategorySlug === category.slug ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
+                        border: "none",
+                        borderBottom: selectedCategorySlug === category.slug ? `2px solid ${category.colour || "#8577ce"}` : "2px solid transparent",
+                        padding: "4px 0",
+                        fontWeight: selectedCategorySlug === category.slug ? "600" : "400",
+                      }}
+                    >
+                      {category.name}
+                    </styled.button>
+                  ))}
+                </HStack>
+              </>
+            )}
+
+            <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase" style={{ letterSpacing: "0.05em", marginTop: categories && categories.categories.length > 0 ? "0.5rem" : "0" }}>
+              Status
             </styled.label>
             <HStack gap="4" flexWrap="wrap">
               <styled.button
-                onClick={() => setSelectedCategorySlug(null)}
+                onClick={() => setSelectedVisibility(null)}
                 fontSize="sm"
                 cursor="pointer"
                 transition="all"
                 style={{
                   backgroundColor: "transparent",
-                  color: selectedCategorySlug === null ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
+                  color: selectedVisibility === null ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
                   border: "none",
-                  borderBottom: selectedCategorySlug === null ? "2px solid var(--colors-fg-default)" : "2px solid transparent",
+                  borderBottom: selectedVisibility === null ? "2px solid var(--colors-fg-default)" : "2px solid transparent",
                   padding: "4px 0",
-                  fontWeight: selectedCategorySlug === null ? "600" : "400",
+                  fontWeight: selectedVisibility === null ? "600" : "400",
                 }}
               >
                 All
               </styled.button>
-              {categories.categories.map((category) => (
-                <styled.button
-                  key={category.id}
-                  onClick={() => setSelectedCategorySlug(category.slug)}
-                  fontSize="sm"
-                  cursor="pointer"
-                  transition="all"
-                  style={{
-                    backgroundColor: "transparent",
-                    color: selectedCategorySlug === category.slug ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
-                    border: "none",
-                    borderBottom: selectedCategorySlug === category.slug ? `2px solid ${category.colour || "#8577ce"}` : "2px solid transparent",
-                    padding: "4px 0",
-                    fontWeight: selectedCategorySlug === category.slug ? "600" : "400",
-                  }}
-                >
-                  {category.name}
-                </styled.button>
-              ))}
+              <styled.button
+                onClick={() => setSelectedVisibility(Visibility.review)}
+                fontSize="sm"
+                cursor="pointer"
+                transition="all"
+                style={{
+                  backgroundColor: "transparent",
+                  color: selectedVisibility === Visibility.review ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
+                  border: "none",
+                  borderBottom: selectedVisibility === Visibility.review ? "2px solid #f97316" : "2px solid transparent",
+                  padding: "4px 0",
+                  fontWeight: selectedVisibility === Visibility.review ? "600" : "400",
+                }}
+              >
+                In Review
+              </styled.button>
             </HStack>
           </VStack>
         )}

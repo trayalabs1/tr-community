@@ -6508,6 +6508,7 @@ components:
         - tags
         - reply_status
         - collections
+        - channel_id
       properties:
         pinned: { $ref: "#/components/schemas/PinnedRank" }
         read_status: { $ref: "#/components/schemas/ReadStatus" }
@@ -6515,6 +6516,7 @@ components:
         category: { $ref: "#/components/schemas/CategoryReference" }
         link: { $ref: "#/components/schemas/LinkReference" }
         tags: { $ref: "#/components/schemas/TagReferenceList" }
+        channel_id: { $ref: "#/components/schemas/Identifier" }
         last_reply_at:
           type: string
           format: date-time
