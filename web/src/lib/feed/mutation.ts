@@ -131,6 +131,7 @@ export function useFeedMutations(
         tags: [],
         visibility: Visibility.draft,
         link: preHydratedLink,
+        channel_id: channelID || "",
       } satisfies ThreadReference;
 
       const newData = {

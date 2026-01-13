@@ -43,7 +43,9 @@ export function QueueThreadListItem({
 
   const { isConfirmingDelete, handlers } = useThreadCardModeration(thread);
 
-  const url = `/t/${thread.slug}`;
+  const url = thread.channel_id
+    ? `/channels/${thread.channel_id}/threads/${thread.slug}`
+    : `/t/${thread.slug}`;
   const title = thread.title || thread.link?.title || "Untitled post";
 
   return (
@@ -76,13 +78,6 @@ export function QueueThreadListItem({
 
               <Timestamp created={thread.createdAt} large />
             </HStack>
-
-            {/* Channel name - if available */}
-            {/* <styled.div fontSize="xs" color="fg.muted">
-              Channel: <styled.span fontWeight="medium" color="fg.default">
-                {(thread as any).channel_name || "Unknown Channel"}
-              </styled.span>
-            </styled.div> */}
           </VStack>
 
           <ThreadMenu thread={thread} editingEnabled movingEnabled />
