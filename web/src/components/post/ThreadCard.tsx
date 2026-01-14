@@ -171,22 +171,25 @@ export const ThreadReferenceCard = memo(
           gap="3"
           p="4"
         >
-          <styled.p
-            fontSize="sm"
-            color="fg.default"
-            fontWeight="medium"
-            style={{
-              margin: "0",
-              lineHeight: "1.6",
-              whiteSpace: "pre-wrap",
-              overflow: "hidden",
-              display: "-webkit-box",
-              WebkitLineClamp: 4,
-              WebkitBoxOrient: "vertical",
-            }}
-          >
-            {thread.description || title}
-          </styled.p>
+          <Link href={permalink} style={{ textDecoration: "none" }}>
+            <styled.p
+              fontSize="sm"
+              color="fg.default"
+              fontWeight="medium"
+              style={{
+                margin: "0",
+                lineHeight: "1.6",
+                whiteSpace: "pre-wrap",
+                overflow: "hidden",
+                display: "-webkit-box",
+                WebkitLineClamp: 4,
+                WebkitBoxOrient: "vertical",
+                cursor: "pointer",
+              }}
+            >
+              {thread.description || title}
+            </styled.p>
+          </Link>
 
           {(!hideCategoryBadge && thread.category) || isInReview ? (
             <styled.div display="flex" gap="2.5" flexWrap="wrap">
