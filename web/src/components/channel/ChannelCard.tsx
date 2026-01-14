@@ -1,19 +1,18 @@
 "use client";
 
-import { HStack, VStack, styled } from "@/styled-system/jsx";
+import { VStack, styled } from "@/styled-system/jsx";
 import { ChevronRightIcon } from "@/components/ui/icons/Chevron";
 import { ProfileIcon } from "@/components/ui/icons/Profile";
-import { MembersIcon } from "@/components/ui/icons/Members";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { getAssetURL } from "@/utils/asset";
 
 interface ChannelCardProps {
   id: string;
   name: string;
+  description?: string;
   icon?: {
     path: string;
   };
-  memberCount?: number;
   isActive?: boolean;
   isCohort?: boolean;
   onClick?: () => void;
@@ -22,8 +21,8 @@ interface ChannelCardProps {
 export function ChannelCard({
   id,
   name,
+  description,
   icon,
-  memberCount = 0,
   isActive = false,
   isCohort = false,
   onClick,
@@ -107,22 +106,21 @@ export function ChannelCard({
         >
           {name}
         </styled.span>
-        <HStack gap="1" alignItems="center">
-          <MembersIcon
-            width="3.5"
-            height="3.5"
-            style={{ color: "var(--colors-fg-muted)" }}
-          />
+        {description && (
           <styled.span
             fontSize="xs"
             style={{
               color: "var(--colors-fg-muted)",
               margin: "0",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              maxWidth: "100%",
             }}
           >
-            {memberCount.toLocaleString()} members
+            {description.length > 30 ? description.substring(0, 30) + "..." : description}
           </styled.span>
-        </HStack>
+        )}
       </VStack>
 
       {/* Chevron */}

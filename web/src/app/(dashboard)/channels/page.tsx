@@ -20,6 +20,7 @@ export default async function ChannelsPage() {
   const { data: channels } = await channelList({});
   const { data: notifications } = await notificationList({ status: ["unread"] });
   const { data: collections } = await collectionList({});
+
   const hasUnreadNotifications = (notifications?.notifications?.length ?? 0) > 0;
   const bookmarkCount = collections?.collections?.length ?? 0;
   const userCanCreateChannels = canCreateChannels(session);
@@ -195,8 +196,8 @@ export default async function ChannelsPage() {
                     <ChannelCard
                       id={channel.id}
                       name={channel.name}
+                      description={channel.description}
                       icon={channel.icon}
-                      memberCount={312}
                       isCohort={true}
                     />
                   </Link>
@@ -222,8 +223,8 @@ export default async function ChannelsPage() {
                       <ChannelCard
                         id={channel.id}
                         name={channel.name}
+                        description={channel.description}
                         icon={channel.icon}
-                        memberCount={1243}
                         isCohort={false}
                       />
                     </Link>

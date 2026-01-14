@@ -96,9 +96,7 @@ export function ChannelScreen(props: Props) {
 
       {/* Threads Section */}
       <VStack alignItems="start" gap="4" width="full">
-        <Heading as="h2" size="lg">
-          Threads
-        </Heading>
+
 
         {isThreadsLoading && !threads ? (
           <styled.div
