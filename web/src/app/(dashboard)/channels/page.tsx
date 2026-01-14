@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { channelList } from "@/api/openapi-server/channels";
 import { notificationList } from "@/api/openapi-server/notifications";
+import { collectionList } from "@/api/openapi-server/collections";
 import { getServerSession } from "@/auth/server-session";
 import { BookmarkButton } from "@/components/channel/BookmarkButton";
 import { ChannelCreateTrigger } from "@/components/channel/ChannelCreate/ChannelCreateTrigger";
@@ -19,7 +20,9 @@ export default async function ChannelsPage() {
   if (!session) redirect("/");
   const { data: channels } = await channelList({});
   const { data: notifications } = await notificationList({ status: ["unread"] });
+  const { data: collections } = await collectionList({});
   const hasUnreadNotifications = (notifications?.notifications?.length ?? 0) > 0;
+  const bookmarkCount = collections?.collections?.length ?? 0;
   const userCanCreateChannels = canCreateChannels(session);
 
   return (
@@ -34,8 +37,8 @@ export default async function ChannelsPage() {
         borderBottomColor="border.default"
         justifyContent="space-between"
         mt="0"
+        bg="white"
         style={{
-          backgroundColor: "white",
           marginLeft: "-1rem",
           marginRight: "-1rem",
           marginTop: "-1.5rem",
@@ -129,7 +132,7 @@ export default async function ChannelsPage() {
           </VStack>
         </Link>
         <HStack gap="2" flexShrink="0">
-          <BookmarkButton />
+          <BookmarkButton count={bookmarkCount} />
           <NotificationButton hasUnread={hasUnreadNotifications} />
         </HStack>
       </HStack>
