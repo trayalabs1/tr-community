@@ -152,6 +152,19 @@ var topicChannelsByGender = map[string][]string{
 	},
 }
 
+func getAllManagedChannelSlugs() map[string]bool {
+	slugs := make(map[string]bool)
+	for _, rule := range cohortChannelRules {
+		slugs[rule.channelSlug] = true
+	}
+	for _, channels := range topicChannelsByGender {
+		for _, slug := range channels {
+			slugs[slug] = true
+		}
+	}
+	return slugs
+}
+
 func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*account.Account, error) {
 	if p.cfg.TrayaAPIServerURL.String() == "" {
 		return nil, fault.Wrap(ErrMissingAPIServerURL, fctx.With(ctx))
@@ -323,8 +336,6 @@ func generateHandle(firstName string, phoneNumber string) string {
 }
 
 func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string) error {
-	channelsToAdd := make(map[string]bool)
-
 	normalizedGender := normalizeGender(gender)
 
 	isWithin60Days, err := isLastOrderWithin60Days(latestOrderDate)
@@ -335,44 +346,96 @@ func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID accou
 		isWithin60Days = false
 	}
 
+	// Step 1: Build target channels set based on current gender/orderCount
+	targetChannels := make(map[string]bool)
+
 	if isWithin60Days {
 		for _, rule := range cohortChannelRules {
 			if rule.gender == normalizedGender && rule.orderCount == orderCount {
-				channelsToAdd[rule.channelSlug] = true
+				targetChannels[rule.channelSlug] = true
 			}
 		}
 
 		if orderCount > 8 {
 			if normalizedGender == "male" {
-				channelsToAdd["month-8-plus-legends"] = true
+				targetChannels["month-8-plus-legends"] = true
 			} else if normalizedGender == "female" {
-				channelsToAdd["month-8-plus-queens"] = true
+				targetChannels["month-8-plus-queens"] = true
 			}
 		}
 	}
 
 	if topicChannels, ok := topicChannelsByGender[normalizedGender]; ok {
 		for _, channelSlug := range topicChannels {
-			channelsToAdd[channelSlug] = true
+			targetChannels[channelSlug] = true
 		}
 	}
 
-	for channelSlug := range channelsToAdd {
-		channel, err := p.channelRepo.GetBySlug(ctx, channelSlug)
+	// Step 2: Get all managed channel slugs
+	managedChannelSlugs := getAllManagedChannelSlugs()
+
+	// Step 3: Get current memberships for the user
+	currentMemberships, err := p.membershipRepo.ListByAccount(ctx, accountID)
+	if err != nil {
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+
+	// Step 4: Build map of current managed channels (channelID -> slug)
+	currentManagedChannels := make(map[xid.ID]string)
+	for _, membership := range currentMemberships {
+		ch, err := p.channelRepo.Get(ctx, channel.ChannelID(membership.ChannelID))
 		if err != nil {
-			p.logger.Warn("channel not found",
-				slog.String("slug", channelSlug),
+			p.logger.Warn("failed to get channel for membership",
+				slog.String("channel_id", membership.ChannelID.String()),
 				slog.String("error", err.Error()))
 			continue
 		}
 
-		exists, err := p.membershipRepo.CheckMembership(ctx, xid.ID(channel.ID), accountID)
-		if err != nil {
-			return fault.Wrap(err, fctx.With(ctx))
+		if managedChannelSlugs[ch.Slug] {
+			currentManagedChannels[membership.ChannelID] = ch.Slug
+		}
+	}
+
+	// Step 5: Remove memberships that should no longer exist
+	for channelID, slug := range currentManagedChannels {
+		if !targetChannels[slug] {
+			err := p.membershipRepo.Remove(ctx, channelID, accountID)
+			if err != nil {
+				p.logger.Warn("failed to remove channel membership",
+					slog.String("channel", slug),
+					slog.String("account_id", accountID.String()),
+					slog.String("error", err.Error()))
+				continue
+			}
+
+			p.logger.Info("removed user from channel",
+				slog.String("channel", slug),
+				slog.String("account_id", accountID.String()),
+				slog.Int("order_count", orderCount),
+				slog.String("gender", gender))
+		}
+	}
+
+	// Step 6: Add memberships that should exist but don't
+	for channelSlug := range targetChannels {
+		alreadyMember := false
+		for _, currentSlug := range currentManagedChannels {
+			if currentSlug == channelSlug {
+				alreadyMember = true
+				break
+			}
 		}
 
-		if !exists {
-			_, err = p.membershipRepo.Add(ctx, xid.ID(channel.ID), accountID, channel_membership.RoleMember)
+		if !alreadyMember {
+			ch, err := p.channelRepo.GetBySlug(ctx, channelSlug)
+			if err != nil {
+				p.logger.Warn("channel not found",
+					slog.String("slug", channelSlug),
+					slog.String("error", err.Error()))
+				continue
+			}
+
+			_, err = p.membershipRepo.Add(ctx, xid.ID(ch.ID), accountID, channel_membership.RoleMember)
 			if err != nil {
 				p.logger.Warn("failed to add channel membership",
 					slog.String("channel", channelSlug),
