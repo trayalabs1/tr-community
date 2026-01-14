@@ -8,11 +8,11 @@ import {
 } from "src/api/openapi-schema";
 import { useSession } from "src/auth";
 import { CollectionMenu } from "src/components/content/CollectionMenu/CollectionMenu";
-import { MemberAvatar } from "src/components/member/MemberBadge/MemberAvatar";
 
 import { styled } from "@/styled-system/jsx";
 import { timestamp } from "@/utils/date";
 import { hasPermission } from "@/utils/permissions";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 import { CategoryBadge } from "../category/CategoryBadge";
 import { PostReviewBadge } from "../thread/PostReviewBadge";
@@ -22,11 +22,8 @@ import {
   DiscussionParticipatingIcon,
 } from "../ui/icons/Discussion";
 
-import { PinIcon } from "../ui/icons/Pin";
-
 import { LikeButton } from "./LikeButton/LikeButton";
 import { useThreadCardModeration } from "./useThreadCardModeration";
-import { ProfileHoverTooltip } from "./ProfileHoverTooltip";
 
 type Props = {
   thread: ThreadReference;
@@ -63,7 +60,6 @@ export const ThreadReferenceCard = memo(
       : replyCountLabel;
 
     const isInReview = thread.visibility === Visibility.review;
-    const isPinned = (thread.pinned ?? 0) > 0;
     const isAdmin = hasPermission(session, Permission.ADMINISTRATOR);
 
     return (
@@ -71,104 +67,91 @@ export const ThreadReferenceCard = memo(
         display="flex"
         flexDir="column"
         w="full"
-        // maxW="2xl"
-        borderRadius="lg"
+        borderRadius="2xl"
         overflow="hidden"
-        backgroundColor="bg.default"
+        backgroundColor="white"
         style={{
-          border: "1px solid var(--colors-border-subtle)",
-          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)",
+          border: "1px solid #f1f2f4",
+          boxShadow: "0 0.5px 2px rgba(0, 0, 0, 0.08)",
           transition: "all 0.2s ease-in-out",
+          cursor: "pointer",
         }}
         onMouseEnter={(e) => {
           const el = e.currentTarget as HTMLElement;
           el.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.12)";
-          el.style.borderColor = "var(--colors-border-default)";
         }}
         onMouseLeave={(e) => {
           const el = e.currentTarget as HTMLElement;
           el.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.08)";
-          el.style.borderColor = "var(--colors-border-subtle)";
         }}
       >
         <styled.div
           display="flex"
-          alignItems="flex-start"
+          alignItems="center"
           justifyContent="space-between"
-          gap="4"
-          p="5"
-          style={{
-            borderBottom: "1px solid var(--colors-border-subtle)",
-          }}
+          gap="3"
+          p="4"
         >
-          <Link href={`/m/${thread.author.handle}`}>
-            <styled.div display="flex" alignItems="center" gap="3" flex="1">
-              {isAdmin ? (
-                <ProfileHoverTooltip profile={thread.author}>
-                  <styled.div
-                    style={{
-                      transition: "transform 0.2s ease-in-out",
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.transform =
-                        "scale(1.05)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.transform =
-                        "scale(1)";
-                    }}
-                  >
-                    <MemberAvatar profile={thread.author} size="md" />
-                  </styled.div>
-                </ProfileHoverTooltip>
-              ) : (
-                <styled.div
-                  style={{
-                    transition: "transform 0.2s ease-in-out",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.transform =
-                      "scale(1.05)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.transform =
-                      "scale(1)";
-                  }}
-                >
-                  <MemberAvatar profile={thread.author} size="md" />
-                </styled.div>
-              )}
-              <styled.div display="flex" flexDir="column" gap="1" flex="1">
-                <styled.p
-                  fontSize="sm"
-                  fontWeight="semibold"
-                  color="fg.default"
-                  style={{
-                    transition: "color 0.2s ease-in-out",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.color =
-                      "var(--colors-fg-subtle)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.color =
-                      "var(--colors-fg-default)";
-                  }}
-                >
-                  {thread.author.handle}
-                </styled.p>
-                <styled.p fontSize="xs" color="fg.muted">
-                  {timestamp(new Date(thread.createdAt), false)}
-                </styled.p>
-              </styled.div>
+          <styled.div display="flex" alignItems="center" gap="3" flex="1" minW="0">
+            <styled.button
+              w="10"
+              h="10"
+              rounded="full"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              fontSize="sm"
+              fontWeight="semibold"
+              style={{
+                backgroundColor: isAdmin
+                  ? TRAYA_COLORS.primary
+                  : TRAYA_COLORS.tertiary,
+                color: isAdmin ? "white" : TRAYA_COLORS.primary,
+                border: "none",
+                cursor: "pointer",
+                transition: "opacity 0.2s ease-in-out",
+                flexShrink: 0,
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+              }}
+            >
+              {thread.author.name.charAt(0).toUpperCase()}
+            </styled.button>
+
+            <styled.div display="flex" flexDir="column" gap="0.5" flex="1" minW="0">
+              <styled.p
+                fontSize="sm"
+                fontWeight="semibold"
+                color="fg.default"
+                style={{
+                  margin: "0",
+                  transition: "color 0.2s ease-in-out",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {thread.author.name}
+              </styled.p>
+              <styled.p
+                fontSize="xs"
+                color="fg.muted"
+                style={{
+                  margin: "0",
+                }}
+              >
+                {timestamp(new Date(thread.createdAt), false)}
+              </styled.p>
             </styled.div>
-          </Link>
+          </styled.div>
+
           {session && (
             <styled.div
               style={{
                 opacity: "0.7",
                 transition: "opacity 0.2s ease-in-out",
+                flexShrink: 0,
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.opacity = "1";
@@ -185,56 +168,28 @@ export const ThreadReferenceCard = memo(
         <styled.div
           display="flex"
           flexDir="column"
-          gap="4"
-          p="5"
-          flex="1"
-          style={{
-            borderBottom: "1px solid var(--colors-border-subtle)",
-          }}
+          gap="3"
+          p="4"
         >
-          <Link href={permalink}>
-            <styled.div display="flex" alignItems="center" gap="2">
-              {isPinned && <PinIcon w="4" h="4" />}
-              <styled.h3
-                fontSize="lg"
-                fontWeight="bold"
-                color="fg.default"
-                style={{
-                  lineHeight: "1.6",
-                  transition: "color 0.2s ease-in-out",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color =
-                    "var(--colors-fg-subtle)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color =
-                    "var(--colors-fg-default)";
-                }}
-              >
-                {title}
-              </styled.h3>
-            </styled.div>
-          </Link>
-
-          {thread.description && (
-            <styled.p
-              fontSize="sm"
-              color="fg.muted"
-              style={{
-                lineHeight: "1.6",
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
-              {thread.description}
-            </styled.p>
-          )}
+          <styled.p
+            fontSize="sm"
+            color="fg.default"
+            fontWeight="medium"
+            style={{
+              margin: "0",
+              lineHeight: "1.6",
+              whiteSpace: "pre-wrap",
+              overflow: "hidden",
+              display: "-webkit-box",
+              WebkitLineClamp: 4,
+              WebkitBoxOrient: "vertical",
+            }}
+          >
+            {thread.description || title}
+          </styled.p>
 
           {(!hideCategoryBadge && thread.category) || isInReview ? (
-            <styled.div display="flex" gap="2" flexWrap="wrap">
+            <styled.div display="flex" gap="2.5" flexWrap="wrap">
               {!hideCategoryBadge && thread.category && (
                 <CategoryBadge category={thread.category} />
               )}
@@ -257,61 +212,63 @@ export const ThreadReferenceCard = memo(
           <styled.div
             display="flex"
             alignItems="center"
-            justifyContent="space-between"
             gap="4"
-            p="5"
-            backgroundColor="bg.subtle"
+            p="4"
+            style={{
+              borderTop: "1px solid var(--colors-border-default)/50",
+              borderBottom: "1px solid var(--colors-border-default)/50",
+            }}
           >
-            <styled.div display="flex" alignItems="center" gap="8">
+            <styled.div
+              display="flex"
+              alignItems="center"
+              gap="2"
+              style={{
+                transition: "opacity 0.2s ease-in-out",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.opacity = "0.8";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.opacity = "1";
+              }}
+            >
+              <LikeButton thread={thread} showCount />
+            </styled.div>
+
+            <Link href={permalink} title={replyStatusLabel}>
               <styled.div
                 display="flex"
                 alignItems="center"
-                gap="2"
+                gap="1.5"
+                color="fg.muted"
                 style={{
-                  transition: "opacity 0.2s ease-in-out",
+                  transition: "color 0.2s ease-in-out",
+                  fontSize: "14px",
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.opacity = "0.8";
+                  (e.currentTarget as HTMLElement).style.color =
+                    "var(--colors-fg-default)";
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.opacity = "1";
+                  (e.currentTarget as HTMLElement).style.color =
+                    "var(--colors-fg-muted)";
                 }}
               >
-                <LikeButton thread={thread} showCount />
+                {hasReplied ? (
+                  <DiscussionParticipatingIcon width="5" />
+                ) : (
+                  <DiscussionIcon width="5" />
+                )}
+                <styled.span fontSize="sm" fontWeight="medium">
+                  {replyCount}
+                </styled.span>
               </styled.div>
-
-              <Link href={permalink} title={replyStatusLabel}>
-                <styled.div
-                  display="flex"
-                  alignItems="center"
-                  gap="2"
-                  color="fg.muted"
-                  style={{
-                    transition: "color 0.2s ease-in-out",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.color =
-                      "var(--colors-fg-default)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.color =
-                      "var(--colors-fg-muted)";
-                  }}
-                >
-                  {hasReplied ? (
-                    <DiscussionParticipatingIcon width="5" />
-                  ) : (
-                    <DiscussionIcon width="5" />
-                  )}
-                  <styled.span fontSize="sm" fontWeight="medium">
-                    {replyCount}
-                  </styled.span>
-                </styled.div>
-              </Link>
-            </styled.div>
+            </Link>
 
             <styled.div
               style={{
+                marginLeft: "auto",
                 opacity: "0.7",
                 transition: "opacity 0.2s ease-in-out",
               }}
