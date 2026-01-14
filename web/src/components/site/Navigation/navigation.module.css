@@ -74,7 +74,7 @@
 }
 
 .navpill {
-  display: block;
+  display: none;
   grid-area: navpill;
 }
 
