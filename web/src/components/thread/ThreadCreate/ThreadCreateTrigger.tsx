@@ -3,6 +3,7 @@ import { useDisclosure } from "src/utils/useDisclosure";
 import { ButtonProps } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
 import { AddIcon } from "@/components/ui/icons/Add";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 import { ThreadCreateModal } from "./ThreadCreateModal";
 
@@ -18,10 +19,25 @@ export function ThreadCreateTrigger({ channelID, ...props }: Props) {
       <Button
         size="sm"
         onClick={useDisclosureProps.onOpen}
+        style={{
+          background: TRAYA_COLORS.primary,
+          color: "white",
+          borderRadius: "0.875rem",
+          padding: "0.5rem 0.75rem",
+          fontWeight: "500",
+          fontSize: "14px",
+          transition: "all 0.2s ease-in-out",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = "0.9";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = "1";
+        }}
         {...props}
       >
         <AddIcon width="4" height="4" />
-        New Thread
+        Create Post
       </Button>
 
       <ThreadCreateModal
