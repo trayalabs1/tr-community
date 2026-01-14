@@ -2,7 +2,7 @@
 
 import { VStack, styled } from "@/styled-system/jsx";
 import { ChevronRightIcon } from "@/components/ui/icons/Chevron";
-import { ProfileIcon } from "@/components/ui/icons/Profile";
+import { CategoryIcon } from "@/components/ui/icons/Category";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { getAssetURL } from "@/utils/asset";
 
@@ -86,7 +86,7 @@ export function ChannelCard({
             objectFit="cover"
           />
         ) : (
-          <ProfileIcon
+          <CategoryIcon
             width={isCohort ? "8" : "6"}
             height={isCohort ? "8" : "6"}
             style={{ color: TRAYA_COLORS.primary }}

@@ -14,6 +14,11 @@ import { HStack, LStack, VStack, styled } from "@/styled-system/jsx";
 import { canCreateChannels } from "@/lib/channel/server-permissions";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 
+const isJourneyChannel = (channelName: string): boolean => {
+  const lowerName = channelName.toLowerCase();
+  return /\bmonths?\b/.test(lowerName);
+};
+
 export default async function ChannelsPage() {
   const session = await getServerSession();
   if (!session) redirect("/");
@@ -24,6 +29,13 @@ export default async function ChannelsPage() {
   const hasUnreadNotifications = (notifications?.notifications?.length ?? 0) > 0;
   const bookmarkCount = collections?.collections?.length ?? 0;
   const userCanCreateChannels = canCreateChannels(session);
+
+  const journeyChannels = channels.channels.filter(
+    (channel) => channel.slug === "general" || isJourneyChannel(channel.name)
+  );
+  const topicChannels = channels.channels.filter(
+    (channel) => channel.slug !== "general" && !isJourneyChannel(channel.name)
+  );
 
   return (
     <LStack gap="0" mt="0" position="relative">
@@ -180,14 +192,13 @@ export default async function ChannelsPage() {
         {channels.channels.length > 0 ? (
         <VStack alignItems="start" gap="8" width="full" display="flex">
           {/* Your Journey Stage */}
-          <VStack alignItems="start" gap="4" width="full">
-            <Heading as="h2" size="md" color="fg.subtle">
-              Your Journey Stage
-            </Heading>
-            <VStack alignItems="start" gap="3" width="full">
-              {channels.channels
-                .filter((channel) => channel.slug === "general")
-                .map((channel) => (
+          {journeyChannels.length > 0 && (
+            <VStack alignItems="start" gap="4" width="full">
+              <Heading as="h2" size="md" color="fg.subtle">
+                Your Journey Stage
+              </Heading>
+              <VStack alignItems="start" gap="3" width="full">
+                {journeyChannels.map((channel) => (
                   <Link
                     key={channel.id}
                     href={`/channels/${channel.id}`}
@@ -202,33 +213,32 @@ export default async function ChannelsPage() {
                     />
                   </Link>
                 ))}
+              </VStack>
             </VStack>
-          </VStack>
+          )}
 
           {/* Topics */}
-          {channels.channels.filter((channel) => channel.slug !== "general").length > 0 && (
+          {topicChannels.length > 0 && (
             <VStack alignItems="start" gap="4" width="full">
               <Heading as="h2" size="md" color="fg.subtle">
                 Topics
               </Heading>
               <VStack alignItems="start" gap="3" width="full">
-                {channels.channels
-                  .filter((channel) => channel.slug !== "general")
-                  .map((channel) => (
-                    <Link
-                      key={channel.id}
-                      href={`/channels/${channel.id}`}
-                      style={{ width: "100%", textDecoration: "none" }}
-                    >
-                      <ChannelCard
-                        id={channel.id}
-                        name={channel.name}
-                        description={channel.description}
-                        icon={channel.icon}
-                        isCohort={false}
-                      />
-                    </Link>
-                  ))}
+                {topicChannels.map((channel) => (
+                  <Link
+                    key={channel.id}
+                    href={`/channels/${channel.id}`}
+                    style={{ width: "100%", textDecoration: "none" }}
+                  >
+                    <ChannelCard
+                      id={channel.id}
+                      name={channel.name}
+                      description={channel.description}
+                      icon={channel.icon}
+                      isCohort={false}
+                    />
+                  </Link>
+                ))}
               </VStack>
             </VStack>
           )}
