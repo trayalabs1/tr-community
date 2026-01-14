@@ -6,13 +6,12 @@ import { notificationList } from "@/api/openapi-server/notifications";
 import { collectionList } from "@/api/openapi-server/collections";
 import { getServerSession } from "@/auth/server-session";
 import { BookmarkButton } from "@/components/channel/BookmarkButton";
+import { ChannelCard } from "@/components/channel/ChannelCard";
 import { ChannelCreateTrigger } from "@/components/channel/ChannelCreate/ChannelCreateTrigger";
 import { NotificationButton } from "@/components/channel/NotificationButton";
 import { Heading } from "@/components/ui/heading";
-import { MembersIcon } from "@/components/ui/icons/Members";
 import { HStack, LStack, VStack, styled } from "@/styled-system/jsx";
 import { canCreateChannels } from "@/lib/channel/server-permissions";
-import { getAssetURL } from "@/utils/asset";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 export default async function ChannelsPage() {
@@ -184,60 +183,22 @@ export default async function ChannelsPage() {
             <Heading as="h2" size="md" color="fg.subtle">
               Your Journey Stage
             </Heading>
-            <VStack alignItems="start" gap="4" width="full">
+            <VStack alignItems="start" gap="3" width="full">
               {channels.channels
                 .filter((channel) => channel.slug === "general")
                 .map((channel) => (
                   <Link
                     key={channel.id}
                     href={`/channels/${channel.id}`}
-                    style={{ width: "100%" }}
+                    style={{ width: "100%", textDecoration: "none" }}
                   >
-                    <styled.div
-                      p="6"
-                      borderRadius="md"
-                      _hover={{ bg: "bg.muted" }}
-                      cursor="pointer"
-                      width="full"
-                      style={{ border: "1px solid var(--colors-border-default)" }}
-                    >
-                      <HStack alignItems="start" gap="4" width="full">
-                        {channel.icon ? (
-                          <styled.img
-                            src={getAssetURL(channel.icon.path)}
-                            alt={channel.name}
-                            w="16"
-                            h="16"
-                            rounded="lg"
-                            objectFit="cover"
-                            flexShrink="0"
-                          />
-                        ) : (
-                          <styled.div
-                            w="16"
-                            h="16"
-                            rounded="lg"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                            flexShrink="0"
-                            style={{
-                              background: TRAYA_COLORS.gradient,
-                            }}
-                          >
-                            <MembersIcon width="8" height="8" style={{ color: "#ffffff" }} />
-                          </styled.div>
-                        )}
-                        <VStack alignItems="start" gap="2" width="full">
-                          <styled.h2 fontSize="xl" fontWeight="semibold">
-                            {channel.name}
-                          </styled.h2>
-                          {channel.description && (
-                            <styled.p color="fg.muted">{channel.description}</styled.p>
-                          )}
-                        </VStack>
-                      </HStack>
-                    </styled.div>
+                    <ChannelCard
+                      id={channel.id}
+                      name={channel.name}
+                      icon={channel.icon}
+                      memberCount={312}
+                      isCohort={true}
+                    />
                   </Link>
                 ))}
             </VStack>
@@ -249,60 +210,22 @@ export default async function ChannelsPage() {
               <Heading as="h2" size="md" color="fg.subtle">
                 Topics
               </Heading>
-              <VStack alignItems="start" gap="4" width="full">
+              <VStack alignItems="start" gap="3" width="full">
                 {channels.channels
                   .filter((channel) => channel.slug !== "general")
                   .map((channel) => (
                     <Link
                       key={channel.id}
                       href={`/channels/${channel.id}`}
-                      style={{ width: "100%" }}
+                      style={{ width: "100%", textDecoration: "none" }}
                     >
-                      <styled.div
-                        p="6"
-                        borderRadius="md"
-                        _hover={{ bg: "bg.muted" }}
-                        cursor="pointer"
-                        width="full"
-                        style={{ border: "1px solid var(--colors-border-default)" }}
-                      >
-                        <HStack alignItems="start" gap="4" width="full">
-                          {channel.icon ? (
-                            <styled.img
-                              src={getAssetURL(channel.icon.path)}
-                              alt={channel.name}
-                              w="16"
-                              h="16"
-                              rounded="lg"
-                              objectFit="cover"
-                              flexShrink="0"
-                            />
-                          ) : (
-                            <styled.div
-                              w="16"
-                              h="16"
-                              rounded="lg"
-                              display="flex"
-                              alignItems="center"
-                              justifyContent="center"
-                              flexShrink="0"
-                              style={{
-                                background: TRAYA_COLORS.gradient,
-                              }}
-                            >
-                              <MembersIcon width="8" height="8" style={{ color: "#ffffff" }} />
-                            </styled.div>
-                          )}
-                          <VStack alignItems="start" gap="2" width="full">
-                            <styled.h2 fontSize="xl" fontWeight="semibold">
-                              {channel.name}
-                            </styled.h2>
-                            {channel.description && (
-                              <styled.p color="fg.muted">{channel.description}</styled.p>
-                            )}
-                          </VStack>
-                        </HStack>
-                      </styled.div>
+                      <ChannelCard
+                        id={channel.id}
+                        name={channel.name}
+                        icon={channel.icon}
+                        memberCount={1243}
+                        isCohort={false}
+                      />
                     </Link>
                   ))}
               </VStack>
