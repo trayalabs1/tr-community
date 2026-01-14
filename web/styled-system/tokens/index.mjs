@@ -1731,6 +1731,42 @@ const tokens = {
     "value": "#ffd6cefb",
     "variable": "var(--colors-tomato-dark-a12)"
   },
+  "colors.traya.primary.1": {
+    "value": "#DCF4E8",
+    "variable": "var(--colors-traya-primary-1)"
+  },
+  "colors.traya.primary.2": {
+    "value": "#B2E6CD",
+    "variable": "var(--colors-traya-primary-2)"
+  },
+  "colors.traya.primary.3": {
+    "value": "#6BA995",
+    "variable": "var(--colors-traya-primary-3)"
+  },
+  "colors.traya.primary.4": {
+    "value": "#329866",
+    "variable": "var(--colors-traya-primary-4)"
+  },
+  "colors.traya.primary.5": {
+    "value": "#1F6044",
+    "variable": "var(--colors-traya-primary-5)"
+  },
+  "colors.traya.primary": {
+    "value": "#329866",
+    "variable": "var(--colors-traya-primary)"
+  },
+  "colors.traya.accent.heart": {
+    "value": "#F04343",
+    "variable": "var(--colors-traya-accent-heart)"
+  },
+  "colors.traya.accent.gradient.start": {
+    "value": "#3EBC7F",
+    "variable": "var(--colors-traya-accent-gradient-start)"
+  },
+  "colors.traya.accent.gradient.end": {
+    "value": "#329866",
+    "variable": "var(--colors-traya-accent-gradient-end)"
+  },
   "colors.gray.light.1": {
     "value": "#fcfcfc",
     "variable": "var(--colors-gray-light-1)"
@@ -2330,6 +2366,10 @@ const tokens = {
   "fonts.interDisplay": {
     "value": "var(--font-inter-display)",
     "variable": "var(--fonts-inter-display)"
+  },
+  "fonts.nunito": {
+    "value": "'Nunito Sans', sans-serif",
+    "variable": "var(--fonts-nunito)"
   },
   "fonts.mono": {
     "value": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
@@ -3906,6 +3946,62 @@ const tokens = {
   "colors.colorPalette.dark.a12": {
     "value": "var(--colors-color-palette-dark-a12)",
     "variable": "var(--colors-color-palette-dark-a12)"
+  },
+  "colors.colorPalette.primary.1": {
+    "value": "var(--colors-color-palette-primary-1)",
+    "variable": "var(--colors-color-palette-primary-1)"
+  },
+  "colors.colorPalette.primary.2": {
+    "value": "var(--colors-color-palette-primary-2)",
+    "variable": "var(--colors-color-palette-primary-2)"
+  },
+  "colors.colorPalette.primary.3": {
+    "value": "var(--colors-color-palette-primary-3)",
+    "variable": "var(--colors-color-palette-primary-3)"
+  },
+  "colors.colorPalette.primary.4": {
+    "value": "var(--colors-color-palette-primary-4)",
+    "variable": "var(--colors-color-palette-primary-4)"
+  },
+  "colors.colorPalette.primary.5": {
+    "value": "var(--colors-color-palette-primary-5)",
+    "variable": "var(--colors-color-palette-primary-5)"
+  },
+  "colors.colorPalette.primary": {
+    "value": "var(--colors-color-palette-primary)",
+    "variable": "var(--colors-color-palette-primary)"
+  },
+  "colors.colorPalette.accent.heart": {
+    "value": "var(--colors-color-palette-accent-heart)",
+    "variable": "var(--colors-color-palette-accent-heart)"
+  },
+  "colors.colorPalette.heart": {
+    "value": "var(--colors-color-palette-heart)",
+    "variable": "var(--colors-color-palette-heart)"
+  },
+  "colors.colorPalette.accent.gradient.start": {
+    "value": "var(--colors-color-palette-accent-gradient-start)",
+    "variable": "var(--colors-color-palette-accent-gradient-start)"
+  },
+  "colors.colorPalette.gradient.start": {
+    "value": "var(--colors-color-palette-gradient-start)",
+    "variable": "var(--colors-color-palette-gradient-start)"
+  },
+  "colors.colorPalette.start": {
+    "value": "var(--colors-color-palette-start)",
+    "variable": "var(--colors-color-palette-start)"
+  },
+  "colors.colorPalette.accent.gradient.end": {
+    "value": "var(--colors-color-palette-accent-gradient-end)",
+    "variable": "var(--colors-color-palette-accent-gradient-end)"
+  },
+  "colors.colorPalette.gradient.end": {
+    "value": "var(--colors-color-palette-gradient-end)",
+    "variable": "var(--colors-color-palette-gradient-end)"
+  },
+  "colors.colorPalette.end": {
+    "value": "var(--colors-color-palette-end)",
+    "variable": "var(--colors-color-palette-end)"
   },
   "colors.colorPalette.light.text.1": {
     "value": "var(--colors-color-palette-light-text-1)",
