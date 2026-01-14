@@ -19,7 +19,6 @@ func (Channel) Mixin() []ent.Mixin {
 func (Channel) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").
-			Unique().
 			Comment("The display name of the channel"),
 		field.String("slug").
 			Unique().

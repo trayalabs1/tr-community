@@ -10,7 +10,6 @@ import { createListCollection } from "@ark-ui/react";
 import { useEffect, useState } from "react";
 
 import { Account, Channel, Asset } from "@/api/openapi-schema";
-import { useSession } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { FormControl } from "@/components/ui/form/FormControl";
 import { FormHelperText } from "@/components/ui/form/FormHelperText";
@@ -23,11 +22,11 @@ import { HStack, LStack, WStack, styled } from "@/styled-system/jsx";
 import {
   channelUpdate,
   getChannelListKey,
+  getChannelGetKey,
 } from "@/api/openapi-client/channels";
 import { handle } from "@/api/client";
 import { useChannelPermissions } from "@/lib/channel/permissions";
 import { AssetUploadEditor } from "@/components/asset/AssetUploadEditor/AssetUploadEditor";
-import { getAssetURL } from "@/utils/asset";
 
 import { revalidateChannels } from "@/app/(dashboard)/channels/actions";
 import { MembersSection } from "./MembersSection";
@@ -98,8 +97,8 @@ export function ChannelSettingsScreen(props: Props) {
       await channelUpdate(props.channel.id, updateData);
 
       mutate(getChannelListKey());
-      mutate([`/channels/${props.channel.id}`]);
-      await revalidateChannels();
+      mutate(getChannelGetKey(props.channel.id));
+      await revalidateChannels(props.channel.id);
       router.refresh();
       router.push(`/channels/${props.channel.id}`);
     });
