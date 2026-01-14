@@ -10,6 +10,8 @@ import { MembersIcon } from "@/components/ui/icons/Members";
 import { LikeIcon } from "@/components/ui/icons/Like";
 import { DiscussionIcon } from "@/components/ui/icons/Discussion";
 import { IntelligenceIcon } from "@/components/ui/icons/Intelligence";
+import { UsernameModal } from "../UsernameSelectionScreen/UsernameModal";
+import { useDisclosure } from "@/utils/useDisclosure";
 
 export function LandingScreen({ token }: { token: string }) {
   const router = useRouter();
@@ -17,6 +19,7 @@ export function LandingScreen({ token }: { token: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const triggered = useRef(false);
+  const usernameModal = useDisclosure();
 
   const handleJoinCommunity = async () => {
     if (triggered.current) return;
@@ -26,8 +29,14 @@ export function LandingScreen({ token }: { token: string }) {
 
     handle(
       async () => {
-        await trigger();
-        router.push("/");
+        const response = await trigger();
+
+        // Check if user needs to set a username
+        if (response?.needs_username) {
+          usernameModal.onOpen();
+        } else {
+          router.push("/");
+        }
       },
       {
         errorToast: false,
@@ -247,6 +256,15 @@ export function LandingScreen({ token }: { token: string }) {
           {isLoading ? "Authenticating..." : "Join Community"}
         </Button>
       </styled.div>
+
+      {/* Username Modal */}
+      <UsernameModal
+        isOpen={usernameModal.isOpen}
+        onOpen={usernameModal.onOpen}
+        onClose={usernameModal.onClose}
+        onOpenChange={usernameModal.onOpenChange}
+        onSuccess={() => router.push("/")}
+      />
     </styled.div>
   );
 }

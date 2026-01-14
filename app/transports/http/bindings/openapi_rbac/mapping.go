@@ -178,6 +178,14 @@ func (m *Mapping) AuthTrayaToken() (bool, *rbac.Permission) {
 	return false, nil // Public
 }
 
+func (m *Mapping) UsernameCheck() (bool, *rbac.Permission) {
+	return false, nil // Public - anyone can check username availability
+}
+
+func (m *Mapping) UsernameSet() (bool, *rbac.Permission) {
+	return true, nil // Requires authentication
+}
+
 func (m *Mapping) AccessKeyList() (bool, *rbac.Permission) {
 	return true, &rbac.PermissionUsePersonalAccessKeys
 }

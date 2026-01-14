@@ -8,6 +8,7 @@ import (
 	"github.com/Southclaws/storyden/app/services/account/account_email"
 	"github.com/Southclaws/storyden/app/services/account/account_suspension"
 	"github.com/Southclaws/storyden/app/services/account/register"
+	"github.com/Southclaws/storyden/app/services/account/username"
 	"github.com/Southclaws/storyden/app/services/admin/settings_manager"
 	"github.com/Southclaws/storyden/app/services/asset"
 	"github.com/Southclaws/storyden/app/services/audit/audit_logger"
@@ -50,6 +51,7 @@ func Build() fx.Option {
 	return fx.Options(
 		fx.Provide(register.New),
 		account.Build(),
+		username.Build(),
 		branding.Build(),
 		onboarding.Build(),
 		account_suspension.Build(),

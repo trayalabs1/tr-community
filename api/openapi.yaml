@@ -745,6 +745,65 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorised" }
         "200": { $ref: "#/components/responses/AuthSuccessOK" }
 
+  /auth/username/check:
+    get:
+      operationId: UsernameCheck
+      description: Check if a username is available
+      tags: [auth]
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 20
+            pattern: "^[a-zA-Z0-9_-]+$"
+          description: Username to check availability for
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "200":
+          description: Username availability status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [available]
+                properties:
+                  available:
+                    type: boolean
+                    description: Whether the username is available
+
+  /auth/username:
+    post:
+      operationId: UsernameSet
+      description: |
+        Set username for the authenticated account (first-time only).
+        This endpoint can only be used once per account to set a permanent
+        username, replacing the temporary handle assigned during signup.
+      tags: [auth]
+      security: [browser: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 20
+                  pattern: "^[a-zA-Z0-9_-]+$"
+                  description: Desired username (letters, numbers, underscores, hyphens)
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/AccountUpdateOK" }
+
   /auth/access-keys:
     get:
       operationId: AccessKeyList
@@ -5137,6 +5196,9 @@ components:
       properties:
         id:
           type: string
+        needs_username:
+          type: boolean
+          description: Indicates if the user must set a username before continuing
 
     OAuthCallback:
       type: object

@@ -867,6 +867,16 @@ var (
 				Columns: []*schema.Column{PostsColumns[17], PostsColumns[3], PostsColumns[12], PostsColumns[14], PostsColumns[7], PostsColumns[8]},
 			},
 			{
+				Name:    "post_channel_id_deleted_at_visibility_last_reply_at",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[15], PostsColumns[3], PostsColumns[12], PostsColumns[8]},
+			},
+			{
+				Name:    "post_channel_id_deleted_at_visibility_category_id_last_reply_at",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[15], PostsColumns[3], PostsColumns[12], PostsColumns[14], PostsColumns[8]},
+			},
+			{
 				Name:    "post_root_post_id_deleted_at_created_at",
 				Unique:  false,
 				Columns: []*schema.Column{PostsColumns[17], PostsColumns[3], PostsColumns[1]},

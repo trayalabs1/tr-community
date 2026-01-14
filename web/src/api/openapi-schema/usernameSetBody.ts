@@ -8,8 +8,12 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
  * OpenAPI spec version: v1.25.13-canary
  */
 
-export interface AuthSuccess {
-  id: string;
-  /** Indicates if the user must set a username before continuing */
-  needs_username?: boolean;
-}
+export type UsernameSetBody = {
+  /**
+   * Desired username (letters, numbers, underscores, hyphens)
+   * @minLength 3
+   * @maxLength 20
+   * @pattern ^[a-zA-Z0-9_-]+$
+   */
+  username: string;
+};
