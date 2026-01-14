@@ -1,5 +1,5 @@
 import { MemberSidebar } from "./MemberSidebar";
-import { Account } from "@/api/openapi-schema";
+import type { Account } from "@/api/openapi-schema";
 
 /**
  * Example usage of the MemberSidebar component
@@ -20,14 +20,21 @@ import { Account } from "@/api/openapi-schema";
  * Font: Nunito Sans
  */
 
-// Example data
-const exampleAccount: Account = {
+// Example data (cast to Account type for demo purposes)
+const exampleAccount = {
   id: "user-123",
   handle: "raman",
   name: "Raman",
   email: "raman@example.com",
-  roles: [{ id: "member-role", name: "Member" }],
-};
+  roles: [
+    {
+      id: "member-role",
+      name: "Member",
+    },
+  ],
+  createdAt: new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString(),
+  updatedAt: new Date().toISOString(),
+} as unknown as Account;
 
 const exampleJourneyStage = {
   id: "cohort-2",

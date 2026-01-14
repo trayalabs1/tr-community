@@ -9,10 +9,10 @@ import { ChannelCreateTrigger } from "@/components/channel/ChannelCreate/Channel
 import { NotificationButton } from "@/components/channel/NotificationButton";
 import { Heading } from "@/components/ui/heading";
 import { MembersIcon } from "@/components/ui/icons/Members";
-import { NotificationIcon } from "@/components/ui/icons/Notification";
 import { HStack, LStack, VStack, styled } from "@/styled-system/jsx";
 import { canCreateChannels } from "@/lib/channel/server-permissions";
 import { getAssetURL } from "@/utils/asset";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 export default async function ChannelsPage() {
   const session = await getServerSession();
@@ -35,39 +35,99 @@ export default async function ChannelsPage() {
         justifyContent="space-between"
         mt="0"
         style={{
-          backgroundColor: "#f0f8f5",
+          backgroundColor: "white",
           marginLeft: "-1rem",
           marginRight: "-1rem",
           marginTop: "-1.5rem",
           paddingLeft: "1rem",
           paddingRight: "1rem",
           width: "calc(100% + 2rem)",
+          borderBottomColor: TRAYA_COLORS.neutral.border,
         }}
       >
-        <HStack alignItems="center" gap="3" flex="1">
+        <Link
+          href={`/m/${session.handle}`}
+          style={{
+            textDecoration: "none",
+            display: "flex",
+            flex: 1,
+            alignItems: "center",
+            gap: "0.75rem",
+            cursor: "pointer",
+          }}
+        >
           <styled.div
-            w="12"
-            h="12"
-            rounded="lg"
+            w="10"
+            h="10"
+            rounded="full"
             display="flex"
             alignItems="center"
             justifyContent="center"
             flexShrink="0"
             style={{
-              background: "#4a9d6f",
+              background: TRAYA_COLORS.gradient,
+              lineHeight: "1",
             }}
           >
-            <MembersIcon width="6" height="6" style={{ color: "#ffffff" }} />
+            <styled.span
+              fontSize="sm"
+              fontWeight="bold"
+              color="white"
+            >
+              {(session.name || session.handle)
+                .split(" ")
+                .map((n: string) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2)}
+            </styled.span>
           </styled.div>
           <VStack alignItems="start" gap="0.5" width="full">
-            <Heading as="h2" size="md">
-              Traya Community
-            </Heading>
-            <styled.p fontSize="xs" color="fg.muted">
-              Support & motivation
-            </styled.p>
+            <styled.h3
+              fontWeight="semibold"
+              color="fg.default"
+              style={{
+                margin: "0",
+                fontSize: "16px",
+                textTransform: "capitalize"
+              }}
+            >
+              {session.name || session.handle}
+            </styled.h3>
+            <HStack gap="1" alignItems="center">
+              <styled.span
+                fontSize="xs"
+                fontWeight="medium"
+                style={{
+                  color: TRAYA_COLORS.primary,
+                  margin: "0",
+                }}
+              >
+                {session.roles?.[0]?.name || "Member"}
+              </styled.span>
+              <styled.span
+                style={{
+                  width: "2px",
+                  height: "2px",
+                  borderRadius: "50%",
+                  background: TRAYA_COLORS.neutral.textMuted,
+                }}
+              />
+              <styled.span
+                fontSize="xs"
+                color="fg.muted"
+                style={{
+                  color: TRAYA_COLORS.neutral.text,
+                  margin: "0",
+                }}
+              >
+                {Math.floor(
+                  (Date.now() - new Date(session.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+                )} days active
+              </styled.span>
+            </HStack>
           </VStack>
-        </HStack>
+        </Link>
         <HStack gap="2" flexShrink="0">
           <BookmarkButton />
           <NotificationButton hasUnread={hasUnreadNotifications} />
@@ -90,7 +150,7 @@ export default async function ChannelsPage() {
             size="lg"
             rounded="full"
             style={{
-              backgroundColor: "#4a9d6f",
+              background: TRAYA_COLORS.gradient,
               color: "#ffffff",
               width: "3rem",
               height: "3rem",
@@ -106,7 +166,7 @@ export default async function ChannelsPage() {
       <LStack gap="6" p="4" width="full">
         {/* Desktop Header */}
         <HStack justifyContent="space-between" width="full" display={{ base: "none", md: "flex" }} alignItems="center">
-          <Heading as="h1" size="2xl">
+          <Heading as="h1" size="2xl" style={{ color: TRAYA_COLORS.primary }}>
             Channels
           </Heading>
           <HStack gap="3" alignItems="center">
@@ -116,132 +176,132 @@ export default async function ChannelsPage() {
 
         {channels.channels.length > 0 ? (
         <VStack alignItems="start" gap="8" width="full" display="flex">
-          {/* Primary Channels */}
+          {/* Your Journey Stage */}
           <VStack alignItems="start" gap="4" width="full">
             <Heading as="h2" size="md" color="fg.subtle">
-              Primary
+              Your Journey Stage
             </Heading>
             <VStack alignItems="start" gap="4" width="full">
               {channels.channels
                 .filter((channel) => channel.slug === "general")
                 .map((channel) => (
-            <Link
-              key={channel.id}
-              href={`/channels/${channel.id}`}
-              style={{ width: "100%" }}
-            >
-              <styled.div
-                p="6"
-                borderRadius="md"
-                _hover={{ bg: "bg.muted" }}
-                cursor="pointer"
-                width="full"
-                style={{ border: "1px solid var(--colors-border-default)" }}
-              >
-                <HStack alignItems="start" gap="4" width="full">
-                  {channel.icon ? (
-                    <styled.img
-                      src={getAssetURL(channel.icon.path)}
-                      alt={channel.name}
-                      w="16"
-                      h="16"
-                      rounded="lg"
-                      objectFit="cover"
-                      flexShrink="0"
-                    />
-                  ) : (
+                  <Link
+                    key={channel.id}
+                    href={`/channels/${channel.id}`}
+                    style={{ width: "100%" }}
+                  >
                     <styled.div
-                      w="16"
-                      h="16"
-                      rounded="lg"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      flexShrink="0"
-                      style={{
-                        background: "#4a9d6f",
-                      }}
+                      p="6"
+                      borderRadius="md"
+                      _hover={{ bg: "bg.muted" }}
+                      cursor="pointer"
+                      width="full"
+                      style={{ border: "1px solid var(--colors-border-default)" }}
                     >
-                      <MembersIcon width="8" height="8" style={{ color: "#ffffff" }} />
+                      <HStack alignItems="start" gap="4" width="full">
+                        {channel.icon ? (
+                          <styled.img
+                            src={getAssetURL(channel.icon.path)}
+                            alt={channel.name}
+                            w="16"
+                            h="16"
+                            rounded="lg"
+                            objectFit="cover"
+                            flexShrink="0"
+                          />
+                        ) : (
+                          <styled.div
+                            w="16"
+                            h="16"
+                            rounded="lg"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            flexShrink="0"
+                            style={{
+                              background: TRAYA_COLORS.gradient,
+                            }}
+                          >
+                            <MembersIcon width="8" height="8" style={{ color: "#ffffff" }} />
+                          </styled.div>
+                        )}
+                        <VStack alignItems="start" gap="2" width="full">
+                          <styled.h2 fontSize="xl" fontWeight="semibold">
+                            {channel.name}
+                          </styled.h2>
+                          {channel.description && (
+                            <styled.p color="fg.muted">{channel.description}</styled.p>
+                          )}
+                        </VStack>
+                      </HStack>
                     </styled.div>
-                  )}
-                  <VStack alignItems="start" gap="2" width="full">
-                    <styled.h2 fontSize="xl" fontWeight="semibold">
-                      {channel.name}
-                    </styled.h2>
-                    {channel.description && (
-                      <styled.p color="fg.muted">{channel.description}</styled.p>
-                    )}
-                  </VStack>
-                </HStack>
-              </styled.div>
-            </Link>
+                  </Link>
                 ))}
             </VStack>
           </VStack>
 
-          {/* Secondary Channels */}
+          {/* Topics */}
           {channels.channels.filter((channel) => channel.slug !== "general").length > 0 && (
             <VStack alignItems="start" gap="4" width="full">
               <Heading as="h2" size="md" color="fg.subtle">
-                Secondary
+                Topics
               </Heading>
               <VStack alignItems="start" gap="4" width="full">
                 {channels.channels
                   .filter((channel) => channel.slug !== "general")
                   .map((channel) => (
-              <Link
-                key={channel.id}
-                href={`/channels/${channel.id}`}
-                style={{ width: "100%" }}
-              >
-                <styled.div
-                  p="6"
-                  borderRadius="md"
-                  _hover={{ bg: "bg.muted" }}
-                  cursor="pointer"
-                  width="full"
-                  style={{ border: "1px solid var(--colors-border-default)" }}
-                >
-                  <HStack alignItems="start" gap="4" width="full">
-                    {channel.icon ? (
-                      <styled.img
-                        src={getAssetURL(channel.icon.path)}
-                        alt={channel.name}
-                        w="16"
-                        h="16"
-                        rounded="lg"
-                        objectFit="cover"
-                        flexShrink="0"
-                      />
-                    ) : (
+                    <Link
+                      key={channel.id}
+                      href={`/channels/${channel.id}`}
+                      style={{ width: "100%" }}
+                    >
                       <styled.div
-                        w="16"
-                        h="16"
-                        rounded="lg"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        flexShrink="0"
-                        style={{
-                          background: "#4a9d6f",
-                        }}
+                        p="6"
+                        borderRadius="md"
+                        _hover={{ bg: "bg.muted" }}
+                        cursor="pointer"
+                        width="full"
+                        style={{ border: "1px solid var(--colors-border-default)" }}
                       >
-                        <MembersIcon width="8" height="8" style={{ color: "#ffffff" }} />
+                        <HStack alignItems="start" gap="4" width="full">
+                          {channel.icon ? (
+                            <styled.img
+                              src={getAssetURL(channel.icon.path)}
+                              alt={channel.name}
+                              w="16"
+                              h="16"
+                              rounded="lg"
+                              objectFit="cover"
+                              flexShrink="0"
+                            />
+                          ) : (
+                            <styled.div
+                              w="16"
+                              h="16"
+                              rounded="lg"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              flexShrink="0"
+                              style={{
+                                background: TRAYA_COLORS.gradient,
+                              }}
+                            >
+                              <MembersIcon width="8" height="8" style={{ color: "#ffffff" }} />
+                            </styled.div>
+                          )}
+                          <VStack alignItems="start" gap="2" width="full">
+                            <styled.h2 fontSize="xl" fontWeight="semibold">
+                              {channel.name}
+                            </styled.h2>
+                            {channel.description && (
+                              <styled.p color="fg.muted">{channel.description}</styled.p>
+                            )}
+                          </VStack>
+                        </HStack>
                       </styled.div>
-                    )}
-                    <VStack alignItems="start" gap="2" width="full">
-                      <styled.h2 fontSize="xl" fontWeight="semibold">
-                        {channel.name}
-                      </styled.h2>
-                      {channel.description && (
-                        <styled.p color="fg.muted">{channel.description}</styled.p>
-                      )}
-                    </VStack>
-                  </HStack>
-                </styled.div>
-              </Link>
-                ))}
+                    </Link>
+                  ))}
               </VStack>
             </VStack>
           )}

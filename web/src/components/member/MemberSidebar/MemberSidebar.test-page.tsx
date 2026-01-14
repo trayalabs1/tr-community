@@ -15,6 +15,7 @@
 
 "use client";
 
+import type { Account } from "@/api/openapi-schema";
 import { HStack } from "@/styled-system/jsx";
 import { MemberSidebar } from "./MemberSidebar";
 
@@ -28,13 +29,11 @@ const mockAccount = {
     {
       id: "role-1",
       name: "Member",
-      description: "Community member",
-      permissions: [],
     },
   ],
   createdAt: new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString(),
-  visibility: "public",
-};
+  updatedAt: new Date().toISOString(),
+} as unknown as Account;
 
 // Mock journey stage
 const mockJourneyStage = {
