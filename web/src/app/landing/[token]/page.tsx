@@ -10,9 +10,15 @@ type Props = {
 export default async function Page(props: Props) {
   const { token } = await props.params;
 
-  if (!token || token.trim() === "") {
+  if (!token || typeof token !== "string") {
     notFound();
   }
 
-  return <LandingScreen token={token} />;
+  const cleanToken = token.split("&")[0]?.split("?")[0]?.trim() ?? "";
+
+  if (!cleanToken) {
+    notFound();
+  }
+
+  return <LandingScreen token={cleanToken} />;
 }
