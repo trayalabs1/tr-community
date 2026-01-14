@@ -110,8 +110,6 @@ export default async function ChannelsPage() {
             Channels
           </Heading>
           <HStack gap="3" alignItems="center">
-            <BookmarkButton />
-            <NotificationButton hasUnread={hasUnreadNotifications} />
             {userCanCreateChannels && <ChannelCreateTrigger size="sm" />}
           </HStack>
         </HStack>
