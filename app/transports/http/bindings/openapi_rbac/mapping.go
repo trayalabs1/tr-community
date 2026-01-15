@@ -342,6 +342,10 @@ func (m *Mapping) ChannelMemberList() (bool, *rbac.Permission) {
 	return true, nil // Checked in service layer - must be member
 }
 
+func (m *Mapping) ChannelMembershipGet() (bool, *rbac.Permission) {
+	return true, nil // Authenticated users can get their own membership
+}
+
 func (m *Mapping) ChannelMemberAdd() (bool, *rbac.Permission) {
 	return true, nil // Checked in service layer - must be owner/admin
 }

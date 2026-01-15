@@ -29,6 +29,7 @@ import type {
   ChannelListOKResponse,
   ChannelMemberAdd,
   ChannelMemberListOKResponse,
+  ChannelMemberListParams,
   ChannelMemberOKResponse,
   ChannelMemberRoleUpdate,
   ChannelMutableProps,
@@ -319,15 +320,21 @@ export const useChannelDelete = <
 /**
  * List all members of a channel. Requires membership in the channel.
  */
-export const channelMemberList = (channelID: string) => {
+export const channelMemberList = (
+  channelID: string,
+  params?: ChannelMemberListParams,
+) => {
   return fetcher<ChannelMemberListOKResponse>({
     url: `/channels/${channelID}/members`,
     method: "GET",
+    params,
   });
 };
 
-export const getChannelMemberListKey = (channelID: string) =>
-  [`/channels/${channelID}/members`] as const;
+export const getChannelMemberListKey = (
+  channelID: string,
+  params?: ChannelMemberListParams,
+) => [`/channels/${channelID}/members`, ...(params ? [params] : [])] as const;
 
 export type ChannelMemberListQueryResult = NonNullable<
   Awaited<ReturnType<typeof channelMemberList>>
@@ -346,6 +353,7 @@ export const useChannelMemberList = <
     | InternalServerErrorResponse,
 >(
   channelID: string,
+  params?: ChannelMemberListParams,
   options?: {
     swr?: SWRConfiguration<
       Awaited<ReturnType<typeof channelMemberList>>,
@@ -358,8 +366,8 @@ export const useChannelMemberList = <
   const isEnabled = swrOptions?.enabled !== false && !!channelID;
   const swrKey =
     swrOptions?.swrKey ??
-    (() => (isEnabled ? getChannelMemberListKey(channelID) : null));
-  const swrFn = () => channelMemberList(channelID);
+    (() => (isEnabled ? getChannelMemberListKey(channelID, params) : null));
+  const swrFn = () => channelMemberList(channelID, params);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -432,6 +440,60 @@ export const useChannelMemberAdd = <
   const swrFn = getChannelMemberAddMutationFetcher(channelID);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Get the authenticated user's membership in a channel.
+ */
+export const channelMembershipGet = (channelID: string) => {
+  return fetcher<ChannelMemberOKResponse>({
+    url: `/channels/${channelID}/membership/me`,
+    method: "GET",
+  });
+};
+
+export const getChannelMembershipGetKey = (channelID: string) =>
+  [`/channels/${channelID}/membership/me`] as const;
+
+export type ChannelMembershipGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof channelMembershipGet>>
+>;
+export type ChannelMembershipGetQueryError =
+  | UnauthorisedResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelMembershipGet = <
+  TError =
+    | UnauthorisedResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof channelMembershipGet>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false && !!channelID;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getChannelMembershipGetKey(channelID) : null));
+  const swrFn = () => channelMembershipGet(channelID);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
 
   return {
     swrKey,

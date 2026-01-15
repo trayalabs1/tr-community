@@ -1,17 +1,11 @@
-import { useChannelMemberList } from "@/api/openapi-client/channels";
+import { useChannelMembershipGet } from "@/api/openapi-client/channels";
 import { useSession } from "@/auth";
 
-/**
- * Hook to check if the current user has specific permissions in a channel
- *
- * Note: This hook uses SWR and must be used in client components only.
- * For server-side permission checks, see @/lib/channel/server-permissions
- */
 export function useChannelPermissions(channelID: string) {
   const session = useSession();
-  const { data: members } = useChannelMemberList(channelID);
+  const { data: membershipData } = useChannelMembershipGet(channelID);
 
-  if (!session || !members) {
+  if (!session || !membershipData) {
     return {
       isOwner: false,
       isAdmin: false,
@@ -24,25 +18,7 @@ export function useChannelPermissions(channelID: string) {
     };
   }
 
-  // Find current user's membership
-  const membership = members.members.find(
-    (m) => m.account.id === session.id
-  );
-
-  if (!membership) {
-    return {
-      isOwner: false,
-      isAdmin: false,
-      isModerator: false,
-      isMember: false,
-      canManageChannel: false,
-      canManageMembers: false,
-      canModerateContent: false,
-      role: null,
-    };
-  }
-
-  const role = membership.role;
+  const role = membershipData.role;
   const isOwner = role === "owner";
   const isAdmin = role === "admin";
   const isModerator = role === "moderator";

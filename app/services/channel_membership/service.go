@@ -23,6 +23,7 @@ type Service interface {
 	RemoveMember(ctx context.Context, requesterID account.AccountID, channelID xid.ID, accountID account.AccountID) error
 	UpdateRole(ctx context.Context, requesterID account.AccountID, channelID xid.ID, accountID account.AccountID, role channel_membership.Role) (*channel_membership.Membership, error)
 	ListMembers(ctx context.Context, channelID xid.ID) ([]*channel_membership.Membership, error)
+	ListMembersPaginated(ctx context.Context, channelID xid.ID, page, limit int) ([]*channel_membership.Membership, int, error)
 	GetMembership(ctx context.Context, channelID xid.ID, accountID account.AccountID) (*channel_membership.Membership, error)
 	JoinPublicChannel(ctx context.Context, accountID account.AccountID, channelID xid.ID) (*channel_membership.Membership, error)
 	LeaveChannel(ctx context.Context, accountID account.AccountID, channelID xid.ID) error
@@ -147,6 +148,29 @@ func (s *service) ListMembers(ctx context.Context, channelID xid.ID) ([]*channel
 	}
 
 	return memberships, nil
+}
+
+func (s *service) ListMembersPaginated(ctx context.Context, channelID xid.ID, page, limit int) ([]*channel_membership.Membership, int, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 50
+	}
+
+	offset := (page - 1) * limit
+
+	memberships, err := s.membership_repo.ListByChannelPaginated(ctx, channelID, offset, limit)
+	if err != nil {
+		return nil, 0, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	total, err := s.membership_repo.CountByChannel(ctx, channelID)
+	if err != nil {
+		return nil, 0, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return memberships, total, nil
 }
 
 func (s *service) GetMembership(ctx context.Context, channelID xid.ID, accountID account.AccountID) (*channel_membership.Membership, error) {

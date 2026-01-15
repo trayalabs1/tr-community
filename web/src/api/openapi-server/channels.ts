@@ -22,6 +22,7 @@ import type {
   ChannelListOKResponse,
   ChannelMemberAdd,
   ChannelMemberListOKResponse,
+  ChannelMemberListParams,
   ChannelMemberOKResponse,
   ChannelMemberRoleUpdate,
   ChannelMutableProps,
@@ -166,16 +167,30 @@ export type channelMemberListResponse = {
   status: number;
 };
 
-export const getChannelMemberListUrl = (channelID: string) => {
-  return `/channels/${channelID}/members`;
+export const getChannelMemberListUrl = (
+  channelID: string,
+  params?: ChannelMemberListParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/channels/${channelID}/members?${normalizedParams.toString()}`
+    : `/channels/${channelID}/members`;
 };
 
 export const channelMemberList = async (
   channelID: string,
+  params?: ChannelMemberListParams,
   options?: RequestInit,
 ): Promise<channelMemberListResponse> => {
   return fetcher<Promise<channelMemberListResponse>>(
-    getChannelMemberListUrl(channelID),
+    getChannelMemberListUrl(channelID, params),
     {
       ...options,
       method: "GET",
@@ -207,6 +222,31 @@ export const channelMemberAdd = async (
       method: "POST",
       headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(channelMemberAdd),
+    },
+  );
+};
+
+/**
+ * Get the authenticated user's membership in a channel.
+ */
+export type channelMembershipGetResponse = {
+  data: ChannelMemberOKResponse;
+  status: number;
+};
+
+export const getChannelMembershipGetUrl = (channelID: string) => {
+  return `/channels/${channelID}/membership/me`;
+};
+
+export const channelMembershipGet = async (
+  channelID: string,
+  options?: RequestInit,
+): Promise<channelMembershipGetResponse> => {
+  return fetcher<Promise<channelMembershipGetResponse>>(
+    getChannelMembershipGetUrl(channelID),
+    {
+      ...options,
+      method: "GET",
     },
   );
 };
