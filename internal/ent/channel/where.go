@@ -658,29 +658,6 @@ func HasCategoriesWith(preds ...predicate.Category) predicate.Channel {
 	})
 }
 
-// HasCollections applies the HasEdge predicate on the "collections" edge.
-func HasCollections() predicate.Channel {
-	return predicate.Channel(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, CollectionsTable, CollectionsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasCollectionsWith applies the HasEdge predicate on the "collections" edge with a given conditions (other predicates).
-func HasCollectionsWith(preds ...predicate.Collection) predicate.Channel {
-	return predicate.Channel(func(s *sql.Selector) {
-		step := newCollectionsStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasPosts applies the HasEdge predicate on the "posts" edge.
 func HasPosts() predicate.Channel {
 	return predicate.Channel(func(s *sql.Selector) {

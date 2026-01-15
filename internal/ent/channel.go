@@ -54,15 +54,13 @@ type ChannelEdges struct {
 	Memberships []*ChannelMembership `json:"memberships,omitempty"`
 	// Categories holds the value of the categories edge.
 	Categories []*Category `json:"categories,omitempty"`
-	// Collections holds the value of the collections edge.
-	Collections []*Collection `json:"collections,omitempty"`
 	// Posts holds the value of the posts edge.
 	Posts []*Post `json:"posts,omitempty"`
 	// Nodes holds the value of the nodes edge.
 	Nodes []*Node `json:"nodes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [6]bool
 }
 
 // CoverImageOrErr returns the CoverImage value or an error if the edge
@@ -105,19 +103,10 @@ func (e ChannelEdges) CategoriesOrErr() ([]*Category, error) {
 	return nil, &NotLoadedError{edge: "categories"}
 }
 
-// CollectionsOrErr returns the Collections value or an error if the edge
-// was not loaded in eager-loading.
-func (e ChannelEdges) CollectionsOrErr() ([]*Collection, error) {
-	if e.loadedTypes[4] {
-		return e.Collections, nil
-	}
-	return nil, &NotLoadedError{edge: "collections"}
-}
-
 // PostsOrErr returns the Posts value or an error if the edge
 // was not loaded in eager-loading.
 func (e ChannelEdges) PostsOrErr() ([]*Post, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[4] {
 		return e.Posts, nil
 	}
 	return nil, &NotLoadedError{edge: "posts"}
@@ -126,7 +115,7 @@ func (e ChannelEdges) PostsOrErr() ([]*Post, error) {
 // NodesOrErr returns the Nodes value or an error if the edge
 // was not loaded in eager-loading.
 func (e ChannelEdges) NodesOrErr() ([]*Node, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[5] {
 		return e.Nodes, nil
 	}
 	return nil, &NotLoadedError{edge: "nodes"}
@@ -257,11 +246,6 @@ func (_m *Channel) QueryMemberships() *ChannelMembershipQuery {
 // QueryCategories queries the "categories" edge of the Channel entity.
 func (_m *Channel) QueryCategories() *CategoryQuery {
 	return NewChannelClient(_m.config).QueryCategories(_m)
-}
-
-// QueryCollections queries the "collections" edge of the Channel entity.
-func (_m *Channel) QueryCollections() *CollectionQuery {
-	return NewChannelClient(_m.config).QueryCollections(_m)
 }
 
 // QueryPosts queries the "posts" edge of the Channel entity.

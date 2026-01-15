@@ -1707,66 +1707,6 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "200": { $ref: "#/components/responses/ReplyCreateOK" }
 
-  /channels/{channelID}/collections:
-    parameters:
-      - $ref: "#/components/parameters/ChannelID"
-    post:
-      operationId: ChannelCollectionCreate
-      description: Create a collection within a channel for curating posts.
-      tags: [channels, collections]
-      requestBody: { $ref: "#/components/requestBodies/CollectionCreate" }
-      responses:
-        default: { $ref: "#/components/responses/InternalServerError" }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "401": { $ref: "#/components/responses/Unauthorised" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/NotFound" }
-        "200": { $ref: "#/components/responses/CollectionCreateOK" }
-    get:
-      operationId: ChannelCollectionList
-      description: Get a list of collections within a channel.
-      tags: [channels, collections]
-      parameters:
-        - { $ref: "#/components/parameters/AccountHandleQueryParam" }
-        - { $ref: "#/components/parameters/CollectionHasItemQueryParam" }
-      responses:
-        default: { $ref: "#/components/responses/InternalServerError" }
-        "404": { $ref: "#/components/responses/NotFound" }
-        "200": { $ref: "#/components/responses/CollectionListOK" }
-
-  /channels/{channelID}/collections/{collection_mark}:
-    parameters:
-      - $ref: "#/components/parameters/ChannelID"
-      - $ref: "#/components/parameters/CollectionMarkParam"
-    get:
-      operationId: ChannelCollectionGet
-      description: Get a collection by its ID within a channel.
-      tags: [channels, collections]
-      responses:
-        default: { $ref: "#/components/responses/InternalServerError" }
-        "404": { $ref: "#/components/responses/NotFound" }
-        "401": { $ref: "#/components/responses/Unauthorised" }
-        "200": { $ref: "#/components/responses/CollectionGetOK" }
-    patch:
-      operationId: ChannelCollectionUpdate
-      description: Update a collection within a channel.
-      tags: [channels, collections]
-      requestBody: { $ref: "#/components/requestBodies/CollectionUpdate" }
-      responses:
-        default: { $ref: "#/components/responses/InternalServerError" }
-        "404": { $ref: "#/components/responses/NotFound" }
-        "401": { $ref: "#/components/responses/Unauthorised" }
-        "200": { $ref: "#/components/responses/CollectionUpdateOK" }
-    delete:
-      operationId: ChannelCollectionDelete
-      description: Delete a collection within a channel.
-      tags: [channels, collections]
-      responses:
-        default: { $ref: "#/components/responses/InternalServerError" }
-        "404": { $ref: "#/components/responses/NotFound" }
-        "401": { $ref: "#/components/responses/Unauthorised" }
-        "200": { description: OK }
-
   #
   #                   888                                      d8b
   #                   888                                      Y8P

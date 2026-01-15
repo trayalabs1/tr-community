@@ -42,8 +42,6 @@ const (
 	EdgeMemberships = "memberships"
 	// EdgeCategories holds the string denoting the categories edge name in mutations.
 	EdgeCategories = "categories"
-	// EdgeCollections holds the string denoting the collections edge name in mutations.
-	EdgeCollections = "collections"
 	// EdgePosts holds the string denoting the posts edge name in mutations.
 	EdgePosts = "posts"
 	// EdgeNodes holds the string denoting the nodes edge name in mutations.
@@ -78,13 +76,6 @@ const (
 	CategoriesInverseTable = "categories"
 	// CategoriesColumn is the table column denoting the categories relation/edge.
 	CategoriesColumn = "channel_id"
-	// CollectionsTable is the table that holds the collections relation/edge.
-	CollectionsTable = "collections"
-	// CollectionsInverseTable is the table name for the Collection entity.
-	// It exists in this package in order to avoid circular dependency with the "collection" package.
-	CollectionsInverseTable = "collections"
-	// CollectionsColumn is the table column denoting the collections relation/edge.
-	CollectionsColumn = "channel_id"
 	// PostsTable is the table that holds the posts relation/edge.
 	PostsTable = "posts"
 	// PostsInverseTable is the table name for the Post entity.
@@ -256,20 +247,6 @@ func ByCategories(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByCollectionsCount orders the results by collections count.
-func ByCollectionsCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newCollectionsStep(), opts...)
-	}
-}
-
-// ByCollections orders the results by collections terms.
-func ByCollections(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newCollectionsStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
 // ByPostsCount orders the results by posts count.
 func ByPostsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -323,13 +300,6 @@ func newCategoriesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CategoriesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, CategoriesTable, CategoriesColumn),
-	)
-}
-func newCollectionsStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(CollectionsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, CollectionsTable, CollectionsColumn),
 	)
 }
 func newPostsStep() *sqlgraph.Step {
