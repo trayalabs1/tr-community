@@ -163,6 +163,7 @@ export * from "./channelMemberAllOf";
 export * from "./channelMemberAllOfRole";
 export * from "./channelMemberList";
 export * from "./channelMemberListOKResponse";
+export * from "./channelMemberListParams";
 export * from "./channelMemberListResult";
 export * from "./channelMemberOKResponse";
 export * from "./channelMemberRoleUpdate";

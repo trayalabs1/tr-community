@@ -42,7 +42,13 @@ export function MembersSection({ channelID }: Props) {
   const [searchResults, setSearchResults] = useState<PublicProfile[]>([]);
   const [selectedUser, setSelectedUser] = useState<PublicProfile | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const { data: members } = useChannelMemberList(channelID);
+  const [currentPage, setCurrentPage] = useState(1);
+  const membersPerPage = 20;
+  
+  const { data: members } = useChannelMemberList(channelID, {
+    page: currentPage,
+    limit: membersPerPage,
+  });
 
   const { register, handleSubmit, reset, control, formState, setValue, watch } =
     useForm<AddMemberForm>({
@@ -107,7 +113,8 @@ export function MembersSection({ channelID }: Props) {
         account_id: selectedUser.id,
         role: data.role,
       });
-      mutate(getChannelMemberListKey(channelID));
+      setCurrentPage(1); // Reset to first page after adding member
+      mutate(getChannelMemberListKey(channelID, { page: 1, limit: membersPerPage }));
       reset();
       setShowAddForm(false);
       setSearchQuery("");
@@ -252,37 +259,66 @@ export function MembersSection({ channelID }: Props) {
       )}
 
       {members && members.members.length > 0 ? (
-        <VStack alignItems="start" gap="2" width="full">
-          {members.members.map((member) => (
-            <HStack
-              key={member.id}
-              width="full"
-              p="3"
-              style={{ border: "1px solid var(--colors-border-default)" }}
-              borderRadius="md"
-              justifyContent="space-between"
-            >
-              <VStack alignItems="start" gap="0">
-                <styled.span fontWeight="medium">
-                  {member.account.name}
-                </styled.span>
-                <styled.span fontSize="sm" color="fg.muted">
-                  @{member.account.handle}
-                </styled.span>
-              </VStack>
-              <styled.span
-                fontSize="sm"
-                px="2"
-                py="1"
-                borderRadius="sm"
-                bg="bg.muted"
-                fontWeight="medium"
+        <>
+          <VStack alignItems="start" gap="2" width="full">
+            {members.members.map((member) => (
+              <HStack
+                key={member.id}
+                width="full"
+                p="3"
+                style={{ border: "1px solid var(--colors-border-default)" }}
+                borderRadius="md"
+                justifyContent="space-between"
               >
-                {member.role}
+                <VStack alignItems="start" gap="0">
+                  <styled.span fontWeight="medium">
+                    {member.account.name}
+                  </styled.span>
+                  <styled.span fontSize="sm" color="fg.muted">
+                    @{member.account.handle}
+                  </styled.span>
+                </VStack>
+                <styled.span
+                  fontSize="sm"
+                  px="2"
+                  py="1"
+                  borderRadius="sm"
+                  bg="bg.muted"
+                  fontWeight="medium"
+                >
+                  {member.role}
+                </styled.span>
+              </HStack>
+            ))}
+          </VStack>
+          
+          {/* Pagination Controls */}
+          {members.total > membersPerPage && (
+            <HStack justifyContent="space-between" alignItems="center" width="full" pt="2">
+              <styled.span fontSize="sm" color="fg.muted">
+                Showing {((currentPage - 1) * membersPerPage) + 1} to {Math.min(currentPage * membersPerPage, members.total)} of {members.total} members
               </styled.span>
+              <HStack gap="2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  disabled={currentPage * membersPerPage >= members.total}
+                >
+                  Next
+                </Button>
+              </HStack>
             </HStack>
-          ))}
-        </VStack>
+          )}
+        </>
       ) : (
         <styled.div
           p="8"

@@ -88,6 +88,7 @@ type OperationPermissions interface {
 	ChannelDelete() (bool, *rbac.Permission)
 	ChannelMemberList() (bool, *rbac.Permission)
 	ChannelMemberAdd() (bool, *rbac.Permission)
+	ChannelMembershipGet() (bool, *rbac.Permission)
 	ChannelMemberUpdateRole() (bool, *rbac.Permission)
 	ChannelMemberRemove() (bool, *rbac.Permission)
 	ChannelJoin() (bool, *rbac.Permission)
@@ -343,6 +344,8 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.ChannelMemberList()
 	case "ChannelMemberAdd":
 		return optable.ChannelMemberAdd()
+	case "ChannelMembershipGet":
+		return optable.ChannelMembershipGet()
 	case "ChannelMemberUpdateRole":
 		return optable.ChannelMemberUpdateRole()
 	case "ChannelMemberRemove":

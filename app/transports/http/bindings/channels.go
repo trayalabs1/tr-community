@@ -242,7 +242,19 @@ func serialiseChannelMember(m *channel_membership.Membership) openapi.ChannelMem
 func (c Channels) ChannelMemberList(ctx context.Context, request openapi.ChannelMemberListRequestObject) (openapi.ChannelMemberListResponseObject, error) {
 	channelID := xid.ID(openapi.ParseID(request.ChannelID))
 
-	members, err := c.membership_svc.ListMembers(ctx, channelID)
+	// Default pagination values
+	page := 1
+	limit := 50
+
+	// Use provided pagination parameters if available
+	if request.Params.Page != nil {
+		page = *request.Params.Page
+	}
+	if request.Params.Limit != nil {
+		limit = *request.Params.Limit
+	}
+
+	members, total, err := c.membership_svc.ListMembersPaginated(ctx, channelID, page, limit)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
@@ -250,7 +262,28 @@ func (c Channels) ChannelMemberList(ctx context.Context, request openapi.Channel
 	return openapi.ChannelMemberList200JSONResponse{
 		ChannelMemberListOKJSONResponse: openapi.ChannelMemberListOKJSONResponse{
 			Members: dt.Map(members, serialiseChannelMember),
+			Total:   total,
+			Page:    page,
+			Limit:   limit,
 		},
+	}, nil
+}
+
+func (c Channels) ChannelMembershipGet(ctx context.Context, request openapi.ChannelMembershipGetRequestObject) (openapi.ChannelMembershipGetResponseObject, error) {
+	accountID, err := session.GetAccountID(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	channelID := xid.ID(openapi.ParseID(request.ChannelID))
+
+	membership, err := c.membership_svc.GetMembership(ctx, channelID, accountID)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return openapi.ChannelMembershipGet200JSONResponse{
+		ChannelMemberOKJSONResponse: openapi.ChannelMemberOKJSONResponse(serialiseChannelMember(membership)),
 	}, nil
 }
 

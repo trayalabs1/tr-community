@@ -7,14 +7,14 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
 
  * OpenAPI spec version: v1.25.13-canary
  */
-import type { ChannelMemberList } from "./channelMemberList";
 
-export interface ChannelMemberListResult {
-  /** Number of members per page */
-  limit: number;
-  members: ChannelMemberList;
-  /** Current page number */
-  page: number;
-  /** Total number of members in the channel */
-  total: number;
-}
+export type ChannelMemberListParams = {
+  /**
+   * Page number for pagination
+   */
+  page?: number;
+  /**
+   * Number of members per page
+   */
+  limit?: number;
+};

@@ -134,6 +134,36 @@ func (r *Repository) ListByChannel(ctx context.Context, channelID xid.ID, filter
 	return dt.MapErr(memberships, FromModel)
 }
 
+func (r *Repository) ListByChannelPaginated(ctx context.Context, channelID xid.ID, offset, limit int) ([]*Membership, error) {
+	memberships, err := r.db.ChannelMembership.Query().
+		Where(ent_membership.ChannelID(channelID)).
+		WithAccount(func(aq *ent.AccountQuery) {
+			aq.WithAccountRoles(func(arq *ent.AccountRolesQuery) {
+				arq.WithRole()
+			})
+		}).
+		Order(ent.Asc(ent_membership.FieldCreatedAt)).
+		Offset(offset).
+		Limit(limit).
+		All(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return dt.MapErr(memberships, FromModel)
+}
+
+func (r *Repository) CountByChannel(ctx context.Context, channelID xid.ID) (int, error) {
+	count, err := r.db.ChannelMembership.Query().
+		Where(ent_membership.ChannelID(channelID)).
+		Count(ctx)
+	if err != nil {
+		return 0, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return count, nil
+}
+
 func (r *Repository) ListByAccount(ctx context.Context, accountID account.AccountID) ([]*Membership, error) {
 	memberships, err := r.db.ChannelMembership.Query().
 		Where(ent_membership.AccountID(xid.ID(accountID))).
