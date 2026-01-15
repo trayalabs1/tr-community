@@ -6035,6 +6035,9 @@ components:
               $ref: "#/components/schemas/Asset"
             meta:
               $ref: "#/components/schemas/Metadata"
+            member_count:
+              type: integer
+              description: Number of members in the channel (includes inflated value for display)
 
     ChannelReference:
       type: object
