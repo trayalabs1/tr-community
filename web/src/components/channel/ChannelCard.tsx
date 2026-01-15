@@ -9,7 +9,7 @@ import { getAssetURL } from "@/utils/asset";
 interface ChannelCardProps {
   id: string;
   name: string;
-  description?: string;
+  member_count?: number;
   icon?: {
     path: string;
   };
@@ -21,7 +21,7 @@ interface ChannelCardProps {
 export function ChannelCard({
   id,
   name,
-  description,
+  member_count,
   icon,
   isActive = false,
   isCohort = false,
@@ -106,19 +106,15 @@ export function ChannelCard({
         >
           {name}
         </styled.span>
-        {description && (
+        {member_count !== undefined && (
           <styled.span
             fontSize="xs"
             style={{
               color: "var(--colors-fg-muted)",
               margin: "0",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              maxWidth: "100%",
             }}
           >
-            {description.length > 30 ? description.substring(0, 30) + "..." : description}
+            {member_count} {member_count === 1 ? "member" : "members"}
           </styled.span>
         )}
       </VStack>
