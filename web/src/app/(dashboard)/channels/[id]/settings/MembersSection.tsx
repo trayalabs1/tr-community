@@ -46,8 +46,8 @@ export function MembersSection({ channelID }: Props) {
   const membersPerPage = 20;
   
   const { data: members } = useChannelMemberList(channelID, {
-    page: currentPage,
-    limit: membersPerPage,
+    page: currentPage.toString(),
+    limit: membersPerPage.toString(),
   });
 
   const { register, handleSubmit, reset, control, formState, setValue, watch } =
@@ -114,7 +114,7 @@ export function MembersSection({ channelID }: Props) {
         role: data.role,
       });
       setCurrentPage(1); // Reset to first page after adding member
-      mutate(getChannelMemberListKey(channelID, { page: 1, limit: membersPerPage }));
+      mutate(getChannelMemberListKey(channelID, { page: "1", limit: membersPerPage.toString() }));
       reset();
       setShowAddForm(false);
       setSearchQuery("");
