@@ -73,8 +73,8 @@ export function MobileCommandBar() {
       backgroundColor="white"
       borderTopWidth="thin"
       borderTopColor="border.default"
+      display={{ base: "flex", md: "none" }}
       style={{
-        display: "flex",
         justifyContent: "center",
         alignItems: "flex-end",
         zIndex: 40,
