@@ -48,22 +48,12 @@ export function ChannelFilterBar({
           fontWeight="medium"
           cursor="pointer"
           style={{
-            backgroundColor: hasActiveFilters ? TRAYA_COLORS.primary : TRAYA_COLORS.tertiary,
-            color: hasActiveFilters ? "white" : TRAYA_COLORS.primary,
+            backgroundColor: "#ecf4eecc",
+            color:  "#2d5340",
             border: "none",
             padding: "0.5rem 0.75rem",
             borderRadius: "0.875rem",
             transition: "all 0.2s ease-in-out",
-          }}
-          onMouseEnter={(e) => {
-            if (!hasActiveFilters) {
-              e.currentTarget.style.backgroundColor = `${TRAYA_COLORS.tertiary}cc`;
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!hasActiveFilters) {
-              e.currentTarget.style.backgroundColor = TRAYA_COLORS.tertiary;
-            }
           }}
         >
           <Filter size={16} strokeWidth={2} />
