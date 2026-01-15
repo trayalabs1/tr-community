@@ -104,11 +104,6 @@ type OperationPermissions interface {
 	ChannelThreadUpdate() (bool, *rbac.Permission)
 	ChannelThreadDelete() (bool, *rbac.Permission)
 	ChannelReplyCreate() (bool, *rbac.Permission)
-	ChannelCollectionCreate() (bool, *rbac.Permission)
-	ChannelCollectionList() (bool, *rbac.Permission)
-	ChannelCollectionGet() (bool, *rbac.Permission)
-	ChannelCollectionUpdate() (bool, *rbac.Permission)
-	ChannelCollectionDelete() (bool, *rbac.Permission)
 	CategoryCreate() (bool, *rbac.Permission)
 	CategoryList() (bool, *rbac.Permission)
 	CategoryGet() (bool, *rbac.Permission)
@@ -380,16 +375,6 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.ChannelThreadDelete()
 	case "ChannelReplyCreate":
 		return optable.ChannelReplyCreate()
-	case "ChannelCollectionCreate":
-		return optable.ChannelCollectionCreate()
-	case "ChannelCollectionList":
-		return optable.ChannelCollectionList()
-	case "ChannelCollectionGet":
-		return optable.ChannelCollectionGet()
-	case "ChannelCollectionUpdate":
-		return optable.ChannelCollectionUpdate()
-	case "ChannelCollectionDelete":
-		return optable.ChannelCollectionDelete()
 	case "CategoryCreate":
 		return optable.CategoryCreate()
 	case "CategoryList":

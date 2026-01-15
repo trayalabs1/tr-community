@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/asset"
-	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/node"
 	"github.com/Southclaws/storyden/internal/ent/post"
@@ -129,20 +128,6 @@ func (_u *CollectionUpdate) ClearCoverAssetID() *CollectionUpdate {
 	return _u
 }
 
-// SetChannelID sets the "channel_id" field.
-func (_u *CollectionUpdate) SetChannelID(v xid.ID) *CollectionUpdate {
-	_u.mutation.SetChannelID(v)
-	return _u
-}
-
-// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
-func (_u *CollectionUpdate) SetNillableChannelID(v *xid.ID) *CollectionUpdate {
-	if v != nil {
-		_u.SetChannelID(*v)
-	}
-	return _u
-}
-
 // SetVisibility sets the "visibility" field.
 func (_u *CollectionUpdate) SetVisibility(v collection.Visibility) *CollectionUpdate {
 	_u.mutation.SetVisibility(v)
@@ -195,11 +180,6 @@ func (_u *CollectionUpdate) SetCoverImage(v *Asset) *CollectionUpdate {
 	return _u.SetCoverImageID(v.ID)
 }
 
-// SetChannel sets the "channel" edge to the Channel entity.
-func (_u *CollectionUpdate) SetChannel(v *Channel) *CollectionUpdate {
-	return _u.SetChannelID(v.ID)
-}
-
 // AddPostIDs adds the "posts" edge to the Post entity by IDs.
 func (_u *CollectionUpdate) AddPostIDs(ids ...xid.ID) *CollectionUpdate {
 	_u.mutation.AddPostIDs(ids...)
@@ -244,12 +224,6 @@ func (_u *CollectionUpdate) ClearOwner() *CollectionUpdate {
 // ClearCoverImage clears the "cover_image" edge to the Asset entity.
 func (_u *CollectionUpdate) ClearCoverImage() *CollectionUpdate {
 	_u.mutation.ClearCoverImage()
-	return _u
-}
-
-// ClearChannel clears the "channel" edge to the Channel entity.
-func (_u *CollectionUpdate) ClearChannel() *CollectionUpdate {
-	_u.mutation.ClearChannel()
 	return _u
 }
 
@@ -337,9 +311,6 @@ func (_u *CollectionUpdate) check() error {
 		if err := collection.VisibilityValidator(v); err != nil {
 			return &ValidationError{Name: "visibility", err: fmt.Errorf(`ent: validator failed for field "Collection.visibility": %w`, err)}
 		}
-	}
-	if _u.mutation.ChannelCleared() && len(_u.mutation.ChannelIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Collection.channel"`)
 	}
 	return nil
 }
@@ -437,35 +408,6 @@ func (_u *CollectionUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.ChannelCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   collection.ChannelTable,
-			Columns: []string{collection.ChannelColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.ChannelIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   collection.ChannelTable,
-			Columns: []string{collection.ChannelColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -703,20 +645,6 @@ func (_u *CollectionUpdateOne) ClearCoverAssetID() *CollectionUpdateOne {
 	return _u
 }
 
-// SetChannelID sets the "channel_id" field.
-func (_u *CollectionUpdateOne) SetChannelID(v xid.ID) *CollectionUpdateOne {
-	_u.mutation.SetChannelID(v)
-	return _u
-}
-
-// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
-func (_u *CollectionUpdateOne) SetNillableChannelID(v *xid.ID) *CollectionUpdateOne {
-	if v != nil {
-		_u.SetChannelID(*v)
-	}
-	return _u
-}
-
 // SetVisibility sets the "visibility" field.
 func (_u *CollectionUpdateOne) SetVisibility(v collection.Visibility) *CollectionUpdateOne {
 	_u.mutation.SetVisibility(v)
@@ -769,11 +697,6 @@ func (_u *CollectionUpdateOne) SetCoverImage(v *Asset) *CollectionUpdateOne {
 	return _u.SetCoverImageID(v.ID)
 }
 
-// SetChannel sets the "channel" edge to the Channel entity.
-func (_u *CollectionUpdateOne) SetChannel(v *Channel) *CollectionUpdateOne {
-	return _u.SetChannelID(v.ID)
-}
-
 // AddPostIDs adds the "posts" edge to the Post entity by IDs.
 func (_u *CollectionUpdateOne) AddPostIDs(ids ...xid.ID) *CollectionUpdateOne {
 	_u.mutation.AddPostIDs(ids...)
@@ -818,12 +741,6 @@ func (_u *CollectionUpdateOne) ClearOwner() *CollectionUpdateOne {
 // ClearCoverImage clears the "cover_image" edge to the Asset entity.
 func (_u *CollectionUpdateOne) ClearCoverImage() *CollectionUpdateOne {
 	_u.mutation.ClearCoverImage()
-	return _u
-}
-
-// ClearChannel clears the "channel" edge to the Channel entity.
-func (_u *CollectionUpdateOne) ClearChannel() *CollectionUpdateOne {
-	_u.mutation.ClearChannel()
 	return _u
 }
 
@@ -924,9 +841,6 @@ func (_u *CollectionUpdateOne) check() error {
 		if err := collection.VisibilityValidator(v); err != nil {
 			return &ValidationError{Name: "visibility", err: fmt.Errorf(`ent: validator failed for field "Collection.visibility": %w`, err)}
 		}
-	}
-	if _u.mutation.ChannelCleared() && len(_u.mutation.ChannelIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Collection.channel"`)
 	}
 	return nil
 }
@@ -1041,35 +955,6 @@ func (_u *CollectionUpdateOne) sqlSave(ctx context.Context) (_node *Collection, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeString),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.ChannelCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   collection.ChannelTable,
-			Columns: []string{collection.ChannelColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.ChannelIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   collection.ChannelTable,
-			Columns: []string{collection.ChannelColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

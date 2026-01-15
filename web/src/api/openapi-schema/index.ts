@@ -150,7 +150,6 @@ export * from "./categoryUpdatePositionBody";
 export * from "./channel";
 export * from "./channelAllOf";
 export * from "./channelAllOfVisibility";
-export * from "./channelCollectionListParams";
 export * from "./channelGetOKResponse";
 export * from "./channelInitialProps";
 export * from "./channelInitialPropsVisibility";

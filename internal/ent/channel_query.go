@@ -16,7 +16,6 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/category"
 	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/channelmembership"
-	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/node"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/predicate"
@@ -34,7 +33,6 @@ type ChannelQuery struct {
 	withIcon        *AssetQuery
 	withMemberships *ChannelMembershipQuery
 	withCategories  *CategoryQuery
-	withCollections *CollectionQuery
 	withPosts       *PostQuery
 	withNodes       *NodeQuery
 	modifiers       []func(*sql.Selector)
@@ -155,28 +153,6 @@ func (_q *ChannelQuery) QueryCategories() *CategoryQuery {
 			sqlgraph.From(channel.Table, channel.FieldID, selector),
 			sqlgraph.To(category.Table, category.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, channel.CategoriesTable, channel.CategoriesColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryCollections chains the current query on the "collections" edge.
-func (_q *ChannelQuery) QueryCollections() *CollectionQuery {
-	query := (&CollectionClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(channel.Table, channel.FieldID, selector),
-			sqlgraph.To(collection.Table, collection.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, channel.CollectionsTable, channel.CollectionsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -424,7 +400,6 @@ func (_q *ChannelQuery) Clone() *ChannelQuery {
 		withIcon:        _q.withIcon.Clone(),
 		withMemberships: _q.withMemberships.Clone(),
 		withCategories:  _q.withCategories.Clone(),
-		withCollections: _q.withCollections.Clone(),
 		withPosts:       _q.withPosts.Clone(),
 		withNodes:       _q.withNodes.Clone(),
 		// clone intermediate query.
@@ -475,17 +450,6 @@ func (_q *ChannelQuery) WithCategories(opts ...func(*CategoryQuery)) *ChannelQue
 		opt(query)
 	}
 	_q.withCategories = query
-	return _q
-}
-
-// WithCollections tells the query-builder to eager-load the nodes that are connected to
-// the "collections" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *ChannelQuery) WithCollections(opts ...func(*CollectionQuery)) *ChannelQuery {
-	query := (&CollectionClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withCollections = query
 	return _q
 }
 
@@ -589,12 +553,11 @@ func (_q *ChannelQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Chan
 	var (
 		nodes       = []*Channel{}
 		_spec       = _q.querySpec()
-		loadedTypes = [7]bool{
+		loadedTypes = [6]bool{
 			_q.withCoverImage != nil,
 			_q.withIcon != nil,
 			_q.withMemberships != nil,
 			_q.withCategories != nil,
-			_q.withCollections != nil,
 			_q.withPosts != nil,
 			_q.withNodes != nil,
 		}
@@ -643,13 +606,6 @@ func (_q *ChannelQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Chan
 		if err := _q.loadCategories(ctx, query, nodes,
 			func(n *Channel) { n.Edges.Categories = []*Category{} },
 			func(n *Channel, e *Category) { n.Edges.Categories = append(n.Edges.Categories, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withCollections; query != nil {
-		if err := _q.loadCollections(ctx, query, nodes,
-			func(n *Channel) { n.Edges.Collections = []*Collection{} },
-			func(n *Channel, e *Collection) { n.Edges.Collections = append(n.Edges.Collections, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -780,37 +736,6 @@ func (_q *ChannelQuery) loadCategories(ctx context.Context, query *CategoryQuery
 	}
 	query.Where(predicate.Category(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(channel.CategoriesColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.ChannelID
-		node, ok := nodeids[fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "channel_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (_q *ChannelQuery) loadCollections(ctx context.Context, query *CollectionQuery, nodes []*Channel, init func(*Channel), assign func(*Channel, *Collection)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[xid.ID]*Channel)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(collection.FieldChannelID)
-	}
-	query.Where(predicate.Collection(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(channel.CollectionsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
