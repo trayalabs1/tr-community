@@ -77,6 +77,9 @@ export function ThreadScreen(props: Props) {
           p="2"
           alignItems="center"
           width="full"
+          display={{ base: "flex", md: "none" }}
+          borderBottomWidth="thin"
+          borderBottomColor="border.default"
           style={{
             position: "sticky",
             top: 0,
@@ -84,8 +87,8 @@ export function ThreadScreen(props: Props) {
             backgroundColor: "rgba(255, 255, 255, 0.95)",
             backdropFilter: "blur(12px)",
             flexShrink: 0,
+            borderBottomColor: "rgba(0, 0, 0, 0.05)",
           }}
-          className="md:hidden"
         >
           <styled.button
             onClick={() => router.back()}
@@ -122,7 +125,7 @@ export function ThreadScreen(props: Props) {
           }}
         >
           {/* Desktop Breadcrumbs - Only on Desktop */}
-          <styled.div className="hidden md:block"  borderBottomWidth="thin" borderBottomColor="border.default" style={{ borderBottomColor: "rgba(0, 0, 0, 0.05)" }}>
+          <styled.div display={{ base: "none", md: "block" }} px="4" py="4">
             <WStack alignItems="start">
               <Breadcrumbs
                 thread={thread}
