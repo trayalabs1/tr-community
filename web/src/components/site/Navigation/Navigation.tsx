@@ -70,9 +70,11 @@ export async function Navigation({
         </Box>
 
         <Box className={styles["navpill"]}>
-          <MobileCommandBar />
+          {/* MobileCommandBar is now rendered outside */}
         </Box>
       </Box>
+
+      <MobileCommandBar />
     </Box>
   );
 }
