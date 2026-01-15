@@ -7,6 +7,7 @@ import { HStack, VStack, styled } from "@/styled-system/jsx";
 import { SearchIcon } from "@/components/ui/icons/Search";
 import { HomeIcon } from "@heroicons/react/24/outline";
 import { LibraryIcon } from "@/components/ui/icons/Library";
+import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 export function MobileCommandBar() {
@@ -15,6 +16,7 @@ export function MobileCommandBar() {
   const isHomeActive = pathname === "/" || (pathname.startsWith("/channels") && !pathname.includes("/settings"));
   const isSearchActive = pathname.startsWith("/search");
   const isLibraryActive = pathname.startsWith("/l");
+  const isInfoActive = pathname.startsWith("/info");
 
   const TabItem = ({
     href,
@@ -100,11 +102,17 @@ export function MobileCommandBar() {
           label="Search"
           isActive={isSearchActive}
         />
-        <TabItem
+        {/* <TabItem
           href="/l"
           icon={LibraryIcon}
           label="Library"
           isActive={isLibraryActive}
+        /> */}
+        <TabItem
+          href="/info"
+          icon={InformationCircleIcon}
+          label="Info"
+          isActive={isInfoActive}
         />
       </HStack>
     </styled.nav>
