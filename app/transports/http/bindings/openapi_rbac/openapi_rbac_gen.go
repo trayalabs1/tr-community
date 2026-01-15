@@ -88,6 +88,7 @@ type OperationPermissions interface {
 	ChannelDelete() (bool, *rbac.Permission)
 	ChannelMemberList() (bool, *rbac.Permission)
 	ChannelMemberAdd() (bool, *rbac.Permission)
+	ChannelMembershipGet() (bool, *rbac.Permission)
 	ChannelMemberUpdateRole() (bool, *rbac.Permission)
 	ChannelMemberRemove() (bool, *rbac.Permission)
 	ChannelJoin() (bool, *rbac.Permission)
@@ -104,11 +105,6 @@ type OperationPermissions interface {
 	ChannelThreadUpdate() (bool, *rbac.Permission)
 	ChannelThreadDelete() (bool, *rbac.Permission)
 	ChannelReplyCreate() (bool, *rbac.Permission)
-	ChannelCollectionCreate() (bool, *rbac.Permission)
-	ChannelCollectionList() (bool, *rbac.Permission)
-	ChannelCollectionGet() (bool, *rbac.Permission)
-	ChannelCollectionUpdate() (bool, *rbac.Permission)
-	ChannelCollectionDelete() (bool, *rbac.Permission)
 	CategoryCreate() (bool, *rbac.Permission)
 	CategoryList() (bool, *rbac.Permission)
 	CategoryGet() (bool, *rbac.Permission)
@@ -348,6 +344,8 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.ChannelMemberList()
 	case "ChannelMemberAdd":
 		return optable.ChannelMemberAdd()
+	case "ChannelMembershipGet":
+		return optable.ChannelMembershipGet()
 	case "ChannelMemberUpdateRole":
 		return optable.ChannelMemberUpdateRole()
 	case "ChannelMemberRemove":
@@ -380,16 +378,6 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.ChannelThreadDelete()
 	case "ChannelReplyCreate":
 		return optable.ChannelReplyCreate()
-	case "ChannelCollectionCreate":
-		return optable.ChannelCollectionCreate()
-	case "ChannelCollectionList":
-		return optable.ChannelCollectionList()
-	case "ChannelCollectionGet":
-		return optable.ChannelCollectionGet()
-	case "ChannelCollectionUpdate":
-		return optable.ChannelCollectionUpdate()
-	case "ChannelCollectionDelete":
-		return optable.ChannelCollectionDelete()
 	case "CategoryCreate":
 		return optable.CategoryCreate()
 	case "CategoryList":

@@ -6,7 +6,6 @@ import (
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
 	"github.com/Southclaws/opt"
-	"github.com/rs/xid"
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/collection"
@@ -35,13 +34,11 @@ type Partial struct {
 	Name        opt.Optional[string]
 	Slug        opt.Optional[string]
 	Description opt.Optional[string]
-	ChannelID   opt.Optional[xid.ID]
 }
 
 func (p Partial) Opts() (opts []collection_writer.Option) {
 	p.Name.Call(func(v string) { opts = append(opts, collection_writer.WithName(v)) })
 	p.Description.Call(func(v string) { opts = append(opts, collection_writer.WithDescription(v)) })
-	p.ChannelID.Call(func(v xid.ID) { opts = append(opts, collection_writer.WithChannel(v)) })
 	return
 }
 

@@ -2265,22 +2265,6 @@ func (c *ChannelClient) QueryCategories(_m *Channel) *CategoryQuery {
 	return query
 }
 
-// QueryCollections queries the collections edge of a Channel.
-func (c *ChannelClient) QueryCollections(_m *Channel) *CollectionQuery {
-	query := (&CollectionClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(channel.Table, channel.FieldID, id),
-			sqlgraph.To(collection.Table, collection.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, channel.CollectionsTable, channel.CollectionsColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryPosts queries the posts edge of a Channel.
 func (c *ChannelClient) QueryPosts(_m *Channel) *PostQuery {
 	query := (&PostClient{config: c.config}).Query()
@@ -2636,22 +2620,6 @@ func (c *CollectionClient) QueryCoverImage(_m *Collection) *AssetQuery {
 			sqlgraph.From(collection.Table, collection.FieldID, id),
 			sqlgraph.To(asset.Table, asset.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, collection.CoverImageTable, collection.CoverImageColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryChannel queries the channel edge of a Collection.
-func (c *CollectionClient) QueryChannel(_m *Collection) *ChannelQuery {
-	query := (&ChannelClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(collection.Table, collection.FieldID, id),
-			sqlgraph.To(channel.Table, channel.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, collection.ChannelTable, collection.ChannelColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

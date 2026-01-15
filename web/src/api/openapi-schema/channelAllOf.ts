@@ -16,7 +16,7 @@ export type ChannelAllOf = {
   /** Description of the channel's purpose */
   description: string;
   icon?: Asset;
-  /** Number of members in the channel */
+  /** Number of members in the channel (includes inflated value for display) */
   member_count?: number;
   meta?: Metadata;
   /** The display name of the channel */

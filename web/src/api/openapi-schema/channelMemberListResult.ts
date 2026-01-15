@@ -10,5 +10,11 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
 import type { ChannelMemberList } from "./channelMemberList";
 
 export interface ChannelMemberListResult {
+  /** Number of members per page */
+  limit: number;
   members: ChannelMemberList;
+  /** Current page number */
+  page: number;
+  /** Total number of members in the channel */
+  total: number;
 }

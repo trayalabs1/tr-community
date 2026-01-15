@@ -60,10 +60,13 @@ func (i *Collections) CollectionCreate(ctx context.Context, request openapi.Coll
 }
 
 func (i *Collections) CollectionList(ctx context.Context, request openapi.CollectionListRequestObject) (openapi.CollectionListResponseObject, error) {
-	opts := []collection_querier.Option{}
+	acc, err := session.GetAccount(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
 
-	if v := request.Params.AccountHandle; v != nil {
-		opts = append(opts, collection_querier.WithOwnerHandle(*v))
+	opts := []collection_querier.Option{
+		collection_querier.WithOwnerHandle(acc.Handle),
 	}
 
 	itemPresenceQuery := opt.Map(opt.NewPtr(request.Params.HasItem), deserialiseID)
@@ -86,9 +89,18 @@ func (i *Collections) CollectionList(ctx context.Context, request openapi.Collec
 }
 
 func (i *Collections) CollectionGet(ctx context.Context, request openapi.CollectionGetRequestObject) (openapi.CollectionGetResponseObject, error) {
+	acc, err := session.GetAccount(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
 	coll, err := i.colReader.GetCollection(ctx, collection.NewKey(request.CollectionMark))
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	if coll.Owner.ID != acc.ID {
+		return nil, fault.Wrap(fault.New("not the owner of this collection"), fctx.With(ctx))
 	}
 
 	return openapi.CollectionGet200JSONResponse{

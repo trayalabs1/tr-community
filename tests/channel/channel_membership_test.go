@@ -90,7 +90,7 @@ func TestChannelMembership(t *testing.T) {
 			channelID := string(createResp.JSON200.Id)
 
 			// Test: List members - should have just the owner
-			listResp, err := cl.ChannelMemberListWithResponse(root, channelID, ownerSession)
+			listResp, err := cl.ChannelMemberListWithResponse(root, channelID, nil, ownerSession)
 			r.NoError(err)
 			r.Equal(http.StatusOK, listResp.StatusCode())
 			r.NotNil(listResp.JSON200)
@@ -117,7 +117,7 @@ func TestChannelMembership(t *testing.T) {
 			r.Equal("member", string(addMember1Resp.JSON200.Role))
 
 			// Test: List members - should now have 3 members
-			listResp2, err := cl.ChannelMemberListWithResponse(root, channelID, ownerSession)
+			listResp2, err := cl.ChannelMemberListWithResponse(root, channelID, nil, ownerSession)
 			r.NoError(err)
 			r.Equal(http.StatusOK, listResp2.StatusCode())
 			r.Len(listResp2.JSON200.Members, 3)
@@ -158,7 +158,7 @@ func TestChannelMembership(t *testing.T) {
 			r.Equal(http.StatusOK, leaveResp.StatusCode())
 
 			// Test: List members after joins and leaves
-			listResp3, err := cl.ChannelMemberListWithResponse(root, channelID, ownerSession)
+			listResp3, err := cl.ChannelMemberListWithResponse(root, channelID, nil, ownerSession)
 			r.NoError(err)
 			r.Equal(http.StatusOK, listResp3.StatusCode())
 			r.Len(listResp3.JSON200.Members, 4) // owner, admin, member1 (moderator), nonMember
@@ -169,10 +169,190 @@ func TestChannelMembership(t *testing.T) {
 			r.Equal(http.StatusOK, removeResp.StatusCode())
 
 			// Test: Final member list
-			listResp4, err := cl.ChannelMemberListWithResponse(root, channelID, ownerSession)
+			listResp4, err := cl.ChannelMemberListWithResponse(root, channelID, nil, ownerSession)
 			r.NoError(err)
 			r.Equal(http.StatusOK, listResp4.StatusCode())
 			r.Len(listResp4.JSON200.Members, 3) // owner, admin, member1 (moderator)
+		}))
+	}))
+}
+
+func TestChannelMembershipGet(t *testing.T) {
+	t.Parallel()
+
+	integration.Test(t, nil, e2e.Setup(), fx.Invoke(func(
+		lc fx.Lifecycle,
+		root context.Context,
+		cl *openapi.ClientWithResponses,
+		sh *e2e.SessionHelper,
+	) {
+		lc.Append(fx.StartHook(func() {
+			r := require.New(t)
+
+			// Create test users
+			owner := "owner-" + xid.New().String()
+			ownerResp, err := cl.AuthPasswordSignupWithResponse(root, nil, openapi.AuthPair{
+				Identifier: owner,
+				Token:      "password",
+			})
+			r.NoError(err)
+			r.Equal(http.StatusOK, ownerResp.StatusCode())
+			ownerID := account.AccountID(utils.Must(xid.FromString(ownerResp.JSON200.Id)))
+			ownerSession := sh.WithSession(e2e.WithAccountID(root, ownerID))
+
+			member := "member-" + xid.New().String()
+			memberResp, err := cl.AuthPasswordSignupWithResponse(root, nil, openapi.AuthPair{
+				Identifier: member,
+				Token:      "password",
+			})
+			r.NoError(err)
+			r.Equal(http.StatusOK, memberResp.StatusCode())
+			memberID := account.AccountID(utils.Must(xid.FromString(memberResp.JSON200.Id)))
+			memberSession := sh.WithSession(e2e.WithAccountID(root, memberID))
+
+			nonMember := "nonmember-" + xid.New().String()
+			nonMemberResp, err := cl.AuthPasswordSignupWithResponse(root, nil, openapi.AuthPair{
+				Identifier: nonMember,
+				Token:      "password",
+			})
+			r.NoError(err)
+			r.Equal(http.StatusOK, nonMemberResp.StatusCode())
+			nonMemberID := account.AccountID(utils.Must(xid.FromString(nonMemberResp.JSON200.Id)))
+			nonMemberSession := sh.WithSession(e2e.WithAccountID(root, nonMemberID))
+
+			// Create a channel
+			createResp, err := cl.ChannelCreateWithResponse(root, openapi.ChannelInitialProps{
+				Name:        "Test Channel",
+				Slug:        "test-channel-membership",
+				Description: "A test channel for membership get operation",
+			}, ownerSession)
+			r.NoError(err)
+			r.Equal(http.StatusOK, createResp.StatusCode())
+			channelID := string(createResp.JSON200.Id)
+
+			// Test: Owner gets their own membership
+			ownerMembershipResp, err := cl.ChannelMembershipGetWithResponse(root, channelID, ownerSession)
+			r.NoError(err)
+			r.Equal(http.StatusOK, ownerMembershipResp.StatusCode())
+			r.NotNil(ownerMembershipResp.JSON200)
+			r.Equal("owner", string(ownerMembershipResp.JSON200.Role))
+			r.Equal(ownerID.String(), string(ownerMembershipResp.JSON200.Account.Id))
+
+			// Add a member
+			addMemberResp, err := cl.ChannelMemberAddWithResponse(root, channelID, openapi.ChannelMemberAdd{
+				AccountId: openapi.Identifier(memberID.String()),
+				Role:      openapi.ChannelMemberAddRoleMember,
+			}, ownerSession)
+			r.NoError(err)
+			r.Equal(http.StatusOK, addMemberResp.StatusCode())
+
+			// Test: Member gets their own membership
+			memberMembershipResp, err := cl.ChannelMembershipGetWithResponse(root, channelID, memberSession)
+			r.NoError(err)
+			r.Equal(http.StatusOK, memberMembershipResp.StatusCode())
+			r.NotNil(memberMembershipResp.JSON200)
+			r.Equal("member", string(memberMembershipResp.JSON200.Role))
+			r.Equal(memberID.String(), string(memberMembershipResp.JSON200.Account.Id))
+
+			// Test: Non-member cannot get membership (should return 404)
+			nonMemberMembershipResp, err := cl.ChannelMembershipGetWithResponse(root, channelID, nonMemberSession)
+			r.NoError(err)
+			r.Equal(http.StatusNotFound, nonMemberMembershipResp.StatusCode())
+		}))
+	}))
+}
+
+func TestChannelMemberListPagination(t *testing.T) {
+	t.Parallel()
+
+	integration.Test(t, nil, e2e.Setup(), fx.Invoke(func(
+		lc fx.Lifecycle,
+		root context.Context,
+		cl *openapi.ClientWithResponses,
+		sh *e2e.SessionHelper,
+	) {
+		lc.Append(fx.StartHook(func() {
+			r := require.New(t)
+
+			// Create owner
+			owner := "owner-" + xid.New().String()
+			ownerResp, err := cl.AuthPasswordSignupWithResponse(root, nil, openapi.AuthPair{
+				Identifier: owner,
+				Token:      "password",
+			})
+			r.NoError(err)
+			r.Equal(http.StatusOK, ownerResp.StatusCode())
+			ownerID := account.AccountID(utils.Must(xid.FromString(ownerResp.JSON200.Id)))
+			ownerSession := sh.WithSession(e2e.WithAccountID(root, ownerID))
+
+			// Create channel
+			createResp, err := cl.ChannelCreateWithResponse(root, openapi.ChannelInitialProps{
+				Name:        "Test Channel Pagination",
+				Slug:        "test-channel-pagination",
+				Description: "A test channel for pagination",
+			}, ownerSession)
+			r.NoError(err)
+			r.Equal(http.StatusOK, createResp.StatusCode())
+			channelID := string(createResp.JSON200.Id)
+
+			// Add 15 members to test pagination
+			memberIDs := make([]string, 15)
+			for i := 0; i < 15; i++ {
+				memberHandle := "member-" + xid.New().String()
+				memberResp, err := cl.AuthPasswordSignupWithResponse(root, nil, openapi.AuthPair{
+					Identifier: memberHandle,
+					Token:      "password",
+				})
+				r.NoError(err)
+				r.Equal(http.StatusOK, memberResp.StatusCode())
+				memberID := string(memberResp.JSON200.Id)
+				memberIDs[i] = memberID
+
+				addResp, err := cl.ChannelMemberAddWithResponse(root, channelID, openapi.ChannelMemberAdd{
+					AccountId: openapi.Identifier(memberID),
+					Role:      openapi.ChannelMemberAddRoleMember,
+				}, ownerSession)
+				r.NoError(err)
+				r.Equal(http.StatusOK, addResp.StatusCode())
+			}
+
+			// Test: Get first page with limit 10
+			page1 := 1
+			limit1 := 10
+			listResp1, err := cl.ChannelMemberListWithResponse(root, channelID, &openapi.ChannelMemberListParams{
+				Page:  &page1,
+				Limit: &limit1,
+			}, ownerSession)
+			r.NoError(err)
+			r.Equal(http.StatusOK, listResp1.StatusCode())
+			r.NotNil(listResp1.JSON200)
+			r.Len(listResp1.JSON200.Members, 10)
+			r.Equal(16, listResp1.JSON200.Total) // 15 members + 1 owner
+			r.Equal(1, listResp1.JSON200.Page)
+			r.Equal(10, listResp1.JSON200.Limit)
+
+			// Test: Get second page with limit 10
+			page2 := 2
+			listResp2, err := cl.ChannelMemberListWithResponse(root, channelID, &openapi.ChannelMemberListParams{
+				Page:  &page2,
+				Limit: &limit1,
+			}, ownerSession)
+			r.NoError(err)
+			r.Equal(http.StatusOK, listResp2.StatusCode())
+			r.NotNil(listResp2.JSON200)
+			r.Len(listResp2.JSON200.Members, 6) // Remaining 6 members
+			r.Equal(16, listResp2.JSON200.Total)
+			r.Equal(2, listResp2.JSON200.Page)
+
+			// Test: Get all members with default pagination
+			listResp3, err := cl.ChannelMemberListWithResponse(root, channelID, nil, ownerSession)
+			r.NoError(err)
+			r.Equal(http.StatusOK, listResp3.StatusCode())
+			r.NotNil(listResp3.JSON200)
+			r.Len(listResp3.JSON200.Members, 16)
+			r.Equal(16, listResp3.JSON200.Total)
+			r.Equal(1, listResp3.JSON200.Page)
+			r.Equal(50, listResp3.JSON200.Limit) // Default limit
 		}))
 	}))
 }

@@ -7,19 +7,14 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
 
  * OpenAPI spec version: v1.25.13-canary
  */
-import type { AccountHandleQueryParamParameter } from "./accountHandleQueryParamParameter";
-import type { CollectionHasItemQueryParamParameter } from "./collectionHasItemQueryParamParameter";
 
-export type ChannelCollectionListParams = {
+export type ChannelMemberListParams = {
   /**
-   * Account handle.
+   * Page number for pagination
    */
-  account_handle?: AccountHandleQueryParamParameter;
+  page?: number;
   /**
- * When specified, will include a field in the response indicating whether
-or not the specified item is present in the collection. This saves you
-needing to make two queries to check if an item is in a collection.
-
- */
-  has_item?: CollectionHasItemQueryParamParameter;
+   * Number of members per page
+   */
+  limit?: number;
 };

@@ -354,7 +354,6 @@ var (
 		{Name: "description", Type: field.TypeString, Nullable: true},
 		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"draft", "unlisted", "review", "published"}, Default: "draft"},
 		{Name: "account_collections", Type: field.TypeString, Nullable: true, Size: 20},
-		{Name: "channel_id", Type: field.TypeString, Size: 20},
 		{Name: "cover_asset_id", Type: field.TypeString, Nullable: true, Size: 20},
 	}
 	// CollectionsTable holds the schema information for the "collections" table.
@@ -370,14 +369,8 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "collections_channels_collections",
-				Columns:    []*schema.Column{CollectionsColumns[9]},
-				RefColumns: []*schema.Column{ChannelsColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-			{
 				Symbol:     "collections_assets_cover_image",
-				Columns:    []*schema.Column{CollectionsColumns[10]},
+				Columns:    []*schema.Column{CollectionsColumns[9]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1433,8 +1426,7 @@ func init() {
 	ChannelMembershipsTable.ForeignKeys[1].RefTable = ChannelsTable
 	ChannelMembershipsTable.ForeignKeys[2].RefTable = AccountsTable
 	CollectionsTable.ForeignKeys[0].RefTable = AccountsTable
-	CollectionsTable.ForeignKeys[1].RefTable = ChannelsTable
-	CollectionsTable.ForeignKeys[2].RefTable = AssetsTable
+	CollectionsTable.ForeignKeys[1].RefTable = AssetsTable
 	CollectionNodesTable.ForeignKeys[0].RefTable = CollectionsTable
 	CollectionNodesTable.ForeignKeys[1].RefTable = NodesTable
 	CollectionPostsTable.ForeignKeys[0].RefTable = CollectionsTable
