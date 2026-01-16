@@ -207,7 +207,7 @@ export default async function ChannelsPage() {
                     <ChannelCard
                       id={channel.id}
                       name={channel.name}
-                      description={channel.description}
+                      member_count={channel.member_count}
                       icon={channel.icon}
                       isCohort={true}
                     />
@@ -233,7 +233,7 @@ export default async function ChannelsPage() {
                     <ChannelCard
                       id={channel.id}
                       name={channel.name}
-                      description={channel.description}
+                      member_count={channel.member_count}
                       icon={channel.icon}
                       isCohort={false}
                     />

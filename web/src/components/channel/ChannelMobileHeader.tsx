@@ -104,7 +104,7 @@ export function ChannelMobileHeader({
           )}
         </VStack>
 
-        <HStack gap="2" alignItems="center" flexShrink="0">
+        {/* <HStack gap="2" alignItems="center" flexShrink="0">
           <styled.button
             display="flex"
             alignItems="center"
@@ -139,7 +139,7 @@ export function ChannelMobileHeader({
           >
             <Users size={18} strokeWidth={2} />
           </styled.button>
-        </HStack>
+        </HStack> */}
       </HStack>
 
       {/* Filter and Create Post Bar */}
