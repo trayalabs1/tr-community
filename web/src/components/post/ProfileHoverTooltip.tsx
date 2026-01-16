@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useState, useRef } from "react";
 import { styled } from "@/styled-system/jsx";
 import { ProfileReference } from "@/api/openapi-schema";
@@ -57,22 +58,25 @@ export function ProfileHoverTooltip({ profile, children }: Props) {
           }}
         >
           <styled.div display="flex" flexDir="column" gap="2">
-            <styled.div
-              display="flex"
-              flexDir="column"
-              gap="1"
-              style={{
-                borderBottom: "1px solid var(--colors-border-subtle)",
-                paddingBottom: "0.5rem",
-              }}
-            >
-              <styled.div fontSize="xs" fontWeight="semibold" color="fg.default">
-                {profile.name}
+            <Link href={`/m/${profile.handle}`} style={{ textDecoration: "none" }}>
+              <styled.div
+                display="flex"
+                flexDir="column"
+                gap="1"
+                style={{
+                  borderBottom: "1px solid var(--colors-border-subtle)",
+                  paddingBottom: "0.5rem",
+                  cursor: "pointer",
+                }}
+              >
+                <styled.div fontSize="xs" fontWeight="semibold" color="fg.default">
+                  {profile.name}
+                </styled.div>
+                <styled.div fontSize="xs" color="fg.muted">
+                  @{profile.handle}
+                </styled.div>
               </styled.div>
-              <styled.div fontSize="xs" color="fg.muted">
-                @{profile.handle}
-              </styled.div>
-            </styled.div>
+            </Link>
             <styled.div fontSize="xs" color="fg.muted">
               Joined {profile.joined}
             </styled.div>
