@@ -165,7 +165,7 @@ export function ProfileScreen(props: Props) {
                 CRM View
               </styled.h3>
               <styled.a
-                href={`https://erp.traya.health/lead-details/${(profile.meta as any).case_id}`}
+                href={`${process.env["NEXT_PUBLIC_ERP_URL"]}/lead-details/${(profile.meta as any).case_id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 display="inline-flex"
