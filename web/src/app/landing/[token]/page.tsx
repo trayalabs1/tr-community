@@ -14,7 +14,10 @@ export default async function Page(props: Props) {
     notFound();
   }
 
-  const cleanToken = token.split("&")[0]?.split("?")[0]?.trim() ?? "";
+  const decodedToken = decodeURIComponent(token);
+  const cleanToken = decodedToken.includes("&")
+    ? decodedToken.split("&")[0]?.trim() ?? ""
+    : decodedToken.split("?")[0]?.trim() ?? "";
 
   if (!cleanToken) {
     notFound();
