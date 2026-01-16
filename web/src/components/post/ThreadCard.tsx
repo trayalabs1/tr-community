@@ -24,6 +24,7 @@ import {
 
 import { LikeButton } from "./LikeButton/LikeButton";
 import { useThreadCardModeration } from "./useThreadCardModeration";
+import { ProfileHoverTooltip } from "./ProfileHoverTooltip";
 
 type Props = {
   thread: ThreadReference;
@@ -93,47 +94,51 @@ export const ThreadReferenceCard = memo(
           p="4"
         >
           <styled.div display="flex" alignItems="center" gap="3" flex="1" minW="0">
-            <styled.button
-              w="10"
-              h="10"
-              rounded="full"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              fontSize="sm"
-              fontWeight="semibold"
-              style={{
-                backgroundColor: isAdmin
-                  ? TRAYA_COLORS.primary
-                  : TRAYA_COLORS.tertiary,
-                color: isAdmin ? "white" : TRAYA_COLORS.primary,
-                border: "none",
-                cursor: "pointer",
-                transition: "opacity 0.2s ease-in-out",
-                flexShrink: 0,
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-              }}
-            >
-              {thread.author.name.charAt(0).toUpperCase()}
-            </styled.button>
+            <ProfileHoverTooltip profile={thread.author}>
+              <Link href={`/m/${thread.author.handle}`} style={{ textDecoration: "none" }}>
+                <styled.button
+                  w="10"
+                  h="10"
+                  rounded="full"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  fontSize="sm"
+                  fontWeight="semibold"
+                  style={{
+                    backgroundColor: isAdmin
+                      ? TRAYA_COLORS.primary
+                      : TRAYA_COLORS.tertiary,
+                    color: isAdmin ? "white" : TRAYA_COLORS.primary,
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "opacity 0.2s ease-in-out",
+                    flexShrink: 0,
+                  }}
+                >
+                  {thread.author.name.charAt(0).toUpperCase()}
+                </styled.button>
+              </Link>
+            </ProfileHoverTooltip>
 
             <styled.div display="flex" flexDir="column" gap="0.5" flex="1" minW="0">
-              <styled.p
-                fontSize="sm"
-                fontWeight="semibold"
-                color="fg.default"
-                style={{
-                  margin: "0",
-                  transition: "color 0.2s ease-in-out",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {thread.author.name}
-              </styled.p>
+              <Link href={`/m/${thread.author.handle}`} style={{ textDecoration: "none" }}>
+                <styled.p
+                  fontSize="sm"
+                  fontWeight="semibold"
+                  color="fg.default"
+                  style={{
+                    margin: "0",
+                    transition: "color 0.2s ease-in-out",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    cursor: "pointer",
+                  }}
+                >
+                  {thread.author.name}
+                </styled.p>
+              </Link>
               <styled.p
                 fontSize="xs"
                 color="fg.muted"
