@@ -12,6 +12,7 @@ import {
 } from "@/api/openapi-client/channels";
 import { Account, Channel } from "@/api/openapi-schema";
 import { ChannelMobileHeader } from "@/components/channel/ChannelMobileHeader";
+import { ChannelFilterBar } from "@/components/channel/ChannelFilterBar";
 import { ThreadReferenceCard } from "@/components/post/ThreadCard";
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
@@ -94,9 +95,20 @@ export function ChannelScreen(props: Props) {
         )}
       </VStack>
 
+      {/* Filter Bar - Desktop Only */}
+      <styled.div display={{ base: "none", md: "block" }} width="full">
+        <ChannelFilterBar
+          channelID={props.channel.id}
+          categories={categories?.categories || []}
+          selectedCategorySlug={selectedCategorySlug}
+          selectedVisibility={selectedVisibility}
+          onCategoryChange={setSelectedCategorySlug}
+          onVisibilityChange={setSelectedVisibility}
+        />
+      </styled.div>
+
       {/* Threads Section */}
       <VStack alignItems="start" gap="4" width="full">
-
 
         {isThreadsLoading && !threads ? (
           <styled.div
