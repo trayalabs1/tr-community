@@ -9,7 +9,6 @@ import { hasPermission } from "@/utils/permissions";
 import { useSession } from "@/auth";
 
 import { BodyInput } from "../BodyInput/BodyInput";
-import { TitleInput } from "../TitleInput/TitleInput";
 
 import { Props, useComposeForm } from "./useComposeForm";
 
@@ -37,10 +36,10 @@ export function ComposeForm(props: Props) {
     >
       <FormProvider {...form}>
         <LStack gap="4" w="full" p={{ base: "3", md: "4" }}>
-          {/* Title Input */}
-          <styled.div w="full">
+          {/* Title Input - Commented Out */}
+          {/* <styled.div w="full">
             <TitleInput />
-          </styled.div>
+          </styled.div> */}
 
           {/* Body Input */}
           <styled.div w="full" flex="1">

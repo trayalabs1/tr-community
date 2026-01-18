@@ -37,13 +37,10 @@ export function useCategorySelect(channelID?: string) {
   }
 
   const collection = createListCollection({
-    items: [
-      { label: "No category", value: NO_CATEGORY_VALUE },
-      ...data.categories.map((category) => ({
-        label: category.name,
-        value: category.id,
-      })),
-    ],
+    items: data.categories.map((category) => ({
+      label: category.name,
+      value: category.id,
+    })),
   });
 
   return {

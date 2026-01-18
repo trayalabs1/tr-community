@@ -14,6 +14,14 @@ export function CategorySelectFlat<T extends FieldValues>(
   const { field } = useController(controllerProps);
   const { ready, collection } = useCategorySelect(channelID);
 
+  const handleCategoryClick = (value: string) => {
+    if (field.value === value) {
+      field.onChange(undefined);
+    } else {
+      field.onChange(value);
+    }
+  };
+
   return (
     <HStack gap="2" flexWrap="wrap" w="full" alignItems="flex-start">
       {ready &&
@@ -21,7 +29,7 @@ export function CategorySelectFlat<T extends FieldValues>(
           <styled.button
             key={item.value}
             type="button"
-            onClick={() => field.onChange(item.value)}
+            onClick={() => handleCategoryClick(item.value)}
             px="3"
             py="2"
             fontSize="sm"
