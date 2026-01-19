@@ -5,9 +5,11 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { createListCollection } from "@ark-ui/react";
+import { Trash2 } from "lucide-react";
 
 import {
   channelMemberAdd,
+  channelMemberRemove,
   getChannelMemberListKey,
   useChannelMemberList,
 } from "@/api/openapi-client/channels";
@@ -43,6 +45,8 @@ export function MembersSection({ channelID }: Props) {
   const [selectedUser, setSelectedUser] = useState<PublicProfile | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
   const membersPerPage = 20;
   
   const { data: members } = useChannelMemberList(channelID, {
@@ -122,6 +126,23 @@ export function MembersSection({ channelID }: Props) {
       setSelectedUser(null);
     });
   });
+
+  const handleRemoveMember = async (memberId: string, memberName: string) => {
+    if (!window.confirm(`Are you sure you want to remove ${memberName} from this channel?`)) {
+      return;
+    }
+
+    await handle(async () => {
+      setIsRemoving(true);
+      try {
+        await channelMemberRemove(channelID, memberId);
+        mutate(getChannelMemberListKey(channelID, { page: currentPage.toString(), limit: membersPerPage.toString() }));
+        setRemovingMemberId(null);
+      } finally {
+        setIsRemoving(false);
+      }
+    });
+  };
 
   return (
     <LStack gap="4">
@@ -269,6 +290,7 @@ export function MembersSection({ channelID }: Props) {
                 style={{ border: "1px solid var(--colors-border-default)" }}
                 borderRadius="md"
                 justifyContent="space-between"
+                alignItems="center"
               >
                 <VStack alignItems="start" gap="0">
                   <styled.span fontWeight="medium">
@@ -278,16 +300,50 @@ export function MembersSection({ channelID }: Props) {
                     @{member.account.handle}
                   </styled.span>
                 </VStack>
-                <styled.span
-                  fontSize="sm"
-                  px="2"
-                  py="1"
-                  borderRadius="sm"
-                  bg="bg.muted"
-                  fontWeight="medium"
-                >
-                  {member.role}
-                </styled.span>
+                <HStack gap="2" alignItems="center">
+                  <styled.span
+                    fontSize="sm"
+                    px="2"
+                    py="1"
+                    borderRadius="sm"
+                    bg="bg.muted"
+                    fontWeight="medium"
+                  >
+                    {member.role}
+                  </styled.span>
+                  {permissions.canManageMembers && (
+                    <styled.button
+                      onClick={() => handleRemoveMember(member.account.id, member.account.name)}
+                      disabled={isRemoving}
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      style={{
+                        backgroundColor: "transparent",
+                        border: "none",
+                        cursor: isRemoving ? "not-allowed" : "pointer",
+                        color: "var(--colors-fg-muted)",
+                        padding: "0.5rem",
+                        borderRadius: "0.375rem",
+                        transition: "all 0.2s ease-in-out",
+                        opacity: isRemoving ? 0.5 : 1,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isRemoving) {
+                          (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+                          (e.currentTarget as HTMLElement).style.color = "#ef4444";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
+                        (e.currentTarget as HTMLElement).style.color = "var(--colors-fg-muted)";
+                      }}
+                      title="Remove member"
+                    >
+                      <Trash2 size={16} strokeWidth={2} />
+                    </styled.button>
+                  )}
+                </HStack>
               </HStack>
             ))}
           </VStack>
