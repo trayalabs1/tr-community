@@ -2,6 +2,7 @@ import { FormProvider } from "react-hook-form";
 
 import { Permission } from "src/api/openapi-schema";
 import { CategorySelectFlat } from "@/components/category/CategorySelect/CategorySelectFlat";
+import { useCategorySelect } from "@/components/category/CategorySelect/useCategorySelect";
 // import { TagListField } from "@/components/thread/ThreadTagList";
 import { Button } from "@/components/ui/button";
 import { HStack, VStack, LStack, styled } from "@/styled-system/jsx";
@@ -16,6 +17,10 @@ export function ComposeForm(props: Props) {
   const { form, state, handlers } = useComposeForm(props);
   const session = useSession();
   const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
+  const { ready, collection } = useCategorySelect(props.channelID);
+
+  // Check if there are any categories available
+  const hasCategories = ready && collection.items && collection.items.length > 0;
 
   return (
     <styled.form
@@ -46,19 +51,21 @@ export function ComposeForm(props: Props) {
             <BodyInput onAssetUpload={handlers.handleAssetUpload} />
           </styled.div>
 
-          {/* Category Selection */}
-          <VStack gap="2" w="full" alignItems="start">
-            <styled.label fontSize="sm" fontWeight="medium" color="fg.muted">
-              Topic
-            </styled.label>
-            <styled.div w="full">
-              <CategorySelectFlat
-                control={form.control}
-                name="category"
-                channelID={props.channelID}
-              />
-            </styled.div>
-          </VStack>
+          {/* Category Selection - Only show if categories exist */}
+          {hasCategories && (
+            <VStack gap="2" w="full" alignItems="start">
+              <styled.label fontSize="sm" fontWeight="medium" color="fg.muted">
+                Topic
+              </styled.label>
+              <styled.div w="full">
+                <CategorySelectFlat
+                  control={form.control}
+                  name="category"
+                  channelID={props.channelID}
+                />
+              </styled.div>
+            </VStack>
+          )}
 
           {/* Tags Selection - Disabled */}
           {/* <VStack gap="2" w="full" alignItems="start">
