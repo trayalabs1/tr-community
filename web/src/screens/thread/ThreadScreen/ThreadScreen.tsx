@@ -152,10 +152,12 @@ export function ThreadScreen(props: Props) {
           </styled.div>
 
           <styled.form
-            p="4"
+            px="4"
+            pt="4"
+            pb="0"
             display="flex"
             flexDirection="column"
-            gap="1"
+            gap="0"
             width="full"
             onSubmit={handlers.handleSave}
           >
@@ -179,7 +181,7 @@ export function ThreadScreen(props: Props) {
             )}
 
             {/* Post Header */}
-            <HStack gap="3" alignItems="start" width="full">
+            <HStack gap="3" alignItems="start" width="full" mb="1">
               <styled.button
                 w="12"
                 h="12"
@@ -260,7 +262,7 @@ export function ThreadScreen(props: Props) {
             </HStack>
 
             {/* Post Content */}
-            <styled.div mb="4">
+            <styled.div mb="1">
               {isEditing ? (
                 <TitleInput name="title" control={form.control} />
               ) : (
@@ -268,7 +270,7 @@ export function ThreadScreen(props: Props) {
                   fontSize="sm"
                   color="fg.default"
                   style={{
-                    whiteSpace: "pre-line",
+                    whiteSpace: "pre-wrap",
                     lineHeight: "1.6",
                     margin: "0",
                     fontSize: "15px",

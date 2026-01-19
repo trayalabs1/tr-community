@@ -3,19 +3,12 @@
 import { DatagraphSearchResults } from "src/components/search/DatagraphSearchResults";
 import { UnreadyBanner } from "src/components/site/Unready";
 
-import { DatagraphItemKind } from "@/api/openapi-schema";
-import { EmptyState } from "@/components/site/EmptyState";
 import { PaginationControls } from "@/components/site/PaginationControls/PaginationControls";
 import { Button } from "@/components/ui/button";
-import { DatagraphKindFilterField } from "@/components/ui/form/DatagraphKindFilterField";
 import { CancelIcon } from "@/components/ui/icons/Cancel";
-import { DiscussionIcon } from "@/components/ui/icons/Discussion";
-import { LibraryIcon } from "@/components/ui/icons/Library";
-import { ReplyIcon } from "@/components/ui/icons/Reply";
 import { SearchIcon } from "@/components/ui/icons/Search";
 import { Input } from "@/components/ui/input";
-import { HStack, WStack, styled } from "@/styled-system/jsx";
-import { vstack } from "@/styled-system/patterns";
+import { styled } from "@/styled-system/jsx";
 
 import { Props, useSearchScreen } from "./useSearch";
 
@@ -25,60 +18,124 @@ export function SearchScreen(props: Props) {
   const { query, page, results } = data;
 
   return (
-    <styled.form
-      className={vstack()}
+    <styled.div
       display="flex"
-      w="full"
-      onSubmit={handlers.handleSearch}
-      action="/search"
+      flexDirection="column"
+      h="full"
+      bg="bg.site"
+      pb="20"
     >
-      <WStack gap="0">
-        <Input
-          w="full"
-          size="md"
-          borderRight="none"
-          borderRightRadius="none"
-          type="search"
-          defaultValue={props.initialQuery}
-          background="bg.default"
-          placeholder={`Search...`}
-          _focus={{
-            // NOTE: This disables the default focus behaviour styles for inputs.
-            boxShadow: "none" as any, // TODO: Fix types at Park-UI or Panda level
-            borderColor: "border.default",
-          }}
-          {...form.register("q")}
-        />
-
-        {query && (
-          <Button
-            size="md"
-            variant="outline"
-            borderX="none"
-            borderRadius="none"
-            borderColor="border.default"
-            type="reset"
-            onClick={handlers.handleReset}
-          >
-            <CancelIcon />
-          </Button>
-        )}
-        <Button
-          size="md"
-          variant="outline"
-          flexShrink="0"
-          borderLeft="none"
-          borderLeftRadius="none"
-          borderColor="border.default"
-          type="submit"
-          width="min"
-          loading={isLoading}
+      <styled.div
+        position="sticky"
+        top="0"
+        bg="bg.site"
+        backdropFilter="auto"
+        px="4"
+        py="2"
+        css={{
+          zIndex: 10,
+          borderBottom: "1px solid var(--colors-border-default)",
+          "@media (max-width: 640px)": {
+            marginLeft: "calc(-100vw + 100%)",
+            marginRight: "calc(-100vw + 100%)",
+            paddingLeft: "calc(100vw - 100%)",
+            paddingRight: "calc(100vw - 100%)",
+          },
+        } as any}
+      >
+        <styled.h1
+          fontWeight="bold"
+          fontSize="xl"
+          mb="2"
+          px="2"
         >
-          <SearchIcon />
-        </Button>
-      </WStack>
+          Search
+        </styled.h1>
 
-      <HStack w="full">
+        <styled.form
+          display="flex"
+          gap="2"
+          onSubmit={handlers.handleSearch}
+          action="/search"
+        >
+          <styled.div
+            position="relative"
+            flex="1"
+            display="flex"
+            alignItems="center"
+            gap="0"
+            px="2"
+            py="1"
+            borderRadius="full"
+            bg="bg.searchInput"
+            css={{
+              border: "1.5px solid transparent",
+              transition: "border-color 0.2s ease",
+              "&:has(input:focus)": {
+                borderColor: "#2D7A4A",
+              },
+            } as any}
+          >
+            <styled.div
+              position="absolute"
+              left="3"
+              display="flex"
+              alignItems="center"
+              pointerEvents="none"
+              css={{
+                color: "#a2c3ac",
+              } as any}
+            >
+              <SearchIcon />
+            </styled.div>
+
+            <Input
+              flex="1"
+              pl="11"
+              pr={query ? "10" : "3"}
+              type="search"
+              defaultValue={props.initialQuery}
+              placeholder="Search all posts..."
+              _focus={{
+                boxShadow: "none" as any,
+                outline: "none",
+              }}
+              css={{
+                width: "100%",
+                overflow: "hidden",
+                background: "transparent",
+                border: "none",
+                borderRadius: "0",
+              } as any}
+              {...form.register("q")}
+            />
+
+            {query && (
+              <Button
+                position="absolute"
+                right="3"
+                size="sm"
+                variant="ghost"
+                type="reset"
+                onClick={handlers.handleReset}
+                p="1"
+              >
+                <CancelIcon />
+              </Button>
+            )}
+          </styled.div>
+        </styled.form>
+      </styled.div>
+
+      {/* Filter tags - commented out as per design */}
+      {/* <styled.div
+        w="full"
+        p="4"
+        css={{
+          display: "flex",
+          borderBottom: "1px solid var(--colors-border-default)",
+        } as any}
+      >
         <DatagraphKindFilterField
           control={form.control}
           name="kind"
@@ -104,33 +161,88 @@ export function SearchScreen(props: Props) {
             },
           ]}
         />
-      </HStack>
+      </styled.div> */}
 
-      {results ? (
-        <>
-          <PaginationControls
-            path="/search"
-            params={{ q: query }}
-            currentPage={page}
-            totalPages={results.total_pages}
-            pageSize={results.page_size}
-          />
+      <styled.div
+        flex="1"
+        overflowY="auto"
+        p="4"
+        display="flex"
+        flexDirection="column"
+        gap="4"
+      >
+        {!query ? (
+          <styled.div
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            py="16"
+            textAlign="center"
+          >
+            <styled.div
+              w="16"
+              h="16"
+              borderRadius="full"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              mb="4"
+              css={{
+                backgroundColor: "#f0f5f1",
+                color: "#a2c3ac",
+              } as any}
+            >
+              <SearchIcon />
+            </styled.div>
+            <styled.p
+              css={{
+                color: "var(--colors-text-secondary)",
+              }}
+            >
+              Search for posts across all channels
+            </styled.p>
+          </styled.div>
+        ) : results ? (
+          <>
+            {results?.items.length > 0 ? (
+              <>
+                <styled.p
+                  fontSize="sm"
+                  mb="2"
+                  css={{
+                    color: "var(--colors-text-secondary)",
+                  }}
+                >
+                  {results.items.length} result{results.items.length !== 1 ? "s" : ""} found
+                </styled.p>
 
-          {results?.items.length > 0 ? (
-            <DatagraphSearchResults result={results} />
-          ) : (
-            <EmptyState hideContributionLabel>
-              {query
-                ? page > results.total_pages
-                  ? "You've gone past the last page! Nothing to see here."
-                  : "No search results."
-                : "Go forth, seek far and wide."}
-            </EmptyState>
-          )}
-        </>
-      ) : (
-        isLoading && <UnreadyBanner error={error} />
-      )}
-    </styled.form>
+                <PaginationControls
+                  path="/search"
+                  params={{ q: query }}
+                  currentPage={page}
+                  totalPages={results.total_pages}
+                  pageSize={results.page_size}
+                />
+
+                <DatagraphSearchResults result={results} />
+              </>
+            ) : (
+              <styled.div textAlign="center" py="16">
+                <styled.p
+                  css={{
+                    color: "var(--colors-text-secondary)",
+                  }}
+                >
+                  No posts found for "{query}"
+                </styled.p>
+              </styled.div>
+            )}
+          </>
+        ) : (
+          isLoading && <UnreadyBanner error={error} />
+        )}
+      </styled.div>
+    </styled.div>
   );
 }

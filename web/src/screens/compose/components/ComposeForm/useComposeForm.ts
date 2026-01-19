@@ -13,7 +13,6 @@ import { threadCreate, threadUpdate } from "src/api/openapi-client/threads";
 import { Thread, ThreadInitialProps, Visibility, Permission } from "src/api/openapi-schema";
 
 import { handle } from "@/api/client";
-import { NO_CATEGORY_VALUE } from "@/components/category/CategorySelect/useCategorySelect";
 import { hasPermission } from "@/utils/permissions";
 import { useSession } from "@/auth";
 
@@ -26,7 +25,7 @@ export type Props = {
 };
 
 export const FormShapeSchema = z.object({
-  title: z.string().min(1, "Your post must have a title to be published"),
+  title: z.string().optional(),
   body: z.string().min(1),
   category: z.string().optional(),
   tags: z.string().array().optional(),
@@ -70,12 +69,11 @@ export function useComposeForm({
     const payload: ThreadInitialProps = {
       ...data,
 
-      // When saving a new draft, these are optional but must be explicitly set.
       title: data.title ?? "",
       body: data.body ?? "",
       url: data.url ?? "",
       tags: data.tags ?? [],
-      category: data.category === NO_CATEGORY_VALUE ? undefined : data.category,
+      category: data.category || undefined,
 
       visibility: Visibility.draft,
     };
@@ -98,9 +96,9 @@ export function useComposeForm({
     const targetVisibility = isAdmin ? Visibility.published : Visibility.review;
 
     const payload = {
-      title,
+      title: title || "",
       body,
-      category: category === NO_CATEGORY_VALUE ? undefined : category,
+      category: category || undefined,
       visibility: targetVisibility,
       tags,
       url,

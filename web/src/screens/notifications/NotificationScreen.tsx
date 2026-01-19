@@ -1,5 +1,7 @@
 "use client";
 
+import { ArrowLeftIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useQueryState } from "nuqs";
 
 import {
@@ -11,7 +13,7 @@ import { useNotifications } from "@/components/notifications/useNotifications";
 import { UnreadyBanner } from "@/components/site/Unready";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { LStack, WStack, styled } from "@/styled-system/jsx";
+import { HStack, LStack, WStack, styled } from "@/styled-system/jsx";
 
 type Props = {
   initialData: NotificationListResult;
@@ -72,12 +74,56 @@ export function NotificationScreen(props: Props) {
 
   const hasUnreadNotifications = data.unreads > 0 && !showingArchived;
 
-  return (
-    <LStack>
-      <WStack justifyContent="space-between" alignItems="flex-start">
-        <LStack>
-          <styled.h1 fontWeight="bold">Notifications</styled.h1>
+  const router = useRouter();
 
+  return (
+    <LStack >
+      <WStack justifyContent="space-between" alignItems="flex-start">
+        <LStack >
+          <HStack
+            gap="0"
+            p="2"
+            alignItems="center"
+            width="full"
+            display={{ base: "flex", md: "none" }}
+            borderBottomWidth="thin"
+            borderBottomColor="border.default"
+            style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 10,
+              backgroundColor: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(12px)",
+              flexShrink: 0,
+              borderBottomColor: "rgba(0, 0, 0, 0.05)",
+            }}
+          >
+            <styled.button
+              onClick={() => router.back()}
+              p="2"
+              style={{
+                marginLeft: "-0.5rem",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                borderRadius: "0.75rem",
+                transition: "background-color 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.backgroundColor =
+                  "rgba(0, 0, 0, 0.05)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.backgroundColor =
+                  "transparent";
+              }}
+            >
+              <ArrowLeftIcon width="16" height="16" />
+            </styled.button>
+            <styled.h1 fontSize="md" fontWeight="bold">
+              Notifications
+            </styled.h1>
+          </HStack>
           <Switch
             size="sm"
             checked={showingArchived}

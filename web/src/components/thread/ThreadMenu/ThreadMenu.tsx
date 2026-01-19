@@ -73,7 +73,7 @@ export function ThreadMenu(props: Props) {
 
               <Menu.Separator />
 
-              <Menu.Item value="copy-link" onClick={handlers.handleCopyLink}>
+              {/* <Menu.Item value="copy-link" onClick={handlers.handleCopyLink}>
                 <HStack gap="1">
                   <LinkIcon /> Copy link
                 </HStack>
@@ -85,7 +85,7 @@ export function ThreadMenu(props: Props) {
                     <ShareIcon /> Share
                   </HStack>
                 </Menu.Item>
-              )}
+              )} */}
 
               <ReportPostMenuItem
                 menuLabel="Report thread"

@@ -91,7 +91,9 @@ export const ThreadReferenceCard = memo(
           alignItems="center"
           justifyContent="space-between"
           gap="3"
-          p="4"
+          px="4"
+          pt="4"
+          pb="2"
         >
           <styled.div display="flex" alignItems="center" gap="3" flex="1" minW="0">
             <ProfileHoverTooltip profile={thread.author}>
@@ -173,8 +175,10 @@ export const ThreadReferenceCard = memo(
         <styled.div
           display="flex"
           flexDir="column"
-          gap="3"
-          p="4"
+          gap="1"
+          px="4"
+          pt="2"
+          pb="4"
         >
           <Link href={permalink} style={{ textDecoration: "none" }}>
             <styled.p
@@ -187,8 +191,9 @@ export const ThreadReferenceCard = memo(
                 whiteSpace: "pre-wrap",
                 overflow: "hidden",
                 display: "-webkit-box",
-                WebkitLineClamp: 4,
+                WebkitLineClamp: 3,
                 WebkitBoxOrient: "vertical",
+                textOverflow: "ellipsis",
                 cursor: "pointer",
               }}
             >

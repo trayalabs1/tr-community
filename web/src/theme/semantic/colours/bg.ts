@@ -92,4 +92,12 @@ export const bg = {
       _osDark: "{colors.slate.dark.a11}",
     },
   },
+
+  // Used for search input container
+  searchInput: {
+    value: {
+      _osLight: "#EDF3F0",
+      _osDark: "#1E2E2A",
+    },
+  },
 };
