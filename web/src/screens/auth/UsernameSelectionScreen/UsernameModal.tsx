@@ -56,8 +56,8 @@ export function UsernameModal({ onSuccess, ...disclosureProps }: Props) {
   return (
     <>
       <ModalDrawer dismissable={!isSubmitting} {...disclosureProps}>
-        <form onSubmit={handleFormSubmit}>
-        <VStack gap="6" w="full" py="2">
+        <form onSubmit={handleFormSubmit} style={{ width: "100%", height: "100%" }}>
+        <VStack gap="6" w="full" py="2" style={{ height: "auto", overflow: "visible" }}>
           {/* Icon Container */}
           <styled.div
             w="16"

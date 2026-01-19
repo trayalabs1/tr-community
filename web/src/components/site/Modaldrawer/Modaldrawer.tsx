@@ -58,7 +58,7 @@ export function ModalDrawer({ children, ...props }: PropsWithChildren<Props>) {
                 <CloseAction onClick={props.onClose} />
               </WStack>
 
-              <Box h="full" w="full" pb="3" overflowY="scroll" overflowX="auto">
+              <Box h="full" w="full" pb="3" style={{ overflowY: "hidden", overflowX: "hidden", touchAction: "none" }}>
                 {children}
               </Box>
             </VStack>
@@ -102,7 +102,14 @@ export function ModalDrawer({ children, ...props }: PropsWithChildren<Props>) {
             max-height: 90vh;
             z-index: var(--z-index-modal);
             border-radius: 1.5rem 1.5rem 0 0;
-            overflow-y: auto;
+            overflow-y: hidden;
+            overflow-x: hidden;
+            touch-action: none;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+          }
+          .modaldrawer__content::-webkit-scrollbar {
+            display: none;
           }
         }
       `}</style>
