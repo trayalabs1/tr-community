@@ -72,14 +72,14 @@ export function NotificationScreen(props: Props) {
 
   const showingArchived = status === NotificationStatus.read;
 
-  const hasUnreadNotifications = data.unreads > 0 && !showingArchived;
+  const hasUnreadNotifications = data.unreads > 0;
 
   const router = useRouter();
 
   return (
-    <LStack >
+    <LStack>
       <WStack justifyContent="space-between" alignItems="flex-start">
-        <LStack >
+        <LStack>
           <HStack
             gap="0"
             p="2"
@@ -124,25 +124,22 @@ export function NotificationScreen(props: Props) {
               Notifications
             </styled.h1>
           </HStack>
-          <Switch
-            size="sm"
-            checked={showingArchived}
-            onClick={handlers.handleToggleStatus}
-          >
-            Archived
-          </Switch>
+          <HStack alignItems="center" gap="2" justifyContent="space-between" width="full">
+            <Switch
+              size="sm"
+              checked={showingArchived}
+              onClick={handlers.handleToggleStatus}
+            >
+              Archived
+            </Switch>
+            { hasUnreadNotifications && (
+              <styled.span fontSize="sm" color="fg.muted" cursor="pointer" onClick={handlers.handleMarkAllAsRead}>
+                Mark all as read
+              </styled.span>
+            )}
+          </HStack>
         </LStack>
 
-        {hasUnreadNotifications && (
-          <Button
-            variant="ghost"
-            size="sm"
-            flexShrink="0"
-            onClick={handlers.handleMarkAllAsRead}
-          >
-            Mark all as read
-          </Button>
-        )}
       </WStack>
 
       <NotificationCardList
