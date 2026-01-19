@@ -24,7 +24,6 @@ export function ComposeForm(props: Props) {
       alignItems="start"
       w="full"
       h="full"
-      gap="4"
       onSubmit={handlers.handlePublish}
       borderRadius={{ base: "lg", md: "2xl" }}
       overflow="hidden"
@@ -35,14 +34,15 @@ export function ComposeForm(props: Props) {
       }}
     >
       <FormProvider {...form}>
-        <LStack gap="4" w="full" p={{ base: "3", md: "4" }}>
+        {/* Scrollable Content Area */}
+        <LStack gap="4" w="full" p={{ base: "3", md: "4" }} flex="1" overflowY="auto" minH="0">
           {/* Title Input - Commented Out */}
           {/* <styled.div w="full">
             <TitleInput />
           </styled.div> */}
 
           {/* Body Input */}
-          <styled.div w="full" flex="1">
+          <styled.div w="full" minH="32" rounded="md" p="1" style={{ backgroundColor: "#f0f5f1" }}>
             <BodyInput onAssetUpload={handlers.handleAssetUpload} />
           </styled.div>
 
@@ -73,44 +73,46 @@ export function ComposeForm(props: Props) {
               />
             </styled.div>
           </VStack> */}
-
-          {/* Action Bar */}
-          <HStack
-            w="full"
-            justifyContent="flex-end"
-            alignItems="center"
-            pt="2"
-            gap="2"
-            style={{
-              borderTop: "1px solid var(--colors-border-default)",
-            }}
-          >
-            {/* Submit Buttons */}
-            <HStack gap="2" w={{ base: "full", md: "auto" }}>
-              <Button
-                variant="ghost"
-                size="sm"
-                type="button"
-                disabled={!form.formState.isValid || state.isSavingDraft}
-                onClick={handlers.handleSaveDraft}
-                loading={state.isSavingDraft}
-                display={{ base: "none", md: "block" }}
-              >
-                Save draft
-              </Button>
-
-              <Button
-                size="sm"
-                type="submit"
-                disabled={!form.formState.isValid || state.isPublishing}
-                loading={state.isPublishing}
-                w={{ base: "full", md: "auto" }}
-              >
-                {isAdmin ? "Post" : "Submit for review"}
-              </Button>
-            </HStack>
-          </HStack>
         </LStack>
+
+        {/* Sticky Action Bar at Bottom */}
+        <HStack
+          w="full"
+          justifyContent="flex-end"
+          alignItems="center"
+          p={{ base: "3", md: "4" }}
+          gap="2"
+          style={{
+            borderTop: "1px solid var(--colors-border-default)",
+            backgroundColor: "var(--colors-bg-surface)",
+            flexShrink: 0,
+          }}
+        >
+          {/* Submit Buttons */}
+          <HStack gap="2" w={{ base: "full", md: "auto" }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              disabled={!form.formState.isValid || state.isSavingDraft}
+              onClick={handlers.handleSaveDraft}
+              loading={state.isSavingDraft}
+              display={{ base: "none", md: "block" }}
+            >
+              Save draft
+            </Button>
+
+            <Button
+              size="sm"
+              type="submit"
+              disabled={!form.formState.isValid || state.isPublishing}
+              loading={state.isPublishing}
+              w={{ base: "full", md: "auto" }}
+            >
+              {isAdmin ? "Post" : "Submit for review"}
+            </Button>
+          </HStack>
+        </HStack>
       </FormProvider>
     </styled.form>
   );

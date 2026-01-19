@@ -30,11 +30,11 @@ export function CategorySelectFlat<T extends FieldValues>(
             key={item.value}
             type="button"
             onClick={() => handleCategoryClick(item.value)}
-            px="3"
-            py="2"
+            px="4"
+            py="2.5"
             fontSize="sm"
             fontWeight="medium"
-            borderRadius="md"
+            borderRadius="full"
             cursor="pointer"
             transition="all"
             whiteSpace="nowrap"
@@ -42,14 +42,13 @@ export function CategorySelectFlat<T extends FieldValues>(
             style={{
               backgroundColor:
                 field.value === item.value
-                  ? "var(--colors-bg-success)"
-                  : "var(--colors-bg-muted)",
+                  ? "#2D7A4A"
+                  : "#f0f3f2",
               color:
                 field.value === item.value
-                  ? "var(--colors-fg-default)"
-                  : "var(--colors-fg-default)",
-              border: "1px solid transparent",
-              fontWeight: field.value === item.value ? "500" : "400",
+                  ? "#ffffff"
+                  : "#637066",
+              border: "none",
             }}
           >
             {item.label}
