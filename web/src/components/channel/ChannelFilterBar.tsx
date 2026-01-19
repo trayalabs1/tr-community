@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { Filter, X } from "lucide-react";
 
-import { Category } from "@/api/openapi-schema";
+import { Category, Permission } from "@/api/openapi-schema";
 import { HStack, VStack, styled } from "@/styled-system/jsx";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { hasPermission } from "@/utils/permissions";
+import { useSession } from "@/auth";
 import { ThreadCreateTrigger } from "@/components/thread/ThreadCreate/ThreadCreateTrigger";
 
 interface ChannelFilterBarProps {
@@ -26,6 +28,8 @@ export function ChannelFilterBar({
   onVisibilityChange,
 }: ChannelFilterBarProps) {
   const [showFilters, setShowFilters] = useState(false);
+  const session = useSession();
+  const canManagePosts = hasPermission(session, Permission.MANAGE_POSTS);
 
   const hasActiveFilters = selectedCategorySlug || selectedVisibility;
   const activeFilterCount = [selectedCategorySlug, selectedVisibility].filter(Boolean).length;
@@ -182,53 +186,55 @@ export function ChannelFilterBar({
           )}
 
           {/* Status Section */}
-          <VStack alignItems="start" gap="2" width="full">
-            <styled.label
-              fontSize="xs"
-              fontWeight="semibold"
-              color="fg.muted"
-              textTransform="uppercase"
-              style={{ letterSpacing: "0.05em" }}
-            >
-              Status
-            </styled.label>
-            <HStack gap="2" flexWrap="wrap">
-              <styled.button
-                onClick={() => onVisibilityChange(null)}
-                fontSize="sm"
-                cursor="pointer"
-                transition="all"
-                style={{
-                  backgroundColor: selectedVisibility === null ? TRAYA_COLORS.primary : TRAYA_COLORS.tertiary,
-                  color: selectedVisibility === null ? "white" : TRAYA_COLORS.primary,
-                  border: "none",
-                  padding: "0.375rem 0.75rem",
-                  borderRadius: "9999px",
-                  fontWeight: "500",
-                  fontSize: "14px",
-                }}
+          {canManagePosts && (
+            <VStack alignItems="start" gap="2" width="full">
+              <styled.label
+                fontSize="xs"
+                fontWeight="semibold"
+                color="fg.muted"
+                textTransform="uppercase"
+                style={{ letterSpacing: "0.05em" }}
               >
-                All
-              </styled.button>
-              <styled.button
-                onClick={() => onVisibilityChange("review")}
-                fontSize="sm"
-                cursor="pointer"
-                transition="all"
-                style={{
-                  backgroundColor: selectedVisibility === "review" ? "#f97316" : `${TRAYA_COLORS.tertiary}80`,
-                  color: selectedVisibility === "review" ? "white" : TRAYA_COLORS.primary,
-                  border: "none",
-                  padding: "0.375rem 0.75rem",
-                  borderRadius: "9999px",
-                  fontWeight: "500",
-                  fontSize: "14px",
-                }}
-              >
-                In Review
-              </styled.button>
-            </HStack>
-          </VStack>
+                Status
+              </styled.label>
+              <HStack gap="2" flexWrap="wrap">
+                <styled.button
+                  onClick={() => onVisibilityChange(null)}
+                  fontSize="sm"
+                  cursor="pointer"
+                  transition="all"
+                  style={{
+                    backgroundColor: selectedVisibility === null ? TRAYA_COLORS.primary : TRAYA_COLORS.tertiary,
+                    color: selectedVisibility === null ? "white" : TRAYA_COLORS.primary,
+                    border: "none",
+                    padding: "0.375rem 0.75rem",
+                    borderRadius: "9999px",
+                    fontWeight: "500",
+                    fontSize: "14px",
+                  }}
+                >
+                  All
+                </styled.button>
+                <styled.button
+                  onClick={() => onVisibilityChange("review")}
+                  fontSize="sm"
+                  cursor="pointer"
+                  transition="all"
+                  style={{
+                    backgroundColor: selectedVisibility === "review" ? TRAYA_COLORS.primary : TRAYA_COLORS.tertiary,
+                    color: selectedVisibility === "review" ? "white" : TRAYA_COLORS.primary,
+                    border: "none",
+                    padding: "0.375rem 0.75rem",
+                    borderRadius: "9999px",
+                    fontWeight: "500",
+                    fontSize: "14px",
+                  }}
+                >
+                  In Review
+                </styled.button>
+              </HStack>
+            </VStack>
+          )}
         </VStack>
       )}
     </VStack>

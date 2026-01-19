@@ -67,7 +67,7 @@ export function CollectionIndexScreen(props: Props) {
           <ArrowLeftIcon width="5" height="5" />
         </styled.button>
         <styled.h1 fontSize="md" fontWeight="semibold" color="fg.default">
-          Saved Post
+          Saved Posts
         </styled.h1>
       </HStack>
 

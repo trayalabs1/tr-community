@@ -103,7 +103,7 @@ export function LandingScreen({ token }: { token: string }) {
           mb="3"
           textAlign="center"
         >
-          Welcome to Traya Community
+          Welcome to Your Community
         </styled.h1>
 
         {/* Description */}
