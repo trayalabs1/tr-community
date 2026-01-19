@@ -3343,6 +3343,10 @@ const tokens = {
     "value": "var(--colors-bg-opaque)",
     "variable": "var(--colors-bg-opaque)"
   },
+  "colors.bg.searchInput": {
+    "value": "var(--colors-bg-search-input)",
+    "variable": "var(--colors-bg-search-input)"
+  },
   "colors.fg.default": {
     "value": "var(--colors-fg-default)",
     "variable": "var(--colors-fg-default)"
@@ -4178,6 +4182,10 @@ const tokens = {
   "colors.colorPalette.opaque": {
     "value": "var(--colors-color-palette-opaque)",
     "variable": "var(--colors-color-palette-opaque)"
+  },
+  "colors.colorPalette.searchInput": {
+    "value": "var(--colors-color-palette-search-input)",
+    "variable": "var(--colors-color-palette-search-input)"
   },
   "colors.colorPalette.outline": {
     "value": "var(--colors-color-palette-outline)",
