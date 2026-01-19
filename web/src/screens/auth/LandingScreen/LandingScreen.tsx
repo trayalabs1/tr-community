@@ -34,7 +34,10 @@ export function LandingScreen({ token }: { token: string }) {
         // Check if user needs to set a username
         if (response?.needs_username) {
           usernameModal.onOpen();
+          // Keep loading state true while modal is open
         } else {
+          // User doesn't need to set username, redirect to home
+          setIsLoading(false);
           router.push("/");
         }
       },
@@ -261,9 +264,17 @@ export function LandingScreen({ token }: { token: string }) {
       <UsernameModal
         isOpen={usernameModal.isOpen}
         onOpen={usernameModal.onOpen}
-        onClose={usernameModal.onClose}
+        onClose={() => {
+          // Reset the triggered flag and loading state if modal is dismissed
+          triggered.current = false;
+          setIsLoading(false);
+          usernameModal.onClose();
+        }}
         onOpenChange={usernameModal.onOpenChange}
-        onSuccess={() => router.push("/")}
+        onSuccess={() => {
+          setIsLoading(false);
+          router.push("/");
+        }}
       />
     </styled.div>
   );
