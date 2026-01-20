@@ -47,7 +47,7 @@ export function ReplyMenu(props: Props) {
 
               <Menu.Separator />
 
-              <Menu.Item value="copy-link" onClick={handlers.handleCopyURL}>
+              {/* <Menu.Item value="copy-link" onClick={handlers.handleCopyURL}>
                 <HStack gap="1">
                   <LinkIcon /> Copy link
                 </HStack>
@@ -59,7 +59,7 @@ export function ReplyMenu(props: Props) {
                     <ShareIcon /> Share
                   </HStack>
                 </Menu.Item>
-              )}
+              )} */}
 
               <ReportPostMenuItem
                 menuLabel="Report reply"

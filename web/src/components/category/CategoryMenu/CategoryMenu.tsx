@@ -98,8 +98,8 @@ export function CategoryMenu(props: Props) {
 
               <Menu.Separator />
 
-              <Menu.Item value="copy-link">Copy link</Menu.Item>
-              {isSharingEnabled && <Menu.Item value="share">Share</Menu.Item>}
+              {/* <Menu.Item value="copy-link">Copy link</Menu.Item>
+              {isSharingEnabled && <Menu.Item value="share">Share</Menu.Item>} */}
             </Menu.ItemGroup>
 
             {isEditingEnabled && (

@@ -75,7 +75,7 @@ export function MemberOptionsMenu({
                 </Link>
               </Menu.ItemGroup>
 
-              <Menu.Item value="copy-link">Copy link</Menu.Item>
+              {/* <Menu.Item value="copy-link">Copy link</Menu.Item> */}
 
               <ReportMemberMenuItem profile={profile} />
 
