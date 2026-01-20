@@ -14,6 +14,8 @@ import (
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/post"
 	"github.com/Southclaws/storyden/app/resources/post/post_search"
+	"github.com/Southclaws/storyden/app/resources/post/reply"
+	"github.com/Southclaws/storyden/app/resources/post/reply_querier"
 	"github.com/Southclaws/storyden/internal/ent"
 	entaccount "github.com/Southclaws/storyden/internal/ent/account"
 	entnotification "github.com/Southclaws/storyden/internal/ent/notification"
@@ -22,10 +24,11 @@ import (
 type Querier struct {
 	db           *ent.Client
 	postSearcher post_search.Repository
+	replyQuerier *reply_querier.Querier
 }
 
-func New(db *ent.Client, postSearcher post_search.Repository) *Querier {
-	return &Querier{db: db, postSearcher: postSearcher}
+func New(db *ent.Client, postSearcher post_search.Repository, replyQuerier *reply_querier.Querier) *Querier {
+	return &Querier{db: db, postSearcher: postSearcher, replyQuerier: replyQuerier}
 }
 
 func (n *Querier) ListNotifications(ctx context.Context, accountID account.AccountID) (notification.Notifications, error) {
@@ -65,6 +68,15 @@ func (n *Querier) hydrateRefs(ctx context.Context, refs notification.Notificatio
 	}
 	pg := lo.KeyBy(posts, func(p *post.Post) post.ID { return p.ID })
 
+	rids := dt.Map(grouped[datagraph.KindReply], func(n *notification.NotificationRef) post.ID {
+		return post.ID(n.ItemRef.OrZero().ID)
+	})
+	replies, err := n.replyQuerier.GetMany(ctx, rids...)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+	rg := lo.KeyBy(replies, func(r *reply.Reply) post.ID { return r.ID })
+
 	ns := dt.Map(refs, func(r *notification.NotificationRef) *notification.Notification {
 		switch r.ItemRef.OrZero().Kind {
 		case datagraph.KindPost:
@@ -79,6 +91,23 @@ func (n *Querier) hydrateRefs(ctx context.Context, refs notification.Notificatio
 				ID:     r.ID,
 				Event:  r.Event,
 				Item:   p,
+				Source: r.Source,
+				Time:   r.Time,
+				Read:   r.Read,
+			}
+
+		case datagraph.KindReply:
+			rep := rg[post.ID(r.ItemRef.OrZero().ID)]
+
+			if rep == nil {
+				// Reply was deleted, skip.
+				return nil
+			}
+
+			return &notification.Notification{
+				ID:     r.ID,
+				Event:  r.Event,
+				Item:   rep,
 				Source: r.Source,
 				Time:   r.Time,
 				Read:   r.Read,
