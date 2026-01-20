@@ -74,20 +74,6 @@ export function MemberName({
               display: "none",
             }}
           >
-            {profile.name}
-          </styled.p>
-          <styled.p
-            className="member-name__show-horizontal-handle"
-            color="fg.subtle"
-            minW="0"
-            textWrap="nowrap"
-            textOverflow="ellipsis"
-            overflowX="hidden"
-            overflowY="clip"
-            lineHeight="tight"
-            fontSize={size}
-            fontWeight="normal"
-          >
             @{profile.handle}
           </styled.p>
           <Roles profile={profile} showRoles={showRoles} roles={roles} />
@@ -118,24 +104,6 @@ export function MemberName({
             _containerSmall={{
               display: size === "xs" ? "none" : undefined,
             }}
-          >
-            {profile.name}
-          </styled.p>
-          <styled.p
-            className="member-name__show-vertical-handle"
-            fontSize={size}
-            fontWeight="normal"
-            w="full"
-            minW="0"
-            textWrap="nowrap"
-            color="fg.subtle"
-            overflowX="hidden"
-            overflowY="clip"
-            textOverflow="ellipsis"
-            lineHeight="tight"
-            // NOTE: Handles are always lowercase so our x-height upper bound is
-            // quite low so we can get away with a tighter line height.
-            mt={size === "lg" ? "-1" : "0"}
           >
             @{profile.handle}
           </styled.p>

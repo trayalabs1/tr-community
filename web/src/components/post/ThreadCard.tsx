@@ -118,7 +118,7 @@ export const ThreadReferenceCard = memo(
                     flexShrink: 0,
                   }}
                 >
-                  {thread.author.name.charAt(0).toUpperCase()}
+                  {thread.author.handle.charAt(0).toUpperCase()}
                 </styled.button>
               </Link>
             </ProfileHoverTooltip>
@@ -138,7 +138,7 @@ export const ThreadReferenceCard = memo(
                     cursor: "pointer",
                   }}
                 >
-                  {thread.author.name}
+                  @{thread.author.handle}
                 </styled.p>
               </Link>
               <styled.p

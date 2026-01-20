@@ -89,7 +89,7 @@ export default async function ChannelsPage() {
               fontWeight="bold"
               color="white"
             >
-              {(session.name || session.handle)
+              {( session.handle)
                 .split(" ")
                 .map((n: string) => n[0])
                 .join("")
@@ -107,7 +107,7 @@ export default async function ChannelsPage() {
                 textTransform: "capitalize"
               }}
             >
-              {session.name || session.handle}
+              { session.handle}
             </styled.h3>
             <HStack gap="1" alignItems="center">
               <styled.span

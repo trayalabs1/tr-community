@@ -70,9 +70,6 @@ export function ProfileHoverTooltip({ profile, children }: Props) {
                 }}
               >
                 <styled.div fontSize="xs" fontWeight="semibold" color="fg.default">
-                  {profile.name}
-                </styled.div>
-                <styled.div fontSize="xs" color="fg.muted">
                   @{profile.handle}
                 </styled.div>
               </styled.div>

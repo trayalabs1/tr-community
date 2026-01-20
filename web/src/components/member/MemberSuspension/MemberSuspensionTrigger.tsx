@@ -15,8 +15,8 @@ export function MemberSuspensionTrigger({
   const { onOpen, isOpen, onClose } = useDisclosure();
 
   const title = profile.suspended
-    ? `Reinstate account ${profile.name}`
-    : `Suspend account ${profile.name}`;
+    ? `Reinstate account @${profile.handle}`
+    : `Suspend account @${profile.handle}`;
 
   return (
     <>
