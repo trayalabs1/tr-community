@@ -74,7 +74,7 @@ export const CollectionCard = memo(({ collection, hideOwner = false }: Props) =>
                     flexShrink: 0,
                   }}
                 >
-                  {collection.owner.name.charAt(0).toUpperCase()}
+                  {collection.owner.handle.charAt(0).toUpperCase()}
                 </styled.button>
               </Link>
             </ProfileHoverTooltip>
@@ -95,7 +95,7 @@ export const CollectionCard = memo(({ collection, hideOwner = false }: Props) =>
                   cursor: "pointer",
                 }}
               >
-                {collection.owner.name}
+                @{collection.owner.handle}
               </styled.p>
             </Link>
             <styled.div display="flex" alignItems="center" gap="1.5" style={{ margin: "0" }}>

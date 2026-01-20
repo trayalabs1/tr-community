@@ -34,7 +34,7 @@ export function CollectionMenu(props: Props) {
                 flexDir="column"
                 userSelect="none"
               >
-                <styled.span>{`Collection by ${collection.owner.name}`}</styled.span>
+                <styled.span>{`Collection by @${collection.owner.handle}`}</styled.span>
 
                 <styled.time fontWeight="normal">
                   {format(new Date(collection.createdAt), "yyyy-MM-dd")}

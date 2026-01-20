@@ -90,7 +90,7 @@ export function LibraryPageMenu({
                 userSelect="none"
               >
                 <styled.span>
-                  {`Created by ${node.owner.name}`} {statusText}
+                  {`Created by @${node.owner.handle}`} {statusText}
                 </styled.span>
 
                 <styled.time fontWeight="normal">

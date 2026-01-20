@@ -58,7 +58,7 @@ export function ThreadMenu(props: Props) {
                 flexDir="column"
                 userSelect="none"
               >
-                <styled.span>{`Post by ${thread.author.name}`}</styled.span>
+                <styled.span>{`Post by @${thread.author.handle}`}</styled.span>
 
                 <MemberBadge
                   profile={thread.author}

@@ -206,7 +206,7 @@ export function ThreadScreen(props: Props) {
                   (e.currentTarget as HTMLElement).style.opacity = "1";
                 }}
               >
-                {thread.author.name.charAt(0).toUpperCase()}
+                {thread.author.handle.charAt(0).toUpperCase()}
               </styled.button>
 
               <VStack alignItems="start" gap="1" flex="1">
@@ -229,7 +229,7 @@ export function ThreadScreen(props: Props) {
                       (e.currentTarget as HTMLElement).style.textDecoration = "none";
                     }}
                   >
-                    {thread.author.name}
+                    @{thread.author.handle}
                   </styled.button>
                   {isAdmin && (
                     <styled.span

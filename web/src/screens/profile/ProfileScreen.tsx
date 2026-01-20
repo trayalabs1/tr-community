@@ -93,7 +93,7 @@ export function ProfileScreen(props: Props) {
             />
           </Box>
 
-          {/* Name with Edit Icon */}
+          {/* Handle with Edit Icon */}
           <VStack alignItems="center" gap="1">
             <HStack gap="2" alignItems="center">
               {isEditing ? (
@@ -103,11 +103,11 @@ export function ProfileScreen(props: Props) {
                   height="7"
                   px="2"
                   fontWeight="semibold"
-                  {...form.register("name")}
+                  {...form.register("handle")}
                 />
               ) : (
                 <styled.p fontSize="lg" fontWeight="semibold" color="fg.default">
-                  {profile.name}
+                  @{profile.handle}
                 </styled.p>
               )}
               {isSelf && (
@@ -117,22 +117,8 @@ export function ProfileScreen(props: Props) {
               )}
             </HStack>
 
-            {/* Handle and Badge */}
+            {/* Badge */}
             <VStack alignItems="center" gap="1">
-              {isEditing ? (
-                <Input
-                  maxW="40"
-                  size="sm"
-                  height="6"
-                  px="2"
-                  fontSize="xs"
-                  {...form.register("handle")}
-                />
-              ) : (
-                <styled.p fontSize="sm" color="fg.muted">
-                  @{profile.handle}
-                </styled.p>
-              )}
               <RoleBadgeList roles={profile.roles} />
             </VStack>
           </VStack>
@@ -262,7 +248,7 @@ export function ProfileScreen(props: Props) {
                   el.style.border = "1px solid transparent";
                 }}
               >
-                View in ERP → {profile.name}
+                View in ERP → @{profile.handle}
               </styled.a>
               <styled.p fontSize="xs" color="fg.muted">
                 Opens member details in the ERP system for CRM management and lead tracking.

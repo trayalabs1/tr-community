@@ -25,7 +25,7 @@ export type Props = {
 
 export function MemberAvatar({ profile, size, editable }: Props) {
   const { width, height } = avatarSize(size);
-  const firstLetter = profile.name?.charAt(0).toUpperCase() || profile.handle.charAt(0).toUpperCase();
+  const firstLetter = profile.handle.charAt(0).toUpperCase();
 
   return (
     <Box position="relative" flexShrink="0">

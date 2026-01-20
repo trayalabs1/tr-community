@@ -38,7 +38,7 @@ export function InvitedByFilter() {
 
         const result = await profileList({ q: query });
         const items = result.profiles.map((profile) => ({
-          label: profile.name,
+          label: `@${profile.handle}`,
           value: profile.handle,
         }));
         setSearchResults(items);

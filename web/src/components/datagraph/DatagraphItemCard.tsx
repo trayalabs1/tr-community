@@ -108,7 +108,7 @@ export function DatagraphItemPostGenericCard({
                   flexShrink: 0,
                 }}
               >
-                {ref.author.name.charAt(0).toUpperCase()}
+                {ref.author.handle.charAt(0).toUpperCase()}
               </styled.button>
             </Link>
           </ProfileHoverTooltip>
@@ -128,7 +128,7 @@ export function DatagraphItemPostGenericCard({
                   cursor: "pointer",
                 }}
               >
-                {ref.author.name}
+                @{ref.author.handle}
               </styled.p>
             </Link>
             <styled.p
@@ -240,7 +240,7 @@ export function DatagraphItemReplyCard({ item }: { item: DatagraphItemReply }) {
                   flexShrink: 0,
                 }}
               >
-                {ref.author.name.charAt(0).toUpperCase()}
+                {ref.author.handle.charAt(0).toUpperCase()}
               </styled.button>
             </Link>
           </ProfileHoverTooltip>
@@ -260,7 +260,7 @@ export function DatagraphItemReplyCard({ item }: { item: DatagraphItemReply }) {
                   cursor: "pointer",
                 }}
               >
-                {ref.author.name}
+                @{ref.author.handle}
               </styled.p>
             </Link>
             <styled.p
@@ -372,7 +372,7 @@ export function DatagraphItemNodeCard({ item }: { item: DatagraphItemNode }) {
                   flexShrink: 0,
                 }}
               >
-                {ref.owner.name.charAt(0).toUpperCase()}
+                {ref.owner.handle.charAt(0).toUpperCase()}
               </styled.button>
             </Link>
           </ProfileHoverTooltip>
@@ -392,7 +392,7 @@ export function DatagraphItemNodeCard({ item }: { item: DatagraphItemNode }) {
                   cursor: "pointer",
                 }}
               >
-                {ref.owner.name}
+                @{ref.owner.handle}
               </styled.p>
             </Link>
             <styled.p

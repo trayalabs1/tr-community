@@ -38,7 +38,7 @@ export function ReplyMenu(props: Props) {
                 flexDir="column"
                 userSelect="none"
               >
-                <styled.span>{`Post by ${props.reply.author.name}`}</styled.span>
+                <styled.span>{`Post by @${props.reply.author.handle}`}</styled.span>
 
                 <styled.time fontWeight="normal">
                   {format(new Date(props.reply.createdAt), "yyyy-MM-dd")}
@@ -66,7 +66,7 @@ export function ReplyMenu(props: Props) {
                 targetKind={DatagraphItemKind.reply}
                 targetId={props.reply.id}
                 author={props.reply.author}
-                headline={`Reply from ${props.reply.author.name}`}
+                headline={`Reply from @${props.reply.author.handle}`}
                 body={truncateBody(props.reply.body)}
               />
 

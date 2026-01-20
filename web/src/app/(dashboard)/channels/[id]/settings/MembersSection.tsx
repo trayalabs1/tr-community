@@ -229,10 +229,7 @@ export function MembersSection({ channelID }: Props) {
                       }}
                     >
                       <VStack alignItems="start" gap="0">
-                        <styled.span fontWeight="medium">{profile.name}</styled.span>
-                        <styled.span fontSize="sm" color="fg.muted">
-                          @{profile.handle}
-                        </styled.span>
+                        <styled.span fontWeight="medium">@{profile.handle}</styled.span>
                       </VStack>
                     </styled.div>
                   ))
