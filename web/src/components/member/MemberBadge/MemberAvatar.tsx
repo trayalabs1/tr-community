@@ -54,7 +54,7 @@ export function MemberAvatar({ profile, size, editable }: Props) {
         style={{
           width: `${width}px`,
           height: `${height}px`,
-          backgroundColor: TRAYA_COLORS.primary,
+          background: TRAYA_COLORS.gradient,
           fontSize: size === "xs" ? "10px" : size === "sm" ? "12px" : size === "md" ? "14px" : "36px",
         }}
       >

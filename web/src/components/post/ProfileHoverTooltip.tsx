@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useState, useRef } from "react";
 import { styled } from "@/styled-system/jsx";
 import { ProfileReference } from "@/api/openapi-schema";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 type Props = {
   profile: ProfileReference;
@@ -49,7 +50,7 @@ export function ProfileHoverTooltip({ profile, children }: Props) {
           style={{
             whiteSpace: "normal",
             border: "1px solid var(--colors-border-default)",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+            boxShadow: TRAYA_COLORS.shadow.large,
             zIndex: 10,
             minWidth: "220px",
             top: "100%",

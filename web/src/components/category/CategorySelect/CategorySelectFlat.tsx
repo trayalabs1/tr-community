@@ -2,6 +2,7 @@ import { FieldValues, useController, UseControllerProps } from "react-hook-form"
 
 import { HStack, VStack, styled } from "@/styled-system/jsx";
 import { useCategorySelect } from "./useCategorySelect";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 export type CategorySelectFlatProps<T extends FieldValues> = UseControllerProps<T> & {
   channelID?: string;
@@ -42,12 +43,12 @@ export function CategorySelectFlat<T extends FieldValues>(
             style={{
               backgroundColor:
                 field.value === item.value
-                  ? "#2D7A4A"
-                  : "#f0f3f2",
+                  ? TRAYA_COLORS.primary
+                  : TRAYA_COLORS.tertiary,
               color:
                 field.value === item.value
                   ? "#ffffff"
-                  : "#637066",
+                  : TRAYA_COLORS.primary,
               border: "none",
             }}
           >

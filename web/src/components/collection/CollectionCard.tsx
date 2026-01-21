@@ -8,6 +8,7 @@ import { styled } from "@/styled-system/jsx";
 import { CollectionIcon } from "../ui/icons/Collection";
 import { CollectionMenu } from "./CollectionMenu/CollectionMenu";
 import { ProfileHoverTooltip } from "../post/ProfileHoverTooltip";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 type Props = {
   collection: Collection;
@@ -28,18 +29,18 @@ export const CollectionCard = memo(({ collection, hideOwner = false }: Props) =>
       overflow="hidden"
       backgroundColor="white"
       style={{
-        border: "1px solid #f1f2f4",
-        boxShadow: "0 0.5px 2px rgba(0, 0, 0, 0.08)",
+        border: `1px solid ${TRAYA_COLORS.border.default}`,
+        boxShadow: TRAYA_COLORS.shadow.subtle,
         transition: "all 0.2s ease-in-out",
         cursor: "pointer",
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.12)";
+        el.style.boxShadow = TRAYA_COLORS.shadow.medium;
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = "0 0.5px 2px rgba(0, 0, 0, 0.08)";
+        el.style.boxShadow = TRAYA_COLORS.shadow.subtle;
       }}
     >
       {/* Header Section - Owner Info and Menu */}
@@ -66,8 +67,8 @@ export const CollectionCard = memo(({ collection, hideOwner = false }: Props) =>
                   fontSize="sm"
                   fontWeight="semibold"
                   style={{
-                    backgroundColor: "#f0f5f1",
-                    color: "#2D7A4A",
+                    background: TRAYA_COLORS.gradient,
+                    color: TRAYA_COLORS.primary,
                     border: "none",
                     cursor: "pointer",
                     transition: "opacity 0.2s ease-in-out",

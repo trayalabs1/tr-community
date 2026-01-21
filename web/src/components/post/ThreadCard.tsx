@@ -72,18 +72,18 @@ export const ThreadReferenceCard = memo(
         overflow="hidden"
         backgroundColor="white"
         style={{
-          border: "1px solid #f1f2f4",
-          boxShadow: "0 0.5px 2px rgba(0, 0, 0, 0.08)",
+          border: `1px solid ${TRAYA_COLORS.border.default}`,
+          boxShadow: TRAYA_COLORS.shadow.subtle,
           transition: "all 0.2s ease-in-out",
           cursor: "pointer",
         }}
         onMouseEnter={(e) => {
           const el = e.currentTarget as HTMLElement;
-          el.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.12)";
+          el.style.boxShadow = TRAYA_COLORS.shadow.medium;
         }}
         onMouseLeave={(e) => {
           const el = e.currentTarget as HTMLElement;
-          el.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.08)";
+          el.style.boxShadow = TRAYA_COLORS.shadow.default;
         }}
       >
         <styled.div
@@ -108,11 +108,9 @@ export const ThreadReferenceCard = memo(
                   fontSize="sm"
                   fontWeight="semibold"
                   style={{
-                    backgroundColor: isAdmin
-                      ? TRAYA_COLORS.primary
-                      : TRAYA_COLORS.tertiary,
-                    color: isAdmin ? "white" : TRAYA_COLORS.primary,
-                    border: "none",
+                    backgroundColor:  TRAYA_COLORS.primary,
+                    color:"white",
+                    border: `2px solid ${TRAYA_COLORS.secondary}`,
                     cursor: "pointer",
                     transition: "opacity 0.2s ease-in-out",
                     flexShrink: 0,
