@@ -84,10 +84,10 @@ export function ThreadScreen(props: Props) {
             position: "sticky",
             top: 0,
             zIndex: 10,
-            backgroundColor: "rgba(255, 255, 255, 0.95)",
+            backgroundColor: TRAYA_COLORS.overlay.dark,
             backdropFilter: "blur(12px)",
             flexShrink: 0,
-            borderBottomColor: "rgba(0, 0, 0, 0.05)",
+            borderBottomColor: TRAYA_COLORS.border.subtle,
           }}
         >
           <styled.button
@@ -102,7 +102,7 @@ export function ThreadScreen(props: Props) {
               transition: "background-color 0.2s",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0, 0, 0, 0.05)";
+              (e.currentTarget as HTMLElement).style.backgroundColor = TRAYA_COLORS.border.subtle;
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
@@ -320,7 +320,7 @@ export function ThreadScreen(props: Props) {
               borderTopColor="border.default"
               mt="4"
               style={{
-                borderTopColor: "rgba(0, 0, 0, 0.05)",
+                borderTopColor: TRAYA_COLORS.border.subtle,
               }}
             >
               <styled.button

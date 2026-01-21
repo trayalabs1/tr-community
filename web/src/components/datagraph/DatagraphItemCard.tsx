@@ -16,6 +16,7 @@ import { ColorPalette } from "@/styled-system/tokens";
 import { Timestamp } from "../site/Timestamp";
 import { Badge } from "../ui/badge";
 import { ProfileHoverTooltip } from "../post/ProfileHoverTooltip";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 type Props = {
   item: DatagraphItem;
@@ -63,18 +64,18 @@ export function DatagraphItemPostGenericCard({
       overflow="hidden"
       backgroundColor="white"
       style={{
-        border: "1px solid #f1f2f4",
-        boxShadow: "0 0.5px 2px rgba(0, 0, 0, 0.08)",
+        border: `1px solid ${TRAYA_COLORS.border.default}`,
+        boxShadow: TRAYA_COLORS.shadow.subtle,
         transition: "all 0.2s ease-in-out",
         cursor: "pointer",
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.12)";
+        el.style.boxShadow = TRAYA_COLORS.shadow.medium;
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = "0 0.5px 2px rgba(0, 0, 0, 0.08)";
+        el.style.boxShadow = TRAYA_COLORS.shadow.subtle;
       }}
     >
       {/* Header Section - Author Info */}
@@ -100,8 +101,8 @@ export function DatagraphItemPostGenericCard({
                 fontSize="sm"
                 fontWeight="semibold"
                 style={{
-                  backgroundColor: "#f0f5f1",
-                  color: "#2D7A4A",
+                  backgroundColor: TRAYA_COLORS.primary,
+                  color: "white",
                   border: "none",
                   cursor: "pointer",
                   transition: "opacity 0.2s ease-in-out",
@@ -195,18 +196,18 @@ export function DatagraphItemReplyCard({ item }: { item: DatagraphItemReply }) {
       overflow="hidden"
       backgroundColor="white"
       style={{
-        border: "1px solid #f1f2f4",
-        boxShadow: "0 0.5px 2px rgba(0, 0, 0, 0.08)",
+        border: `1px solid ${TRAYA_COLORS.border.default}`,
+        boxShadow: TRAYA_COLORS.shadow.subtle,
         transition: "all 0.2s ease-in-out",
         cursor: "pointer",
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.12)";
+        el.style.boxShadow = TRAYA_COLORS.shadow.medium;
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = "0 0.5px 2px rgba(0, 0, 0, 0.08)";
+        el.style.boxShadow = TRAYA_COLORS.shadow.subtle;
       }}
     >
       {/* Header Section - Author Info */}
@@ -232,8 +233,8 @@ export function DatagraphItemReplyCard({ item }: { item: DatagraphItemReply }) {
                 fontSize="sm"
                 fontWeight="semibold"
                 style={{
-                  backgroundColor: "#f0f5f1",
-                  color: "#2D7A4A",
+                  backgroundColor: TRAYA_COLORS.primary,
+                  color: 'white',
                   border: "none",
                   cursor: "pointer",
                   transition: "opacity 0.2s ease-in-out",
@@ -327,18 +328,18 @@ export function DatagraphItemNodeCard({ item }: { item: DatagraphItemNode }) {
       overflow="hidden"
       backgroundColor="white"
       style={{
-        border: "1px solid #f1f2f4",
-        boxShadow: "0 0.5px 2px rgba(0, 0, 0, 0.08)",
+        border: `1px solid ${TRAYA_COLORS.border.default}`,
+        boxShadow: TRAYA_COLORS.shadow.subtle,
         transition: "all 0.2s ease-in-out",
         cursor: "pointer",
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.12)";
+        el.style.boxShadow = TRAYA_COLORS.shadow.medium;
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = "0 0.5px 2px rgba(0, 0, 0, 0.08)";
+        el.style.boxShadow = TRAYA_COLORS.shadow.subtle;
       }}
     >
       {/* Header Section - Owner Info */}
@@ -364,8 +365,8 @@ export function DatagraphItemNodeCard({ item }: { item: DatagraphItemNode }) {
                 fontSize="sm"
                 fontWeight="semibold"
                 style={{
-                  backgroundColor: "#f0f5f1",
-                  color: "#2D7A4A",
+                  backgroundColor: TRAYA_COLORS.secondary,
+                  color: TRAYA_COLORS.primary,
                   border: "none",
                   cursor: "pointer",
                   transition: "opacity 0.2s ease-in-out",
@@ -463,18 +464,18 @@ export function DatagraphItemProfileCard({
       overflow="hidden"
       backgroundColor="white"
       style={{
-        border: "1px solid #f1f2f4",
-        boxShadow: "0 0.5px 2px rgba(0, 0, 0, 0.08)",
+        border: `1px solid ${TRAYA_COLORS.border.default}`,
+        boxShadow: TRAYA_COLORS.shadow.subtle,
         transition: "all 0.2s ease-in-out",
         cursor: "pointer",
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.12)";
+        el.style.boxShadow = TRAYA_COLORS.shadow.medium;
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = "0 0.5px 2px rgba(0, 0, 0, 0.08)";
+        el.style.boxShadow = TRAYA_COLORS.shadow.subtle;
       }}
     >
       {/* Header Section - Profile Info */}
@@ -500,8 +501,8 @@ export function DatagraphItemProfileCard({
                 fontSize="sm"
                 fontWeight="semibold"
                 style={{
-                  backgroundColor: "#f0f5f1",
-                  color: "#2D7A4A",
+                  backgroundColor: TRAYA_COLORS.secondary,
+                  color: TRAYA_COLORS.primary,
                   border: "none",
                   cursor: "pointer",
                   transition: "opacity 0.2s ease-in-out",
@@ -592,10 +593,12 @@ export function DatagraphItemBadge({ kind }: { kind: DatagraphItemKind }) {
 
   return (
     <Badge
-      style={cssVars}
-      backgroundColor="var(--colors-color-palette-bg)"
-      borderColor="var(--colors-color-palette-bo)"
-      color="var(--colors-color-palette-fg)"
+      style={{
+        ...cssVars,
+        backgroundColor: TRAYA_COLORS.tertiary,
+        color: TRAYA_COLORS.primary,
+        border:'none'
+      }}
     >
       {label}
     </Badge>

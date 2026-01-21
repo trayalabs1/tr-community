@@ -26,6 +26,7 @@ import { Heading } from "@/components/ui/heading";
 import { HStack, LStack, VStack, styled } from "@/styled-system/jsx";
 import { mutate } from "swr";
 import { useChannelPermissions } from "@/lib/channel/permissions";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 type Props = {
   channelID: string;
@@ -327,8 +328,8 @@ export function MembersSection({ channelID }: Props) {
                       }}
                       onMouseEnter={(e) => {
                         if (!isRemoving) {
-                          (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(239, 68, 68, 0.1)";
-                          (e.currentTarget as HTMLElement).style.color = "#ef4444";
+                          (e.currentTarget as HTMLElement).style.backgroundColor = TRAYA_COLORS.button.hoverBg;
+                          (e.currentTarget as HTMLElement).style.color = TRAYA_COLORS.button.hoverColor;
                         }
                       }}
                       onMouseLeave={(e) => {

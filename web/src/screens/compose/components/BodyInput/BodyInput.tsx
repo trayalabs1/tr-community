@@ -16,7 +16,7 @@ export function BodyInput({ onAssetUpload }: PropsWithChildren<Props>) {
   const { control } = useBodyInput();
 
   return (
-    <FormControl h="full">
+    <FormControl h="auto" minH="32">
       <Controller
         render={({ field, formState }) => (
           <ContentComposer

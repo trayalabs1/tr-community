@@ -16,7 +16,7 @@ export function CategoryBadge({
   ...props
 }: Props & BadgeProps) {
   const cssProps = {
-    backgroundColor: TRAYA_COLORS.secondary,
+    backgroundColor: TRAYA_COLORS.tertiary,
     color: TRAYA_COLORS.primary,
     border: "none",
   };

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { BookmarkIcon } from "@/components/ui/icons/Bookmark";
 import { styled } from "@/styled-system/jsx";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 export function BookmarkButton({ count }: { count?: number } = {}) {
   return (
@@ -49,7 +50,7 @@ export function BookmarkButton({ count }: { count?: number } = {}) {
             style={{
               width: "18px",
               height: "18px",
-              backgroundColor: "#329866",
+              backgroundColor: TRAYA_COLORS.primary,
               color: "white",
               fontSize: "10px",
               fontWeight: "600",

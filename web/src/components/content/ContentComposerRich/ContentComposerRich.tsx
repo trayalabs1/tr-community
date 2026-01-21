@@ -49,25 +49,14 @@ export function ContentComposerRich(props: ContentComposerProps) {
       onDragLeave={handlers.handleDragLeave}
       onDrop={handlers.handleDrop}
     >
-      {editor && (
-        <ComposerTools
-          enabled={!props.disabled}
-          icon={<EditIcon />}
-          workingCount={uploadingCount}
-        >
-          <EditorMenu
-            editor={editor}
-            uniqueID={`${uniqueID}-toolbar`}
-            format={format}
-            handlers={handlers}
-          />
-        </ComposerTools>
-      )}
       <div
         id={`editor-content-${uniqueID}`}
         className={css({
           height: "full",
           width: "full",
+          flex: "1",
+          minHeight: "0",
+          position: "relative",
         })}
         suppressHydrationWarning
       >
@@ -77,6 +66,22 @@ export function ContentComposerRich(props: ContentComposerProps) {
           <div dangerouslySetInnerHTML={{ __html: initialValueHTML }} />
         )}
       </div>
+      {editor && (
+        <div style={{ position: "relative", width: "100%", flexShrink: 0 }}>
+          <ComposerTools
+            enabled={!props.disabled}
+            icon={<EditIcon />}
+            workingCount={uploadingCount}
+          >
+            <EditorMenu
+              editor={editor}
+              uniqueID={`${uniqueID}-toolbar`}
+              format={format}
+              handlers={handlers}
+            />
+          </ComposerTools>
+        </div>
+      )}
       {editor && (
         <BubbleMenu
           editor={editor}

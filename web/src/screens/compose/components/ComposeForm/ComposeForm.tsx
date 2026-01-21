@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { HStack, VStack, LStack, styled } from "@/styled-system/jsx";
 import { hasPermission } from "@/utils/permissions";
 import { useSession } from "@/auth";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 import { BodyInput } from "../BodyInput/BodyInput";
 
@@ -47,7 +48,7 @@ export function ComposeForm(props: Props) {
           </styled.div> */}
 
           {/* Body Input */}
-          <styled.div w="full" minH="32" rounded="md" p="1" style={{ backgroundColor: "#f0f5f1" }}>
+          <styled.div w="full" minH="32" h="auto" rounded="md" p="1" style={{ backgroundColor: "#f0f5f1" }}>
             <BodyInput onAssetUpload={handlers.handleAssetUpload} />
           </styled.div>
 
@@ -115,6 +116,10 @@ export function ComposeForm(props: Props) {
               disabled={!form.formState.isValid || state.isPublishing}
               loading={state.isPublishing}
               w={{ base: "full", md: "auto" }}
+              style={{
+                backgroundColor: TRAYA_COLORS.primary,
+                color: "white",
+              }}
             >
               {isAdmin ? "Post" : "Submit for review"}
             </Button>

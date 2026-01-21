@@ -9,6 +9,7 @@ import { Heading } from "@/components/ui/heading";
 import { HStack, VStack, styled } from "@/styled-system/jsx";
 import { getAssetURL } from "@/utils/asset";
 import { ChannelFilterBar } from "@/components/channel/ChannelFilterBar";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 type ChannelMobileHeaderProps = {
   channel: Channel;
@@ -76,10 +77,10 @@ export function ChannelMobileHeader({
             justifyContent="center"
             flexShrink="0"
             style={{
-              background: "#4a9d6f",
+              background: TRAYA_COLORS.secondary,
             }}
           >
-            <MembersIcon width="5" height="5" style={{ color: "#ffffff" }} />
+            <MembersIcon width="5" height="5" style={{ color: TRAYA_COLORS.primary }} />
           </styled.div>
         )}
 

@@ -60,7 +60,7 @@ export function ChannelFilterBar({
             transition: "all 0.2s ease-in-out",
           }}
         >
-          <Filter size={16} strokeWidth={2} />
+          <Filter size={16} strokeWidth={2}/>
           <styled.span>Filters</styled.span>
           {hasActiveFilters && (
             <styled.div
@@ -169,7 +169,7 @@ export function ChannelFilterBar({
                     cursor="pointer"
                     transition="all"
                     style={{
-                      backgroundColor: selectedCategorySlug === category.slug ? TRAYA_COLORS.primary : `${TRAYA_COLORS.tertiary}80`,
+                      backgroundColor: selectedCategorySlug === category.slug ? TRAYA_COLORS.primary : `${TRAYA_COLORS.tertiary}`,
                       color: selectedCategorySlug === category.slug ? "white" : TRAYA_COLORS.primary,
                       border: "none",
                       padding: "0.375rem 0.75rem",
