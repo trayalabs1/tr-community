@@ -48,9 +48,7 @@ export function ComposeForm(props: Props) {
           </styled.div> */}
 
           {/* Body Input */}
-          <styled.div w="full" minH="32" h="auto" rounded="md" p="1" style={{ backgroundColor: "#f0f5f1" }}>
-            <BodyInput onAssetUpload={handlers.handleAssetUpload} />
-          </styled.div>
+          <BodyInput onAssetUpload={handlers.handleAssetUpload} />
 
           {/* Category Selection - Only show if admin and categories exist */}
           {isAdmin && hasCategories && (
