@@ -87,11 +87,6 @@ export function MembersSection({ channelID }: Props) {
       return;
     }
 
-    // Clear selected user when searching again
-    if (selectedUser && searchQuery !== selectedUser.handle) {
-      setSelectedUser(null);
-    }
-
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
@@ -106,19 +101,20 @@ export function MembersSection({ channelID }: Props) {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedUser]);
+  }, [searchQuery]);
 
   const onSubmit = handleSubmit(async (data) => {
-    await handle(async () => {
-      if (!selectedUser) {
-        throw new Error("Please select a user from the search results.");
-      }
+    if (!selectedUser) {
+      alert("Please select a user from the search results.");
+      return;
+    }
 
+    await handle(async () => {
       await channelMemberAdd(channelID, {
         account_id: selectedUser.id,
         role: data.role,
       });
-      setCurrentPage(1); // Reset to first page after adding member
+      setCurrentPage(1);
       mutate(getChannelMemberListKey(channelID, { page: "1", limit: membersPerPage.toString() }));
       reset();
       setShowAddForm(false);
@@ -177,6 +173,11 @@ export function MembersSection({ channelID }: Props) {
                 setValue("handle", e.target.value);
               }}
             />
+            {formState.errors.handle && (
+              <styled.div color="fg.error" fontSize="sm" mt="2">
+                {formState.errors.handle.message}
+              </styled.div>
+            )}
             <FormHelperText>
               Type a user handle to search. If your profile is at /m/user1, enter "user1"
             </FormHelperText>
@@ -226,6 +227,7 @@ export function MembersSection({ channelID }: Props) {
                       onClick={() => {
                         setValue("handle", profile.handle);
                         setSelectedUser(profile);
+                        setSearchQuery("");
                         setSearchResults([]);
                       }}
                     >
@@ -270,7 +272,11 @@ export function MembersSection({ channelID }: Props) {
             >
               Cancel
             </Button>
-            <Button type="submit" loading={formState.isSubmitting}>
+            <Button
+              type="submit"
+              loading={formState.isSubmitting}
+              disabled={!selectedUser || formState.isSubmitting}
+            >
               Add Member
             </Button>
           </HStack>
