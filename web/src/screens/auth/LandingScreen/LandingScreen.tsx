@@ -256,7 +256,7 @@ export function LandingScreen({ token }: { token: string }) {
             cursor: isLoading ? "not-allowed" : "pointer",
           }}
         >
-          {isLoading ? "Authenticating..." : "Join Community"}
+          {isLoading ? "Authenticating..." : "Enter Community"}
         </Button>
       </styled.div>
 

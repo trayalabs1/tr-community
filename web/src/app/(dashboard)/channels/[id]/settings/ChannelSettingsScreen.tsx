@@ -30,6 +30,7 @@ import { AssetUploadEditor } from "@/components/asset/AssetUploadEditor/AssetUpl
 
 import { revalidateChannels } from "@/app/(dashboard)/channels/actions";
 import { MembersSection } from "./MembersSection";
+import { CategoriesSection } from "./CategoriesSection";
 
 type Props = {
   session?: Account;
@@ -228,6 +229,15 @@ export function ChannelSettingsScreen(props: Props) {
         maxW="2xl"
       >
         <MembersSection channelID={props.channel.id} />
+      </styled.div>
+
+      <styled.div
+        style={{ border: "1px solid var(--colors-border-default)" }}
+        borderRadius="md"
+        p="6"
+        maxW="2xl"
+      >
+        <CategoriesSection channelID={props.channel.id} />
       </styled.div>
     </LStack>
   );
