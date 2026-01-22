@@ -1,35 +1,38 @@
 package channel
 
-// InitialMemberCounts maps channel names to their initial member count values.
+// InitialMemberCounts maps channel slugs to their initial member count values.
 // This is used to conditionally add initial values to the actual member count
-// when displaying to users, based on the channel name.
+// when displaying to users, based on the channel slug.
 var InitialMemberCounts = map[string]int{
-	// Warriors Channels - 3000 members each
-	"Month 1 Warriors":     3000,
-	"Month 2 Warriors":     3000,
-	"Month 3 Warriors":     3000,
-	"Month 4 Warriors":     3000,
-	"Month 5 Warriors":     3000,
-	"Month 6-8 Warriors":   3000,
-	"Month 8+ Warriors":    3000,
+	// Male cohort channels - 3000 members each
+	"month-1-warriors":      3000,
+	"month-2-titans":        3000,
+	"month-3-warriors":      3000,
+	"month-4-warriors":      3000,
+	"month-5-warriors":      3000,
+	"month-6-8-warriors":    3000,
+	"month-8-plus-warriors": 3000,
 
-	// Heroines Channels - 3000 members each
-	"Month 1 Heroines":     3000,
-	"Month 2 Heroines":     3000,
-	"Month 3 Heroines":     3000,
-	"Month 4 Heroines":     3000,
-	"Month 5 Heroines":     3000,
-	"Month 6-8 Heroines":   3000,
-	"Month 8+ Heroines":    3000,
+	// Female cohort channels - 3000 members each
+	"month-1-heroines":      3000,
+	"month-2-heroines":      3000,
+	"month-3-heroines":      3000,
+	"month-4-heroines":      3000,
+	"month-5-heroines":      3000,
+	"month-6-8-heroines":    3000,
+	"month-8-plus-queens":   3000,
 
-	// Topic Channels - Varying member counts
-	"Stress, Sleep & Nutrition":           850,
-	"Digestion, Metabolism & Gut Health":  763,
-	"Dandruff & Hair Health":              882,
-	"Hormones & PCOS":                     965,
-	"Stress, Sleep & Nutrition - Female":  453,
-	"Digestion, Metabolism & Gut - Female": 882,
-	"Dandruff & Hair Health - Female":     950,
+	// Topic channels - Varying member counts
+	"stress-sleep-nutrition":          850,
+	"digestion-metabolism-gut-health": 763,
+	"dandruff-hair-health":            882,
+	"hormones-pcos":                   965,
+	"stress-sleep-nutrition-female":   453,
+	"digestion-metabolism-gut-female": 882,
+	"dandruff-hair-health-female":     950,
+
+	// Other channels
+	"admin-announcements": 0,
 }
 
 // GetInitialMemberCount returns the initial member count for a channel by name.
