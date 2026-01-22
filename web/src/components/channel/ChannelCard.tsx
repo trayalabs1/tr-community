@@ -102,6 +102,7 @@ export function ChannelCard({
             fontSize: isCohort ? "16px" : "14px",
             color: "var(--colors-fg-default)",
             margin: "0",
+            textAlign:"start"
           }}
         >
           {name}

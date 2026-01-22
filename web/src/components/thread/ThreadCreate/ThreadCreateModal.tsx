@@ -29,6 +29,7 @@ export function ThreadCreateModal({
       <ComposeForm
         channelID={channelID}
         onSuccess={onClose}
+        skipDraftNavigation={true}
       />
     </ModalDrawer>
   );
