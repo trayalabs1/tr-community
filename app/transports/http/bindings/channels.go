@@ -141,8 +141,10 @@ func serialiseChannel(c *channel.Channel) openapi.Channel {
 func serialiseChannelWithMemberCount(c *channel.Channel, memberCount int) openapi.Channel {
 	ch := serialiseChannel(c)
 
-	// Add 3000 to the actual member count to show inflated value
-	inflatedCount := memberCount + 3000
+	// Get initial member count based on channel slug from configuration
+	initialMemberCount := channel.GetInitialMemberCount(c.Slug)
+
+	inflatedCount := memberCount + initialMemberCount
 	ch.MemberCount = &inflatedCount
 
 	return ch
