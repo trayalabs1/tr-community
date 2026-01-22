@@ -366,7 +366,7 @@ export function DatagraphItemNodeCard({ item }: { item: DatagraphItemNode }) {
                 fontWeight="semibold"
                 style={{
                   backgroundColor: TRAYA_COLORS.secondary,
-                  color: TRAYA_COLORS.primary,
+                  color: "white",
                   border: "none",
                   cursor: "pointer",
                   transition: "opacity 0.2s ease-in-out",
@@ -502,7 +502,7 @@ export function DatagraphItemProfileCard({
                 fontWeight="semibold"
                 style={{
                   backgroundColor: TRAYA_COLORS.secondary,
-                  color: TRAYA_COLORS.primary,
+                  color: "white",
                   border: "none",
                   cursor: "pointer",
                   transition: "opacity 0.2s ease-in-out",

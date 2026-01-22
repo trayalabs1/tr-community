@@ -68,7 +68,7 @@ export const CollectionCard = memo(({ collection, hideOwner = false }: Props) =>
                   fontWeight="semibold"
                   style={{
                     background: TRAYA_COLORS.gradient,
-                    color: TRAYA_COLORS.primary,
+                    color: "white",
                     border: "none",
                     cursor: "pointer",
                     transition: "opacity 0.2s ease-in-out",

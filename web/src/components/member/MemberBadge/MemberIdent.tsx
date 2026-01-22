@@ -70,9 +70,9 @@ export function MemberName({
             textOverflow="ellipsis"
             lineHeight="tight"
             color="fg.default"
-            _containerSmall={{
-              display: "none",
-            }}
+            // _containerSmall={{
+            //   display: "none",
+            // }}
           >
             @{profile.handle}
           </styled.p>
@@ -105,7 +105,7 @@ export function MemberName({
               display: size === "xs" ? "none" : undefined,
             }}
           >
-            @{profile.handle}
+            @{profile?.handle}
           </styled.p>
           <Roles profile={profile} showRoles={showRoles} roles={roles} />
         </Flex>
