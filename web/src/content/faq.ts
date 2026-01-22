@@ -28,12 +28,6 @@ export const FAQ_DATA: FAQItem[] = [
   },
   // Using the Community
   {
-    id: "4",
-    question: "How do I join topic channels?",
-    category: "Using the Community",
-    answer: "Browse available topic channels from the home screen. Tap on any channel to view it, then use the \"Join\" button to subscribe. You can choose notification preferences when joining.",
-  },
-  {
     id: "5",
     question: "How do I save posts for later?",
     category: "Using the Community",
@@ -58,19 +52,6 @@ export const FAQ_DATA: FAQItem[] = [
     category: "Guidelines",
     answer: "Minor violations result in a warning. Repeated or serious violations may lead to temporary or permanent suspension from the community.",
   },
-  // Trust Levels
-  {
-    id: "9",
-    question: "What are trust levels?",
-    category: "Trust Levels",
-    answer: "Trust levels (0-4) reflect your participation and standing in the community. Higher levels unlock additional features like editing titles and more posting privileges.",
-  },
-  {
-    id: "10",
-    question: "How do I increase my trust level?",
-    category: "Trust Levels",
-    answer: "Engage positively with the community: read posts, like helpful content, reply thoughtfully, and visit regularly. Trust levels increase automatically based on your activity.",
-  },
 ];
 
-export const FAQ_CATEGORIES = ["All", "Getting Started", "Using the Community", "Guidelines", "Trust Levels"];
+export const FAQ_CATEGORIES = ["All", "Getting Started", "Using the Community", "Guidelines"];

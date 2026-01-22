@@ -52,8 +52,8 @@ export function ComposeForm(props: Props) {
             <BodyInput onAssetUpload={handlers.handleAssetUpload} />
           </styled.div>
 
-          {/* Category Selection - Only show if categories exist */}
-          {hasCategories && (
+          {/* Category Selection - Only show if admin and categories exist */}
+          {isAdmin && hasCategories && (
             <VStack gap="2" w="full" alignItems="start">
               <styled.label fontSize="sm" fontWeight="medium" color="fg.muted">
                 Topic
