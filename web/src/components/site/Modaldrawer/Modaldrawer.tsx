@@ -58,7 +58,7 @@ export function ModalDrawer({ children, ...props }: PropsWithChildren<Props>) {
                 <CloseAction onClick={props.onClose} />
               </WStack>
 
-              <Box h="full" w="full" pb="3" style={{ overflowY: "hidden", overflowX: "hidden", touchAction: "none" }}>
+              <Box h="full" w="full" pb="3" style={{ overflowY: "auto", overflowX: "hidden", touchAction: "auto", WebkitOverflowScrolling: "touch", minHeight: 0 }}>
                 {children}
               </Box>
             </VStack>

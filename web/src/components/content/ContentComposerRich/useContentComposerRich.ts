@@ -508,15 +508,21 @@ export function useContentComposer(props: ContentComposerProps) {
   }
 
   async function handleFileUpload(e: ChangeEvent<HTMLInputElement>) {
-    if (!e.currentTarget.files || !editor) {
+    const inputElement = e.currentTarget;
+
+    if (!inputElement.files || !editor) {
       return;
     }
 
-    const images = Array.from(e.currentTarget.files).filter((file) =>
+    const images = Array.from(inputElement.files).filter((file) =>
       /image/i.test(file.type),
     );
 
     await handleFiles(editor.view, images);
+
+    inputElement.value = "";
+    inputElement.type = "text";
+    inputElement.type = "file";
   }
 
   // -
