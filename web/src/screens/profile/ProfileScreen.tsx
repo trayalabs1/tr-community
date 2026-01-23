@@ -43,7 +43,7 @@ export function ProfileScreen(props: Props) {
   }
 
   const { session, profile } = data;
-  const { isSelf, isEditing, canViewAccount } = state;
+  const { isSelf, isEditing } = state;
   const isEmpty =
     !profile.bio || profile.bio === "" || profile.bio === "<body></body>";
 
@@ -111,7 +111,7 @@ export function ProfileScreen(props: Props) {
                 </styled.p>
               )}
               {isSelf && (
-                <MemberOptionsMenu profile={profile} asChild>
+                <MemberOptionsMenu profile={profile} asChild onEditClick={handlers.handleSetEditing}>
                   <MoreAction type="button" size="sm" />
                 </MemberOptionsMenu>
               )}
@@ -174,37 +174,29 @@ export function ProfileScreen(props: Props) {
           </styled.div>
         </VStack>
 
-        <styled.form className={lstack()} p="3" onSubmit={handlers.handleSave}>
-          {isEmpty && !isEditing ? (
-            <styled.p color="fg.subtle" fontStyle="italic">
-              This profile has no bio yet...
-            </styled.p>
-          ) : (
-            <ContentFormField<Form>
-              control={form.control}
-              name="bio"
-              initialValue={profile.bio}
-              disabled={!isEditing}
-              placeholder="This profile has no bio yet..."
-            />
-          )}
+        {session && hasPermission(session, Permission.ADMINISTRATOR) && (
+          <styled.form className={lstack()} p="3" onSubmit={handlers.handleSave}>
+            {isEmpty && !isEditing ? (
+              <styled.p color="fg.subtle" fontStyle="italic">
+                This profile has no bio yet...
+              </styled.p>
+            ) : (
+              <ContentFormField<Form>
+                control={form.control}
+                name="bio"
+                initialValue={profile.bio}
+                disabled={!isEditing}
+                placeholder="This profile has no bio yet..."
+              />
+            )}
 
-          {isSelf && (
-            <HStack justify="center">
-              {isEditing ? (
+            {isSelf && isEditing && (
+              <HStack justify="center">
                 <SaveAction size="sm">Save</SaveAction>
-              ) : (
-                <EditAction
-                  size="sm"
-                  variant="ghost"
-                  onClick={handlers.handleSetEditing}
-                >
-                  Edit
-                </EditAction>
-              )}
-            </HStack>
-          )}
-        </styled.form>
+              </HStack>
+            )}
+          </styled.form>
+        )}
 
         {profile.deletedAt && (
           <Box p="3">
@@ -257,7 +249,7 @@ export function ProfileScreen(props: Props) {
           </Box>
         )}
 
-        {canViewAccount && (
+        {session && hasPermission(session, Permission.ADMINISTRATOR) && (
           <Box p="3">
             <ProfileAccountManagement accountId={profile.id} />
           </Box>

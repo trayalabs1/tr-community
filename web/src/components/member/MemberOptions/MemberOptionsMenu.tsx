@@ -5,9 +5,11 @@ import { toast } from "sonner";
 
 import { useSession } from "src/auth";
 
-import { ProfileReference } from "@/api/openapi-schema";
+import { Permission, ProfileReference } from "@/api/openapi-schema";
 import { ReportMemberMenuItem } from "@/components/report/ReportMemberMenuItem";
+import { EditIcon } from "@/components/ui/icons/Edit";
 import * as Menu from "@/components/ui/menu";
+import { styled } from "@/styled-system/jsx";
 import { WEB_ADDRESS } from "@/config";
 import { hasPermission } from "@/utils/permissions";
 import { useCopyToClipboard } from "@/utils/useCopyToClipboard";
@@ -19,11 +21,13 @@ import { MemberSuspensionTrigger } from "../MemberSuspension/MemberSuspensionTri
 export type Props = {
   profile: ProfileReference;
   asChild?: boolean;
+  onEditClick?: () => void;
 };
 
 export function MemberOptionsMenu({
   children,
   profile,
+  onEditClick,
   ...props
 }: PropsWithChildren<Props>) {
   const session = useSession();
@@ -37,6 +41,8 @@ export function MemberOptionsMenu({
     !isSelf && hasPermission(session, "MANAGE_SUSPENSIONS");
 
   const isRoleChangeEnabled = hasPermission(session, "MANAGE_ROLES");
+
+  const isAdminUser = session && hasPermission(session, Permission.ADMINISTRATOR);
 
   function handleSelect(value: MenuSelectionDetails) {
     switch (value.value) {
@@ -74,6 +80,21 @@ export function MemberOptionsMenu({
                   <Menu.Item value="view">View profile</Menu.Item>
                 </Link>
               </Menu.ItemGroup>
+
+              {isSelf && (
+                <Menu.ItemGroup>
+                  <Menu.Item
+                    value="edit"
+                    onClick={onEditClick}
+                    display="flex"
+                    alignItems="center"
+                    gap="2"
+                  >
+                    <EditIcon width="4" height="4" />
+                    <styled.span>Edit Profile</styled.span>
+                  </Menu.Item>
+                </Menu.ItemGroup>
+              )}
 
               {/* <Menu.Item value="copy-link">Copy link</Menu.Item> */}
 
