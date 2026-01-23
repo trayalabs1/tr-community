@@ -1,7 +1,5 @@
 "use client";
 
-import { ArrowLeftIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useQueryState } from "nuqs";
 
 import {
@@ -10,6 +8,7 @@ import {
 } from "@/api/openapi-schema";
 import { NotificationCardList } from "@/components/notifications/NotificationCardList";
 import { useNotifications } from "@/components/notifications/useNotifications";
+import { HeaderWithBackArrow } from "@/components/site/Header";
 import { UnreadyBanner } from "@/components/site/Unready";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -74,56 +73,15 @@ export function NotificationScreen(props: Props) {
 
   const hasUnreadNotifications = data.unreads > 0;
 
-  const router = useRouter();
-
   return (
     <LStack>
       <WStack justifyContent="space-between" alignItems="flex-start">
         <LStack>
-          <HStack
-            gap="0"
-            p="2"
-            alignItems="center"
-            width="full"
-            display={{ base: "flex", md: "none" }}
-            borderBottomWidth="thin"
-            borderBottomColor="border.default"
-            style={{
-              position: "sticky",
-              top: 0,
-              zIndex: 10,
-              backgroundColor: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(12px)",
-              flexShrink: 0,
-              borderBottomColor: "rgba(0, 0, 0, 0.05)",
-            }}
-          >
-            <styled.button
-              onClick={() => router.back()}
-              p="2"
-              style={{
-                marginLeft: "-0.5rem",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                borderRadius: "0.75rem",
-                transition: "background-color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor =
-                  "rgba(0, 0, 0, 0.05)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor =
-                  "transparent";
-              }}
-            >
-              <ArrowLeftIcon width="16" height="16" />
-            </styled.button>
-            <styled.h1 fontSize="md" fontWeight="bold">
-              Notifications
-            </styled.h1>
-          </HStack>
+          <HeaderWithBackArrow
+            title="Notifications"
+            mobileOnly
+            isSticky
+          />
           <HStack alignItems="center" gap="2" justifyContent="space-between" width="full">
             <Switch
               size="sm"

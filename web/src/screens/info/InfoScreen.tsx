@@ -1,17 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { HStack, LStack, VStack, WStack, styled } from "@/styled-system/jsx";
-import { ArrowLeftIcon } from "@/components/ui/icons/Arrow";
 import { ChevronDownIcon } from "@/components/ui/icons/Chevron";
 import { InfoIcon } from "@/components/ui/icons/Info";
+import { HeaderWithBackArrow } from "@/components/site/Header";
 import { FAQ_DATA, FAQ_CATEGORIES } from "@/content/faq";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { Props, useInfoScreen } from "./useInfoScreen";
 
 export function InfoScreen(props: Props) {
-  const router = useRouter();
   useInfoScreen(props);
 
   // Track selected category for filtering
@@ -27,71 +25,14 @@ export function InfoScreen(props: Props) {
 
   return (
     <LStack gap="0" width="full" height="screen" style={{ backgroundColor: "white" }}>
-      {/* Mobile Header - Back Arrow + Title with Info Icon (Only on Mobile) */}
-      <HStack
-        gap="0"
-        p="2"
-        alignItems="center"
-        width="full"
-        display={{ base: "flex", md: "none" }}
-        borderBottomWidth="thin"
-        borderBottomColor="border.default"
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-          backgroundColor: "rgba(255, 255, 255, 0.95)",
-          backdropFilter: "blur(12px)",
-          flexShrink: 0,
-          borderBottomColor: "rgba(0, 0, 0, 0.05)",
-        }}
-      >
-        <styled.button
-          onClick={() => router.back()}
-          p="2"
-          style={{
-            marginLeft: "-0.5rem",
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            borderRadius: "0.75rem",
-            transition: "background-color 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0, 0, 0, 0.05)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
-          }}
-        >
-          <ArrowLeftIcon width="5" height="5" />
-        </styled.button>
-
-        {/* Header with info icon and title */}
-        <HStack gap="2" alignItems="center">
-          <styled.div
-            w="8"
-            h="8"
-            rounded="full"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            style={{
-              backgroundColor: `${TRAYA_COLORS.primary}20`,
-            }}
-          >
-            <InfoIcon width="5" height="5" style={{ color: TRAYA_COLORS.primary }} />
-          </styled.div>
-          <VStack gap="0" alignItems="start">
-            <styled.h1 fontSize="md" fontWeight="semibold" color="fg.default">
-              Info
-            </styled.h1>
-            <styled.p fontSize="xs" color="fg.muted">
-              Frequently asked questions
-            </styled.p>
-          </VStack>
-        </HStack>
-      </HStack>
+      <HeaderWithBackArrow
+        title="Info"
+        subtitle="Frequently asked questions"
+        headerIcon={<InfoIcon width="5" height="5" style={{ color: "#ffffff" }} />}
+        headerIconBackground={`${TRAYA_COLORS.primary}FF`}
+        mobileOnly
+        isSticky
+      />
 
       {/* Content Wrapper */}
       <styled.div

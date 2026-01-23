@@ -33,10 +33,10 @@ import {
   DiscussionParticipatingIcon,
 } from "@/components/ui/icons/Discussion";
 import { LikeIcon, LikeSavedIcon } from "@/components/ui/icons/Like";
+import { HeaderWithBackArrow } from "@/components/site/Header";
 import { VisibilityBadge } from "@/components/visibility/VisibilityBadge";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { HStack, LStack, VStack, WStack, styled } from "@/styled-system/jsx";
-import { useRouter } from "next/navigation";
 
 import { Form, Props, useThreadScreen } from "./useThreadScreen";
 
@@ -64,56 +64,17 @@ export function ThreadScreen(props: Props) {
     return <Unready error={new Error("Thread data not found")} />;
   }
 
-  const router = useRouter();
   const session = useSession(props.initialSession);
   const isAdmin = hasPermission(session, Permission.ADMINISTRATOR);
 
   return (
     <ReplyProvider>
       <LStack gap="0" width="full" height="screen" style={{ backgroundColor: "white" }}>
-        {/* Mobile Header - Back Arrow + Post Title (Only on Mobile) */}
-        <HStack
-          gap="0"
-          p="2"
-          alignItems="center"
-          width="full"
-          display={{ base: "flex", md: "none" }}
-          borderBottomWidth="thin"
-          borderBottomColor="border.default"
-          style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 10,
-            backgroundColor: TRAYA_COLORS.overlay.dark,
-            backdropFilter: "blur(12px)",
-            flexShrink: 0,
-            borderBottomColor: TRAYA_COLORS.border.subtle,
-          }}
-        >
-          <styled.button
-            onClick={() => router.back()}
-            p="2"
-            style={{
-              marginLeft: "-0.5rem",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              borderRadius: "0.75rem",
-              transition: "background-color 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.backgroundColor = TRAYA_COLORS.border.subtle;
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
-            }}
-          >
-            <ArrowLeftIcon width="5" height="5" />
-          </styled.button>
-          <styled.h1 fontSize="md" fontWeight="semibold" color="fg.default">
-            Post
-          </styled.h1>
-        </HStack>
+        <HeaderWithBackArrow
+          title="Post"
+          mobileOnly
+          isSticky
+        />
 
         {/* Content Wrapper */}
         <styled.div
