@@ -21,6 +21,7 @@ export function UsernameModal({ onSuccess, ...disclosureProps }: Props) {
     error,
     isSubmitting,
     handleSubmit,
+    resetUsername,
   } = useUsernameSelection();
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -30,6 +31,11 @@ export function UsernameModal({ onSuccess, ...disclosureProps }: Props) {
       onSuccess?.();
       disclosureProps.onClose?.();
     }
+  };
+
+  const handleModalClose = () => {
+    resetUsername();
+    disclosureProps.onClose?.();
   };
 
   const showValidation = username.length > 0;
@@ -55,7 +61,7 @@ export function UsernameModal({ onSuccess, ...disclosureProps }: Props) {
 
   return (
     <>
-      <ModalDrawer dismissable={!isSubmitting} {...disclosureProps}>
+      <ModalDrawer dismissable={!isSubmitting} {...disclosureProps} onClose={handleModalClose}>
         <form onSubmit={handleFormSubmit} style={{ width: "100%", height: "100%" }}>
         <VStack gap="6" w="full" py="2" style={{ height: "auto", overflow: "visible" }}>
           {/* Icon Container */}
@@ -95,6 +101,17 @@ export function UsernameModal({ onSuccess, ...disclosureProps }: Props) {
             This name will be visible on all your posts, comments, and profile in the community
           </styled.p>
 
+          {/* Auto-Generated Username Info */}
+          <styled.p
+            fontSize="xs"
+            color="fg.muted"
+            textAlign="center"
+            m="0"
+            style={{ fontStyle: "italic" }}
+          >
+            We've generated a username for you. Feel free to use it or customize it!
+          </styled.p>
+
           {/* Form Field */}
           <VStack gap="2" w="full">
             <styled.label
@@ -110,7 +127,7 @@ export function UsernameModal({ onSuccess, ...disclosureProps }: Props) {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your name..."
+              placeholder="Your username..."
               disabled={isSubmitting}
               autoFocus
               autoComplete="off"
@@ -129,7 +146,7 @@ export function UsernameModal({ onSuccess, ...disclosureProps }: Props) {
               color="fg.muted"
               m="0"
             >
-              You can use your real name or a nickname
+              3-30 characters: letters, numbers, underscores, or hyphens
             </styled.p>
 
             {/* Validation Message */}

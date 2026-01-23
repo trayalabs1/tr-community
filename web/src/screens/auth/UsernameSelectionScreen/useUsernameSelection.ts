@@ -1,18 +1,20 @@
 import { useState, useEffect, useCallback } from "react";
 import { usernameCheck, usernameSet } from "@/api/openapi-client/auth";
 import { handle } from "@/api/client";
+import { generateRandomUsername } from "@/utils/generateUsername";
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 const MIN_LENGTH = 3;
 const MAX_LENGTH = 30; // Matches backend validation limit
 
 export function useUsernameSelection() {
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(() => generateRandomUsername());
   const [isChecking, setIsChecking] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkTimeout, setCheckTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Validate username format
   const validateUsername = (value: string): string | null => {
@@ -52,6 +54,14 @@ export function useUsernameSelection() {
       setIsChecking(false);
     }
   }, []);
+
+  // Initialize with generated username check
+  useEffect(() => {
+    if (!isInitialized && username) {
+      checkAvailability(username);
+      setIsInitialized(true);
+    }
+  }, [username, isInitialized, checkAvailability]);
 
   // Debounce username checks
   useEffect(() => {
@@ -126,6 +136,17 @@ export function useUsernameSelection() {
     }
   };
 
+  const resetUsername = () => {
+    setUsername(generateRandomUsername());
+    setIsAvailable(null);
+    setError(null);
+    setIsChecking(false);
+    setIsInitialized(false);
+    if (checkTimeout) {
+      clearTimeout(checkTimeout);
+    }
+  };
+
   return {
     username,
     setUsername,
@@ -134,5 +155,6 @@ export function useUsernameSelection() {
     error,
     isSubmitting,
     handleSubmit,
+    resetUsername,
   };
 }
