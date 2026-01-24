@@ -29,7 +29,7 @@ export function InfoScreen(props: Props) {
         title="Info"
         subtitle="Frequently asked questions"
         headerIcon={<InfoIcon width="5" height="5" style={{ color: "#ffffff" }} />}
-        headerIconBackground={`${TRAYA_COLORS.primary}FF`}
+        headerIconBackground={`${TRAYA_COLORS.primary}`}
         mobileOnly
         isSticky
       />

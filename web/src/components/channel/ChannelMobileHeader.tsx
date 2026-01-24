@@ -82,10 +82,6 @@ export function ChannelMobileHeader({
         style={{
           height: "1px",
           backgroundColor: "var(--colors-border-default)",
-          marginLeft: "-100vw",
-          marginRight: "-100vw",
-          paddingLeft: "100vw",
-          paddingRight: "100vw",
         }}
       />
     </VStack>

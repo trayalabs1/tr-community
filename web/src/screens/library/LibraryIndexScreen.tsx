@@ -21,7 +21,7 @@ export function LibraryIndexScreen(props: LibraryIndexScreenProps) {
   const { nodes } = data;
 
   return (
-    <VStack gap="4">
+    <VStack gap="4" px="4">
       <Breadcrumbs
         libraryPath={[]}
         visibility="draft"

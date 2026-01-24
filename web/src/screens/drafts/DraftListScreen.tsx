@@ -20,7 +20,7 @@ export function DraftListScreen(props: Props) {
   const { nodes, threads } = data;
 
   return (
-    <VStack w="full" alignItems="start">
+    <VStack w="full" alignItems="start" px="4">
       <Heading>Your drafts</Heading>
 
       <Heading color="fg.subtle">Threads</Heading>

@@ -75,35 +75,38 @@ export function NotificationScreen(props: Props) {
 
   return (
     <LStack>
-      <WStack justifyContent="space-between" alignItems="flex-start">
-        <LStack>
-          <HeaderWithBackArrow
-            title="Notifications"
-            mobileOnly
-            isSticky
-          />
-          <HStack alignItems="center" gap="2" justifyContent="space-between" width="full">
-            <Switch
-              size="sm"
-              checked={showingArchived}
-              onClick={handlers.handleToggleStatus}
-            >
-              Archived
-            </Switch>
-            { hasUnreadNotifications && (
-              <styled.span fontSize="sm" color="fg.muted" cursor="pointer" onClick={handlers.handleMarkAllAsRead}>
-                Mark all as read
-              </styled.span>
-            )}
-          </HStack>
-        </LStack>
-
-      </WStack>
-
-      <NotificationCardList
-        notifications={notifications}
-        onMove={handlers.handleMarkAs}
+      <HeaderWithBackArrow
+        title="Notifications"
+        mobileOnly
+        isSticky
       />
+
+      <LStack px="4">
+        <WStack justifyContent="space-between" alignItems="flex-start">
+          <LStack>
+            <HStack alignItems="center" gap="2" justifyContent="space-between" width="full">
+              <Switch
+                size="sm"
+                checked={showingArchived}
+                onClick={handlers.handleToggleStatus}
+              >
+                Archived
+              </Switch>
+              { hasUnreadNotifications && (
+                <styled.span fontSize="sm" color="fg.muted" cursor="pointer" onClick={handlers.handleMarkAllAsRead}>
+                  Mark all as read
+                </styled.span>
+              )}
+            </HStack>
+          </LStack>
+
+        </WStack>
+
+        <NotificationCardList
+          notifications={notifications}
+          onMove={handlers.handleMarkAs}
+        />
+      </LStack>
     </LStack>
   );
 }

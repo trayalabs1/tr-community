@@ -39,24 +39,24 @@ export function CollectionScreen({ session, initialCollection }: Props) {
 
   return (
     <VStack alignItems="start">
-      {/* <Breadcrumbs
-        index={{
-          href: "/c",
-          label: "Collections",
-        }}
-        crumbs={[{ label: collection.name, href: url }]}
-      >
-        {session && (
-          <CollectionCreateTrigger session={session} size="xs" label="Create" />
-        )}
-      </Breadcrumbs> */}
-
       <HeaderWithBackArrow
         title={collection.name}
         subtitle={descriptionDisplay}
       />
 
-      <VStack alignItems="start" gap="4" width="full">
+      <VStack alignItems="start" gap="4" width="full" px="4">
+        {/* <Breadcrumbs
+          index={{
+            href: "/c",
+            label: "Collections",
+          }}
+          crumbs={[{ label: collection.name, href: url }]}
+        >
+          {session && (
+            <CollectionCreateTrigger session={session} size="xs" label="Create" />
+          )}
+        </Breadcrumbs> */}
+
         {collection.items?.map((i) => (
           <DatagraphItemCard key={i.id} item={i.item} />
         ))}

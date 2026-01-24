@@ -10,8 +10,9 @@ import { useChannelList, useChannelCategoryList } from "@/api/openapi-client/cha
 import { useNodeList } from "@/api/openapi-client/nodes";
 import { ChannelList } from "@/components/channel/ChannelList/ChannelList";
 import { TopicsSection } from "./TopicsSection";
-import { LStack, styled } from "@/styled-system/jsx";
+import { LStack, HStack, styled } from "@/styled-system/jsx";
 import { LibraryIcon } from "@/components/ui/icons/Library";
+import { ChevronDownIcon } from "@/components/ui/icons/Chevron";
 import { LibraryNavigationTree } from "@/components/site/Navigation/LibraryNavigationTree/LibraryNavigationTree";
 import { css } from "@/styled-system/css";
 
@@ -27,6 +28,7 @@ type Props = {
 
 export function ContentNavigationList(props: Props) {
   const pathname = usePathname();
+  const [isLibraryExpanded, setIsLibraryExpanded] = useState(true);
 
   const { data: channelListData } = useChannelList({
     swr: {
@@ -129,35 +131,59 @@ export function ContentNavigationList(props: Props) {
             }}
           >
             <LStack gap="1">
-              <div
+              <button
+                onClick={() => setIsLibraryExpanded(!isLibraryExpanded)}
                 className={css({
                   display: "flex",
                   alignItems: "center",
+                  justifyContent: "space-between",
                   gap: "1",
                   py: "1",
+                  pr: "1",
+                  h: "8",
                   fontSize: "xs",
                   fontWeight: "semibold",
                   color: "fg.muted",
                   textTransform: "uppercase",
                   letterSpacing: "wider",
-                })}
-              >
-                <LibraryIcon width="3" height="3" />
-                <span>Library</span>
-              </div>
-              <div
-                className={css({
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
                   w: "full",
+                  textAlign: "left",
+                  _hover: {
+                    color: "fg.subtle",
+                  },
                 })}
               >
-                <LibraryNavigationTree
-                  initialNodeList={nodeListData}
-                  currentNode={undefined}
-                  visibility={["draft", "review", "unlisted", "published"]}
-                  hideHeader={true}
-                  channelId={selectedChannelId}
+                <HStack gap="1">
+                  <LibraryIcon width="4" height="4" />
+                  <span>Library</span>
+                </HStack>
+                <ChevronDownIcon
+                  width="4"
+                  height="4"
+                  style={{
+                    transition: "transform 200ms",
+                    transform: isLibraryExpanded ? "rotate(0deg)" : "rotate(-90deg)",
+                  }}
                 />
-              </div>
+              </button>
+              {isLibraryExpanded && (
+                <div
+                  className={css({
+                    w: "full",
+                  })}
+                >
+                  <LibraryNavigationTree
+                    initialNodeList={nodeListData}
+                    currentNode={undefined}
+                    visibility={["draft", "review", "unlisted", "published"]}
+                    hideHeader={true}
+                    channelId={selectedChannelId}
+                  />
+                </div>
+              )}
             </LStack>
           </div>
         )}

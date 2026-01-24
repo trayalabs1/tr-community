@@ -30,7 +30,7 @@ export function CollectionIndexScreen(props: Props) {
         isSticky
       />
 
-      <VStack width="full" gap="0" mt="-4">
+      <VStack width="full" gap="0" mt="-4" px="4">
         <LStack width="full" p={{ base: "4", md: "0" }}>
           <Breadcrumbs
             index={{

@@ -78,12 +78,15 @@ export function HeaderWithBackArrow({
         <styled.div
           w="8"
           h="8"
+          minW="8"
+          minH="8"
           rounded="full"
           display="flex"
           alignItems="center"
           justifyContent="center"
+          flexShrink="0"
           style={{
-            backgroundColor: headerIconBackground || `${TRAYA_COLORS.primary}20`,
+            backgroundColor: headerIconBackground || `${TRAYA_COLORS.primary}`,
           }}
         >
           {headerIcon}
