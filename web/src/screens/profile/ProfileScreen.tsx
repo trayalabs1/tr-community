@@ -1,8 +1,5 @@
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
-import { useRouter } from "next/navigation";
-
 import { Permission } from "@/api/openapi-schema";
 import { Unready } from "src/components/site/Unready";
 
@@ -18,8 +15,8 @@ import { EditAction } from "@/components/site/Action/Edit";
 import { MoreAction } from "@/components/site/Action/More";
 import { SaveAction } from "@/components/site/Action/Save";
 import { DotSeparator } from "@/components/site/Dot";
+import { HeaderWithBackArrow } from "@/components/site/Header";
 import { LikeIcon } from "@/components/ui/icons/Like";
-import { ArrowLeftIcon } from "@/components/ui/icons/Arrow";
 import { Input } from "@/components/ui/input";
 import { hasPermission } from "@/utils/permissions";
 import {
@@ -43,44 +40,14 @@ export function ProfileScreen(props: Props) {
   }
 
   const { session, profile } = data;
-  const { isSelf, isEditing, canViewAccount } = state;
+  const { isSelf, isEditing } = state;
   const isEmpty =
     !profile.bio || profile.bio === "" || profile.bio === "<body></body>";
-
-  const router = useRouter();
 
   return (
     <LStack w="full">
       <CardBox p="0">
-        {/* Back Arrow Header */}
-        <HStack gap="2" alignItems="center" p="4" borderBottomWidth="thin" borderBottomColor="border.default">
-          <styled.button
-            onClick={() => router.back()}
-            p="2"
-            style={{
-              marginLeft: "-0.5rem",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              borderRadius: "0.75rem",
-              transition: "background-color 0.2s",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0, 0, 0, 0.05)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
-            }}
-          >
-            <ArrowLeftIcon width="5" height="5" />
-          </styled.button>
-          <styled.h1 fontSize="md" fontWeight="semibold" color="fg.default">
-            My Profile
-          </styled.h1>
-        </HStack>
+        <HeaderWithBackArrow title="My Profile" />
 
         {/* Profile Content */}
         <VStack alignItems="center" p="6" gap="4">
@@ -111,7 +78,7 @@ export function ProfileScreen(props: Props) {
                 </styled.p>
               )}
               {isSelf && (
-                <MemberOptionsMenu profile={profile} asChild>
+                <MemberOptionsMenu profile={profile} asChild onEditClick={handlers.handleSetEditing}>
                   <MoreAction type="button" size="sm" />
                 </MemberOptionsMenu>
               )}
@@ -174,37 +141,29 @@ export function ProfileScreen(props: Props) {
           </styled.div>
         </VStack>
 
-        <styled.form className={lstack()} p="3" onSubmit={handlers.handleSave}>
-          {isEmpty && !isEditing ? (
-            <styled.p color="fg.subtle" fontStyle="italic">
-              This profile has no bio yet...
-            </styled.p>
-          ) : (
-            <ContentFormField<Form>
-              control={form.control}
-              name="bio"
-              initialValue={profile.bio}
-              disabled={!isEditing}
-              placeholder="This profile has no bio yet..."
-            />
-          )}
+        {session && hasPermission(session, Permission.ADMINISTRATOR) && (
+          <styled.form className={lstack()} p="3" onSubmit={handlers.handleSave}>
+            {isEmpty && !isEditing ? (
+              <styled.p color="fg.subtle" fontStyle="italic">
+                This profile has no bio yet...
+              </styled.p>
+            ) : (
+              <ContentFormField<Form>
+                control={form.control}
+                name="bio"
+                initialValue={profile.bio}
+                disabled={!isEditing}
+                placeholder="This profile has no bio yet..."
+              />
+            )}
 
-          {isSelf && (
-            <HStack justify="center">
-              {isEditing ? (
+            {isSelf && isEditing && (
+              <HStack justify="center">
                 <SaveAction size="sm">Save</SaveAction>
-              ) : (
-                <EditAction
-                  size="sm"
-                  variant="ghost"
-                  onClick={handlers.handleSetEditing}
-                >
-                  Edit
-                </EditAction>
-              )}
-            </HStack>
-          )}
-        </styled.form>
+              </HStack>
+            )}
+          </styled.form>
+        )}
 
         {profile.deletedAt && (
           <Box p="3">
@@ -257,7 +216,7 @@ export function ProfileScreen(props: Props) {
           </Box>
         )}
 
-        {canViewAccount && (
+        {session && hasPermission(session, Permission.ADMINISTRATOR) && (
           <Box p="3">
             <ProfileAccountManagement accountId={profile.id} />
           </Box>

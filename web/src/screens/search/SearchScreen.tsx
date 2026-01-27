@@ -30,17 +30,11 @@ export function SearchScreen(props: Props) {
         top="0"
         bg="bg.site"
         backdropFilter="auto"
-        px="4"
+        px={{ base: "4", md: "4" }}
         py="2"
         css={{
           zIndex: 10,
           borderBottom: "1px solid var(--colors-border-default)",
-          "@media (max-width: 640px)": {
-            marginLeft: "calc(-100vw + 100%)",
-            marginRight: "calc(-100vw + 100%)",
-            paddingLeft: "calc(100vw - 100%)",
-            paddingRight: "calc(100vw - 100%)",
-          },
         } as any}
       >
         <styled.h1

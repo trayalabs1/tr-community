@@ -17,11 +17,13 @@ import { getServerSidebarState } from "./NavigationPane/server";
 
 type Props = {
   contextpane: React.ReactNode;
+  paddingMode?: "default" | "none";
 };
 
 export async function Navigation({
   contextpane,
   children,
+  paddingMode = "default",
 }: PropsWithChildren<Props>) {
   const globalSettings = await getSettings();
   const sessionAccount = await getServerSession();
@@ -40,7 +42,11 @@ export async function Navigation({
       w="full"
       data-leftbar-shown={showLeftBar}
     >
-      <Box id="navigation__scroll" className={styles["navgrid"]}>
+      <Box 
+        id="navigation__scroll" 
+        className={styles["navgrid"]}
+        data-padding={paddingMode}
+      >
         <Box className={styles["main"]}>
           {/*  */}
           <Onboarding />
@@ -57,6 +63,7 @@ export async function Navigation({
         left="0"
         height="dvh"
         className={styles["navgrid"]}
+        data-padding={paddingMode}
         pointerEvents="none"
       >
         <DesktopCommandBar />

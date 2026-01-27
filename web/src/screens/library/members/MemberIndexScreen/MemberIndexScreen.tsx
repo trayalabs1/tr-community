@@ -19,7 +19,7 @@ export function MemberIndexScreen(props: Props) {
   }
 
   return (
-    <VStack>
+    <VStack px="4">
       <PaginatedSearch
         index="/m"
         initialQuery={props.query}

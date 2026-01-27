@@ -51,12 +51,7 @@ export default async function ChannelsPage() {
         mt="0"
         bg="white"
         style={{
-          marginLeft: "-1rem",
-          marginRight: "-1rem",
-          marginTop: "-1.5rem",
-          paddingLeft: "1rem",
-          paddingRight: "1rem",
-          width: "calc(100% + 2rem)",
+          width: "calc(100%)",
           borderBottomColor: TRAYA_COLORS.neutral.border,
         }}
       >

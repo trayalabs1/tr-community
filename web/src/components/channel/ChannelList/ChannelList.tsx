@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useChannelList } from "@/api/openapi-client/channels";
 import { ChannelListOKResponse } from "@/api/openapi-schema";
-import { NavigationHeader } from "@/components/site/Navigation/ContentNavigationList/NavigationHeader";
 import { Unready } from "@/components/site/Unready";
 import { CategoryIcon } from "@/components/ui/icons/Category";
+import { ChevronDownIcon } from "@/components/ui/icons/Chevron";
 import { css } from "@/styled-system/css";
 import { HStack, LStack } from "@/styled-system/jsx";
 
@@ -20,6 +21,7 @@ export function ChannelList({
   selectedChannelID,
   onChannelSelect,
 }: Props) {
+  const [isExpanded, setIsExpanded] = useState(true);
   const { data, error } = useChannelList({
     swr: {
       fallbackData: initialChannelList,
@@ -36,23 +38,46 @@ export function ChannelList({
 
   return (
     <LStack gap="0">
-      <NavigationHeader href="/channels">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={css({
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "1",
+          py: "1",
+          pr: "1",
+          h: "8",
+          fontSize: "xs",
+          fontWeight: "semibold",
+          color: "fg.muted",
+          textTransform: "uppercase",
+          letterSpacing: "wider",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          w: "full",
+          textAlign: "left",
+          _hover: {
+            color: "fg.subtle",
+          },
+        })}
+      >
         <HStack gap="1">
-          <CategoryIcon />
-          <span
-            className={css({
-              textTransform: "uppercase",
-              fontSize: "xs",
-              fontWeight: "semibold",
-              letterSpacing: "wider",
-            })}
-          >
-            Channels
-          </span>
+          <CategoryIcon width="4" height="4" />
+          <span>Channels</span>
         </HStack>
-      </NavigationHeader>
+        <ChevronDownIcon
+          width="4"
+          height="4"
+          style={{
+            transition: "transform 200ms",
+            transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)",
+          }}
+        />
+      </button>
 
-      {data.channels.length > 0 ? (
+      {isExpanded && data.channels.length > 0 ? (
         <LStack gap="1">
           {data.channels.map((channel) => (
             <Link
