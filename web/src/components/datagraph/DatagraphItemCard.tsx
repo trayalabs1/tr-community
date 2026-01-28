@@ -1,3 +1,4 @@
+import Link from "next/link";
 import chroma from "chroma-js";
 
 import {
@@ -9,15 +10,13 @@ import {
   DatagraphItemReply,
   DatagraphItemThread,
 } from "@/api/openapi-schema";
-import { HStack, WStack } from "@/styled-system/jsx";
+import { styled } from "@/styled-system/jsx";
 import { ColorPalette } from "@/styled-system/tokens";
-import { getAssetURL } from "@/utils/asset";
-import { htmlToMarkdown } from "@/utils/markdown";
 
-import { MemberBadge } from "../member/MemberBadge/MemberBadge";
 import { Timestamp } from "../site/Timestamp";
 import { Badge } from "../ui/badge";
-import { Card } from "../ui/rich-card";
+import { ProfileHoverTooltip } from "../post/ProfileHoverTooltip";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 type Props = {
   item: DatagraphItem;
@@ -57,26 +56,130 @@ export function DatagraphItemPostGenericCard({
   const url = `/t/${ref.slug}`;
 
   return (
-    <Card
-      id={ref.id}
-      url={url}
-      title={ref.title || "(untitled post)"}
-      text={ref.description ?? htmlToMarkdown(ref.body)}
-      controls={
-        <WStack>
-          <HStack gap="1" minWidth="0" color="fg.subtle">
-            <MemberBadge
-              profile={ref.author}
-              size="sm"
-              name="full-horizontal"
-            />
-            <Timestamp created={ref.createdAt} />
-          </HStack>
+    <styled.div
+      display="flex"
+      flexDir="column"
+      w="full"
+      borderRadius="2xl"
+      overflow="hidden"
+      backgroundColor="white"
+      style={{
+        border: `1px solid ${TRAYA_COLORS.border.default}`,
+        boxShadow: TRAYA_COLORS.shadow.subtle,
+        transition: "all 0.2s ease-in-out",
+        cursor: "pointer",
+      }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.boxShadow = TRAYA_COLORS.shadow.medium;
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.boxShadow = TRAYA_COLORS.shadow.subtle;
+      }}
+    >
+      {/* Header Section - Author Info */}
+      <styled.div
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        gap="3"
+        px="4"
+        pt="4"
+        pb="2"
+      >
+        <styled.div display="flex" alignItems="center" gap="3" flex="1" minW="0">
+          <ProfileHoverTooltip profile={ref.author}>
+            <Link href={`/m/${ref.author.handle}`} style={{ textDecoration: "none" }}>
+              <styled.button
+                w="10"
+                h="10"
+                rounded="full"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                fontSize="sm"
+                fontWeight="semibold"
+                style={{
+                  backgroundColor: TRAYA_COLORS.primary,
+                  color: "white",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "opacity 0.2s ease-in-out",
+                  flexShrink: 0,
+                }}
+              >
+                {ref.author.handle.charAt(0).toUpperCase()}
+              </styled.button>
+            </Link>
+          </ProfileHoverTooltip>
 
+          <styled.div display="flex" flexDir="column" gap="0.5" flex="1" minW="0">
+            <Link href={`/m/${ref.author.handle}`} style={{ textDecoration: "none" }}>
+              <styled.p
+                fontSize="sm"
+                fontWeight="semibold"
+                color="fg.default"
+                style={{
+                  margin: "0",
+                  transition: "color 0.2s ease-in-out",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                }}
+              >
+                @{ref.author.handle}
+              </styled.p>
+            </Link>
+            <styled.p
+              fontSize="xs"
+              color="fg.muted"
+              style={{
+                margin: "0",
+              }}
+            >
+              <Timestamp created={ref.createdAt} />
+            </styled.p>
+          </styled.div>
+        </styled.div>
+      </styled.div>
+
+      {/* Content Section - Description */}
+      <styled.div
+        display="flex"
+        flexDir="column"
+        gap="1"
+        px="4"
+        pt="2"
+        pb="4"
+      >
+        <Link href={url} style={{ textDecoration: "none" }}>
+          <styled.p
+            fontSize="sm"
+            color="fg.default"
+            fontWeight="medium"
+            style={{
+              margin: "0",
+              lineHeight: "1.6",
+              whiteSpace: "pre-wrap",
+              overflow: "hidden",
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+              textOverflow: "ellipsis",
+              cursor: "pointer",
+            }}
+          >
+            {(ref.description ?? ref.title) || "(untitled post)"}
+          </styled.p>
+        </Link>
+
+        <styled.div display="flex" gap="2.5" flexWrap="wrap">
           <DatagraphItemBadge kind={item.kind} />
-        </WStack>
-      }
-    />
+        </styled.div>
+      </styled.div>
+    </styled.div>
   );
 }
 
@@ -85,26 +188,130 @@ export function DatagraphItemReplyCard({ item }: { item: DatagraphItemReply }) {
   const url = `/t/locate/${ref.id}`;
 
   return (
-    <Card
-      id={ref.id}
-      url={url}
-      title={ref.title ? `Thread: ${ref.title}` : "(untitled thread)"}
-      text={ref.description ?? htmlToMarkdown(ref.body)}
-      controls={
-        <WStack>
-          <HStack gap="1" minWidth="0" color="fg.subtle">
-            <MemberBadge
-              profile={ref.author}
-              size="sm"
-              name="full-horizontal"
-            />
-            <Timestamp created={ref.createdAt} />
-          </HStack>
+    <styled.div
+      display="flex"
+      flexDir="column"
+      w="full"
+      borderRadius="2xl"
+      overflow="hidden"
+      backgroundColor="white"
+      style={{
+        border: `1px solid ${TRAYA_COLORS.border.default}`,
+        boxShadow: TRAYA_COLORS.shadow.subtle,
+        transition: "all 0.2s ease-in-out",
+        cursor: "pointer",
+      }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.boxShadow = TRAYA_COLORS.shadow.medium;
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.boxShadow = TRAYA_COLORS.shadow.subtle;
+      }}
+    >
+      {/* Header Section - Author Info */}
+      <styled.div
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        gap="3"
+        px="4"
+        pt="4"
+        pb="2"
+      >
+        <styled.div display="flex" alignItems="center" gap="3" flex="1" minW="0">
+          <ProfileHoverTooltip profile={ref.author}>
+            <Link href={`/m/${ref.author.handle}`} style={{ textDecoration: "none" }}>
+              <styled.button
+                w="10"
+                h="10"
+                rounded="full"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                fontSize="sm"
+                fontWeight="semibold"
+                style={{
+                  backgroundColor: TRAYA_COLORS.primary,
+                  color: 'white',
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "opacity 0.2s ease-in-out",
+                  flexShrink: 0,
+                }}
+              >
+                {ref.author.handle.charAt(0).toUpperCase()}
+              </styled.button>
+            </Link>
+          </ProfileHoverTooltip>
 
+          <styled.div display="flex" flexDir="column" gap="0.5" flex="1" minW="0">
+            <Link href={`/m/${ref.author.handle}`} style={{ textDecoration: "none" }}>
+              <styled.p
+                fontSize="sm"
+                fontWeight="semibold"
+                color="fg.default"
+                style={{
+                  margin: "0",
+                  transition: "color 0.2s ease-in-out",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                }}
+              >
+                @{ref.author.handle}
+              </styled.p>
+            </Link>
+            <styled.p
+              fontSize="xs"
+              color="fg.muted"
+              style={{
+                margin: "0",
+              }}
+            >
+              <Timestamp created={ref.createdAt} />
+            </styled.p>
+          </styled.div>
+        </styled.div>
+      </styled.div>
+
+      {/* Content Section - Description */}
+      <styled.div
+        display="flex"
+        flexDir="column"
+        gap="1"
+        px="4"
+        pt="2"
+        pb="4"
+      >
+        <Link href={url} style={{ textDecoration: "none" }}>
+          <styled.p
+            fontSize="sm"
+            color="fg.default"
+            fontWeight="medium"
+            style={{
+              margin: "0",
+              lineHeight: "1.6",
+              whiteSpace: "pre-wrap",
+              overflow: "hidden",
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+              textOverflow: "ellipsis",
+              cursor: "pointer",
+            }}
+          >
+            {(ref.description ?? ref.title) || "(untitled thread)"}
+          </styled.p>
+        </Link>
+
+        <styled.div display="flex" gap="2.5" flexWrap="wrap">
           <DatagraphItemBadge kind={item.kind} />
-        </WStack>
-      }
-    />
+        </styled.div>
+      </styled.div>
+    </styled.div>
   );
 }
 
@@ -113,23 +320,130 @@ export function DatagraphItemNodeCard({ item }: { item: DatagraphItemNode }) {
   const url = `/l/${ref.slug}`;
 
   return (
-    <Card
-      id={ref.id}
-      url={url}
-      title={ref.name}
-      text={ref.description}
-      image={getAssetURL(ref.primary_image?.path)}
-      controls={
-        <WStack>
-          <HStack gap="1" minWidth="0" color="fg.subtle">
-            <MemberBadge profile={ref.owner} size="sm" name="full-horizontal" />
-            <Timestamp created={ref.createdAt} />
-          </HStack>
+    <styled.div
+      display="flex"
+      flexDir="column"
+      w="full"
+      borderRadius="2xl"
+      overflow="hidden"
+      backgroundColor="white"
+      style={{
+        border: `1px solid ${TRAYA_COLORS.border.default}`,
+        boxShadow: TRAYA_COLORS.shadow.subtle,
+        transition: "all 0.2s ease-in-out",
+        cursor: "pointer",
+      }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.boxShadow = TRAYA_COLORS.shadow.medium;
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.boxShadow = TRAYA_COLORS.shadow.subtle;
+      }}
+    >
+      {/* Header Section - Owner Info */}
+      <styled.div
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        gap="3"
+        px="4"
+        pt="4"
+        pb="2"
+      >
+        <styled.div display="flex" alignItems="center" gap="3" flex="1" minW="0">
+          <ProfileHoverTooltip profile={ref.owner}>
+            <Link href={`/m/${ref.owner.handle}`} style={{ textDecoration: "none" }}>
+              <styled.button
+                w="10"
+                h="10"
+                rounded="full"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                fontSize="sm"
+                fontWeight="semibold"
+                style={{
+                  backgroundColor: TRAYA_COLORS.secondary,
+                  color: "white",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "opacity 0.2s ease-in-out",
+                  flexShrink: 0,
+                }}
+              >
+                {ref.owner.handle.charAt(0).toUpperCase()}
+              </styled.button>
+            </Link>
+          </ProfileHoverTooltip>
 
+          <styled.div display="flex" flexDir="column" gap="0.5" flex="1" minW="0">
+            <Link href={`/m/${ref.owner.handle}`} style={{ textDecoration: "none" }}>
+              <styled.p
+                fontSize="sm"
+                fontWeight="semibold"
+                color="fg.default"
+                style={{
+                  margin: "0",
+                  transition: "color 0.2s ease-in-out",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                }}
+              >
+                @{ref.owner.handle}
+              </styled.p>
+            </Link>
+            <styled.p
+              fontSize="xs"
+              color="fg.muted"
+              style={{
+                margin: "0",
+              }}
+            >
+              <Timestamp created={ref.createdAt} />
+            </styled.p>
+          </styled.div>
+        </styled.div>
+      </styled.div>
+
+      {/* Content Section - Description */}
+      <styled.div
+        display="flex"
+        flexDir="column"
+        gap="1"
+        px="4"
+        pt="2"
+        pb="4"
+      >
+        <Link href={url} style={{ textDecoration: "none" }}>
+          <styled.p
+            fontSize="sm"
+            color="fg.default"
+            fontWeight="medium"
+            style={{
+              margin: "0",
+              lineHeight: "1.6",
+              whiteSpace: "pre-wrap",
+              overflow: "hidden",
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+              textOverflow: "ellipsis",
+              cursor: "pointer",
+            }}
+          >
+            {ref.description || ref.name}
+          </styled.p>
+        </Link>
+
+        <styled.div display="flex" gap="2.5" flexWrap="wrap">
           <DatagraphItemBadge kind={item.kind} />
-        </WStack>
-      }
-    />
+        </styled.div>
+      </styled.div>
+    </styled.div>
   );
 }
 
@@ -142,22 +456,132 @@ export function DatagraphItemProfileCard({
   const url = `/m/${ref.handle}`;
 
   return (
-    <Card
-      id={ref.id}
-      url={url}
-      title={ref.name}
-      text={ref.bio}
-      controls={
-        <WStack>
-          <HStack gap="1" minWidth="0" color="fg.subtle">
-            <MemberBadge profile={ref} size="sm" name="full-horizontal" />
-            <Timestamp created={ref.createdAt} />
-          </HStack>
+    <styled.div
+      display="flex"
+      flexDir="column"
+      w="full"
+      borderRadius="2xl"
+      overflow="hidden"
+      backgroundColor="white"
+      style={{
+        border: `1px solid ${TRAYA_COLORS.border.default}`,
+        boxShadow: TRAYA_COLORS.shadow.subtle,
+        transition: "all 0.2s ease-in-out",
+        cursor: "pointer",
+      }}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.boxShadow = TRAYA_COLORS.shadow.medium;
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.boxShadow = TRAYA_COLORS.shadow.subtle;
+      }}
+    >
+      {/* Header Section - Profile Info */}
+      <styled.div
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        gap="3"
+        px="4"
+        pt="4"
+        pb="2"
+      >
+        <styled.div display="flex" alignItems="center" gap="3" flex="1" minW="0">
+          <ProfileHoverTooltip profile={ref}>
+            <Link href={url} style={{ textDecoration: "none" }}>
+              <styled.button
+                w="10"
+                h="10"
+                rounded="full"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                fontSize="sm"
+                fontWeight="semibold"
+                style={{
+                  backgroundColor: TRAYA_COLORS.secondary,
+                  color: "white",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "opacity 0.2s ease-in-out",
+                  flexShrink: 0,
+                }}
+              >
+                {ref.name.charAt(0).toUpperCase()}
+              </styled.button>
+            </Link>
+          </ProfileHoverTooltip>
 
+          <styled.div display="flex" flexDir="column" gap="0.5" flex="1" minW="0">
+            <Link href={url} style={{ textDecoration: "none" }}>
+              <styled.p
+                fontSize="sm"
+                fontWeight="semibold"
+                color="fg.default"
+                style={{
+                  margin: "0",
+                  transition: "color 0.2s ease-in-out",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                }}
+              >
+                {ref.name}
+              </styled.p>
+            </Link>
+            <styled.p
+              fontSize="xs"
+              color="fg.muted"
+              style={{
+                margin: "0",
+              }}
+            >
+              @{ref.handle}
+            </styled.p>
+          </styled.div>
+        </styled.div>
+      </styled.div>
+
+      {/* Content Section - Bio */}
+      <styled.div
+        display="flex"
+        flexDir="column"
+        gap="1"
+        px="4"
+        pt="2"
+        pb="4"
+      >
+        {ref.bio && (
+          <Link href={url} style={{ textDecoration: "none" }}>
+            <styled.p
+              fontSize="sm"
+              color="fg.default"
+              fontWeight="medium"
+              style={{
+                margin: "0",
+                lineHeight: "1.6",
+                whiteSpace: "pre-wrap",
+                overflow: "hidden",
+                display: "-webkit-box",
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical",
+                textOverflow: "ellipsis",
+                cursor: "pointer",
+              }}
+            >
+              {ref.bio}
+            </styled.p>
+          </Link>
+        )}
+
+        <styled.div display="flex" gap="2.5" flexWrap="wrap">
           <DatagraphItemBadge kind={item.kind} />
-        </WStack>
-      }
-    />
+        </styled.div>
+      </styled.div>
+    </styled.div>
   );
 }
 
@@ -169,10 +593,12 @@ export function DatagraphItemBadge({ kind }: { kind: DatagraphItemKind }) {
 
   return (
     <Badge
-      style={cssVars}
-      backgroundColor="var(--colors-color-palette-bg)"
-      borderColor="var(--colors-color-palette-bo)"
-      color="var(--colors-color-palette-fg)"
+      style={{
+        ...cssVars,
+        backgroundColor: TRAYA_COLORS.tertiary,
+        color: TRAYA_COLORS.primary,
+        border:'none'
+      }}
     >
       {label}
     </Badge>

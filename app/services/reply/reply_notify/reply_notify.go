@@ -47,7 +47,7 @@ func Build() fx.Option {
 						notification.EventReplyToReply,
 						&datagraph.Ref{
 							ID:   xid.ID(evt.ReplyID),
-							Kind: datagraph.KindPost,
+							Kind: datagraph.KindReply,
 						},
 					)
 					errs = append(errs, err)

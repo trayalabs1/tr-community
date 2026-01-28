@@ -312,6 +312,12 @@
       description: |-
         The issuer/discovery URL for the Keycloak realm (e.g. https://auth.example.com/realms/YourRealm).
 
+    - env: TRAYA_API_SERVER_URL
+      name: TrayaAPIServerURL
+      type: net/url.URL
+      description: |-
+        The base URL for the Traya API server. Used for authenticating users via Traya tokens and fetching user information.
+
 - section: SMS
   description: |-
     SMS sending configuration. This must be enabled in order to support SMS-based authentication.

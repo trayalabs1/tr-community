@@ -36,11 +36,14 @@ type Partial struct {
 	Description opt.Optional[string]
 }
 
-func (s *Manager) Create(ctx context.Context, accID account.AccountID, name string, partial Partial) (*collection.CollectionWithItems, error) {
-	opts := []collection_writer.Option{}
+func (p Partial) Opts() (opts []collection_writer.Option) {
+	p.Name.Call(func(v string) { opts = append(opts, collection_writer.WithName(v)) })
+	p.Description.Call(func(v string) { opts = append(opts, collection_writer.WithDescription(v)) })
+	return
+}
 
-	partial.Name.Call(func(v string) { opts = append(opts, collection_writer.WithName(v)) })
-	partial.Description.Call(func(v string) { opts = append(opts, collection_writer.WithDescription(v)) })
+func (s *Manager) Create(ctx context.Context, accID account.AccountID, name string, partial Partial) (*collection.CollectionWithItems, error) {
+	opts := partial.Opts()
 
 	slug := partial.Slug.Or(mark.Slugify(name))
 

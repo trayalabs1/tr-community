@@ -10,4 +10,6 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
 
 export interface AuthSuccess {
   id: string;
+  /** Indicates if the user must set a username before continuing */
+  needs_username?: boolean;
 }

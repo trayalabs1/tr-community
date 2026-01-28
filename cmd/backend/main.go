@@ -15,11 +15,44 @@ import (
 
 	"github.com/Southclaws/storyden/app/resources"
 	"github.com/Southclaws/storyden/app/services"
+	"github.com/Southclaws/storyden/app/services/account/username"
 	transport "github.com/Southclaws/storyden/app/transports"
 	"github.com/Southclaws/storyden/internal/boot_time"
 	"github.com/Southclaws/storyden/internal/config"
 	"github.com/Southclaws/storyden/internal/infrastructure"
 )
+
+// startupSeeding runs username cache seeding in a goroutine on server startup
+func startupSeeding(
+	lc fx.Lifecycle,
+	logger *slog.Logger,
+	seeder *username.Seeder,
+) {
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			// Run seeding in goroutine to not block server startup
+			go func() {
+				// Create a background context with timeout
+				seedCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
+
+				logger.Info("starting username cache seeding")
+
+				if err := seeder.SeedIfNeeded(seedCtx); err != nil {
+					// Log error but don't fail server startup
+					logger.Error("failed to seed username cache",
+						slog.String("error", err.Error()))
+					logger.Warn("username checks will fall back to database queries")
+				} else {
+					logger.Info("username cache seeding completed successfully")
+				}
+			}()
+
+			// Don't block startup
+			return nil
+		},
+	})
+}
 
 // Start starts the application and blocks until fatal error
 // The server will shut down if the root context is cancelled
@@ -35,6 +68,9 @@ func Start(ctx context.Context) {
 		resources.Build(),
 		services.Build(),
 		transport.Build(),
+
+		// Add startup hook for username seeding
+		fx.Invoke(startupSeeding),
 	)
 
 	err := app.Start(ctx)

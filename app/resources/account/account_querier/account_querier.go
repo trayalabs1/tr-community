@@ -126,3 +126,39 @@ func (d *Querier) ListByHeldPermission(ctx context.Context, perms ...rbac.Permis
 
 	return dt.MapErr(accounts, account.MapRef)
 }
+
+// GetAllHandles fetches all non-temporary handles from database
+// Returns only handle strings for memory efficiency during username seeding
+func (d *Querier) GetAllHandles(ctx context.Context) ([]string, error) {
+	var handles []string
+
+	err := d.db.Account.
+		Query().
+		Where(
+			// Exclude temporary handles
+			account_ent.Not(account_ent.HandleHasPrefix("temp_")),
+		).
+		Select(account_ent.FieldHandle).
+		Scan(ctx, &handles)
+
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return handles, nil
+}
+
+// CountNonTempAccounts returns count of accounts with permanent handles
+// Used to determine if Redis username cache needs reseeding
+func (d *Querier) CountNonTempAccounts(ctx context.Context) (int, error) {
+	count, err := d.db.Account.
+		Query().
+		Where(account_ent.Not(account_ent.HandleHasPrefix("temp_"))).
+		Count(ctx)
+
+	if err != nil {
+		return 0, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return count, nil
+}

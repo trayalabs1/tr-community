@@ -1,12 +1,25 @@
 import { createListCollection } from "@ark-ui/react";
 
 import { useCategoryList } from "@/api/openapi-client/categories";
+import { useChannelCategoryList } from "@/api/openapi-client/channels";
 import { ListCollectionItem } from "@/components/ui/form/SelectField";
 
 export const NO_CATEGORY_VALUE = "__none__";
 
-export function useCategorySelect() {
-  const { data, error } = useCategoryList();
+export function useCategorySelect(channelID?: string) {
+  // Use channel-specific categories if channelID is provided
+  const channelCategories = useChannelCategoryList(channelID || "", {
+    swr: {
+      enabled: !!channelID,
+    },
+  });
+  const globalCategories = useCategoryList({
+    swr: {
+      enabled: !channelID,
+    },
+  });
+
+  const { data, error } = channelID ? channelCategories : globalCategories;
 
   if (!data) {
     if (error) {
@@ -24,13 +37,10 @@ export function useCategorySelect() {
   }
 
   const collection = createListCollection({
-    items: [
-      { label: "No category", value: NO_CATEGORY_VALUE },
-      ...data.categories.map((category) => ({
-        label: category.name,
-        value: category.id,
-      })),
-    ],
+    items: data.categories.map((category) => ({
+      label: category.name,
+      value: category.id,
+    })),
   });
 
   return {

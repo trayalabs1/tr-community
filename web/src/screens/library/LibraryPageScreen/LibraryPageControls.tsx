@@ -16,7 +16,7 @@ import { useEditState } from "./useEditState";
 
 function useLibraryPageControls() {
   const libraryPath = useLibraryPath();
-  const { store } = useLibraryPageContext();
+  const { store, channelID, channelName } = useLibraryPageContext();
   const { draft, setSlug } = store.getState();
 
   const slug = useWatch((s) => s.draft.slug);
@@ -48,6 +48,8 @@ function useLibraryPageControls() {
     isAllowedToEdit,
     editing,
     handleSlugChange,
+    channelID,
+    channelName,
   };
 }
 
@@ -61,6 +63,8 @@ export function LibraryPageControls() {
     isAllowedToEdit,
     editing,
     handleSlugChange,
+    channelID,
+    channelName,
   } = useLibraryPageControls();
 
   return (
@@ -73,6 +77,8 @@ export function LibraryPageControls() {
         value={slug}
         invalid={isSlugInvalid}
         onChange={handleSlugChange}
+        channelID={channelID}
+        channelName={channelName}
       />
       <HStack>
         {isAllowedToEdit && <EditControls />}

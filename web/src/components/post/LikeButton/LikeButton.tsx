@@ -2,6 +2,7 @@ import { LikeAction } from "@/components/site/Action/Like";
 import { Button } from "@/components/ui/button";
 import { LikeIcon, LikeSavedIcon } from "@/components/ui/icons/Like";
 import { styled } from "@/styled-system/jsx";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 import { Props, useLikeButton } from "./useLikeButton";
 
@@ -14,14 +15,21 @@ export function LikeButton({ showCount = false, ...props }: LikeButtonProps) {
   const likeCount = props.thread.likes.likes;
 
   if (showCount) {
+    const hasLikes = likeCount > 0;
     return (
-      <Button
-        type="button"
-        variant="subtle"
+      <styled.button
         display="flex"
-        size="xs"
+        alignItems="center"
         gap="1"
-        color="fg.muted"
+        style={{
+          color: hasLikes ? TRAYA_COLORS.heart : "var(--colors-fg-muted)",
+          backgroundColor: "transparent",
+          border: "none",
+          cursor: "pointer",
+          padding: "0",
+          fontFamily: "inherit",
+          fontSize: "14px",
+        }}
         aria-label={props.thread.likes.liked ? "Unlike" : "Like"}
         title={props.thread.likes.liked ? "Unlike" : "Like"}
         onClick={handleClick}
@@ -41,7 +49,7 @@ export function LikeButton({ showCount = false, ...props }: LikeButtonProps) {
         >
           {likeCount}
         </styled.span>
-      </Button>
+      </styled.button>
     );
   }
 

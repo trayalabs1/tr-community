@@ -15,6 +15,7 @@ import (
 	"github.com/Southclaws/lexorank"
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/asset"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/link"
 	"github.com/Southclaws/storyden/internal/ent/node"
@@ -162,6 +163,12 @@ func (_c *NodeCreate) SetAccountID(v xid.ID) *NodeCreate {
 	return _c
 }
 
+// SetChannelID sets the "channel_id" field.
+func (_c *NodeCreate) SetChannelID(v xid.ID) *NodeCreate {
+	_c.mutation.SetChannelID(v)
+	return _c
+}
+
 // SetPropertySchemaID sets the "property_schema_id" field.
 func (_c *NodeCreate) SetPropertySchemaID(v xid.ID) *NodeCreate {
 	_c.mutation.SetPropertySchemaID(v)
@@ -261,6 +268,11 @@ func (_c *NodeCreate) SetOwnerID(id xid.ID) *NodeCreate {
 // SetOwner sets the "owner" edge to the Account entity.
 func (_c *NodeCreate) SetOwner(v *Account) *NodeCreate {
 	return _c.SetOwnerID(v.ID)
+}
+
+// SetChannel sets the "channel" edge to the Channel entity.
+func (_c *NodeCreate) SetChannel(v *Channel) *NodeCreate {
+	return _c.SetChannelID(v.ID)
 }
 
 // SetParentID sets the "parent" edge to the Node entity by ID.
@@ -485,6 +497,9 @@ func (_c *NodeCreate) check() error {
 	if _, ok := _c.mutation.AccountID(); !ok {
 		return &ValidationError{Name: "account_id", err: errors.New(`ent: missing required field "Node.account_id"`)}
 	}
+	if _, ok := _c.mutation.ChannelID(); !ok {
+		return &ValidationError{Name: "channel_id", err: errors.New(`ent: missing required field "Node.channel_id"`)}
+	}
 	if _, ok := _c.mutation.Visibility(); !ok {
 		return &ValidationError{Name: "visibility", err: errors.New(`ent: missing required field "Node.visibility"`)}
 	}
@@ -503,6 +518,9 @@ func (_c *NodeCreate) check() error {
 	}
 	if len(_c.mutation.OwnerIDs()) == 0 {
 		return &ValidationError{Name: "owner", err: errors.New(`ent: missing required edge "Node.owner"`)}
+	}
+	if len(_c.mutation.ChannelIDs()) == 0 {
+		return &ValidationError{Name: "channel", err: errors.New(`ent: missing required edge "Node.channel"`)}
 	}
 	return nil
 }
@@ -603,6 +621,23 @@ func (_c *NodeCreate) createSpec() (*Node, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.AccountID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ChannelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   node.ChannelTable,
+			Columns: []string{node.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ChannelID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.ParentIDs(); len(nodes) > 0 {
@@ -975,6 +1010,18 @@ func (u *NodeUpsert) UpdateAccountID() *NodeUpsert {
 	return u
 }
 
+// SetChannelID sets the "channel_id" field.
+func (u *NodeUpsert) SetChannelID(v xid.ID) *NodeUpsert {
+	u.Set(node.FieldChannelID, v)
+	return u
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *NodeUpsert) UpdateChannelID() *NodeUpsert {
+	u.SetExcluded(node.FieldChannelID)
+	return u
+}
+
 // SetPropertySchemaID sets the "property_schema_id" field.
 func (u *NodeUpsert) SetPropertySchemaID(v xid.ID) *NodeUpsert {
 	u.Set(node.FieldPropertySchemaID, v)
@@ -1294,6 +1341,20 @@ func (u *NodeUpsertOne) SetAccountID(v xid.ID) *NodeUpsertOne {
 func (u *NodeUpsertOne) UpdateAccountID() *NodeUpsertOne {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateAccountID()
+	})
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *NodeUpsertOne) SetChannelID(v xid.ID) *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetChannelID(v)
+	})
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *NodeUpsertOne) UpdateChannelID() *NodeUpsertOne {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateChannelID()
 	})
 }
 
@@ -1799,6 +1860,20 @@ func (u *NodeUpsertBulk) SetAccountID(v xid.ID) *NodeUpsertBulk {
 func (u *NodeUpsertBulk) UpdateAccountID() *NodeUpsertBulk {
 	return u.Update(func(s *NodeUpsert) {
 		s.UpdateAccountID()
+	})
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *NodeUpsertBulk) SetChannelID(v xid.ID) *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.SetChannelID(v)
+	})
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *NodeUpsertBulk) UpdateChannelID() *NodeUpsertBulk {
+	return u.Update(func(s *NodeUpsert) {
+		s.UpdateChannelID()
 	})
 }
 

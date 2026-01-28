@@ -14,6 +14,7 @@ import { css } from "@/styled-system/css";
 import { HStack, LStack, VStack, WStack, styled } from "@/styled-system/jsx";
 import { CardBox } from "@/styled-system/patterns";
 import { timestamp } from "@/utils/date";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 import { useReplyContext } from "../ReplyContext";
 
@@ -36,7 +37,7 @@ export function ReplyBox(props: Props) {
   }
 
   return (
-    <VStack w="full" pb="12" gap="2" alignItems="stretch">
+    <VStack w="full" gap="2" alignItems="stretch">
       <Admonition
         value={!!postedReply}
         onChange={handlers.handleReplyPostedAdmonitionClose}
@@ -105,7 +106,15 @@ export function ReplyBox(props: Props) {
             />
           </HStack>
 
-          <Button type="submit" size="xs" disabled={isLoading || isEmpty}>
+          <Button
+            type="submit"
+            size="xs"
+            disabled={isLoading || isEmpty}
+            style={{
+              backgroundColor: TRAYA_COLORS.primary,
+              color: "white",
+            }}
+          >
             Post
           </Button>
         </HStack>

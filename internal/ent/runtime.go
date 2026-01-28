@@ -10,8 +10,11 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/accountfollow"
 	"github.com/Southclaws/storyden/internal/ent/accountroles"
 	"github.com/Southclaws/storyden/internal/ent/asset"
+	"github.com/Southclaws/storyden/internal/ent/auditlog"
 	"github.com/Southclaws/storyden/internal/ent/authentication"
 	"github.com/Southclaws/storyden/internal/ent/category"
+	"github.com/Southclaws/storyden/internal/ent/channel"
+	"github.com/Southclaws/storyden/internal/ent/channelmembership"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/collectionnode"
 	"github.com/Southclaws/storyden/internal/ent/collectionpost"
@@ -196,6 +199,37 @@ func init() {
 			return nil
 		}
 	}()
+	auditlogMixin := schema.AuditLog{}.Mixin()
+	auditlogMixinFields0 := auditlogMixin[0].Fields()
+	_ = auditlogMixinFields0
+	auditlogMixinFields1 := auditlogMixin[1].Fields()
+	_ = auditlogMixinFields1
+	auditlogFields := schema.AuditLog{}.Fields()
+	_ = auditlogFields
+	// auditlogDescCreatedAt is the schema descriptor for created_at field.
+	auditlogDescCreatedAt := auditlogMixinFields1[0].Descriptor()
+	// auditlog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	auditlog.DefaultCreatedAt = auditlogDescCreatedAt.Default.(func() time.Time)
+	// auditlogDescID is the schema descriptor for id field.
+	auditlogDescID := auditlogMixinFields0[0].Descriptor()
+	// auditlog.DefaultID holds the default value on creation for the id field.
+	auditlog.DefaultID = auditlogDescID.Default.(func() xid.ID)
+	// auditlog.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	auditlog.IDValidator = func() func(string) error {
+		validators := auditlogDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	authenticationMixin := schema.Authentication{}.Mixin()
 	authenticationMixinFields0 := authenticationMixin[0].Fields()
 	_ = authenticationMixinFields0
@@ -285,6 +319,80 @@ func init() {
 	// category.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	category.IDValidator = func() func(string) error {
 		validators := categoryDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	channelMixin := schema.Channel{}.Mixin()
+	channelMixinFields0 := channelMixin[0].Fields()
+	_ = channelMixinFields0
+	channelMixinFields1 := channelMixin[1].Fields()
+	_ = channelMixinFields1
+	channelMixinFields2 := channelMixin[2].Fields()
+	_ = channelMixinFields2
+	channelFields := schema.Channel{}.Fields()
+	_ = channelFields
+	// channelDescCreatedAt is the schema descriptor for created_at field.
+	channelDescCreatedAt := channelMixinFields1[0].Descriptor()
+	// channel.DefaultCreatedAt holds the default value on creation for the created_at field.
+	channel.DefaultCreatedAt = channelDescCreatedAt.Default.(func() time.Time)
+	// channelDescUpdatedAt is the schema descriptor for updated_at field.
+	channelDescUpdatedAt := channelMixinFields2[0].Descriptor()
+	// channel.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	channel.DefaultUpdatedAt = channelDescUpdatedAt.Default.(func() time.Time)
+	// channel.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	channel.UpdateDefaultUpdatedAt = channelDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// channelDescDescription is the schema descriptor for description field.
+	channelDescDescription := channelFields[2].Descriptor()
+	// channel.DefaultDescription holds the default value on creation for the description field.
+	channel.DefaultDescription = channelDescDescription.Default.(string)
+	// channelDescID is the schema descriptor for id field.
+	channelDescID := channelMixinFields0[0].Descriptor()
+	// channel.DefaultID holds the default value on creation for the id field.
+	channel.DefaultID = channelDescID.Default.(func() xid.ID)
+	// channel.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	channel.IDValidator = func() func(string) error {
+		validators := channelDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	channelmembershipMixin := schema.ChannelMembership{}.Mixin()
+	channelmembershipMixinFields0 := channelmembershipMixin[0].Fields()
+	_ = channelmembershipMixinFields0
+	channelmembershipMixinFields1 := channelmembershipMixin[1].Fields()
+	_ = channelmembershipMixinFields1
+	channelmembershipFields := schema.ChannelMembership{}.Fields()
+	_ = channelmembershipFields
+	// channelmembershipDescCreatedAt is the schema descriptor for created_at field.
+	channelmembershipDescCreatedAt := channelmembershipMixinFields1[0].Descriptor()
+	// channelmembership.DefaultCreatedAt holds the default value on creation for the created_at field.
+	channelmembership.DefaultCreatedAt = channelmembershipDescCreatedAt.Default.(func() time.Time)
+	// channelmembershipDescID is the schema descriptor for id field.
+	channelmembershipDescID := channelmembershipMixinFields0[0].Descriptor()
+	// channelmembership.DefaultID holds the default value on creation for the id field.
+	channelmembership.DefaultID = channelmembershipDescID.Default.(func() xid.ID)
+	// channelmembership.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	channelmembership.IDValidator = func() func(string) error {
+		validators := channelmembershipDescID.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),
@@ -728,7 +836,7 @@ func init() {
 	// node.DefaultHideChildTree holds the default value on creation for the hide_child_tree field.
 	node.DefaultHideChildTree = nodeDescHideChildTree.Default.(bool)
 	// nodeDescSort is the schema descriptor for sort field.
-	nodeDescSort := nodeFields[11].Descriptor()
+	nodeDescSort := nodeFields[12].Descriptor()
 	// node.DefaultSort holds the default value on creation for the sort field.
 	node.DefaultSort = nodeDescSort.Default.(func() lexorank.Key)
 	// nodeDescID is the schema descriptor for id field.
@@ -793,10 +901,10 @@ func init() {
 	postDescCreatedAt := postMixinFields1[0].Descriptor()
 	// post.DefaultCreatedAt holds the default value on creation for the created_at field.
 	post.DefaultCreatedAt = postDescCreatedAt.Default.(func() time.Time)
-	// postDescPinned is the schema descriptor for pinned field.
-	postDescPinned := postFields[2].Descriptor()
-	// post.DefaultPinned holds the default value on creation for the pinned field.
-	post.DefaultPinned = postDescPinned.Default.(bool)
+	// postDescPinnedRank is the schema descriptor for pinned_rank field.
+	postDescPinnedRank := postFields[2].Descriptor()
+	// post.DefaultPinnedRank holds the default value on creation for the pinned_rank field.
+	post.DefaultPinnedRank = postDescPinnedRank.Default.(int)
 	// postDescID is the schema descriptor for id field.
 	postDescID := postMixinFields0[0].Descriptor()
 	// post.DefaultID holds the default value on creation for the id field.

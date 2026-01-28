@@ -39,6 +39,8 @@ const (
 	FieldHideChildTree = "hide_child_tree"
 	// FieldAccountID holds the string denoting the account_id field in the database.
 	FieldAccountID = "account_id"
+	// FieldChannelID holds the string denoting the channel_id field in the database.
+	FieldChannelID = "channel_id"
 	// FieldPropertySchemaID holds the string denoting the property_schema_id field in the database.
 	FieldPropertySchemaID = "property_schema_id"
 	// FieldPrimaryAssetID holds the string denoting the primary_asset_id field in the database.
@@ -53,6 +55,8 @@ const (
 	FieldMetadata = "metadata"
 	// EdgeOwner holds the string denoting the owner edge name in mutations.
 	EdgeOwner = "owner"
+	// EdgeChannel holds the string denoting the channel edge name in mutations.
+	EdgeChannel = "channel"
 	// EdgeParent holds the string denoting the parent edge name in mutations.
 	EdgeParent = "parent"
 	// EdgeNodes holds the string denoting the nodes edge name in mutations.
@@ -84,6 +88,13 @@ const (
 	OwnerInverseTable = "accounts"
 	// OwnerColumn is the table column denoting the owner relation/edge.
 	OwnerColumn = "account_id"
+	// ChannelTable is the table that holds the channel relation/edge.
+	ChannelTable = "nodes"
+	// ChannelInverseTable is the table name for the Channel entity.
+	// It exists in this package in order to avoid circular dependency with the "channel" package.
+	ChannelInverseTable = "channels"
+	// ChannelColumn is the table column denoting the channel relation/edge.
+	ChannelColumn = "channel_id"
 	// ParentTable is the table that holds the parent relation/edge.
 	ParentTable = "nodes"
 	// ParentColumn is the table column denoting the parent relation/edge.
@@ -163,6 +174,7 @@ var Columns = []string{
 	FieldParentNodeID,
 	FieldHideChildTree,
 	FieldAccountID,
+	FieldChannelID,
 	FieldPropertySchemaID,
 	FieldPrimaryAssetID,
 	FieldLinkID,
@@ -304,6 +316,11 @@ func ByAccountID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAccountID, opts...).ToFunc()
 }
 
+// ByChannelID orders the results by the channel_id field.
+func ByChannelID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldChannelID, opts...).ToFunc()
+}
+
 // ByPropertySchemaID orders the results by the property_schema_id field.
 func ByPropertySchemaID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPropertySchemaID, opts...).ToFunc()
@@ -333,6 +350,13 @@ func BySort(opts ...sql.OrderTermOption) OrderOption {
 func ByOwnerField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newOwnerStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByChannelField orders the results by channel field.
+func ByChannelField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newChannelStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -466,6 +490,13 @@ func newOwnerStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(OwnerInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, OwnerTable, OwnerColumn),
+	)
+}
+func newChannelStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ChannelInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ChannelTable, ChannelColumn),
 	)
 }
 func newParentStep() *sqlgraph.Step {

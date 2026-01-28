@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { CategoryReference } from "@/api/openapi-schema";
-import { categoryColourCSS } from "@/lib/category/colours";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 import { Badge, BadgeProps } from "../ui/badge";
 
@@ -15,7 +15,11 @@ export function CategoryBadge({
   asLink = true,
   ...props
 }: Props & BadgeProps) {
-  const cssProps = categoryColourCSS(category.colour);
+  const cssProps = {
+    backgroundColor: TRAYA_COLORS.tertiary,
+    color: TRAYA_COLORS.primary,
+    border: "none",
+  };
 
   const path = `/d/${category.slug}`;
 
@@ -23,9 +27,6 @@ export function CategoryBadge({
     <Badge
       size="sm"
       style={cssProps}
-      bgColor="colorPalette.bg"
-      borderColor="colorPalette.border"
-      color="colorPalette.fg"
       // as any: expression produces a union that is too complex... (???)
       {...(props as any)}
     >

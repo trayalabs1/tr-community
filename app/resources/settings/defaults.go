@@ -27,6 +27,7 @@ var DefaultSettings = Settings{
 	Description:        opt.New(DefaultDescription),
 	Content:            opt.New(defaultContent),
 	AccentColour:       opt.New(DefaultColour),
+	ColorMode:          opt.New(ColorModeLight),
 	AuthenticationMode: opt.New(authentication.ModeHandle),
 	Services: opt.New(ServiceSettings{
 		Moderation: opt.New(ModerationServiceSettings{

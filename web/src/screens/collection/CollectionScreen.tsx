@@ -9,9 +9,8 @@ import { CollectionCreateTrigger } from "@/components/content/CollectionCreate/C
 import { DatagraphItemCard } from "@/components/datagraph/DatagraphItemCard";
 import { MemberBadge } from "@/components/member/MemberBadge/MemberBadge";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
-import { Heading } from "@/components/ui/heading";
-import { CardGrid } from "@/components/ui/rich-card";
-import { LStack, VStack, styled } from "@/styled-system/jsx";
+import { HeaderWithBackArrow } from "@/components/site/Header";
+import { VStack, styled } from "@/styled-system/jsx";
 
 type Props = {
   session?: Account;
@@ -30,45 +29,38 @@ export function CollectionScreen({ session, initialCollection }: Props) {
 
   const url = `/c/${collection.slug}`;
 
+  const descriptionDisplay = collection.description ? (
+    <styled.span>{collection.description}</styled.span>
+  ) : (
+    <styled.span color="fg.muted" fontStyle="italic">
+      (no description)
+    </styled.span>
+  );
+
   return (
     <VStack alignItems="start">
-      <Breadcrumbs
-        index={{
-          href: "/c",
-          label: "Collections",
-        }}
-        crumbs={[{ label: collection.name, href: url }]}
-      >
-        {session && (
-          <CollectionCreateTrigger session={session} size="xs" label="Create" />
-        )}
-      </Breadcrumbs>
+      <HeaderWithBackArrow
+        title={collection.name}
+        subtitle={descriptionDisplay}
+      />
 
-      <LStack gap="1">
-        <Heading size="xl">{collection.name}</Heading>
-
-        <styled.p fontSize="sm">
-          {collection.description ? (
-            <styled.span>{collection.description}</styled.span>
-          ) : (
-            <styled.span color="fg.muted" fontStyle="italic">
-              (no description)
-            </styled.span>
+      <VStack alignItems="start" gap="4" width="full" px="4">
+        {/* <Breadcrumbs
+          index={{
+            href: "/c",
+            label: "Collections",
+          }}
+          crumbs={[{ label: collection.name, href: url }]}
+        >
+          {session && (
+            <CollectionCreateTrigger session={session} size="xs" label="Create" />
           )}
-        </styled.p>
+        </Breadcrumbs> */}
 
-        <MemberBadge
-          profile={collection.owner}
-          name="full-horizontal"
-          size="sm"
-        />
-      </LStack>
-
-      <CardGrid>
-        {collection.items.map((i) => (
+        {collection.items?.map((i) => (
           <DatagraphItemCard key={i.id} item={i.item} />
         ))}
-      </CardGrid>
+      </VStack>
     </VStack>
   );
 }

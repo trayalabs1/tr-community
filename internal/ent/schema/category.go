@@ -32,6 +32,9 @@ func (Category) Fields() []ent.Field {
 			GoType(xid.ID{}).
 			Optional().
 			Nillable(),
+		field.String("channel_id").
+			GoType(xid.ID{}).
+			Comment("The channel this category belongs to"),
 		field.JSON("metadata", map[string]any{}).
 			Optional().
 			Comment("Arbitrary metadata used by clients to store domain specific information."),
@@ -50,5 +53,10 @@ func (Category) Edges() []ent.Edge {
 		edge.To("cover_image", Asset.Type).
 			Field("cover_image_asset_id").
 			Unique(),
+		edge.From("channel", Channel.Type).
+			Field("channel_id").
+			Ref("categories").
+			Unique().
+			Required(),
 	}
 }

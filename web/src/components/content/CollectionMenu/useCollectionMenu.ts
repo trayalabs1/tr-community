@@ -1,3 +1,5 @@
+import { useRouter } from "next/navigation";
+
 import { useCollectionList } from "src/api/openapi-client/collections";
 import { Account, Collection, PostReference } from "src/api/openapi-schema";
 
@@ -10,13 +12,14 @@ export type Props = {
 };
 
 export function useCollectionMenu({ account, thread }: Props) {
+  const router = useRouter();
   const { data, error } = useCollectionList({
     account_handle: account.handle,
     has_item: thread.id,
   });
 
   const { addPost, removePost, revalidate } =
-    useCollectionItemMutations(account);
+    useCollectionItemMutations(account, router);
 
   if (!data) {
     return {

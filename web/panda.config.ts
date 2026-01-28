@@ -25,7 +25,6 @@ import { slider } from "@/recipes/slider";
 import { switchRecipe } from "@/recipes/switch";
 import { table } from "@/recipes/table";
 import { tabs } from "@/recipes/tabs";
-import { tagsInput } from "@/recipes/tags-input";
 import { text } from "@/recipes/text";
 import { toggleGroup } from "@/recipes/toggle-group";
 import { tooltip } from "@/recipes/tooltip";
@@ -46,6 +45,12 @@ export default defineConfig({
   exclude: [],
 
   conditions: {
+    extend: {
+      // Override Panda's default OS-based conditions to support admin-controlled theme
+      // When data-color-mode is set, use that. Otherwise fall back to OS preference.
+      osLight: '[data-color-mode="light"] &, :where(:root:not([data-color-mode])) @media (prefers-color-scheme: light)',
+      osDark: '[data-color-mode="dark"] &, :where(:root:not([data-color-mode])) @media (prefers-color-scheme: dark)',
+    },
     target: "&:target",
     checked:
       "&:is(:checked, [data-checked], [aria-checked=true], [data-state=checked])",
@@ -217,7 +222,6 @@ export default defineConfig({
         table: table,
         slider: slider,
         pinInput: pinInput,
-        tagsInput: tagsInput,
         tabs: tabs,
         radioGroup: radioGroup,
         treeView: treeView,

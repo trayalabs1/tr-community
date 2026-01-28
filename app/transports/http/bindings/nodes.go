@@ -133,6 +133,13 @@ func (c *Nodes) NodeCreate(ctx context.Context, request openapi.NodeCreateReques
 
 	primaryImage := opt.Map(opt.NewPtr(request.Body.PrimaryImageAssetId), deserialiseAssetID)
 
+	var channelOpt opt.Optional[library.QueryKey]
+	if request.Body.Channel.IsSpecified() {
+		if channelID, err := request.Body.Channel.Get(); err == nil {
+			channelOpt = opt.New(deserialiseNodeMark(channelID))
+		}
+	}
+
 	node, err := c.nodeMutator.Create(ctx,
 		accountID,
 		request.Body.Name,
@@ -145,6 +152,7 @@ func (c *Nodes) NodeCreate(ctx context.Context, request openapi.NodeCreateReques
 			Description:  opt.NewPtr(request.Body.Description),
 			AssetsAdd:    opt.NewPtrMap(request.Body.AssetIds, deserialiseAssetIDs),
 			AssetSources: opt.NewPtrMap(request.Body.AssetSources, deserialiseAssetSources),
+			Channel:      channelOpt,
 			Parent:       opt.NewPtrMap(request.Body.Parent, deserialiseNodeMark),
 			HideChildren: opt.NewPtr(request.Body.HideChildTree), Tags: tags,
 			Visibility: vis,
@@ -198,6 +206,11 @@ func (c *Nodes) NodeList(ctx context.Context, request openapi.NodeListRequestObj
 	author := opt.NewPtr(request.Params.Author)
 	if v, ok := author.Get(); ok {
 		opts = append(opts, node_traversal.WithRootOwner(v))
+	}
+
+	channel := opt.NewPtr(request.Params.Channel)
+	if v, ok := channel.Get(); ok {
+		opts = append(opts, node_traversal.WithChannel(v))
 	}
 
 	if d, ok := depth.Get(); ok {

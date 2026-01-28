@@ -37,7 +37,8 @@ export type Props = {
 export function EditorMenu({ editor, uniqueID, format, handlers }: Props) {
   return (
     <HStack gap="1">
-      <Menu.Root
+      {/* Text Block Menu - Disabled */}
+      {/* <Menu.Root
         onSelect={(d) => format.text.set(d.value)}
         positioning={{ gutter: 0 }}
       >
@@ -102,8 +103,10 @@ export function EditorMenu({ editor, uniqueID, format, handlers }: Props) {
             </Menu.Content>
           </Menu.Positioner>
         </Portal>
-      </Menu.Root>
-      <Button
+      </Menu.Root> */}
+
+      {/* Bold Button - Disabled */}
+      {/* <Button
         type="button"
         size="xs"
         variant={format.bold.isActive ? "subtle" : "ghost"}
@@ -111,8 +114,10 @@ export function EditorMenu({ editor, uniqueID, format, handlers }: Props) {
         onClick={format.bold.toggle}
       >
         <BoldIcon />
-      </Button>
-      <Button
+      </Button> */}
+
+      {/* Italic Button - Disabled */}
+      {/* <Button
         type="button"
         size="xs"
         variant={format.italic.isActive ? "subtle" : "ghost"}
@@ -120,8 +125,10 @@ export function EditorMenu({ editor, uniqueID, format, handlers }: Props) {
         onClick={format.italic.toggle}
       >
         <ItalicIcon />
-      </Button>
-      <Button
+      </Button> */}
+
+      {/* Strikethrough Button - Disabled */}
+      {/* <Button
         type="button"
         size="xs"
         variant={format.strike.isActive ? "subtle" : "ghost"}
@@ -129,8 +136,10 @@ export function EditorMenu({ editor, uniqueID, format, handlers }: Props) {
         onClick={format.strike.toggle}
       >
         <StrikethroughIcon />
-      </Button>
-      <Button
+      </Button> */}
+
+      {/* Code Button - Disabled */}
+      {/* <Button
         type="button"
         size="xs"
         variant={format.code.isActive ? "subtle" : "ghost"}
@@ -138,11 +147,13 @@ export function EditorMenu({ editor, uniqueID, format, handlers }: Props) {
         onClick={format.code.toggle}
       >
         <CodeIcon />
-      </Button>
+      </Button> */}
 
-      <LinkButton editor={editor} />
+      {/* Link Button - Disabled */}
+      {/* <LinkButton editor={editor} /> */}
 
-      <Button
+      {/* Quote Button - Disabled */}
+      {/* <Button
         type="button"
         size="xs"
         variant={format.blockquote.isActive ? "subtle" : "ghost"}
@@ -150,9 +161,10 @@ export function EditorMenu({ editor, uniqueID, format, handlers }: Props) {
         onClick={format.blockquote.toggle}
       >
         <TextQuoteIcon />
-      </Button>
+      </Button> */}
 
-      <Button
+      {/* Code Block Button - Disabled */}
+      {/* <Button
         type="button"
         size="xs"
         variant={format.pre.isActive ? "subtle" : "ghost"}
@@ -160,9 +172,10 @@ export function EditorMenu({ editor, uniqueID, format, handlers }: Props) {
         onClick={format.pre.toggle}
       >
         <CodeSquareIcon />
-      </Button>
+      </Button> */}
 
-      <Button
+      {/* Bullet List Button - Disabled */}
+      {/* <Button
         type="button"
         size="xs"
         variant={format.bulletList.isActive ? "subtle" : "ghost"}
@@ -170,9 +183,10 @@ export function EditorMenu({ editor, uniqueID, format, handlers }: Props) {
         onClick={format.bulletList.toggle}
       >
         <ListIcon />
-      </Button>
+      </Button> */}
 
-      <Button
+      {/* Ordered List Button - Disabled */}
+      {/* <Button
         type="button"
         size="xs"
         variant={format.orderedList.isActive ? "subtle" : "ghost"}
@@ -180,7 +194,7 @@ export function EditorMenu({ editor, uniqueID, format, handlers }: Props) {
         onClick={format.orderedList.toggle}
       >
         <ListOrderedIcon />
-      </Button>
+      </Button> */}
 
       <label
         className={button({

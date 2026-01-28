@@ -1,3 +1,5 @@
+import { useRouter } from "next/navigation";
+
 import { PostReference } from "src/api/openapi-schema";
 
 import { handle } from "@/api/client";
@@ -8,7 +10,8 @@ export type Props = {
 };
 
 export function useLikeButton({ thread }: Props) {
-  const { likePost, unlikePost, revalidate } = useFeedMutations();
+  const router = useRouter();
+  const { likePost, unlikePost, revalidate } = useFeedMutations(undefined, undefined, undefined, router);
 
   const handleClick = async () => {
     await handle(

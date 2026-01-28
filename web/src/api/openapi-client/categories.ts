@@ -24,12 +24,433 @@ import type {
   CategoryUpdateBody,
   CategoryUpdateOKResponse,
   CategoryUpdatePositionBody,
+  ForbiddenResponse,
   InternalServerErrorResponse,
   NotFoundResponse,
   NotModifiedResponse,
   UnauthorisedResponse,
 } from "../openapi-schema";
 
+/**
+ * Get all categories in a channel.
+ */
+export const channelCategoryList = (channelID: string) => {
+  return fetcher<CategoryListOKResponse>({
+    url: `/channels/${channelID}/categories`,
+    method: "GET",
+  });
+};
+
+export const getChannelCategoryListKey = (channelID: string) =>
+  [`/channels/${channelID}/categories`] as const;
+
+export type ChannelCategoryListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof channelCategoryList>>
+>;
+export type ChannelCategoryListQueryError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | InternalServerErrorResponse;
+
+export const useChannelCategoryList = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof channelCategoryList>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false && !!channelID;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getChannelCategoryListKey(channelID) : null));
+  const swrFn = () => channelCategoryList(channelID);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Create a category in a channel.
+ */
+export const channelCategoryCreate = (
+  channelID: string,
+  categoryCreateBody: CategoryCreateBody,
+) => {
+  return fetcher<CategoryCreateOKResponse>({
+    url: `/channels/${channelID}/categories`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: categoryCreateBody,
+  });
+};
+
+export const getChannelCategoryCreateMutationFetcher = (channelID: string) => {
+  return (
+    _: Key,
+    { arg }: { arg: CategoryCreateBody },
+  ): Promise<CategoryCreateOKResponse> => {
+    return channelCategoryCreate(channelID, arg);
+  };
+};
+export const getChannelCategoryCreateMutationKey = (channelID: string) =>
+  [`/channels/${channelID}/categories`] as const;
+
+export type ChannelCategoryCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof channelCategoryCreate>>
+>;
+export type ChannelCategoryCreateMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | InternalServerErrorResponse;
+
+export const useChannelCategoryCreate = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof channelCategoryCreate>>,
+      TError,
+      Key,
+      CategoryCreateBody,
+      Awaited<ReturnType<typeof channelCategoryCreate>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getChannelCategoryCreateMutationKey(channelID);
+  const swrFn = getChannelCategoryCreateMutationFetcher(channelID);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Get a specific category in a channel.
+ */
+export const channelCategoryGet = (channelID: string, categorySlug: string) => {
+  return fetcher<CategoryGetOKResponse>({
+    url: `/channels/${channelID}/categories/${categorySlug}`,
+    method: "GET",
+  });
+};
+
+export const getChannelCategoryGetKey = (
+  channelID: string,
+  categorySlug: string,
+) => [`/channels/${channelID}/categories/${categorySlug}`] as const;
+
+export type ChannelCategoryGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof channelCategoryGet>>
+>;
+export type ChannelCategoryGetQueryError =
+  | NotModifiedResponse
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelCategoryGet = <
+  TError =
+    | NotModifiedResponse
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  categorySlug: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof channelCategoryGet>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled =
+    swrOptions?.enabled !== false && !!(channelID && categorySlug);
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() =>
+      isEnabled ? getChannelCategoryGetKey(channelID, categorySlug) : null);
+  const swrFn = () => channelCategoryGet(channelID, categorySlug);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Update a category in a channel.
+ */
+export const channelCategoryUpdate = (
+  channelID: string,
+  categorySlug: string,
+  categoryUpdateBody: CategoryUpdateBody,
+) => {
+  return fetcher<CategoryUpdateOKResponse>({
+    url: `/channels/${channelID}/categories/${categorySlug}`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: categoryUpdateBody,
+  });
+};
+
+export const getChannelCategoryUpdateMutationFetcher = (
+  channelID: string,
+  categorySlug: string,
+) => {
+  return (
+    _: Key,
+    { arg }: { arg: CategoryUpdateBody },
+  ): Promise<CategoryUpdateOKResponse> => {
+    return channelCategoryUpdate(channelID, categorySlug, arg);
+  };
+};
+export const getChannelCategoryUpdateMutationKey = (
+  channelID: string,
+  categorySlug: string,
+) => [`/channels/${channelID}/categories/${categorySlug}`] as const;
+
+export type ChannelCategoryUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof channelCategoryUpdate>>
+>;
+export type ChannelCategoryUpdateMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelCategoryUpdate = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  categorySlug: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof channelCategoryUpdate>>,
+      TError,
+      Key,
+      CategoryUpdateBody,
+      Awaited<ReturnType<typeof channelCategoryUpdate>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ??
+    getChannelCategoryUpdateMutationKey(channelID, categorySlug);
+  const swrFn = getChannelCategoryUpdateMutationFetcher(
+    channelID,
+    categorySlug,
+  );
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Delete a category. Posts will be moved to target category.
+ */
+export const channelCategoryDelete = (
+  channelID: string,
+  categorySlug: string,
+  categoryDeleteBody: CategoryDeleteBody,
+) => {
+  return fetcher<CategoryDeleteOKResponse>({
+    url: `/channels/${channelID}/categories/${categorySlug}`,
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    data: categoryDeleteBody,
+  });
+};
+
+export const getChannelCategoryDeleteMutationFetcher = (
+  channelID: string,
+  categorySlug: string,
+) => {
+  return (
+    _: Key,
+    { arg }: { arg: CategoryDeleteBody },
+  ): Promise<CategoryDeleteOKResponse> => {
+    return channelCategoryDelete(channelID, categorySlug, arg);
+  };
+};
+export const getChannelCategoryDeleteMutationKey = (
+  channelID: string,
+  categorySlug: string,
+) => [`/channels/${channelID}/categories/${categorySlug}`] as const;
+
+export type ChannelCategoryDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof channelCategoryDelete>>
+>;
+export type ChannelCategoryDeleteMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelCategoryDelete = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  categorySlug: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof channelCategoryDelete>>,
+      TError,
+      Key,
+      CategoryDeleteBody,
+      Awaited<ReturnType<typeof channelCategoryDelete>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ??
+    getChannelCategoryDeleteMutationKey(channelID, categorySlug);
+  const swrFn = getChannelCategoryDeleteMutationFetcher(
+    channelID,
+    categorySlug,
+  );
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Update category position in the tree for drag-and-drop.
+ */
+export const channelCategoryUpdatePosition = (
+  channelID: string,
+  categorySlug: string,
+  categoryUpdatePositionBody: CategoryUpdatePositionBody,
+) => {
+  return fetcher<CategoryListOKResponse>({
+    url: `/channels/${channelID}/categories/${categorySlug}/position`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: categoryUpdatePositionBody,
+  });
+};
+
+export const getChannelCategoryUpdatePositionMutationFetcher = (
+  channelID: string,
+  categorySlug: string,
+) => {
+  return (
+    _: Key,
+    { arg }: { arg: CategoryUpdatePositionBody },
+  ): Promise<CategoryListOKResponse> => {
+    return channelCategoryUpdatePosition(channelID, categorySlug, arg);
+  };
+};
+export const getChannelCategoryUpdatePositionMutationKey = (
+  channelID: string,
+  categorySlug: string,
+) => [`/channels/${channelID}/categories/${categorySlug}/position`] as const;
+
+export type ChannelCategoryUpdatePositionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof channelCategoryUpdatePosition>>
+>;
+export type ChannelCategoryUpdatePositionMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelCategoryUpdatePosition = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  categorySlug: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof channelCategoryUpdatePosition>>,
+      TError,
+      Key,
+      CategoryUpdatePositionBody,
+      Awaited<ReturnType<typeof channelCategoryUpdatePosition>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ??
+    getChannelCategoryUpdatePositionMutationKey(channelID, categorySlug);
+  const swrFn = getChannelCategoryUpdatePositionMutationFetcher(
+    channelID,
+    categorySlug,
+  );
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
 /**
  * Create a category for organising posts.
  */

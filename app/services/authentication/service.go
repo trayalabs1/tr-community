@@ -21,6 +21,7 @@ import (
 	"github.com/Southclaws/storyden/app/services/authentication/provider/password"
 	"github.com/Southclaws/storyden/app/services/authentication/provider/password/password_reset"
 	"github.com/Southclaws/storyden/app/services/authentication/provider/phone"
+	"github.com/Southclaws/storyden/app/services/authentication/provider/traya"
 	"github.com/Southclaws/storyden/app/services/authentication/provider/webauthn"
 	"github.com/Southclaws/storyden/app/services/authentication/session"
 )
@@ -44,6 +45,7 @@ func Build() fx.Option {
 			discord.New,
 			keycloak.New,
 			phone.New,
+			traya.New,
 		),
 		fx.Provide(email_verify.New),
 		fx.Provide(password_reset.NewTokenProvider, password_reset.NewEmailResetter),
@@ -63,6 +65,7 @@ func New(
 	dp *discord.Provider,
 	kc *keycloak.Provider,
 	pp *phone.Provider,
+	tp *traya.Provider,
 ) *Manager {
 	providers := []Provider{
 		pw,
@@ -73,6 +76,7 @@ func New(
 		dp,
 		kc,
 		pp,
+		tp,
 	}
 
 	logger.Debug("initialised auth providers",

@@ -2,7 +2,7 @@ import { last } from "lodash";
 import { uniq } from "lodash/fp";
 import { FormEventHandler, ForwardedRef, Fragment, forwardRef } from "react";
 
-import { Visibility } from "src/api/openapi-schema";
+import { Identifier, Visibility } from "src/api/openapi-schema";
 import { useSession } from "src/auth";
 
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,8 @@ type Props = {
   invalid?: boolean;
   defaultValue?: string;
   onChange?: FormEventHandler<HTMLInputElement>;
+  channelName?: string;
+  channelID?: Identifier;
 };
 
 export const Breadcrumbs_ = (
@@ -33,6 +35,8 @@ export const Breadcrumbs_ = (
     invalid,
     defaultValue,
     onChange,
+    channelName,
+    channelID,
     ...rest
   }: Props,
   ref: ForwardedRef<HTMLInputElement>,
@@ -54,16 +58,33 @@ export const Breadcrumbs_ = (
       overflowX="scroll"
       pt="scrollGutter"
       mt="-scrollGutter"
+      display={{ base: "none", md: "flex" }}
     >
       <LinkButton
         size="xs"
         variant="subtle"
         flexShrink="0"
         minW="min"
-        href="/l"
+        href={channelID ? `/channels/${channelID}/library` : "/l"}
       >
         Library
       </LinkButton>
+      {channelName && (
+        <>
+          <Box flexShrink="0">
+            <BreadcrumbIcon />
+          </Box>
+          <LinkButton
+            size="xs"
+            variant="subtle"
+            flexShrink="0"
+            minW="min"
+            href={`/channels/${channelID}/library`}
+          >
+            {channelName}
+          </LinkButton>
+        </>
+      )}
       {paths.map((p) => {
         const isCurrent = p === current && create === "show";
 
@@ -115,7 +136,7 @@ export const Breadcrumbs_ = (
           <Box flexShrink="0">
             <BreadcrumbIcon />
           </Box>
-          <CreatePageAction parentSlug={current} />
+          <CreatePageAction parentSlug={current} channelID={channelID} />
         </>
       )}
       {isEditing && (

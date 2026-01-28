@@ -206,6 +206,8 @@ type Config struct {
 	KeycloakClientSecret string `envconfig:"OAUTH_KEYCLOAK_CLIENT_SECRET"`
 	// The issuer/discovery URL for the Keycloak realm (e.g. https://auth.example.com/realms/YourRealm).
 	KeycloakIssuerURL url.URL `envconfig:"OAUTH_KEYCLOAK_ISSUER_URL"`
+	// The base URL for the Traya API server. Used for authenticating users via Traya tokens and fetching user information.
+	TrayaAPIServerURL url.URL `envconfig:"TRAYA_API_SERVER_URL"`
 
 	// -
 	// SMS

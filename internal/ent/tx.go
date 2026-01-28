@@ -22,10 +22,16 @@ type Tx struct {
 	AccountRoles *AccountRolesClient
 	// Asset is the client for interacting with the Asset builders.
 	Asset *AssetClient
+	// AuditLog is the client for interacting with the AuditLog builders.
+	AuditLog *AuditLogClient
 	// Authentication is the client for interacting with the Authentication builders.
 	Authentication *AuthenticationClient
 	// Category is the client for interacting with the Category builders.
 	Category *CategoryClient
+	// Channel is the client for interacting with the Channel builders.
+	Channel *ChannelClient
+	// ChannelMembership is the client for interacting with the ChannelMembership builders.
+	ChannelMembership *ChannelMembershipClient
 	// Collection is the client for interacting with the Collection builders.
 	Collection *CollectionClient
 	// CollectionNode is the client for interacting with the CollectionNode builders.
@@ -209,8 +215,11 @@ func (tx *Tx) init() {
 	tx.AccountFollow = NewAccountFollowClient(tx.config)
 	tx.AccountRoles = NewAccountRolesClient(tx.config)
 	tx.Asset = NewAssetClient(tx.config)
+	tx.AuditLog = NewAuditLogClient(tx.config)
 	tx.Authentication = NewAuthenticationClient(tx.config)
 	tx.Category = NewCategoryClient(tx.config)
+	tx.Channel = NewChannelClient(tx.config)
+	tx.ChannelMembership = NewChannelMembershipClient(tx.config)
 	tx.Collection = NewCollectionClient(tx.config)
 	tx.CollectionNode = NewCollectionNodeClient(tx.config)
 	tx.CollectionPost = NewCollectionPostClient(tx.config)

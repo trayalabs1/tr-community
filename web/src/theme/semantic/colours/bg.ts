@@ -28,8 +28,8 @@ export const bg = {
   },
   emphasized: {
     value: {
-      _osLight: "{colors.accent.light.2}",
-      _osDark: "{colors.accent.dark.4}",
+      _osLight: "{colors.accent.light.1}",
+      _osDark: "{colors.accent.dark.6}",
     },
   },
   disabled: {
@@ -90,6 +90,14 @@ export const bg = {
     value: {
       _osLight: "{colors.white.a11}",
       _osDark: "{colors.slate.dark.a11}",
+    },
+  },
+
+  // Used for search input container
+  searchInput: {
+    value: {
+      _osLight: "#EDF3F0",
+      _osDark: "#1E2E2A",
     },
   },
 };

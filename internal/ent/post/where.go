@@ -86,9 +86,9 @@ func Slug(v string) predicate.Post {
 	return predicate.Post(sql.FieldEQ(FieldSlug, v))
 }
 
-// Pinned applies equality check predicate on the "pinned" field. It's identical to PinnedEQ.
-func Pinned(v bool) predicate.Post {
-	return predicate.Post(sql.FieldEQ(FieldPinned, v))
+// PinnedRank applies equality check predicate on the "pinned_rank" field. It's identical to PinnedRankEQ.
+func PinnedRank(v int) predicate.Post {
+	return predicate.Post(sql.FieldEQ(FieldPinnedRank, v))
 }
 
 // LastReplyAt applies equality check predicate on the "last_reply_at" field. It's identical to LastReplyAtEQ.
@@ -124,6 +124,11 @@ func AccountPosts(v xid.ID) predicate.Post {
 // CategoryID applies equality check predicate on the "category_id" field. It's identical to CategoryIDEQ.
 func CategoryID(v xid.ID) predicate.Post {
 	return predicate.Post(sql.FieldEQ(FieldCategoryID, v))
+}
+
+// ChannelID applies equality check predicate on the "channel_id" field. It's identical to ChannelIDEQ.
+func ChannelID(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldEQ(FieldChannelID, v))
 }
 
 // LinkID applies equality check predicate on the "link_id" field. It's identical to LinkIDEQ.
@@ -461,14 +466,44 @@ func SlugContainsFold(v string) predicate.Post {
 	return predicate.Post(sql.FieldContainsFold(FieldSlug, v))
 }
 
-// PinnedEQ applies the EQ predicate on the "pinned" field.
-func PinnedEQ(v bool) predicate.Post {
-	return predicate.Post(sql.FieldEQ(FieldPinned, v))
+// PinnedRankEQ applies the EQ predicate on the "pinned_rank" field.
+func PinnedRankEQ(v int) predicate.Post {
+	return predicate.Post(sql.FieldEQ(FieldPinnedRank, v))
 }
 
-// PinnedNEQ applies the NEQ predicate on the "pinned" field.
-func PinnedNEQ(v bool) predicate.Post {
-	return predicate.Post(sql.FieldNEQ(FieldPinned, v))
+// PinnedRankNEQ applies the NEQ predicate on the "pinned_rank" field.
+func PinnedRankNEQ(v int) predicate.Post {
+	return predicate.Post(sql.FieldNEQ(FieldPinnedRank, v))
+}
+
+// PinnedRankIn applies the In predicate on the "pinned_rank" field.
+func PinnedRankIn(vs ...int) predicate.Post {
+	return predicate.Post(sql.FieldIn(FieldPinnedRank, vs...))
+}
+
+// PinnedRankNotIn applies the NotIn predicate on the "pinned_rank" field.
+func PinnedRankNotIn(vs ...int) predicate.Post {
+	return predicate.Post(sql.FieldNotIn(FieldPinnedRank, vs...))
+}
+
+// PinnedRankGT applies the GT predicate on the "pinned_rank" field.
+func PinnedRankGT(v int) predicate.Post {
+	return predicate.Post(sql.FieldGT(FieldPinnedRank, v))
+}
+
+// PinnedRankGTE applies the GTE predicate on the "pinned_rank" field.
+func PinnedRankGTE(v int) predicate.Post {
+	return predicate.Post(sql.FieldGTE(FieldPinnedRank, v))
+}
+
+// PinnedRankLT applies the LT predicate on the "pinned_rank" field.
+func PinnedRankLT(v int) predicate.Post {
+	return predicate.Post(sql.FieldLT(FieldPinnedRank, v))
+}
+
+// PinnedRankLTE applies the LTE predicate on the "pinned_rank" field.
+func PinnedRankLTE(v int) predicate.Post {
+	return predicate.Post(sql.FieldLTE(FieldPinnedRank, v))
 }
 
 // LastReplyAtEQ applies the EQ predicate on the "last_reply_at" field.
@@ -981,6 +1016,76 @@ func CategoryIDContainsFold(v xid.ID) predicate.Post {
 	return predicate.Post(sql.FieldContainsFold(FieldCategoryID, vc))
 }
 
+// ChannelIDEQ applies the EQ predicate on the "channel_id" field.
+func ChannelIDEQ(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldEQ(FieldChannelID, v))
+}
+
+// ChannelIDNEQ applies the NEQ predicate on the "channel_id" field.
+func ChannelIDNEQ(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldNEQ(FieldChannelID, v))
+}
+
+// ChannelIDIn applies the In predicate on the "channel_id" field.
+func ChannelIDIn(vs ...xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldIn(FieldChannelID, vs...))
+}
+
+// ChannelIDNotIn applies the NotIn predicate on the "channel_id" field.
+func ChannelIDNotIn(vs ...xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldNotIn(FieldChannelID, vs...))
+}
+
+// ChannelIDGT applies the GT predicate on the "channel_id" field.
+func ChannelIDGT(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldGT(FieldChannelID, v))
+}
+
+// ChannelIDGTE applies the GTE predicate on the "channel_id" field.
+func ChannelIDGTE(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldGTE(FieldChannelID, v))
+}
+
+// ChannelIDLT applies the LT predicate on the "channel_id" field.
+func ChannelIDLT(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldLT(FieldChannelID, v))
+}
+
+// ChannelIDLTE applies the LTE predicate on the "channel_id" field.
+func ChannelIDLTE(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldLTE(FieldChannelID, v))
+}
+
+// ChannelIDContains applies the Contains predicate on the "channel_id" field.
+func ChannelIDContains(v xid.ID) predicate.Post {
+	vc := v.String()
+	return predicate.Post(sql.FieldContains(FieldChannelID, vc))
+}
+
+// ChannelIDHasPrefix applies the HasPrefix predicate on the "channel_id" field.
+func ChannelIDHasPrefix(v xid.ID) predicate.Post {
+	vc := v.String()
+	return predicate.Post(sql.FieldHasPrefix(FieldChannelID, vc))
+}
+
+// ChannelIDHasSuffix applies the HasSuffix predicate on the "channel_id" field.
+func ChannelIDHasSuffix(v xid.ID) predicate.Post {
+	vc := v.String()
+	return predicate.Post(sql.FieldHasSuffix(FieldChannelID, vc))
+}
+
+// ChannelIDEqualFold applies the EqualFold predicate on the "channel_id" field.
+func ChannelIDEqualFold(v xid.ID) predicate.Post {
+	vc := v.String()
+	return predicate.Post(sql.FieldEqualFold(FieldChannelID, vc))
+}
+
+// ChannelIDContainsFold applies the ContainsFold predicate on the "channel_id" field.
+func ChannelIDContainsFold(v xid.ID) predicate.Post {
+	vc := v.String()
+	return predicate.Post(sql.FieldContainsFold(FieldChannelID, vc))
+}
+
 // LinkIDEQ applies the EQ predicate on the "link_id" field.
 func LinkIDEQ(v xid.ID) predicate.Post {
 	return predicate.Post(sql.FieldEQ(FieldLinkID, v))
@@ -1099,6 +1204,29 @@ func HasCategory() predicate.Post {
 func HasCategoryWith(preds ...predicate.Category) predicate.Post {
 	return predicate.Post(func(s *sql.Selector) {
 		step := newCategoryStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasChannel applies the HasEdge predicate on the "channel" edge.
+func HasChannel() predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ChannelTable, ChannelColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasChannelWith applies the HasEdge predicate on the "channel" edge with a given conditions (other predicates).
+func HasChannelWith(preds ...predicate.Channel) predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := newChannelStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

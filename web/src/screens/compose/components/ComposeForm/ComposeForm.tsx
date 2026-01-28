@@ -1,17 +1,27 @@
 import { FormProvider } from "react-hook-form";
 
-import { CategorySelect } from "@/components/category/CategorySelect/CategorySelect";
-import { TagListField } from "@/components/thread/ThreadTagList";
+import { Permission } from "src/api/openapi-schema";
+import { CategorySelectFlat } from "@/components/category/CategorySelect/CategorySelectFlat";
+import { useCategorySelect } from "@/components/category/CategorySelect/useCategorySelect";
+// import { TagListField } from "@/components/thread/ThreadTagList";
 import { Button } from "@/components/ui/button";
-import { HStack, WStack, styled } from "@/styled-system/jsx";
+import { HStack, VStack, LStack, styled } from "@/styled-system/jsx";
+import { hasPermission } from "@/utils/permissions";
+import { useSession } from "@/auth";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 import { BodyInput } from "../BodyInput/BodyInput";
-import { TitleInput } from "../TitleInput/TitleInput";
 
 import { Props, useComposeForm } from "./useComposeForm";
 
 export function ComposeForm(props: Props) {
   const { form, state, handlers } = useComposeForm(props);
+  const session = useSession();
+  const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
+  const { ready, collection } = useCategorySelect(props.channelID);
+
+  // Check if there are any categories available
+  const hasCategories = ready && collection.items && collection.items.length > 0;
 
   return (
     <styled.form
@@ -20,59 +30,99 @@ export function ComposeForm(props: Props) {
       alignItems="start"
       w="full"
       h="full"
-      gap="2"
       onSubmit={handlers.handlePublish}
+      borderRadius={{ base: "lg", md: "2xl" }}
+      overflow="hidden"
+      style={{
+        backgroundColor: "var(--colors-bg-surface)",
+        border: "1px solid var(--colors-border-default)",
+        boxShadow: "var(--shadows-lg)",
+      }}
     >
       <FormProvider {...form}>
-        <WStack
-          flexDir={{
-            base: "column-reverse",
-            md: "row",
-          }}
-          alignItems={{
-            base: "end",
-            md: "center",
+        {/* Scrollable Content Area */}
+        <LStack gap="4" w="full" p={{ base: "3", md: "4" }} flex="1" overflowY="auto" minH="0">
+          {/* Title Input - Commented Out */}
+          {/* <styled.div w="full">
+            <TitleInput />
+          </styled.div> */}
+
+          {/* Body Input */}
+          <BodyInput onAssetUpload={handlers.handleAssetUpload} />
+
+          {/* Category Selection - Only show if admin and categories exist */}
+          {isAdmin && hasCategories && (
+            <VStack gap="2" w="full" alignItems="start">
+              <styled.label fontSize="sm" fontWeight="medium" color="fg.muted">
+                Topic
+              </styled.label>
+              <styled.div w="full">
+                <CategorySelectFlat
+                  control={form.control}
+                  name="category"
+                  channelID={props.channelID}
+                />
+              </styled.div>
+            </VStack>
+          )}
+
+          {/* Tags Selection - Disabled */}
+          {/* <VStack gap="2" w="full" alignItems="start">
+            <styled.label fontSize="sm" fontWeight="medium" color="fg.muted">
+              Tags
+            </styled.label>
+            <styled.div w="full">
+              <TagListField
+                name="tags"
+                control={form.control}
+                initialTags={props.initialDraft?.tags}
+              />
+            </styled.div>
+          </VStack> */}
+        </LStack>
+
+        {/* Sticky Action Bar at Bottom */}
+        <HStack
+          w="full"
+          justifyContent="flex-end"
+          alignItems="center"
+          p={{ base: "3", md: "4" }}
+          gap="2"
+          style={{
+            borderTop: "1px solid var(--colors-border-default)",
+            backgroundColor: "var(--colors-bg-surface)",
+            flexShrink: 0,
           }}
         >
-          <HStack width="full">
-            <CategorySelect control={form.control} name="category" />
-            <TagListField
-              name="tags"
-              control={form.control}
-              initialTags={props.initialDraft?.tags}
-            />
-          </HStack>
-
-          <HStack>
+          {/* Submit Buttons */}
+          <HStack gap="2" w={{ base: "full", md: "auto" }}>
             <Button
               variant="ghost"
-              size="xs"
+              size="sm"
+              type="button"
               disabled={!form.formState.isValid || state.isSavingDraft}
               onClick={handlers.handleSaveDraft}
               loading={state.isSavingDraft}
+              display={{ base: "none", md: "block" }}
             >
               Save draft
             </Button>
 
             <Button
-              variant="subtle"
-              size="xs"
+              size="sm"
               type="submit"
               disabled={!form.formState.isValid || state.isPublishing}
               loading={state.isPublishing}
+              w={{ base: "full", md: "auto" }}
+              style={{
+                backgroundColor: TRAYA_COLORS.primary,
+                color: "white",
+              }}
             >
-              Post
+              {isAdmin ? "Post" : "Submit for review"}
             </Button>
           </HStack>
-        </WStack>
-
-        <HStack width="full" justifyContent="space-between" alignItems="start">
-          <HStack width="full">
-            <TitleInput />
-          </HStack>
         </HStack>
-
-        <BodyInput onAssetUpload={handlers.handleAssetUpload} />
       </FormProvider>
     </styled.form>
   );

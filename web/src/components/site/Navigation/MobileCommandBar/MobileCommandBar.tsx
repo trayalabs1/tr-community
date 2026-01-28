@@ -1,72 +1,120 @@
 "use client";
 
-import { CommandDock } from "@/components/site/CommandDock/CommandDock";
-import { ButtonProps } from "@/components/ui/button";
-import { IconButton } from "@/components/ui/icon-button";
-import { MenuIcon } from "@/components/ui/icons/Menu";
-import { SiteIcon } from "@/components/ui/icons/Site";
-import { WStack } from "@/styled-system/jsx";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-import { Search } from "../../../search/Search/Search";
-import { CloseAction } from "../../Action/Close";
-import { AccountMenu } from "../AccountMenu/AccountMenu";
-import { ComposeAnchor } from "../Anchors/Compose";
-import { HomeAnchor } from "../Anchors/Home";
-import { LibraryAnchor } from "../Anchors/Library";
-import { LoginAnchor } from "../Anchors/Login";
-import { ContentNavigationList } from "../ContentNavigationList/ContentNavigationList";
-
-import { useMobileCommandBar } from "./useMobileCommandBar";
+import { HStack, VStack, styled } from "@/styled-system/jsx";
+import { SearchIcon } from "@/components/ui/icons/Search";
+import { HomeIcon } from "@heroicons/react/24/outline";
+import { LibraryIcon } from "@/components/ui/icons/Library";
+import { InformationCircleIcon } from "@heroicons/react/24/outline";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 export function MobileCommandBar() {
-  const { isExpanded, onExpand, onClose, account } = useMobileCommandBar();
+  const pathname = usePathname();
+
+  const isHomeActive = pathname === "/" || (pathname.startsWith("/channels") && !pathname.includes("/settings"));
+  const isSearchActive = pathname.startsWith("/search");
+  const isLibraryActive = pathname.startsWith("/l");
+  const isInfoActive = pathname.startsWith("/info");
+
+  const TabItem = ({
+    href,
+    icon: Icon,
+    label,
+    isActive,
+  }: {
+    href: string;
+    icon: React.ComponentType<any>;
+    label: string;
+    isActive: boolean;
+  }) => (
+    <Link href={href} style={{ textDecoration: "none" }}>
+      <VStack
+        alignItems="center"
+        justifyContent="center"
+        gap="1"
+        flex="1"
+        cursor="pointer"
+        as="div"
+      >
+        <styled.div
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          width="6"
+          height="6"
+          style={{
+            color: isActive ? TRAYA_COLORS.primary : TRAYA_COLORS.neutral.textMuted,
+          }}
+        >
+          <Icon width="24" height="24" strokeWidth={1.5} />
+        </styled.div>
+        <styled.span
+          fontSize="xs"
+          fontWeight="medium"
+          style={{
+            margin: "0",
+            textAlign: "center",
+            color: isActive ? TRAYA_COLORS.primary : TRAYA_COLORS.neutral.textMuted,
+          }}
+        >
+          {label}
+        </styled.span>
+      </VStack>
+    </Link>
+  );
 
   return (
-    <CommandDock
-      isOpen={isExpanded}
-      onClickOutside={onClose}
-      render={() => {
-        return <ContentNavigationList />;
+    <styled.nav
+      position="fixed"
+      bottom="safeBottom"
+      left="0"
+      right="0"
+      width="full"
+      backgroundColor="white"
+      borderTopWidth="thin"
+      borderTopColor="border.default"
+      display={{ base: "flex", md: "none" }}
+      style={{
+        justifyContent: "center",
+        alignItems: "flex-end",
+        zIndex: 40,
+        pointerEvents: "auto",
       }}
     >
-      <WStack alignItems="center">
-        {isExpanded ? (
-          <>
-            {account ? (
-              <AccountMenu account={account} size="sm" />
-            ) : (
-              <SiteIcon borderRadius="md" w="8" h="8" />
-            )}
-            <Search />
-            <CloseAction onClick={onClose} size="sm" />
-          </>
-        ) : (
-          <>
-            {account ? (
-              <AccountMenu account={account} size="sm" />
-            ) : (
-              <SiteIcon borderRadius="md" w="8" h="8" />
-            )}
-            <HomeAnchor hideLabel size="sm" />
-            {account ? <ComposeAnchor hideLabel size="sm" /> : <LoginAnchor />}
-            <LibraryAnchor hideLabel size="sm" />
-            <ExpandTrigger onClick={onExpand} />
-          </>
-        )}
-      </WStack>
-    </CommandDock>
-  );
-}
-
-function ExpandTrigger(props: ButtonProps) {
-  return (
-    <IconButton
-      title="Main navigation menu"
-      variant="ghost"
-      size="sm"
-      {...props}
-    >
-      <MenuIcon />
-    </IconButton>
+      <HStack
+        width="full"
+        justifyContent="space-around"
+        alignItems="stretch"
+        py="3"
+        px="0"
+      >
+        <TabItem
+          href="/"
+          icon={HomeIcon}
+          label="Home"
+          isActive={isHomeActive}
+        />
+        <TabItem
+          href="/search"
+          icon={SearchIcon}
+          label="Search"
+          isActive={isSearchActive}
+        />
+        {/* <TabItem
+          href="/l"
+          icon={LibraryIcon}
+          label="Library"
+          isActive={isLibraryActive}
+        /> */}
+        <TabItem
+          href="/info"
+          icon={InformationCircleIcon}
+          label="Info"
+          isActive={isInfoActive}
+        />
+      </HStack>
+    </styled.nav>
   );
 }

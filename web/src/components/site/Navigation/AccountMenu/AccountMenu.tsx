@@ -7,11 +7,15 @@ import * as Menu from "@/components/ui/menu";
 import { hasPermission } from "@/utils/permissions";
 
 import { AdminMenuItem } from "../Anchors/Admin";
+import { CollectionsMenuItem } from "../Anchors/Collections";
 import { DraftsMenuItem } from "../Anchors/Drafts";
+// import { LinksMenuItem } from "../Anchors/Link";
 import { LogoutMenuItem } from "../Anchors/Logout";
+import { MembersMenuItem } from "../Anchors/Members";
 import { ProfileMenuItem } from "../Anchors/Profile";
 import { QueueMenuItem } from "../Anchors/Queue";
 import { ReportsMenuItem } from "../Anchors/Reports";
+// import { RolesMenuItem } from "../Anchors/Roles";
 import { SettingsMenuItem } from "../Anchors/Settings";
 
 type Props = {
@@ -53,13 +57,14 @@ export function AccountMenu({ account, size = "md" }: Props) {
 
               <ProfileMenuItem handle={account.handle} />
               <SettingsMenuItem />
-              {isAdmin && <AdminMenuItem />}
-            </Menu.ItemGroup>
-
-            <Menu.ItemGroup id="content">
               <DraftsMenuItem />
               <QueueMenuItem />
               <ReportsMenuItem />
+              <CollectionsMenuItem />
+              {/* <LinksMenuItem /> */}
+              <MembersMenuItem />
+              {/* <RolesMenuItem /> */}
+              {isAdmin && <AdminMenuItem />}
             </Menu.ItemGroup>
 
             <Menu.Separator />

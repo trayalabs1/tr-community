@@ -34,7 +34,7 @@ export function CollectionMenu(props: Props) {
                 flexDir="column"
                 userSelect="none"
               >
-                <styled.span>{`Collection by ${collection.owner.name}`}</styled.span>
+                <styled.span>{`Collection by @${collection.owner.handle}`}</styled.span>
 
                 <styled.time fontWeight="normal">
                   {format(new Date(collection.createdAt), "yyyy-MM-dd")}
@@ -43,7 +43,7 @@ export function CollectionMenu(props: Props) {
 
               <Menu.Separator />
 
-              <Menu.Item value="copy-link" onClick={handlers.handleCopyLink}>
+              {/* <Menu.Item value="copy-link" onClick={handlers.handleCopyLink}>
                 <HStack gap="1">
                   <LinkIcon /> Copy link
                 </HStack>
@@ -55,7 +55,7 @@ export function CollectionMenu(props: Props) {
                     <ShareIcon /> Share
                   </HStack>
                 </Menu.Item>
-              )}
+              )} */}
 
               {isDeletingEnabled && (
                 <DeleteWithConfirmationMenuItem

@@ -16,8 +16,11 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/accountfollow"
 	"github.com/Southclaws/storyden/internal/ent/accountroles"
 	"github.com/Southclaws/storyden/internal/ent/asset"
+	"github.com/Southclaws/storyden/internal/ent/auditlog"
 	"github.com/Southclaws/storyden/internal/ent/authentication"
 	"github.com/Southclaws/storyden/internal/ent/category"
+	"github.com/Southclaws/storyden/internal/ent/channel"
+	"github.com/Southclaws/storyden/internal/ent/channelmembership"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/collectionnode"
 	"github.com/Southclaws/storyden/internal/ent/collectionpost"
@@ -106,8 +109,11 @@ func checkColumn(t, c string) error {
 			accountfollow.Table:       accountfollow.ValidColumn,
 			accountroles.Table:        accountroles.ValidColumn,
 			asset.Table:               asset.ValidColumn,
+			auditlog.Table:            auditlog.ValidColumn,
 			authentication.Table:      authentication.ValidColumn,
 			category.Table:            category.ValidColumn,
+			channel.Table:             channel.ValidColumn,
+			channelmembership.Table:   channelmembership.ValidColumn,
 			collection.Table:          collection.ValidColumn,
 			collectionnode.Table:      collectionnode.ValidColumn,
 			collectionpost.Table:      collectionpost.ValidColumn,

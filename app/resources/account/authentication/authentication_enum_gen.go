@@ -90,6 +90,7 @@ var (
 	ServiceOAuthGitHub   = Service{serviceOAuthGitHub}
 	ServiceOAuthDiscord  = Service{serviceOAuthDiscord}
 	ServiceOAuthKeycloak = Service{serviceOAuthKeycloak}
+	ServiceTraya         = Service{serviceTraya}
 )
 
 func (r Service) Format(f fmt.State, verb rune) {
@@ -118,6 +119,8 @@ func (r Service) Format(f fmt.State, verb rune) {
 			fmt.Fprint(f, "Discord")
 		case ServiceOAuthKeycloak:
 			fmt.Fprint(f, "Keycloak")
+		case ServiceTraya:
+			fmt.Fprint(f, "Traya token authentication")
 		default:
 			fmt.Fprint(f, "")
 		}
@@ -170,6 +173,8 @@ func NewService(__iNpUt__ string) (Service, error) {
 		return ServiceOAuthDiscord, nil
 	case string(serviceOAuthKeycloak):
 		return ServiceOAuthKeycloak, nil
+	case string(serviceTraya):
+		return ServiceTraya, nil
 	default:
 		return Service{}, fmt.Errorf("invalid value for type 'Service': '%s'", __iNpUt__)
 	}
@@ -184,6 +189,7 @@ var (
 	TokenTypePasswordHash = TokenType{tokenTypePasswordHash}
 	TokenTypeWebAuthn     = TokenType{tokenTypeWebAuthn}
 	TokenTypeOAuth        = TokenType{tokenTypeOAuth}
+	TokenTypeTraya        = TokenType{tokenTypeTraya}
 )
 
 func (r TokenType) Format(f fmt.State, verb rune) {
@@ -202,6 +208,8 @@ func (r TokenType) Format(f fmt.State, verb rune) {
 			fmt.Fprint(f, "WebAuthn token")
 		case TokenTypeOAuth:
 			fmt.Fprint(f, "OAuth2 token")
+		case TokenTypeTraya:
+			fmt.Fprint(f, "Traya token")
 		default:
 			fmt.Fprint(f, "")
 		}
@@ -244,6 +252,8 @@ func NewTokenType(__iNpUt__ string) (TokenType, error) {
 		return TokenTypeWebAuthn, nil
 	case string(tokenTypeOAuth):
 		return TokenTypeOAuth, nil
+	case string(tokenTypeTraya):
+		return TokenTypeTraya, nil
 	default:
 		return TokenType{}, fmt.Errorf("invalid value for type 'TokenType': '%s'", __iNpUt__)
 	}

@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { parseAsBoolean, useQueryState } from "nuqs";
 
-import { ThreadReference } from "src/api/openapi-schema";
+import { Permission, ThreadReference } from "src/api/openapi-schema";
 
 import { handle } from "@/api/client";
 import { useSession } from "@/auth";
@@ -13,6 +13,7 @@ import { useReportContext } from "@/lib/report/useReportContext";
 import { canDeletePost, canEditPost } from "@/lib/thread/permissions";
 import { withUndo } from "@/lib/thread/undo";
 import { useShare } from "@/utils/client";
+import { hasPermission } from "@/utils/permissions";
 import { useCopyToClipboard } from "@/utils/useCopyToClipboard";
 
 import { getPermalinkForThread } from "../utils";
@@ -21,12 +22,14 @@ export type Props = {
   thread: ThreadReference;
   editingEnabled?: boolean;
   movingEnabled?: boolean;
+  onPinChange?: (pinned: boolean) => Promise<void>;
 };
 
 export function useThreadMenu({
   thread,
   editingEnabled,
   movingEnabled,
+  onPinChange,
 }: Props) {
   const router = useRouter();
   const account = useSession();
@@ -36,7 +39,7 @@ export function useThreadMenu({
   const pathname = usePathname();
   const isOnThreadPage = pathname?.includes(`/t/${thread.slug}`);
 
-  const { deleteThread, revalidate } = useFeedMutations();
+  const { deleteThread, updateThread, revalidate } = useFeedMutations(undefined, undefined, undefined, router);
 
   const {
     isConfirming: isConfirmingDelete,
@@ -49,6 +52,8 @@ export function useThreadMenu({
   const isMovingEnabled = canEditPost(thread, account) && movingEnabled;
   const isDeletingEnabled =
     canDeletePost(thread, account) && thread.deletedAt === undefined;
+  const canPinThread = hasPermission(account, Permission.MANAGE_POSTS);
+  const isThreadPinned = (thread.pinned ?? 0) > 0;
 
   const permalink = getPermalinkForThread(thread.slug);
 
@@ -69,22 +74,47 @@ export function useThreadMenu({
   }
 
   async function handleDelete() {
+    await handle(async () => {
+      await withUndo({
+        message: "Thread deleted",
+        duration: 5000,
+        toastId: `thread-${thread.id}`,
+        action: async () => {
+          await deleteThread(thread.id);
+          await resolveReport();
+
+          if (isOnThreadPage) {
+            router.push("/");
+          }
+        },
+        onUndo: () => {},
+      });
+    });
+  }
+
+  async function handlePinThread() {
     await handle(
       async () => {
-        await withUndo({
-          message: "Thread deleted",
-          duration: 5000,
-          toastId: `thread-${thread.id}`,
-          action: async () => {
-            await deleteThread(thread.id);
-            await resolveReport();
+        if (onPinChange) {
+          await onPinChange(true);
+        } else {
+          await updateThread(thread.id, { pinned: 1 });
+        }
+      },
+      {
+        cleanup: async () => await revalidate(),
+      },
+    );
+  }
 
-            if (isOnThreadPage) {
-              router.push("/");
-            }
-          },
-          onUndo: () => {},
-        });
+  async function handleUnpinThread() {
+    await handle(
+      async () => {
+        if (onPinChange) {
+          await onPinChange(false);
+        } else {
+          await updateThread(thread.id, { pinned: 0 });
+        }
       },
       {
         cleanup: async () => await revalidate(),
@@ -98,12 +128,16 @@ export function useThreadMenu({
     isMovingEnabled,
     isDeletingEnabled,
     isConfirmingDelete,
+    canPinThread,
+    isThreadPinned,
     handlers: {
       handleCopyLink,
       handleShare,
       handleEdit,
       handleConfirmDelete,
       handleCancelDelete,
+      handlePinThread,
+      handleUnpinThread,
     },
   };
 }

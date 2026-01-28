@@ -67,6 +67,8 @@ type Partial struct {
 	Visibility opt.Optional[visibility.Visibility]
 	URL        opt.Optional[url.URL]
 	Meta       opt.Optional[map[string]any]
+	ChannelID  opt.Optional[xid.ID]
+	Pinned     opt.Optional[int]
 }
 
 func (p Partial) Opts() (opts []thread_writer.Option) {
@@ -75,6 +77,8 @@ func (p Partial) Opts() (opts []thread_writer.Option) {
 	p.Category.Call(func(v xid.ID) { opts = append(opts, thread_writer.WithCategory(xid.ID(v))) })
 	p.Visibility.Call(func(v visibility.Visibility) { opts = append(opts, thread_writer.WithVisibility(v)) })
 	p.Meta.Call(func(v map[string]any) { opts = append(opts, thread_writer.WithMeta(v)) })
+	p.ChannelID.Call(func(v xid.ID) { opts = append(opts, thread_writer.WithChannel(v)) })
+	p.Pinned.Call(func(v int) { opts = append(opts, thread_writer.WithPinned(v)) })
 	return
 }
 

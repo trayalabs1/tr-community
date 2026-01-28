@@ -134,7 +134,7 @@ func TestGetCookieDomain(t *testing.T) {
 
 	d3, err := getCookieDomain(u("https://api.makeroom.club"), u("https://www.makeroom.club"))
 	r.NoError(err)
-	r.Equal("api.makeroom.club", d3)
+	r.Equal("makeroom.club", d3)
 
 	d4, err := getCookieDomain(u("https://makeroom.club"), u("https://community.makeroom.club"))
 	r.NoError(err)
@@ -143,6 +143,10 @@ func TestGetCookieDomain(t *testing.T) {
 	d5, err := getCookieDomain(u("https://makeroom.club"), u("https://makeroom.club"))
 	r.NoError(err)
 	r.Equal("makeroom.club", d5)
+
+	d6, err := getCookieDomain(u("https://discourse-api.dev.hav-g.in"), u("https://discourse.dev.hav-g.in"))
+	r.NoError(err)
+	r.Equal("dev.hav-g.in", d6)
 }
 
 func u(s string) url.URL {

@@ -11,6 +11,38 @@ import type { ReplyCreateBody, ReplyCreateOKResponse } from "../openapi-schema";
 import { fetcher } from "../server";
 
 /**
+ * Create a new reply within a thread in a channel.
+ */
+export type channelReplyCreateResponse = {
+  data: ReplyCreateOKResponse;
+  status: number;
+};
+
+export const getChannelReplyCreateUrl = (
+  channelID: string,
+  threadMark: string,
+) => {
+  return `/channels/${channelID}/threads/${threadMark}/replies`;
+};
+
+export const channelReplyCreate = async (
+  channelID: string,
+  threadMark: string,
+  replyCreateBody: ReplyCreateBody,
+  options?: RequestInit,
+): Promise<channelReplyCreateResponse> => {
+  return fetcher<Promise<channelReplyCreateResponse>>(
+    getChannelReplyCreateUrl(channelID, threadMark),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(replyCreateBody),
+    },
+  );
+};
+
+/**
  * Create a new post within a thread.
  */
 export type replyCreateResponse = {

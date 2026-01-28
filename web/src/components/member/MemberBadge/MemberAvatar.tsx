@@ -1,17 +1,20 @@
-import Image from "next/image";
-
-import { getAccountGetAvatarKey } from "@/api/openapi-client/accounts";
-import { Identifier, ProfileReference } from "@/api/openapi-schema";
+import { ProfileReference } from "@/api/openapi-schema";
 import { Button } from "@/components/ui/button";
 import { MediaAddIcon } from "@/components/ui/icons/Media";
-import { API_ADDRESS } from "@/config";
 import { css } from "@/styled-system/css";
-import { Box } from "@/styled-system/jsx";
+import { Box, styled } from "@/styled-system/jsx";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 import { EditAvatarTrigger } from "../EditAvatar/EditAvatarModal";
 
-const avatarStyles = css({
+const fallbackAvatarStyles = css({
   borderRadius: "full",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontWeight: "bold",
+  color: "white",
+  fontSize: "sm",
 });
 
 export type Props = {
@@ -21,9 +24,8 @@ export type Props = {
 };
 
 export function MemberAvatar({ profile, size, editable }: Props) {
-  const avatarURL = getAvatarURL(profile.handle);
-
   const { width, height } = avatarSize(size);
+  const firstLetter = profile.handle.charAt(0).toUpperCase();
 
   return (
     <Box position="relative" flexShrink="0">
@@ -47,21 +49,19 @@ export function MemberAvatar({ profile, size, editable }: Props) {
           </EditAvatarTrigger>
         </Box>
       )}
-      <Image
-        className={avatarStyles}
-        src={avatarURL}
-        alt={`${profile.handle}'s avatar`}
-        width={width}
-        height={height}
-      />
+      <styled.div
+        className={fallbackAvatarStyles}
+        style={{
+          width: `${width}px`,
+          height: `${height}px`,
+          background: TRAYA_COLORS.gradient,
+          fontSize: size === "xs" ? "10px" : size === "sm" ? "12px" : size === "md" ? "14px" : "36px",
+        }}
+      >
+        {firstLetter}
+      </styled.div>
     </Box>
   );
-}
-
-export function getAvatarURL(id: Identifier): string {
-  const [path] = getAccountGetAvatarKey(id);
-
-  return `${API_ADDRESS}/api${path}`;
 }
 
 export function avatarSize(size: Props["size"]) {

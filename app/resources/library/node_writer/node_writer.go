@@ -128,6 +128,12 @@ func WithParent(v library.NodeID) Option {
 	}
 }
 
+func WithChannel(v xid.ID) Option {
+	return func(c *ent.NodeMutation) {
+		c.SetChannelID(v)
+	}
+}
+
 func WithHideChildren(v bool) Option {
 	return func(c *ent.NodeMutation) {
 		c.SetHideChildTree(v)

@@ -26,6 +26,8 @@ export type Props = {
   initialPage?: number;
   slug: string;
   thread: ThreadGetResponse;
+  channelID?: string;
+  channelName?: string;
 };
 
 export const FormSchema = z.object({
@@ -85,6 +87,19 @@ export function useThreadScreen({
       },
     },
   );
+
+  const handlePinChange = async (pinned: boolean) => {
+    const mutator = (threadData?: ThreadGetResponse) => {
+      if (!threadData) return;
+      return {
+        ...threadData,
+        pinned: pinned ? 1 : 0,
+      };
+    };
+
+    await mutate(mutator, { revalidate: false });
+    await threadUpdate(slug, { pinned: pinned ? 1 : 0 });
+  };
 
   useBeacon(DatagraphItemKind.thread, data?.id);
 
@@ -216,6 +231,7 @@ export function useThreadScreen({
       handleEditAndAccept,
       handleConfirmDelete,
       handleCancelDelete,
+      handlePinChange,
     },
   };
 }

@@ -50,6 +50,14 @@ func (d *database) Root(ctx context.Context, fs ...Filter) ([]*library.Node, err
 		query.Where(node.HasOwnerWith(account.Handle(*f.rootAccountHandleFilter)))
 	}
 
+	if f.channelID != nil {
+		channelXID, err := xid.FromString(*f.channelID)
+		if err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
+		}
+		query.Where(node.ChannelID(channelXID))
+	}
+
 	if len(f.visibility) > 0 {
 		visibilityTypes := dt.Map(f.visibility, func(v visibility.Visibility) node.Visibility {
 			return node.Visibility(v.String())
@@ -105,6 +113,7 @@ from
     children
     inner join nodes n on n.id = children.id
     inner join accounts a on a.id = n.account_id
+    left join channels c on c.id = n.channel_id
 
 -- optional where clause
 %s
@@ -152,6 +161,14 @@ func (d *database) Subtree(ctx context.Context, id opt.Optional[library.NodeID],
 			getPlaceholder()))
 
 		args = append(args, *f.rootAccountHandleFilter)
+	}
+
+	if f.channelID != nil {
+		predicates = append(predicates, fmt.Sprintf(
+			"cast(n.channel_id as text) = %s",
+			getPlaceholder()))
+
+		args = append(args, *f.channelID)
 	}
 
 	if f.depth != nil {

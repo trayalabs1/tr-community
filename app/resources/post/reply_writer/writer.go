@@ -81,6 +81,12 @@ func WithVisibility(v visibility.Visibility) Option {
 	}
 }
 
+func WithChannel(id xid.ID) Option {
+	return func(pm *ent.PostMutation) {
+		pm.SetChannelID(id)
+	}
+}
+
 func (d *Writer) Create(
 	ctx context.Context,
 	authorID account.AccountID,
@@ -111,7 +117,8 @@ func (d *Writer) Create(
 		SetUpdatedAt(time.Now()).
 		SetLastReplyAt(time.Now()).
 		SetRootID(xid.ID(parentID)).
-		SetAuthorID(xid.ID(authorID))
+		SetAuthorID(xid.ID(authorID)).
+		SetChannelID(thread.ChannelID)
 
 	for _, fn := range opts {
 		fn(q.Mutation())

@@ -40,13 +40,16 @@ export function ModalDrawer({ children, ...props }: PropsWithChildren<Props>) {
           <Drawer.Content className="modaldrawer__content">
             <VStack
               minHeight={{ base: "full", md: "0" }}
-              minWidth={{ base: "full", md: "md" }}
-              maxWidth={{ base: "full", md: "prose" }}
-              borderTopRadius={{ base: "xl", md: "md" }}
+              minWidth={{ base: "full", md: "2xl" }}
+              maxWidth={{ base: "full", md: "4xl" }}
+              borderTopRadius={{ base: "2xl", md: "md" }}
               borderBottomRadius={{ base: "none", md: "md" }}
-              bgColor="bg.default"
-              boxShadow="lg"
-              p={{ base: "4", md: "3" }}
+              boxShadow="xl"
+              p={{ base: "3", md: "4" }}
+              style={{
+                backgroundColor: "#ffffff",
+                maxHeight: "90vh",
+              }}
             >
               <WStack alignItems="start">
                 <Drawer.Title asChild>
@@ -55,7 +58,7 @@ export function ModalDrawer({ children, ...props }: PropsWithChildren<Props>) {
                 <CloseAction onClick={props.onClose} />
               </WStack>
 
-              <Box h="full" w="full" pb="3" overflowY="scroll" overflowX="clip">
+              <Box h="full" w="full" pb="3" style={{ overflowY: "auto", overflowX: "hidden", touchAction: "auto", WebkitOverflowScrolling: "touch", minHeight: 0 }}>
                 {children}
               </Box>
             </VStack>
@@ -68,7 +71,6 @@ export function ModalDrawer({ children, ...props }: PropsWithChildren<Props>) {
           position: fixed;
           inset: 0;
           background-color: var(--colors-black-alpha-600);
-          backdrop-filter: blur(2px);
           z-index: var(--z-index-overlay);
         }
 
@@ -90,15 +92,24 @@ export function ModalDrawer({ children, ...props }: PropsWithChildren<Props>) {
         /* Drawer mode - on mobile screens */
         @media screen and (max-width: 48em) {
           .modaldrawer__content {
-            height: 100%;
+            height: auto;
             width: 100%;
-            top: 0;
+            bottom: 0;
+            top: auto;
             display: flex;
             flex-direction: column;
             position: fixed;
-            margin-top: 3rem;
-            max-height: 96%;
+            max-height: 90vh;
             z-index: var(--z-index-modal);
+            border-radius: 1.5rem 1.5rem 0 0;
+            overflow-y: hidden;
+            overflow-x: hidden;
+            touch-action: none;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+          }
+          .modaldrawer__content::-webkit-scrollbar {
+            display: none;
           }
         }
       `}</style>

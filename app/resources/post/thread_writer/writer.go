@@ -78,6 +78,12 @@ func WithMeta(meta map[string]any) Option {
 	}
 }
 
+func WithPinned(v int) Option {
+	return func(m *ent.PostMutation) {
+		m.SetPinnedRank(v)
+	}
+}
+
 func WithAssets(a []asset.AssetID) Option {
 	return func(m *ent.PostMutation) {
 		m.AddAssetIDs(a...)
@@ -87,6 +93,12 @@ func WithAssets(a []asset.AssetID) Option {
 func WithLink(id xid.ID) Option {
 	return func(pm *ent.PostMutation) {
 		pm.SetLinkID(id)
+	}
+}
+
+func WithChannel(id xid.ID) Option {
+	return func(pm *ent.PostMutation) {
+		pm.SetChannelID(id)
 	}
 }
 
@@ -122,6 +134,12 @@ func (d *Writer) Create(
 
 	for _, fn := range opts {
 		fn(mutate)
+	}
+
+	// Ensure channel_id is always set (required field).
+	// Default to empty ID for global threads if not specified.
+	if _, ok := mutate.ChannelID(); !ok {
+		mutate.SetChannelID(xid.ID{})
 	}
 
 	// If a category was specified, check if it exists first.

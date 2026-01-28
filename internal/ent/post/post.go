@@ -28,8 +28,8 @@ const (
 	FieldTitle = "title"
 	// FieldSlug holds the string denoting the slug field in the database.
 	FieldSlug = "slug"
-	// FieldPinned holds the string denoting the pinned field in the database.
-	FieldPinned = "pinned"
+	// FieldPinnedRank holds the string denoting the pinned_rank field in the database.
+	FieldPinnedRank = "pinned_rank"
 	// FieldLastReplyAt holds the string denoting the last_reply_at field in the database.
 	FieldLastReplyAt = "last_reply_at"
 	// FieldRootPostID holds the string denoting the root_post_id field in the database.
@@ -48,12 +48,16 @@ const (
 	FieldAccountPosts = "account_posts"
 	// FieldCategoryID holds the string denoting the category_id field in the database.
 	FieldCategoryID = "category_id"
+	// FieldChannelID holds the string denoting the channel_id field in the database.
+	FieldChannelID = "channel_id"
 	// FieldLinkID holds the string denoting the link_id field in the database.
 	FieldLinkID = "link_id"
 	// EdgeAuthor holds the string denoting the author edge name in mutations.
 	EdgeAuthor = "author"
 	// EdgeCategory holds the string denoting the category edge name in mutations.
 	EdgeCategory = "category"
+	// EdgeChannel holds the string denoting the channel edge name in mutations.
+	EdgeChannel = "channel"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
 	// EdgeRoot holds the string denoting the root edge name in mutations.
@@ -98,6 +102,13 @@ const (
 	CategoryInverseTable = "categories"
 	// CategoryColumn is the table column denoting the category relation/edge.
 	CategoryColumn = "category_id"
+	// ChannelTable is the table that holds the channel relation/edge.
+	ChannelTable = "posts"
+	// ChannelInverseTable is the table name for the Channel entity.
+	// It exists in this package in order to avoid circular dependency with the "channel" package.
+	ChannelInverseTable = "channels"
+	// ChannelColumn is the table column denoting the channel relation/edge.
+	ChannelColumn = "channel_id"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
 	TagsTable = "tag_posts"
 	// TagsInverseTable is the table name for the Tag entity.
@@ -187,7 +198,7 @@ var Columns = []string{
 	FieldIndexedAt,
 	FieldTitle,
 	FieldSlug,
-	FieldPinned,
+	FieldPinnedRank,
 	FieldLastReplyAt,
 	FieldRootPostID,
 	FieldReplyToPostID,
@@ -197,6 +208,7 @@ var Columns = []string{
 	FieldVisibility,
 	FieldAccountPosts,
 	FieldCategoryID,
+	FieldChannelID,
 	FieldLinkID,
 }
 
@@ -228,8 +240,8 @@ func ValidColumn(column string) bool {
 var (
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
-	// DefaultPinned holds the default value on creation for the "pinned" field.
-	DefaultPinned bool
+	// DefaultPinnedRank holds the default value on creation for the "pinned_rank" field.
+	DefaultPinnedRank int
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() xid.ID
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
@@ -302,9 +314,9 @@ func BySlug(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSlug, opts...).ToFunc()
 }
 
-// ByPinned orders the results by the pinned field.
-func ByPinned(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPinned, opts...).ToFunc()
+// ByPinnedRank orders the results by the pinned_rank field.
+func ByPinnedRank(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPinnedRank, opts...).ToFunc()
 }
 
 // ByLastReplyAt orders the results by the last_reply_at field.
@@ -347,6 +359,11 @@ func ByCategoryID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCategoryID, opts...).ToFunc()
 }
 
+// ByChannelID orders the results by the channel_id field.
+func ByChannelID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldChannelID, opts...).ToFunc()
+}
+
 // ByLinkID orders the results by the link_id field.
 func ByLinkID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLinkID, opts...).ToFunc()
@@ -363,6 +380,13 @@ func ByAuthorField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByCategoryField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newCategoryStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByChannelField orders the results by channel field.
+func ByChannelField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newChannelStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -552,6 +576,13 @@ func newCategoryStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CategoryInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, CategoryTable, CategoryColumn),
+	)
+}
+func newChannelStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ChannelInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ChannelTable, ChannelColumn),
 	)
 }
 func newTagsStep() *sqlgraph.Step {

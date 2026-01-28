@@ -20,8 +20,11 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/accountfollow"
 	"github.com/Southclaws/storyden/internal/ent/accountroles"
 	"github.com/Southclaws/storyden/internal/ent/asset"
+	"github.com/Southclaws/storyden/internal/ent/auditlog"
 	"github.com/Southclaws/storyden/internal/ent/authentication"
 	"github.com/Southclaws/storyden/internal/ent/category"
+	"github.com/Southclaws/storyden/internal/ent/channel"
+	"github.com/Southclaws/storyden/internal/ent/channelmembership"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/collectionnode"
 	"github.com/Southclaws/storyden/internal/ent/collectionpost"
@@ -63,10 +66,16 @@ type Client struct {
 	AccountRoles *AccountRolesClient
 	// Asset is the client for interacting with the Asset builders.
 	Asset *AssetClient
+	// AuditLog is the client for interacting with the AuditLog builders.
+	AuditLog *AuditLogClient
 	// Authentication is the client for interacting with the Authentication builders.
 	Authentication *AuthenticationClient
 	// Category is the client for interacting with the Category builders.
 	Category *CategoryClient
+	// Channel is the client for interacting with the Channel builders.
+	Channel *ChannelClient
+	// ChannelMembership is the client for interacting with the ChannelMembership builders.
+	ChannelMembership *ChannelMembershipClient
 	// Collection is the client for interacting with the Collection builders.
 	Collection *CollectionClient
 	// CollectionNode is the client for interacting with the CollectionNode builders.
@@ -130,8 +139,11 @@ func (c *Client) init() {
 	c.AccountFollow = NewAccountFollowClient(c.config)
 	c.AccountRoles = NewAccountRolesClient(c.config)
 	c.Asset = NewAssetClient(c.config)
+	c.AuditLog = NewAuditLogClient(c.config)
 	c.Authentication = NewAuthenticationClient(c.config)
 	c.Category = NewCategoryClient(c.config)
+	c.Channel = NewChannelClient(c.config)
+	c.ChannelMembership = NewChannelMembershipClient(c.config)
 	c.Collection = NewCollectionClient(c.config)
 	c.CollectionNode = NewCollectionNodeClient(c.config)
 	c.CollectionPost = NewCollectionPostClient(c.config)
@@ -252,8 +264,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AccountFollow:       NewAccountFollowClient(cfg),
 		AccountRoles:        NewAccountRolesClient(cfg),
 		Asset:               NewAssetClient(cfg),
+		AuditLog:            NewAuditLogClient(cfg),
 		Authentication:      NewAuthenticationClient(cfg),
 		Category:            NewCategoryClient(cfg),
+		Channel:             NewChannelClient(cfg),
+		ChannelMembership:   NewChannelMembershipClient(cfg),
 		Collection:          NewCollectionClient(cfg),
 		CollectionNode:      NewCollectionNodeClient(cfg),
 		CollectionPost:      NewCollectionPostClient(cfg),
@@ -301,8 +316,11 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AccountFollow:       NewAccountFollowClient(cfg),
 		AccountRoles:        NewAccountRolesClient(cfg),
 		Asset:               NewAssetClient(cfg),
+		AuditLog:            NewAuditLogClient(cfg),
 		Authentication:      NewAuthenticationClient(cfg),
 		Category:            NewCategoryClient(cfg),
+		Channel:             NewChannelClient(cfg),
+		ChannelMembership:   NewChannelMembershipClient(cfg),
 		Collection:          NewCollectionClient(cfg),
 		CollectionNode:      NewCollectionNodeClient(cfg),
 		CollectionPost:      NewCollectionPostClient(cfg),
@@ -356,12 +374,12 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Account, c.AccountFollow, c.AccountRoles, c.Asset, c.Authentication,
-		c.Category, c.Collection, c.CollectionNode, c.CollectionPost, c.Email, c.Event,
-		c.EventParticipant, c.Invitation, c.LikePost, c.Link, c.MentionProfile, c.Node,
-		c.Notification, c.Post, c.PostRead, c.Property, c.PropertySchema,
-		c.PropertySchemaField, c.Question, c.React, c.Report, c.Role, c.Session,
-		c.Setting, c.Tag,
+		c.Account, c.AccountFollow, c.AccountRoles, c.Asset, c.AuditLog,
+		c.Authentication, c.Category, c.Channel, c.ChannelMembership, c.Collection,
+		c.CollectionNode, c.CollectionPost, c.Email, c.Event, c.EventParticipant,
+		c.Invitation, c.LikePost, c.Link, c.MentionProfile, c.Node, c.Notification,
+		c.Post, c.PostRead, c.Property, c.PropertySchema, c.PropertySchemaField,
+		c.Question, c.React, c.Report, c.Role, c.Session, c.Setting, c.Tag,
 	} {
 		n.Use(hooks...)
 	}
@@ -371,12 +389,12 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Account, c.AccountFollow, c.AccountRoles, c.Asset, c.Authentication,
-		c.Category, c.Collection, c.CollectionNode, c.CollectionPost, c.Email, c.Event,
-		c.EventParticipant, c.Invitation, c.LikePost, c.Link, c.MentionProfile, c.Node,
-		c.Notification, c.Post, c.PostRead, c.Property, c.PropertySchema,
-		c.PropertySchemaField, c.Question, c.React, c.Report, c.Role, c.Session,
-		c.Setting, c.Tag,
+		c.Account, c.AccountFollow, c.AccountRoles, c.Asset, c.AuditLog,
+		c.Authentication, c.Category, c.Channel, c.ChannelMembership, c.Collection,
+		c.CollectionNode, c.CollectionPost, c.Email, c.Event, c.EventParticipant,
+		c.Invitation, c.LikePost, c.Link, c.MentionProfile, c.Node, c.Notification,
+		c.Post, c.PostRead, c.Property, c.PropertySchema, c.PropertySchemaField,
+		c.Question, c.React, c.Report, c.Role, c.Session, c.Setting, c.Tag,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -393,10 +411,16 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AccountRoles.mutate(ctx, m)
 	case *AssetMutation:
 		return c.Asset.mutate(ctx, m)
+	case *AuditLogMutation:
+		return c.AuditLog.mutate(ctx, m)
 	case *AuthenticationMutation:
 		return c.Authentication.mutate(ctx, m)
 	case *CategoryMutation:
 		return c.Category.mutate(ctx, m)
+	case *ChannelMutation:
+		return c.Channel.mutate(ctx, m)
+	case *ChannelMembershipMutation:
+		return c.ChannelMembership.mutate(ctx, m)
 	case *CollectionMutation:
 		return c.Collection.mutate(ctx, m)
 	case *CollectionNodeMutation:
@@ -919,6 +943,22 @@ func (c *AccountClient) QueryHandledReports(_m *Account) *ReportQuery {
 			sqlgraph.From(account.Table, account.FieldID, id),
 			sqlgraph.To(report.Table, report.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, account.HandledReportsTable, account.HandledReportsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAuditLogs queries the audit_logs edge of a Account.
+func (c *AccountClient) QueryAuditLogs(_m *Account) *AuditLogQuery {
+	query := (&AuditLogClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, id),
+			sqlgraph.To(auditlog.Table, auditlog.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, account.AuditLogsTable, account.AuditLogsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -1542,6 +1582,155 @@ func (c *AssetClient) mutate(ctx context.Context, m *AssetMutation) (Value, erro
 	}
 }
 
+// AuditLogClient is a client for the AuditLog schema.
+type AuditLogClient struct {
+	config
+}
+
+// NewAuditLogClient returns a client for the AuditLog from the given config.
+func NewAuditLogClient(c config) *AuditLogClient {
+	return &AuditLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `auditlog.Hooks(f(g(h())))`.
+func (c *AuditLogClient) Use(hooks ...Hook) {
+	c.hooks.AuditLog = append(c.hooks.AuditLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `auditlog.Intercept(f(g(h())))`.
+func (c *AuditLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AuditLog = append(c.inters.AuditLog, interceptors...)
+}
+
+// Create returns a builder for creating a AuditLog entity.
+func (c *AuditLogClient) Create() *AuditLogCreate {
+	mutation := newAuditLogMutation(c.config, OpCreate)
+	return &AuditLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AuditLog entities.
+func (c *AuditLogClient) CreateBulk(builders ...*AuditLogCreate) *AuditLogCreateBulk {
+	return &AuditLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AuditLogClient) MapCreateBulk(slice any, setFunc func(*AuditLogCreate, int)) *AuditLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AuditLogCreateBulk{err: fmt.Errorf("calling to AuditLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AuditLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AuditLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AuditLog.
+func (c *AuditLogClient) Update() *AuditLogUpdate {
+	mutation := newAuditLogMutation(c.config, OpUpdate)
+	return &AuditLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AuditLogClient) UpdateOne(_m *AuditLog) *AuditLogUpdateOne {
+	mutation := newAuditLogMutation(c.config, OpUpdateOne, withAuditLog(_m))
+	return &AuditLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AuditLogClient) UpdateOneID(id xid.ID) *AuditLogUpdateOne {
+	mutation := newAuditLogMutation(c.config, OpUpdateOne, withAuditLogID(id))
+	return &AuditLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AuditLog.
+func (c *AuditLogClient) Delete() *AuditLogDelete {
+	mutation := newAuditLogMutation(c.config, OpDelete)
+	return &AuditLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AuditLogClient) DeleteOne(_m *AuditLog) *AuditLogDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AuditLogClient) DeleteOneID(id xid.ID) *AuditLogDeleteOne {
+	builder := c.Delete().Where(auditlog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AuditLogDeleteOne{builder}
+}
+
+// Query returns a query builder for AuditLog.
+func (c *AuditLogClient) Query() *AuditLogQuery {
+	return &AuditLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAuditLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AuditLog entity by its id.
+func (c *AuditLogClient) Get(ctx context.Context, id xid.ID) (*AuditLog, error) {
+	return c.Query().Where(auditlog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AuditLogClient) GetX(ctx context.Context, id xid.ID) *AuditLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryEnactedBy queries the enacted_by edge of a AuditLog.
+func (c *AuditLogClient) QueryEnactedBy(_m *AuditLog) *AccountQuery {
+	query := (&AccountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(auditlog.Table, auditlog.FieldID, id),
+			sqlgraph.To(account.Table, account.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, auditlog.EnactedByTable, auditlog.EnactedByColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AuditLogClient) Hooks() []Hook {
+	return c.hooks.AuditLog
+}
+
+// Interceptors returns the client interceptors.
+func (c *AuditLogClient) Interceptors() []Interceptor {
+	return c.inters.AuditLog
+}
+
+func (c *AuditLogClient) mutate(ctx context.Context, m *AuditLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AuditLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AuditLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AuditLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AuditLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AuditLog mutation op: %q", m.Op())
+	}
+}
+
 // AuthenticationClient is a client for the Authentication schema.
 type AuthenticationClient struct {
 	config
@@ -1863,6 +2052,22 @@ func (c *CategoryClient) QueryCoverImage(_m *Category) *AssetQuery {
 	return query
 }
 
+// QueryChannel queries the channel edge of a Category.
+func (c *CategoryClient) QueryChannel(_m *Category) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(category.Table, category.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, category.ChannelTable, category.ChannelColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *CategoryClient) Hooks() []Hook {
 	return c.hooks.Category
@@ -1885,6 +2090,400 @@ func (c *CategoryClient) mutate(ctx context.Context, m *CategoryMutation) (Value
 		return (&CategoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Category mutation op: %q", m.Op())
+	}
+}
+
+// ChannelClient is a client for the Channel schema.
+type ChannelClient struct {
+	config
+}
+
+// NewChannelClient returns a client for the Channel from the given config.
+func NewChannelClient(c config) *ChannelClient {
+	return &ChannelClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `channel.Hooks(f(g(h())))`.
+func (c *ChannelClient) Use(hooks ...Hook) {
+	c.hooks.Channel = append(c.hooks.Channel, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `channel.Intercept(f(g(h())))`.
+func (c *ChannelClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Channel = append(c.inters.Channel, interceptors...)
+}
+
+// Create returns a builder for creating a Channel entity.
+func (c *ChannelClient) Create() *ChannelCreate {
+	mutation := newChannelMutation(c.config, OpCreate)
+	return &ChannelCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Channel entities.
+func (c *ChannelClient) CreateBulk(builders ...*ChannelCreate) *ChannelCreateBulk {
+	return &ChannelCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ChannelClient) MapCreateBulk(slice any, setFunc func(*ChannelCreate, int)) *ChannelCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ChannelCreateBulk{err: fmt.Errorf("calling to ChannelClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ChannelCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ChannelCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Channel.
+func (c *ChannelClient) Update() *ChannelUpdate {
+	mutation := newChannelMutation(c.config, OpUpdate)
+	return &ChannelUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ChannelClient) UpdateOne(_m *Channel) *ChannelUpdateOne {
+	mutation := newChannelMutation(c.config, OpUpdateOne, withChannel(_m))
+	return &ChannelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ChannelClient) UpdateOneID(id xid.ID) *ChannelUpdateOne {
+	mutation := newChannelMutation(c.config, OpUpdateOne, withChannelID(id))
+	return &ChannelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Channel.
+func (c *ChannelClient) Delete() *ChannelDelete {
+	mutation := newChannelMutation(c.config, OpDelete)
+	return &ChannelDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ChannelClient) DeleteOne(_m *Channel) *ChannelDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ChannelClient) DeleteOneID(id xid.ID) *ChannelDeleteOne {
+	builder := c.Delete().Where(channel.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ChannelDeleteOne{builder}
+}
+
+// Query returns a query builder for Channel.
+func (c *ChannelClient) Query() *ChannelQuery {
+	return &ChannelQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeChannel},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Channel entity by its id.
+func (c *ChannelClient) Get(ctx context.Context, id xid.ID) (*Channel, error) {
+	return c.Query().Where(channel.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ChannelClient) GetX(ctx context.Context, id xid.ID) *Channel {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCoverImage queries the cover_image edge of a Channel.
+func (c *ChannelClient) QueryCoverImage(_m *Channel) *AssetQuery {
+	query := (&AssetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, channel.CoverImageTable, channel.CoverImageColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryIcon queries the icon edge of a Channel.
+func (c *ChannelClient) QueryIcon(_m *Channel) *AssetQuery {
+	query := (&AssetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, channel.IconTable, channel.IconColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMemberships queries the memberships edge of a Channel.
+func (c *ChannelClient) QueryMemberships(_m *Channel) *ChannelMembershipQuery {
+	query := (&ChannelMembershipClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(channelmembership.Table, channelmembership.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, channel.MembershipsTable, channel.MembershipsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCategories queries the categories edge of a Channel.
+func (c *ChannelClient) QueryCategories(_m *Channel) *CategoryQuery {
+	query := (&CategoryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(category.Table, category.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, channel.CategoriesTable, channel.CategoriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPosts queries the posts edge of a Channel.
+func (c *ChannelClient) QueryPosts(_m *Channel) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, channel.PostsTable, channel.PostsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryNodes queries the nodes edge of a Channel.
+func (c *ChannelClient) QueryNodes(_m *Channel) *NodeQuery {
+	query := (&NodeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(node.Table, node.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, channel.NodesTable, channel.NodesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ChannelClient) Hooks() []Hook {
+	return c.hooks.Channel
+}
+
+// Interceptors returns the client interceptors.
+func (c *ChannelClient) Interceptors() []Interceptor {
+	return c.inters.Channel
+}
+
+func (c *ChannelClient) mutate(ctx context.Context, m *ChannelMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ChannelCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ChannelUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ChannelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ChannelDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Channel mutation op: %q", m.Op())
+	}
+}
+
+// ChannelMembershipClient is a client for the ChannelMembership schema.
+type ChannelMembershipClient struct {
+	config
+}
+
+// NewChannelMembershipClient returns a client for the ChannelMembership from the given config.
+func NewChannelMembershipClient(c config) *ChannelMembershipClient {
+	return &ChannelMembershipClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `channelmembership.Hooks(f(g(h())))`.
+func (c *ChannelMembershipClient) Use(hooks ...Hook) {
+	c.hooks.ChannelMembership = append(c.hooks.ChannelMembership, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `channelmembership.Intercept(f(g(h())))`.
+func (c *ChannelMembershipClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ChannelMembership = append(c.inters.ChannelMembership, interceptors...)
+}
+
+// Create returns a builder for creating a ChannelMembership entity.
+func (c *ChannelMembershipClient) Create() *ChannelMembershipCreate {
+	mutation := newChannelMembershipMutation(c.config, OpCreate)
+	return &ChannelMembershipCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ChannelMembership entities.
+func (c *ChannelMembershipClient) CreateBulk(builders ...*ChannelMembershipCreate) *ChannelMembershipCreateBulk {
+	return &ChannelMembershipCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ChannelMembershipClient) MapCreateBulk(slice any, setFunc func(*ChannelMembershipCreate, int)) *ChannelMembershipCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ChannelMembershipCreateBulk{err: fmt.Errorf("calling to ChannelMembershipClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ChannelMembershipCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ChannelMembershipCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ChannelMembership.
+func (c *ChannelMembershipClient) Update() *ChannelMembershipUpdate {
+	mutation := newChannelMembershipMutation(c.config, OpUpdate)
+	return &ChannelMembershipUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ChannelMembershipClient) UpdateOne(_m *ChannelMembership) *ChannelMembershipUpdateOne {
+	mutation := newChannelMembershipMutation(c.config, OpUpdateOne, withChannelMembership(_m))
+	return &ChannelMembershipUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ChannelMembershipClient) UpdateOneID(id xid.ID) *ChannelMembershipUpdateOne {
+	mutation := newChannelMembershipMutation(c.config, OpUpdateOne, withChannelMembershipID(id))
+	return &ChannelMembershipUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ChannelMembership.
+func (c *ChannelMembershipClient) Delete() *ChannelMembershipDelete {
+	mutation := newChannelMembershipMutation(c.config, OpDelete)
+	return &ChannelMembershipDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ChannelMembershipClient) DeleteOne(_m *ChannelMembership) *ChannelMembershipDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ChannelMembershipClient) DeleteOneID(id xid.ID) *ChannelMembershipDeleteOne {
+	builder := c.Delete().Where(channelmembership.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ChannelMembershipDeleteOne{builder}
+}
+
+// Query returns a query builder for ChannelMembership.
+func (c *ChannelMembershipClient) Query() *ChannelMembershipQuery {
+	return &ChannelMembershipQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeChannelMembership},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ChannelMembership entity by its id.
+func (c *ChannelMembershipClient) Get(ctx context.Context, id xid.ID) (*ChannelMembership, error) {
+	return c.Query().Where(channelmembership.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ChannelMembershipClient) GetX(ctx context.Context, id xid.ID) *ChannelMembership {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryChannel queries the channel edge of a ChannelMembership.
+func (c *ChannelMembershipClient) QueryChannel(_m *ChannelMembership) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channelmembership.Table, channelmembership.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, channelmembership.ChannelTable, channelmembership.ChannelColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAccount queries the account edge of a ChannelMembership.
+func (c *ChannelMembershipClient) QueryAccount(_m *ChannelMembership) *AccountQuery {
+	query := (&AccountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channelmembership.Table, channelmembership.FieldID, id),
+			sqlgraph.To(account.Table, account.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, channelmembership.AccountTable, channelmembership.AccountColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ChannelMembershipClient) Hooks() []Hook {
+	return c.hooks.ChannelMembership
+}
+
+// Interceptors returns the client interceptors.
+func (c *ChannelMembershipClient) Interceptors() []Interceptor {
+	return c.inters.ChannelMembership
+}
+
+func (c *ChannelMembershipClient) mutate(ctx context.Context, m *ChannelMembershipMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ChannelMembershipCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ChannelMembershipUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ChannelMembershipUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ChannelMembershipDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ChannelMembership mutation op: %q", m.Op())
 	}
 }
 
@@ -3708,6 +4307,22 @@ func (c *NodeClient) QueryOwner(_m *Node) *AccountQuery {
 	return query
 }
 
+// QueryChannel queries the channel edge of a Node.
+func (c *NodeClient) QueryChannel(_m *Node) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(node.Table, node.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, node.ChannelTable, node.ChannelColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryParent queries the parent edge of a Node.
 func (c *NodeClient) QueryParent(_m *Node) *NodeQuery {
 	query := (&NodeClient{config: c.config}).Query()
@@ -4207,6 +4822,22 @@ func (c *PostClient) QueryCategory(_m *Post) *CategoryQuery {
 			sqlgraph.From(post.Table, post.FieldID, id),
 			sqlgraph.To(category.Table, category.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, post.CategoryTable, post.CategoryColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryChannel queries the channel edge of a Post.
+func (c *PostClient) QueryChannel(_m *Post) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, post.ChannelTable, post.ChannelColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -6265,18 +6896,18 @@ func (c *TagClient) mutate(ctx context.Context, m *TagMutation) (Value, error) {
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Account, AccountFollow, AccountRoles, Asset, Authentication, Category,
-		Collection, CollectionNode, CollectionPost, Email, Event, EventParticipant,
-		Invitation, LikePost, Link, MentionProfile, Node, Notification, Post, PostRead,
-		Property, PropertySchema, PropertySchemaField, Question, React, Report, Role,
-		Session, Setting, Tag []ent.Hook
+		Account, AccountFollow, AccountRoles, Asset, AuditLog, Authentication, Category,
+		Channel, ChannelMembership, Collection, CollectionNode, CollectionPost, Email,
+		Event, EventParticipant, Invitation, LikePost, Link, MentionProfile, Node,
+		Notification, Post, PostRead, Property, PropertySchema, PropertySchemaField,
+		Question, React, Report, Role, Session, Setting, Tag []ent.Hook
 	}
 	inters struct {
-		Account, AccountFollow, AccountRoles, Asset, Authentication, Category,
-		Collection, CollectionNode, CollectionPost, Email, Event, EventParticipant,
-		Invitation, LikePost, Link, MentionProfile, Node, Notification, Post, PostRead,
-		Property, PropertySchema, PropertySchemaField, Question, React, Report, Role,
-		Session, Setting, Tag []ent.Interceptor
+		Account, AccountFollow, AccountRoles, Asset, AuditLog, Authentication, Category,
+		Channel, ChannelMembership, Collection, CollectionNode, CollectionPost, Email,
+		Event, EventParticipant, Invitation, LikePost, Link, MentionProfile, Node,
+		Notification, Post, PostRead, Property, PropertySchema, PropertySchemaField,
+		Question, React, Report, Role, Session, Setting, Tag []ent.Interceptor
 	}
 )
 

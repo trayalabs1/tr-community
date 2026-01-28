@@ -9,6 +9,7 @@ import pink from "./pink";
 import red from "./red";
 import slate from "./slate";
 import tomato from "./tomato";
+import * as traya from "./traya";
 
 export const colours = defineTokens.colors({
   current: { value: "currentColor" },
@@ -51,6 +52,7 @@ export const colours = defineTokens.colors({
   red: red.tokens,
   slate: slate.tokens,
   tomato: tomato.tokens,
+  traya: traya.tokens,
 
   gray: neutral.tokens,
   neutral: neutral.tokens,

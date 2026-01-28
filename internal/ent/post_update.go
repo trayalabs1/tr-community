@@ -14,6 +14,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/asset"
 	"github.com/Southclaws/storyden/internal/ent/category"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/event"
 	"github.com/Southclaws/storyden/internal/ent/likepost"
@@ -135,17 +136,24 @@ func (_u *PostUpdate) ClearSlug() *PostUpdate {
 	return _u
 }
 
-// SetPinned sets the "pinned" field.
-func (_u *PostUpdate) SetPinned(v bool) *PostUpdate {
-	_u.mutation.SetPinned(v)
+// SetPinnedRank sets the "pinned_rank" field.
+func (_u *PostUpdate) SetPinnedRank(v int) *PostUpdate {
+	_u.mutation.ResetPinnedRank()
+	_u.mutation.SetPinnedRank(v)
 	return _u
 }
 
-// SetNillablePinned sets the "pinned" field if the given value is not nil.
-func (_u *PostUpdate) SetNillablePinned(v *bool) *PostUpdate {
+// SetNillablePinnedRank sets the "pinned_rank" field if the given value is not nil.
+func (_u *PostUpdate) SetNillablePinnedRank(v *int) *PostUpdate {
 	if v != nil {
-		_u.SetPinned(*v)
+		_u.SetPinnedRank(*v)
 	}
+	return _u
+}
+
+// AddPinnedRank adds value to the "pinned_rank" field.
+func (_u *PostUpdate) AddPinnedRank(v int) *PostUpdate {
+	_u.mutation.AddPinnedRank(v)
 	return _u
 }
 
@@ -291,6 +299,20 @@ func (_u *PostUpdate) ClearCategoryID() *PostUpdate {
 	return _u
 }
 
+// SetChannelID sets the "channel_id" field.
+func (_u *PostUpdate) SetChannelID(v xid.ID) *PostUpdate {
+	_u.mutation.SetChannelID(v)
+	return _u
+}
+
+// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
+func (_u *PostUpdate) SetNillableChannelID(v *xid.ID) *PostUpdate {
+	if v != nil {
+		_u.SetChannelID(*v)
+	}
+	return _u
+}
+
 // SetLinkID sets the "link_id" field.
 func (_u *PostUpdate) SetLinkID(v xid.ID) *PostUpdate {
 	_u.mutation.SetLinkID(v)
@@ -325,6 +347,11 @@ func (_u *PostUpdate) SetAuthor(v *Account) *PostUpdate {
 // SetCategory sets the "category" edge to the Category entity.
 func (_u *PostUpdate) SetCategory(v *Category) *PostUpdate {
 	return _u.SetCategoryID(v.ID)
+}
+
+// SetChannel sets the "channel" edge to the Channel entity.
+func (_u *PostUpdate) SetChannel(v *Channel) *PostUpdate {
+	return _u.SetChannelID(v.ID)
 }
 
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
@@ -549,6 +576,12 @@ func (_u *PostUpdate) ClearAuthor() *PostUpdate {
 // ClearCategory clears the "category" edge to the Category entity.
 func (_u *PostUpdate) ClearCategory() *PostUpdate {
 	_u.mutation.ClearCategory()
+	return _u
+}
+
+// ClearChannel clears the "channel" edge to the Channel entity.
+func (_u *PostUpdate) ClearChannel() *PostUpdate {
+	_u.mutation.ClearChannel()
 	return _u
 }
 
@@ -838,6 +871,9 @@ func (_u *PostUpdate) check() error {
 	if _u.mutation.AuthorCleared() && len(_u.mutation.AuthorIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Post.author"`)
 	}
+	if _u.mutation.ChannelCleared() && len(_u.mutation.ChannelIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Post.channel"`)
+	}
 	return nil
 }
 
@@ -886,8 +922,11 @@ func (_u *PostUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.SlugCleared() {
 		_spec.ClearField(post.FieldSlug, field.TypeString)
 	}
-	if value, ok := _u.mutation.Pinned(); ok {
-		_spec.SetField(post.FieldPinned, field.TypeBool, value)
+	if value, ok := _u.mutation.PinnedRank(); ok {
+		_spec.SetField(post.FieldPinnedRank, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPinnedRank(); ok {
+		_spec.AddField(post.FieldPinnedRank, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.LastReplyAt(); ok {
 		_spec.SetField(post.FieldLastReplyAt, field.TypeTime, value)
@@ -958,6 +997,35 @@ func (_u *PostUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ChannelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   post.ChannelTable,
+			Columns: []string{post.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ChannelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   post.ChannelTable,
+			Columns: []string{post.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -1663,17 +1731,24 @@ func (_u *PostUpdateOne) ClearSlug() *PostUpdateOne {
 	return _u
 }
 
-// SetPinned sets the "pinned" field.
-func (_u *PostUpdateOne) SetPinned(v bool) *PostUpdateOne {
-	_u.mutation.SetPinned(v)
+// SetPinnedRank sets the "pinned_rank" field.
+func (_u *PostUpdateOne) SetPinnedRank(v int) *PostUpdateOne {
+	_u.mutation.ResetPinnedRank()
+	_u.mutation.SetPinnedRank(v)
 	return _u
 }
 
-// SetNillablePinned sets the "pinned" field if the given value is not nil.
-func (_u *PostUpdateOne) SetNillablePinned(v *bool) *PostUpdateOne {
+// SetNillablePinnedRank sets the "pinned_rank" field if the given value is not nil.
+func (_u *PostUpdateOne) SetNillablePinnedRank(v *int) *PostUpdateOne {
 	if v != nil {
-		_u.SetPinned(*v)
+		_u.SetPinnedRank(*v)
 	}
+	return _u
+}
+
+// AddPinnedRank adds value to the "pinned_rank" field.
+func (_u *PostUpdateOne) AddPinnedRank(v int) *PostUpdateOne {
+	_u.mutation.AddPinnedRank(v)
 	return _u
 }
 
@@ -1819,6 +1894,20 @@ func (_u *PostUpdateOne) ClearCategoryID() *PostUpdateOne {
 	return _u
 }
 
+// SetChannelID sets the "channel_id" field.
+func (_u *PostUpdateOne) SetChannelID(v xid.ID) *PostUpdateOne {
+	_u.mutation.SetChannelID(v)
+	return _u
+}
+
+// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
+func (_u *PostUpdateOne) SetNillableChannelID(v *xid.ID) *PostUpdateOne {
+	if v != nil {
+		_u.SetChannelID(*v)
+	}
+	return _u
+}
+
 // SetLinkID sets the "link_id" field.
 func (_u *PostUpdateOne) SetLinkID(v xid.ID) *PostUpdateOne {
 	_u.mutation.SetLinkID(v)
@@ -1853,6 +1942,11 @@ func (_u *PostUpdateOne) SetAuthor(v *Account) *PostUpdateOne {
 // SetCategory sets the "category" edge to the Category entity.
 func (_u *PostUpdateOne) SetCategory(v *Category) *PostUpdateOne {
 	return _u.SetCategoryID(v.ID)
+}
+
+// SetChannel sets the "channel" edge to the Channel entity.
+func (_u *PostUpdateOne) SetChannel(v *Channel) *PostUpdateOne {
+	return _u.SetChannelID(v.ID)
 }
 
 // AddTagIDs adds the "tags" edge to the Tag entity by IDs.
@@ -2077,6 +2171,12 @@ func (_u *PostUpdateOne) ClearAuthor() *PostUpdateOne {
 // ClearCategory clears the "category" edge to the Category entity.
 func (_u *PostUpdateOne) ClearCategory() *PostUpdateOne {
 	_u.mutation.ClearCategory()
+	return _u
+}
+
+// ClearChannel clears the "channel" edge to the Channel entity.
+func (_u *PostUpdateOne) ClearChannel() *PostUpdateOne {
+	_u.mutation.ClearChannel()
 	return _u
 }
 
@@ -2379,6 +2479,9 @@ func (_u *PostUpdateOne) check() error {
 	if _u.mutation.AuthorCleared() && len(_u.mutation.AuthorIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Post.author"`)
 	}
+	if _u.mutation.ChannelCleared() && len(_u.mutation.ChannelIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Post.channel"`)
+	}
 	return nil
 }
 
@@ -2444,8 +2547,11 @@ func (_u *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) {
 	if _u.mutation.SlugCleared() {
 		_spec.ClearField(post.FieldSlug, field.TypeString)
 	}
-	if value, ok := _u.mutation.Pinned(); ok {
-		_spec.SetField(post.FieldPinned, field.TypeBool, value)
+	if value, ok := _u.mutation.PinnedRank(); ok {
+		_spec.SetField(post.FieldPinnedRank, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedPinnedRank(); ok {
+		_spec.AddField(post.FieldPinnedRank, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.LastReplyAt(); ok {
 		_spec.SetField(post.FieldLastReplyAt, field.TypeTime, value)
@@ -2516,6 +2622,35 @@ func (_u *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(category.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ChannelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   post.ChannelTable,
+			Columns: []string{post.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ChannelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   post.ChannelTable,
+			Columns: []string{post.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
