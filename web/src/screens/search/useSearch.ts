@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { parseAsInteger, useQueryState } from "nuqs";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -13,6 +13,7 @@ import {
 } from "@/api/openapi-schema";
 import { useSearchQueryState } from "@/components/search/Search/useSearch";
 import { DatagraphKindSchema } from "@/lib/datagraph/schema";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 export type Props = {
   initialQuery: string;
@@ -33,6 +34,7 @@ export function useSearchScreen(props: Props) {
     ...parseAsInteger,
     defaultValue: 1,
   });
+  const { trackSearchClicked, trackSearchDone } = useEventTracking();
 
   const form = useForm<Form>({
     resolver: zodResolver(FormSchema),
@@ -71,6 +73,13 @@ export function useSearchScreen(props: Props) {
     },
   );
 
+  // Track search_done when results are loaded
+  useEffect(() => {
+    if (query && data && !isLoading) {
+      trackSearchDone(query, data.items?.length ?? 0);
+    }
+  }, [query, data, isLoading, trackSearchDone]);
+
   // NOTE: This is done via a useEffect because we don't want this to be present
   // on a server-render, only for client side search interactions.
   const [isSearchLoading, setLoading] = useState(false);
@@ -79,6 +88,7 @@ export function useSearchScreen(props: Props) {
   }, [isLoading]);
 
   const handleSearch = form.handleSubmit((data) => {
+    trackSearchClicked();
     setQuery(data.q);
   });
 

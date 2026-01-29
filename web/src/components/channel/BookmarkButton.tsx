@@ -1,13 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { useCallback } from "react";
 import { BookmarkIcon } from "@/components/ui/icons/Bookmark";
 import { styled } from "@/styled-system/jsx";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 export function BookmarkButton({ count }: { count?: number } = {}) {
+  const { trackSavedClicked } = useEventTracking();
+
+  const handleClick = useCallback(() => {
+    trackSavedClicked();
+  }, [trackSavedClicked]);
+
   return (
-    <Link href="/c">
+    <Link href="/c" onClick={handleClick}>
       <styled.div
         position="relative"
         display="inline-flex"

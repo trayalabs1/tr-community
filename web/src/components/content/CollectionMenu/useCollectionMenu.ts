@@ -5,6 +5,7 @@ import { Account, Collection, PostReference } from "src/api/openapi-schema";
 
 import { handle } from "@/api/client";
 import { useCollectionItemMutations } from "@/lib/collection/mutation";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 export type Props = {
   account: Account;
@@ -20,6 +21,7 @@ export function useCollectionMenu({ account, thread }: Props) {
 
   const { addPost, removePost, revalidate } =
     useCollectionItemMutations(account, router);
+  const { trackCardSave } = useEventTracking();
 
   if (!data) {
     return {
@@ -31,10 +33,11 @@ export function useCollectionMenu({ account, thread }: Props) {
   const { collections } = data;
 
   const handleSelect = (collection: Collection) => async () => {
+    const isAlreadySavedIn = collection?.has_queried_item;
+    trackCardSave(thread.id, isAlreadySavedIn ? "unsave" : "save");
+
     await handle(
       async () => {
-        const isAlreadySavedIn = collection?.has_queried_item;
-
         if (isAlreadySavedIn) {
           await removePost(collection.id, thread.id);
         } else {

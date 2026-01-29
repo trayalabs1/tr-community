@@ -5,10 +5,12 @@ import { ThreadReference } from "@/api/openapi-schema";
 import { useConfirmation } from "@/components/site/useConfirmation";
 import { useFeedMutations } from "@/lib/feed/mutation";
 import { withUndo } from "@/lib/thread/undo";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 export function useThreadCardModeration(thread: ThreadReference) {
   const router = useRouter();
   const { updateThread, deleteThread, revalidate } = useFeedMutations(undefined, undefined, undefined, router);
+  const { trackAdminApproved } = useEventTracking();
 
   const {
     isConfirming: isConfirmingDelete,
@@ -17,6 +19,8 @@ export function useThreadCardModeration(thread: ThreadReference) {
   } = useConfirmation(handleDelete);
 
   async function handleAcceptThread() {
+    trackAdminApproved(thread.id, thread.author.id);
+
     await handle(
       async () => {
         await updateThread(thread.id, { visibility: "published" });

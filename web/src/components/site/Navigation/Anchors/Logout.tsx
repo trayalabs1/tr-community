@@ -1,8 +1,10 @@
+import { useCallback } from "react";
 import { LogoutIcon } from "@/components/ui/icons/Logout";
 import { LinkButtonStyleProps } from "@/components/ui/link-button";
 import { Item } from "@/components/ui/menu";
 import { API_ADDRESS } from "@/config";
 import { button } from "@/styled-system/recipes";
+import { useMoengage } from "@/lib/moengage/useMoengage";
 
 import { AnchorProps } from "./Anchor";
 
@@ -36,11 +38,18 @@ export const LogoutLabel = "Logout";
 type Props = AnchorProps & LinkButtonStyleProps;
 
 export function LogoutAnchor({ hideLabel, ...props }: Props) {
+  const { logout: logoutMoengage } = useMoengage();
+
+  const handleLogout = useCallback(() => {
+    logoutMoengage();
+  }, [logoutMoengage]);
+
   return (
     <a
       className={button({ variant: "ghost", ...props })}
       href={LogoutRoute}
       title={LogoutLabel}
+      onClick={handleLogout}
     >
       {<LogoutIcon />}
       {!hideLabel && (
@@ -53,8 +62,14 @@ export function LogoutAnchor({ hideLabel, ...props }: Props) {
 }
 
 export function LogoutMenuItem({ hideLabel }: AnchorProps) {
+  const { logout: logoutMoengage } = useMoengage();
+
+  const handleLogout = useCallback(() => {
+    logoutMoengage();
+  }, [logoutMoengage]);
+
   return (
-    <a href={LogoutRoute}>
+    <a href={LogoutRoute} onClick={handleLogout}>
       <Item value={LogoutID}>
         {<LogoutIcon />}
         {!hideLabel && (

@@ -11,6 +11,7 @@ export const EVENTS = {
   community_search_done: { optional: ["search_query", "results_count"] },
   community_info_clicked: {},
   community_post_clicked: { optional: ["channel_id", "post_type"] },
+  community_create_post_clicked: { optional: ["channel_id"] },
   community_submit_for_review: {
     optional: ["post_length", "has_attachments", "has_mentions"],
   },

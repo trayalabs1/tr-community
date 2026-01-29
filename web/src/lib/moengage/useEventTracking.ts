@@ -29,10 +29,12 @@ export function useEventTracking() {
   const trackEvent = useCallback(
     (eventName: EventName, attributes?: Record<string, unknown>) => {
       const caseId = getCaseId();
-      moengage.trackEvent(eventName, {
-        case_id: caseId,
-        ...attributes,
-      });
+      setTimeout(() => {
+        moengage.trackEvent(eventName, {
+          case_id: caseId,
+          ...attributes,
+        });
+      }, 100);
     },
     [getCaseId]
   );
