@@ -44,6 +44,17 @@ export default async function RootLayout({ children }: PropsWithChildren) {
         */}
         <script src="/config.js" />
 
+        {/* MoEngage SDK Script */}
+        <script
+          src="https://cdn.moengage.com/webpush/releases/async/v2.67.0/moengage.min.js"
+          async
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.Moengage=window.Moengage||[],window.Moengage.push(["init",{app_id:"${process.env["NEXT_PUBLIC_MOENGAGE_APP_ID"]||""}",swPath:"/serviceworker.js"}]);`,
+          }}
+        />
+
         {/*
             NOTE: This stylesheet is fully server-side rendered but it's not
             static because it uses data from the API to be generated. But we
