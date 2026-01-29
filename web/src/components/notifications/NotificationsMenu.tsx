@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { Portal } from "@ark-ui/react";
 import Link from "next/link";
 
@@ -10,6 +11,7 @@ import * as Menu from "@/components/ui/menu";
 import { Center, LStack, WStack, styled } from "@/styled-system/jsx";
 import { hstack } from "@/styled-system/patterns";
 import { deriveError } from "@/utils/error";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 import { NotificationsTrigger } from "./NotificationsTrigger";
 import { NotificationItem } from "./item";
@@ -17,6 +19,12 @@ import { Props, useNotifications } from "./useNotifications";
 
 export function NotificationsMenu(props: Props) {
   const { ready, error, data, handlers } = useNotifications(props);
+  const { trackNotificationsClicked } = useEventTracking();
+
+  const handleNotificationsClick = useCallback(() => {
+    trackNotificationsClicked();
+  }, [trackNotificationsClicked]);
+
   if (!ready) {
     return (
       <NotificationsTrigger
@@ -35,7 +43,7 @@ export function NotificationsMenu(props: Props) {
 
   return (
     <Menu.Root closeOnSelect={false}>
-      <Menu.Trigger cursor="pointer" position="relative" asChild>
+      <Menu.Trigger cursor="pointer" position="relative" asChild onClick={handleNotificationsClick}>
         <NotificationsTrigger
           hideLabel
           size="md"

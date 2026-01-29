@@ -44,6 +44,38 @@ export default async function RootLayout({ children }: PropsWithChildren) {
         */}
         <script src="/config.js" />
 
+        {/* MoEngage SDK - Load the correct SDK version (matching form-v2s) */}
+        <script
+          src="https://cdn.moengage.com/webpush/moe_webSdk.min.latest.js"
+          async={false}
+        />
+        {/* Initialize MoEngage after SDK loads */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const appId = "${process.env["NEXT_PUBLIC_MOENGAGE_APP_ID"] || ""}";
+                const cluster = "${process.env["NEXT_PUBLIC_MOENGAGE_CLUSTER"] || "DC_3"}";
+                const debugLogs = parseInt("${process.env["NEXT_PUBLIC_MOENGAGE_DEBUG_LOGS"] || "1"}", 10);
+
+                if (!appId || typeof window.moe === 'undefined') {
+                  return;
+                }
+
+                try {
+                  window.Moengage = window.moe({
+                    app_id: appId,
+                    cluster: cluster,
+                    debug_logs: debugLogs
+                  });
+                } catch (error) {
+                  console.error('[MoEngage] Initialization error:', error);
+                }
+              })();
+            `,
+          }}
+        />
+
         {/*
             NOTE: This stylesheet is fully server-side rendered but it's not
             static because it uses data from the API to be generated. But we

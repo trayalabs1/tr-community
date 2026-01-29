@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { ModalDrawer } from "@/components/site/Modaldrawer/Modaldrawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,7 @@ import { MembersIcon } from "@/components/ui/icons/Members";
 import { UseDisclosureProps } from "@/utils/useDisclosure";
 import { VStack, styled } from "@/styled-system/jsx";
 import { useUsernameSelection } from "./useUsernameSelection";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 type Props = UseDisclosureProps & {
   onSuccess?: () => void;
@@ -23,6 +25,18 @@ export function UsernameModal({ onSuccess, ...disclosureProps }: Props) {
     handleSubmit,
     resetUsername,
   } = useUsernameSelection();
+  const { trackNameFilled } = useEventTracking();
+
+  const handleUsernameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newUsername = e.target.value;
+      setUsername(newUsername);
+      if (newUsername.length > 0) {
+        trackNameFilled(newUsername);
+      }
+    },
+    [setUsername, trackNameFilled]
+  );
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,7 +140,7 @@ export function UsernameModal({ onSuccess, ...disclosureProps }: Props) {
             <Input
               type="text"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={handleUsernameChange}
               placeholder="Your username..."
               disabled={isSubmitting}
               autoFocus

@@ -4,6 +4,7 @@ import { PostReference } from "src/api/openapi-schema";
 
 import { handle } from "@/api/client";
 import { useFeedMutations } from "@/lib/feed/mutation";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 export type Props = {
   thread: PostReference;
@@ -12,8 +13,11 @@ export type Props = {
 export function useLikeButton({ thread }: Props) {
   const router = useRouter();
   const { likePost, unlikePost, revalidate } = useFeedMutations(undefined, undefined, undefined, router);
+  const { trackCardLike } = useEventTracking();
 
   const handleClick = async () => {
+    trackCardLike(thread.id);
+
     await handle(
       async () => {
         // This is a toggle button, so we'll either like or unlike depending on what they have now.

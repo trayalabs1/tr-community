@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthTrayaToken } from "@/api/openapi-client/auth";
 import { VStack, styled } from "@/styled-system/jsx";
@@ -12,6 +12,7 @@ import { DiscussionIcon } from "@/components/ui/icons/Discussion";
 import { IntelligenceIcon } from "@/components/ui/icons/Intelligence";
 import { UsernameModal } from "../UsernameSelectionScreen/UsernameModal";
 import { useDisclosure } from "@/utils/useDisclosure";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 export function LandingScreen({ token }: { token: string }) {
   const router = useRouter();
@@ -20,12 +21,18 @@ export function LandingScreen({ token }: { token: string }) {
   const [error, setError] = useState<string | null>(null);
   const triggered = useRef(false);
   const usernameModal = useDisclosure();
+  const { trackOnboardingLanded, trackEnterClicked } = useEventTracking();
+
+  useEffect(() => {
+    trackOnboardingLanded();
+  }, [trackOnboardingLanded]);
 
   const handleJoinCommunity = async () => {
     if (triggered.current) return;
     triggered.current = true;
     setIsLoading(true);
     setError(null);
+    trackEnterClicked();
 
     handle(
       async () => {
