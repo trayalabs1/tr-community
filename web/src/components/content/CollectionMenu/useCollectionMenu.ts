@@ -34,7 +34,7 @@ export function useCollectionMenu({ account, thread }: Props) {
 
   const handleSelect = (collection: Collection) => async () => {
     const isAlreadySavedIn = collection?.has_queried_item;
-    trackCardSave(thread.id, isAlreadySavedIn ? "unsave" : "save");
+    trackCardSave(thread.id, isAlreadySavedIn ? "unsave" : "save", undefined);
 
     await handle(
       async () => {

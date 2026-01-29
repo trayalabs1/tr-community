@@ -19,7 +19,7 @@ export function useThreadCardModeration(thread: ThreadReference) {
   } = useConfirmation(handleDelete);
 
   async function handleAcceptThread() {
-    trackAdminApproved(thread.id, thread.author.id);
+    trackAdminApproved(thread.id, thread.author.id, thread.channel_id);
 
     await handle(
       async () => {

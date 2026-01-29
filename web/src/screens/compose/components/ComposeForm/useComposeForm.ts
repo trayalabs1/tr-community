@@ -163,7 +163,7 @@ export function useComposeForm({
   );
 
   const handlePublish = form.handleSubmit((data) => {
-    trackSubmitForReview(data.body?.length, false, false);
+    trackSubmitForReview(data.body?.length, false, false, channelID);
     return handle(
       async () => {
         setIsPublishing(true);

@@ -105,78 +105,86 @@ export function useEventTracking() {
   );
 
   const trackSubmitForReview = useCallback(
-    (postLength?: number, hasAttachments?: boolean, hasMentions?: boolean) => {
+    (postLength?: number, hasAttachments?: boolean, hasMentions?: boolean, channelId?: string) => {
       trackEvent("community_submit_for_review", {
         post_length: postLength,
         has_attachments: hasAttachments,
         has_mentions: hasMentions,
+        channel_id: channelId,
       });
     },
     [trackEvent]
   );
 
   const trackCardReply = useCallback(
-    (postId?: string, replyLength?: number) => {
+    (postId?: string, replyLength?: number, channelId?: string) => {
       trackEvent("community_card_reply", {
         post_id: postId,
         reply_length: replyLength,
+        channel_id: channelId,
       });
     },
     [trackEvent]
   );
 
   const trackCardRepliedTo = useCallback(
-    (postId?: string, replierId?: string) => {
+    (postId?: string, replierId?: string, channelId?: string) => {
       trackEvent("community_card_replied_to", {
         post_id: postId,
         replier_id: replierId,
+        channel_id: channelId,
       });
     },
     [trackEvent]
   );
 
-  const trackCardLike = useCallback((postId?: string) => {
+  const trackCardLike = useCallback((postId?: string, channelId?: string) => {
     trackEvent("community_card_like", {
       post_id: postId,
+      channel_id: channelId,
     });
   }, [trackEvent]);
 
   const trackCardLikedTo = useCallback(
-    (postId?: string, likerId?: string) => {
+    (postId?: string, likerId?: string, channelId?: string) => {
       trackEvent("community_card_liked_to", {
         post_id: postId,
         liker_id: likerId,
+        channel_id: channelId,
       });
     },
     [trackEvent]
   );
 
   const trackCardSave = useCallback(
-    (postId?: string, action?: "save" | "unsave") => {
+    (postId?: string, action?: "save" | "unsave", channelId?: string) => {
       trackEvent("community_card_save", {
         post_id: postId,
         action,
+        channel_id: channelId,
       });
     },
     [trackEvent]
   );
 
   const trackAdminApproved = useCallback(
-    (postId?: string, approvedPostOwnerId?: string) => {
+    (postId?: string, approvedPostOwnerId?: string, channelId?: string) => {
       trackEvent("community_admin_approved", {
         post_id: postId,
         approved_post_owner_id: approvedPostOwnerId,
+        channel_id: channelId,
       });
     },
     [trackEvent]
   );
 
   const trackAdminReplied = useCallback(
-    (postId?: string, replyLength?: number, postOwnerId?: string) => {
+    (postId?: string, replyLength?: number, postOwnerId?: string, channelId?: string) => {
       trackEvent("community_admin_replied", {
         post_id: postId,
         reply_length: replyLength,
         post_owner_id: postOwnerId,
+        channel_id: channelId,
       });
     },
     [trackEvent]
