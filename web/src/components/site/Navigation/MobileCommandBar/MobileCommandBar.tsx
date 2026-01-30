@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -9,27 +10,39 @@ import { HomeIcon } from "@heroicons/react/24/outline";
 import { LibraryIcon } from "@/components/ui/icons/Library";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 export function MobileCommandBar() {
   const pathname = usePathname();
+  const { trackSearchClicked, trackInfoClicked } = useEventTracking();
 
   const isHomeActive = pathname === "/" || (pathname.startsWith("/channels") && !pathname.includes("/settings"));
   const isSearchActive = pathname.startsWith("/search");
   const isLibraryActive = pathname.startsWith("/l");
   const isInfoActive = pathname.startsWith("/info");
 
+  const handleSearchClick = useCallback(() => {
+    trackSearchClicked();
+  }, [trackSearchClicked]);
+
+  const handleInfoClick = useCallback(() => {
+    trackInfoClicked();
+  }, [trackInfoClicked]);
+
   const TabItem = ({
     href,
     icon: Icon,
     label,
     isActive,
+    onClick,
   }: {
     href: string;
     icon: React.ComponentType<any>;
     label: string;
     isActive: boolean;
+    onClick?: () => void;
   }) => (
-    <Link href={href} style={{ textDecoration: "none" }}>
+    <Link href={href} style={{ textDecoration: "none" }} onClick={onClick}>
       <VStack
         alignItems="center"
         justifyContent="center"
@@ -101,6 +114,7 @@ export function MobileCommandBar() {
           icon={SearchIcon}
           label="Search"
           isActive={isSearchActive}
+          onClick={handleSearchClick}
         />
         {/* <TabItem
           href="/l"
@@ -113,6 +127,7 @@ export function MobileCommandBar() {
           icon={InformationCircleIcon}
           label="Info"
           isActive={isInfoActive}
+          onClick={handleInfoClick}
         />
       </HStack>
     </styled.nav>

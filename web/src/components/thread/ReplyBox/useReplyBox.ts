@@ -5,12 +5,14 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Account, DatagraphItemKind, Thread } from "src/api/openapi-schema";
+import { Account, DatagraphItemKind, Thread, Permission } from "src/api/openapi-schema";
 
 import { handle } from "@/api/client";
 import { useSession } from "@/auth";
 import { sendBeacon } from "@/lib/beacon/beacon";
 import { useThreadMutations } from "@/lib/thread/mutation";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
+import { hasPermission } from "@/utils/permissions";
 
 import { useReplyContext } from "../ReplyContext";
 
@@ -38,6 +40,7 @@ export function useReplyBox({ initialSession, thread }: Props) {
     thread.replies.current_page,
     thread.replies.total_pages,
   );
+  const { trackCardReply, trackAdminReplied } = useEventTracking();
   const [resetKey, setResetKey] = useState("");
   const [isEmpty, setEmpty] = useState(true);
   const [postedReply, setPostedReply] = useState<ReplyLocationState | null>(
@@ -58,6 +61,14 @@ export function useReplyBox({ initialSession, thread }: Props) {
   }
 
   const handleSubmit = form.handleSubmit(async (data: Form) => {
+    const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
+
+    trackCardReply(thread.id, data.body.length, undefined);
+
+    if (isAdmin) {
+      trackAdminReplied(thread.id, data.body.length, thread.author.id, undefined);
+    }
+
     await handle(
       async () => {
         const { id } = await createReply({

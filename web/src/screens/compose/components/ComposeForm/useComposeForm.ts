@@ -15,6 +15,7 @@ import { Thread, ThreadInitialProps, Visibility, Permission } from "src/api/open
 import { handle } from "@/api/client";
 import { hasPermission } from "@/utils/permissions";
 import { useSession } from "@/auth";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 export type Props = {
   editing?: string;
@@ -45,6 +46,7 @@ export function useComposeForm({
   const router = useRouter();
   const { mutate } = useSWRConfig();
   const session = useSession();
+  const { trackPostClicked, trackSubmitForReview } = useEventTracking();
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -160,8 +162,9 @@ export function useComposeForm({
     ),
   );
 
-  const handlePublish = form.handleSubmit((data) =>
-    handle(
+  const handlePublish = form.handleSubmit((data) => {
+    trackSubmitForReview(data.body?.length, false, false, channelID);
+    return handle(
       async () => {
         setIsPublishing(true);
         await publish(data);
@@ -179,8 +182,8 @@ export function useComposeForm({
           setIsPublishing(false);
         },
       },
-    ),
-  );
+    );
+  });
 
   const handleAssetUpload = async () => {
     await handle(

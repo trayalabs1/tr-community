@@ -1,16 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useCallback } from "react";
 import { NotificationIcon } from "@/components/ui/icons/Notification";
 import { Box, styled } from "@/styled-system/jsx";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 type Props = {
   hasUnread?: boolean;
 };
 
 export function NotificationButton({ hasUnread = false }: Props) {
+  const { trackNotificationsClicked } = useEventTracking();
+
+  const handleClick = useCallback(() => {
+    trackNotificationsClicked();
+  }, [trackNotificationsClicked]);
+
   return (
-    <Link href="/notifications">
+    <Link href="/notifications" onClick={handleClick}>
       <styled.div position="relative" display="inline-flex">
         <styled.button
           display="flex"
