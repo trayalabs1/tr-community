@@ -64,6 +64,22 @@ func (d *Querier) GetByID(ctx context.Context, id account.AccountID) (*account.A
 	return acc, nil
 }
 
+func (d *Querier) GetHandleAndMetadata(ctx context.Context, id account.AccountID) (string, map[string]any, error) {
+	acc, err := d.db.Account.
+		Query().
+		Where(account_ent.ID(xid.ID(id))).
+		Select(account_ent.FieldHandle, account_ent.FieldMetadata).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return "", nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.NotFound))
+		}
+		return "", nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.Internal))
+	}
+
+	return acc.Handle, acc.Metadata, nil
+}
+
 func (d *Querier) LookupByHandle(ctx context.Context, handle string) (*account.AccountWithEdges, bool, error) {
 	q := d.db.Account.
 		Query().

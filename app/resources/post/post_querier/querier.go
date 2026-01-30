@@ -33,15 +33,15 @@ func (q *Querier) Probe(ctx context.Context, id post.ID) (*post.PostRef, error) 
 	return post.MapRef(p), nil
 }
 
-func (q *Querier) AuthorID(ctx context.Context, id post.ID) (account.AccountID, error) {
+func (q *Querier) AuthorAndChannelID(ctx context.Context, id post.ID) (account.AccountID, xid.ID, error) {
 	p, err := q.db.Post.
 		Query().
 		Where(ent_post.IDEQ(xid.ID(id))).
-		Select(ent_post.FieldAccountPosts).
+		Select(ent_post.FieldAccountPosts, ent_post.FieldChannelID).
 		Only(ctx)
 	if err != nil {
-		return account.AccountID{}, fault.Wrap(err, fctx.With(ctx))
+		return account.AccountID{}, xid.ID{}, fault.Wrap(err, fctx.With(ctx))
 	}
 
-	return account.AccountID(p.AccountPosts), nil
+	return account.AccountID(p.AccountPosts), p.ChannelID, nil
 }

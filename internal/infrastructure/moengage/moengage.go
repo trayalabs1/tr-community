@@ -114,7 +114,10 @@ func (c *Client) AddEvent(ctx context.Context, data EventData) error {
 		return fault.Wrap(errMoEngageRequestFailed, fctx.With(ctx), fmsg.With(message))
 	}
 
-	c.logger.Debug("moengage event sent", slog.String("event", data.Event))
+	c.logger.Debug("moengage event sent successfully",
+		slog.String("event", data.Event),
+		slog.String("case_id", data.CaseID),
+	)
 
 	return nil
 }
