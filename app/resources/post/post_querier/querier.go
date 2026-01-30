@@ -7,6 +7,7 @@ import (
 	"github.com/Southclaws/fault/fctx"
 	"github.com/rs/xid"
 
+	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/post"
 	"github.com/Southclaws/storyden/internal/ent"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
@@ -30,4 +31,17 @@ func (q *Querier) Probe(ctx context.Context, id post.ID) (*post.PostRef, error) 
 	}
 
 	return post.MapRef(p), nil
+}
+
+func (q *Querier) AuthorID(ctx context.Context, id post.ID) (account.AccountID, error) {
+	p, err := q.db.Post.
+		Query().
+		Where(ent_post.IDEQ(xid.ID(id))).
+		Select(ent_post.FieldAccountPosts).
+		Only(ctx)
+	if err != nil {
+		return account.AccountID{}, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return account.AccountID(p.AccountPosts), nil
 }
