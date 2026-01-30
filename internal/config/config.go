@@ -169,6 +169,15 @@ type Config struct {
 	SendGridAPIKey string `envconfig:"SENDGRID_API_KEY"`
 
 	// -
+	// MoEngage
+	// -
+
+	// The MoEngage app key used to identify your MoEngage application.
+	MoEngageAppKey string `envconfig:"MOENGAGE_APP_KEY"`
+	// The MoEngage auth key used to authenticate API requests.
+	MoEngageAuthKey string `envconfig:"MOENGAGE_AUTH_KEY"`
+
+	// -
 	// Authentication
 	// -
 

@@ -53,6 +53,7 @@ func (l *PostLiker) AddPostLike(ctx context.Context, accountID account.AccountID
 	l.bus.Publish(ctx, &message.EventPostLiked{
 		PostID:     postID,
 		RootPostID: postRef.Root,
+		LikerID:    accountID,
 	})
 
 	return nil

@@ -69,6 +69,7 @@ type EventThreadReplyUnpublished struct {
 type EventPostLiked struct {
 	PostID     post.ID
 	RootPostID post.ID
+	LikerID    account.AccountID
 }
 
 type EventPostUnliked struct {
