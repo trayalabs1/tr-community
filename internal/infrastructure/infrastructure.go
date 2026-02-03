@@ -12,6 +12,7 @@ import (
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation"
 	"github.com/Southclaws/storyden/internal/infrastructure/logger"
 	"github.com/Southclaws/storyden/internal/infrastructure/mailer"
+	"github.com/Southclaws/storyden/internal/infrastructure/moengage"
 	"github.com/Southclaws/storyden/internal/infrastructure/object"
 	"github.com/Southclaws/storyden/internal/infrastructure/pdf"
 	"github.com/Southclaws/storyden/internal/infrastructure/pubsub"
@@ -32,6 +33,7 @@ func Build() fx.Option {
 		cache.Build(),
 		fx.Provide(rate.NewFactory),
 		mailer.Build(),
+		moengage.Build(),
 		sms.Build(),
 		fx.Provide(webauthn.New),
 		object.Build(),
