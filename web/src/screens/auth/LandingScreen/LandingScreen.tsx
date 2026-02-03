@@ -13,11 +13,13 @@ import { IntelligenceIcon } from "@/components/ui/icons/Intelligence";
 import { UsernameModal } from "../UsernameSelectionScreen/UsernameModal";
 import { useDisclosure } from "@/utils/useDisclosure";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
+import { Spinner } from "@/components/ui/Spinner";
 
 export function LandingScreen({ token }: { token: string }) {
   const router = useRouter();
   const { trigger } = useAuthTrayaToken({ token });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [needsUsername, setNeedsUsername] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const triggered = useRef(false);
   const usernameModal = useDisclosure();
@@ -27,45 +29,55 @@ export function LandingScreen({ token }: { token: string }) {
     trackOnboardingLanded();
   }, [trackOnboardingLanded]);
 
-  const handleJoinCommunity = async () => {
+  useEffect(() => {
     if (triggered.current) return;
     triggered.current = true;
-    setIsLoading(true);
-    setError(null);
     trackEnterClicked();
 
     handle(
       async () => {
         const response = await trigger();
 
-        // Check if user needs to set a username
         if (response?.needs_username) {
-          usernameModal.onOpen();
-          // Keep loading state true while modal is open
-        } else {
-          // User doesn't need to set username, redirect to home
+          setNeedsUsername(true);
           setIsLoading(false);
-          router.push("/");
+          usernameModal.onOpen();
+        } else {
+          router.push("/channels");
         }
       },
       {
         errorToast: false,
-        onError: async (err) => {
+        onError: async () => {
+          triggered.current = false;
+          setIsLoading(false);
+          setNeedsUsername(true);
+          setError("Authentication failed. Please try again.");
+        },
+      }
+    );
+  }, [trigger, router, usernameModal, trackEnterClicked]);
 
-          let errorMessage = "Unknown error";
-          let statusCode = undefined;
+  const handleRetry = async () => {
+    if (triggered.current) return;
+    triggered.current = true;
+    setIsLoading(true);
+    setError(null);
 
-          if (err instanceof Error) {
-            errorMessage = err.message;
-            if ("status" in err) {
-              statusCode = (err as any).status;
-            }
-          } else if (typeof err === "string") {
-            errorMessage = err;
-          } else {
-            errorMessage = JSON.stringify(err);
-          }
+    handle(
+      async () => {
+        const response = await trigger();
 
+        if (response?.needs_username) {
+          setIsLoading(false);
+          usernameModal.onOpen();
+        } else {
+          router.push("/channels");
+        }
+      },
+      {
+        errorToast: false,
+        onError: async () => {
           triggered.current = false;
           setIsLoading(false);
           setError("Authentication failed. Please try again.");
@@ -73,6 +85,25 @@ export function LandingScreen({ token }: { token: string }) {
       }
     );
   };
+
+  if (isLoading && !needsUsername) {
+    return (
+      <styled.div
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        minH="screen"
+        p="6"
+        style={{ background: "#f5f5f5" }}
+      >
+        <Spinner size="lg" />
+        <styled.p mt="4" color="fg.muted" fontSize="sm">
+          Loading...
+        </styled.p>
+      </styled.div>
+    );
+  }
 
   return (
     <styled.div
@@ -249,7 +280,7 @@ export function LandingScreen({ token }: { token: string }) {
         {/* Join Button */}
         <Button
           w="full"
-          onClick={handleJoinCommunity}
+          onClick={handleRetry}
           loading={isLoading}
           disabled={isLoading}
           style={{
@@ -263,7 +294,7 @@ export function LandingScreen({ token }: { token: string }) {
             cursor: isLoading ? "not-allowed" : "pointer",
           }}
         >
-          {isLoading ? "Authenticating..." : "Enter Community"}
+          {isLoading ? "Authenticating..." : error ? "Try Again" : "Enter Community"}
         </Button>
       </styled.div>
 
@@ -280,7 +311,7 @@ export function LandingScreen({ token }: { token: string }) {
         onOpenChange={usernameModal.onOpenChange}
         onSuccess={() => {
           setIsLoading(false);
-          router.push("/");
+          router.push("/channels");
         }}
       />
     </styled.div>
