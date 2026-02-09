@@ -50,6 +50,9 @@ func (Node) Fields() []ent.Field {
 func (Node) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("slug"),
+		index.Fields("parent_node_id", "visibility", "sort"),
+		index.Fields("visibility", "deleted_at", "updated_at"),
+		index.Fields("account_id"),
 	}
 }
 

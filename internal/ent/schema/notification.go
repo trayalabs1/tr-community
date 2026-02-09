@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/rs/xid"
 )
 
@@ -38,6 +39,12 @@ func (Notification) Fields() []ent.Field {
 			GoType(xid.ID{}).
 			Optional().
 			Nillable(),
+	}
+}
+
+func (Notification) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("owner_account_id", "created_at"),
 	}
 }
 
