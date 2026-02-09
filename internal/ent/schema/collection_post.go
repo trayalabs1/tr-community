@@ -61,6 +61,7 @@ func (CollectionPost) Indexes() []ent.Index {
 		index.Fields("collection_id", "post_id").
 			Unique().
 			StorageKey("unique_collection_post"),
+		index.Fields("post_id"),
 	}
 }
 

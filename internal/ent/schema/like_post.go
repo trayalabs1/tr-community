@@ -44,5 +44,7 @@ func (LikePost) Indexes() []ent.Index {
 		index.Fields("account_id", "post_id").
 			Unique().
 			StorageKey("unique_like_post"),
+		index.Fields("post_id"),
+		index.Fields("account_id", "created_at"),
 	}
 }

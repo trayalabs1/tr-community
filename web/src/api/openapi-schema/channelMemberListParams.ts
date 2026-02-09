@@ -12,9 +12,9 @@ export type ChannelMemberListParams = {
   /**
    * Page number for pagination
    */
-  page?: string;
+  page?: number;
   /**
    * Number of members per page
    */
-  limit?: string;
+  limit?: number;
 };
