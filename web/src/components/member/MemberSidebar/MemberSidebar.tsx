@@ -275,8 +275,8 @@ export function MemberSidebar({
         </LStack>
       )}
 
-      {/* Topics Section */}
-      {topics.length > 0 && (
+{/* Topics Section - Hidden for now */}
+      {false && topics.length > 0 && (
         <LStack gap="3" w="full">
           <styled.button
             onClick={() => setIsTopicsOpen(!isTopicsOpen)}
