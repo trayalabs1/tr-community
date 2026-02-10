@@ -45,5 +45,6 @@ func (React) Indexes() []ent.Index {
 		index.Fields("account_id", "post_id", "emoji").
 			Unique().
 			StorageKey("unique_react_post_emoji"),
+		index.Fields("post_id"),
 	}
 }

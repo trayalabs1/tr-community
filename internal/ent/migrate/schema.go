@@ -442,6 +442,11 @@ var (
 				Unique:  true,
 				Columns: []*schema.Column{CollectionPostsColumns[2], CollectionPostsColumns[3]},
 			},
+			{
+				Name:    "collectionpost_post_id",
+				Unique:  false,
+				Columns: []*schema.Column{CollectionPostsColumns[3]},
+			},
 		},
 	}
 	// EmailsColumns holds the columns for the "emails" table.
@@ -610,6 +615,16 @@ var (
 				Unique:  true,
 				Columns: []*schema.Column{LikePostsColumns[2], LikePostsColumns[3]},
 			},
+			{
+				Name:    "likepost_post_id",
+				Unique:  false,
+				Columns: []*schema.Column{LikePostsColumns[3]},
+			},
+			{
+				Name:    "likepost_account_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{LikePostsColumns[2], LikePostsColumns[1]},
+			},
 		},
 	}
 	// LinksColumns holds the columns for the "links" table.
@@ -749,6 +764,21 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{NodesColumns[6]},
 			},
+			{
+				Name:    "node_parent_node_id_visibility_sort",
+				Unique:  false,
+				Columns: []*schema.Column{NodesColumns[16], NodesColumns[10], NodesColumns[11]},
+			},
+			{
+				Name:    "node_visibility_deleted_at_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{NodesColumns[10], NodesColumns[3], NodesColumns[2]},
+			},
+			{
+				Name:    "node_account_id",
+				Unique:  false,
+				Columns: []*schema.Column{NodesColumns[13]},
+			},
 		},
 	}
 	// NotificationsColumns holds the columns for the "notifications" table.
@@ -780,6 +810,13 @@ var (
 				Columns:    []*schema.Column{NotificationsColumns[8]},
 				RefColumns: []*schema.Column{AccountsColumns[0]},
 				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "notification_owner_account_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{NotificationsColumns[7], NotificationsColumns[1]},
 			},
 		},
 	}
@@ -873,6 +910,16 @@ var (
 				Name:    "post_root_post_id_deleted_at_created_at",
 				Unique:  false,
 				Columns: []*schema.Column{PostsColumns[17], PostsColumns[3], PostsColumns[1]},
+			},
+			{
+				Name:    "post_account_posts",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[13]},
+			},
+			{
+				Name:    "post_category_id_deleted_at_visibility",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[14], PostsColumns[3], PostsColumns[12]},
 			},
 		},
 	}
@@ -1063,6 +1110,11 @@ var (
 				Name:    "unique_react_post_emoji",
 				Unique:  true,
 				Columns: []*schema.Column{ReactsColumns[3], ReactsColumns[4], ReactsColumns[2]},
+			},
+			{
+				Name:    "react_post_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReactsColumns[4]},
 			},
 		},
 	}

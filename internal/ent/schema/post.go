@@ -64,6 +64,12 @@ func (Post) Indexes() []ent.Index {
 		// - root post + soft delete always used for filtering
 		// - created at always used for ordering
 		index.Fields("root_post_id", "deleted_at", "created_at"),
+
+		// Author filtering queries
+		index.Fields("account_posts"),
+
+		// Category filtering queries
+		index.Fields("category_id", "deleted_at", "visibility"),
 	}
 }
 
