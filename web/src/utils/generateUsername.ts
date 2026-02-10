@@ -1,16 +1,10 @@
-import { Config, uniqueNamesGenerator, adjectives, names, colors } from "unique-names-generator";
+export function generateRandomUsername(name?: string): string {
+  const fourDigitSuffix = Math.floor(1000 + Math.random() * 9000);
 
-export function generateRandomUsername(): string {
-  const config: Config = {
-    dictionaries: [colors, names],
-    separator: "_",
-    length: 2,
-    style: "lowerCase",
-  };
+  if (name) {
+    const cleanName = name.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
+    return `${cleanName}${fourDigitSuffix}`;
+  }
 
-  const generatedName = uniqueNamesGenerator(config);
-
-  const usernameWithNumber = `${generatedName}${Math.floor(Math.random() * 100)}`;
-
-  return usernameWithNumber;
+  return `user${fourDigitSuffix}`;
 }

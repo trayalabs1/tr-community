@@ -212,7 +212,7 @@ export default async function ChannelsPage() {
             </VStack>
           )}
 
-          {/* Topics */}
+{/* Topics - Hidden for now
           {topicChannels.length > 0 && (
             <VStack alignItems="start" gap="4" width="full">
               <Heading as="h2" size="md" color="fg.subtle">
@@ -237,6 +237,7 @@ export default async function ChannelsPage() {
               </VStack>
             </VStack>
           )}
+*/}
         </VStack>
       ) : (
         <styled.div

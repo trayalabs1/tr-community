@@ -105,6 +105,7 @@ export function ContentNavigationList(props: Props) {
             }}
           />
         )}
+{/* Topics - Hidden for now
         {selectedChannelId && selectedChannelCategories && (
           <div
             style={{
@@ -121,6 +122,7 @@ export function ContentNavigationList(props: Props) {
             />
           </div>
         )}
+*/}
         {nodeListData?.nodes && nodeListData.nodes.length > 0 && (
           <div
             style={{

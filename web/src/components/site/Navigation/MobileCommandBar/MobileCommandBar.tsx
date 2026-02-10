@@ -81,7 +81,7 @@ export function MobileCommandBar() {
   return (
     <styled.nav
       position="fixed"
-      bottom="safeBottom"
+      bottom="0"
       left="0"
       right="0"
       width="full"
