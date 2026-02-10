@@ -12,9 +12,10 @@ import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 type Props = UseDisclosureProps & {
   onSuccess?: () => void;
+  initialName?: string;
 };
 
-export function UsernameModal({ onSuccess, ...disclosureProps }: Props) {
+export function UsernameModal({ onSuccess, initialName, ...disclosureProps }: Props) {
   const {
     username,
     setUsername,
@@ -24,7 +25,7 @@ export function UsernameModal({ onSuccess, ...disclosureProps }: Props) {
     isSubmitting,
     handleSubmit,
     resetUsername,
-  } = useUsernameSelection();
+  } = useUsernameSelection(initialName);
   const { trackNameFilled } = useEventTracking();
 
   const handleUsernameChange = useCallback(

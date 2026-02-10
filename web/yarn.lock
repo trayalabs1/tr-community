@@ -13640,13 +13640,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"unique-names-generator@npm:^4.7.1":
-  version: 4.7.1
-  resolution: "unique-names-generator@npm:4.7.1"
-  checksum: 10c0/db07b9a0fee6eac4a21cf567c9744ee97895aa744d51ec913557205173a65c1a7a4d12470295796acb7247e6646e7975c340bb634c7adf41e5d950fa5cf94375
-  languageName: node
-  linkType: hard
-
 "unique-slug@npm:^5.0.0":
   version: 5.0.0
   resolution: "unique-slug@npm:5.0.0"
@@ -14205,7 +14198,6 @@ __metadata:
     turndown: "npm:^7.2.1"
     typescript: "npm:^5.9.3"
     unified: "npm:^11.0.5"
-    unique-names-generator: "npm:^4.7.1"
     uvu: "npm:^0.5.6"
     vaul: "npm:^1.1.2"
     zod: "npm:^3.25.76"

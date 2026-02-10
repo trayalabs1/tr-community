@@ -7,8 +7,8 @@ const USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 const MIN_LENGTH = 3;
 const MAX_LENGTH = 30; // Matches backend validation limit
 
-export function useUsernameSelection() {
-  const [username, setUsername] = useState(() => generateRandomUsername());
+export function useUsernameSelection(initialName?: string) {
+  const [username, setUsername] = useState(() => generateRandomUsername(initialName));
   const [isChecking, setIsChecking] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -137,7 +137,7 @@ export function useUsernameSelection() {
   };
 
   const resetUsername = () => {
-    setUsername(generateRandomUsername());
+    setUsername(generateRandomUsername(initialName));
     setIsAvailable(null);
     setError(null);
     setIsChecking(false);

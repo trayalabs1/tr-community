@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthTrayaToken } from "@/api/openapi-client/auth";
+import { useAccountGet } from "@/api/openapi-client/accounts";
 import { VStack, styled } from "@/styled-system/jsx";
 import { handle } from "@/api/client";
 import { Button } from "@/components/ui/button";
@@ -18,9 +19,11 @@ import { Spinner } from "@/components/ui/Spinner";
 export function LandingScreen({ token }: { token: string }) {
   const router = useRouter();
   const { trigger } = useAuthTrayaToken({ token });
+  const { mutate: mutateAccount } = useAccountGet();
   const [isLoading, setIsLoading] = useState(true);
   const [needsUsername, setNeedsUsername] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | undefined>();
   const triggered = useRef(false);
   const usernameModal = useDisclosure();
   const { trackOnboardingLanded, trackEnterClicked } = useEventTracking();
@@ -39,6 +42,8 @@ export function LandingScreen({ token }: { token: string }) {
         const response = await trigger();
 
         if (response?.needs_username) {
+          const account = await mutateAccount();
+          setUserName(account?.name);
           setNeedsUsername(true);
           setIsLoading(false);
           usernameModal.onOpen();
@@ -56,7 +61,7 @@ export function LandingScreen({ token }: { token: string }) {
         },
       }
     );
-  }, [trigger, router, usernameModal, trackEnterClicked]);
+  }, [trigger, router, usernameModal, trackEnterClicked, mutateAccount]);
 
   const handleRetry = async () => {
     if (triggered.current) return;
@@ -69,6 +74,8 @@ export function LandingScreen({ token }: { token: string }) {
         const response = await trigger();
 
         if (response?.needs_username) {
+          const account = await mutateAccount();
+          setUserName(account?.name);
           setIsLoading(false);
           usernameModal.onOpen();
         } else {
@@ -313,6 +320,7 @@ export function LandingScreen({ token }: { token: string }) {
           setIsLoading(false);
           router.push("/channels");
         }}
+        initialName={userName}
       />
     </styled.div>
   );
