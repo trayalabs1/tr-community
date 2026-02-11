@@ -48,6 +48,7 @@ export function LandingScreen({ token }: { token: string }) {
           setIsLoading(false);
           usernameModal.onOpen();
         } else {
+          await mutateAccount();
           router.push("/channels");
         }
       },
@@ -79,6 +80,7 @@ export function LandingScreen({ token }: { token: string }) {
           setIsLoading(false);
           usernameModal.onOpen();
         } else {
+          await mutateAccount();
           router.push("/channels");
         }
       },
