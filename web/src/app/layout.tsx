@@ -58,19 +58,24 @@ export default async function RootLayout({ children }: PropsWithChildren) {
                 const cluster = "${process.env["NEXT_PUBLIC_MOENGAGE_CLUSTER"] || "DC_3"}";
                 const debugLogs = parseInt("${process.env["NEXT_PUBLIC_MOENGAGE_DEBUG_LOGS"] || "1"}", 10);
 
-                if (!appId || typeof window.moe === 'undefined') {
-                  return;
-                }
+                if (!appId) return;
 
-                try {
-                  window.Moengage = window.moe({
-                    app_id: appId,
-                    cluster: cluster,
-                    debug_logs: debugLogs
-                  });
-                } catch (error) {
-                  console.error('[MoEngage] Initialization error:', error);
+                function initMoengage() {
+                  if (typeof window.moe === 'undefined') {
+                    setTimeout(initMoengage, 100);
+                    return;
+                  }
+                  try {
+                    window.Moengage = window.moe({
+                      app_id: appId,
+                      cluster: cluster,
+                      debug_logs: debugLogs
+                    });
+                  } catch (error) {
+                    console.error('[MoEngage] Initialization error:', error);
+                  }
                 }
+                initMoengage();
               })();
             `,
           }}
