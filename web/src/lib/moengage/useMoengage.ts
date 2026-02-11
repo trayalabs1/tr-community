@@ -3,6 +3,10 @@ import type { MoEngageUser } from "./types";
 import { moengage } from "./utils";
 
 export function useMoengage() {
+  const identify = useCallback((uniqueId: string) => {
+    moengage.identify(uniqueId);
+  }, []);
+
   const trackEvent = useCallback(
     (eventName: string, eventAttributes?: Record<string, unknown>) => {
       moengage.trackEvent(eventName, eventAttributes);
@@ -23,6 +27,7 @@ export function useMoengage() {
   }, []);
 
   return {
+    identify,
     trackEvent,
     setUserAttributes,
     logout,
