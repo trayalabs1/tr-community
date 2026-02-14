@@ -35,7 +35,6 @@ export function LandingScreen({ token }: { token: string }) {
   useEffect(() => {
     if (triggered.current) return;
     triggered.current = true;
-    trackEnterClicked();
 
     handle(
       async () => {
@@ -46,7 +45,6 @@ export function LandingScreen({ token }: { token: string }) {
           setUserName(account?.name);
           setNeedsUsername(true);
           setIsLoading(false);
-          usernameModal.onOpen();
         } else {
           await mutateAccount();
           router.push("/channels");
@@ -62,9 +60,16 @@ export function LandingScreen({ token }: { token: string }) {
         },
       }
     );
-  }, [trigger, router, usernameModal, trackEnterClicked, mutateAccount]);
+  }, [trigger, router, mutateAccount]);
 
-  const handleRetry = async () => {
+  const handleEnterCommunity = async () => {
+    trackEnterClicked();
+
+    if (needsUsername && !error) {
+      usernameModal.onOpen();
+      return;
+    }
+
     if (triggered.current) return;
     triggered.current = true;
     setIsLoading(true);
@@ -289,7 +294,7 @@ export function LandingScreen({ token }: { token: string }) {
         {/* Join Button */}
         <Button
           w="full"
-          onClick={handleRetry}
+          onClick={handleEnterCommunity}
           loading={isLoading}
           disabled={isLoading}
           style={{
