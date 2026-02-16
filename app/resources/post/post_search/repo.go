@@ -115,14 +115,10 @@ func WithTags(names ...tag_ref.Name) Filter {
 }
 
 // WithChannels filters posts to only those in the specified channel IDs.
-// If no channel IDs are provided (empty list), the filter returns no results
-// to support users with no channel memberships seeing no posts.
+// Callers should check for empty IDs and return empty results before calling Search.
 func WithChannels(ids ...xid.ID) Filter {
 	return func(pq *ent.PostQuery) {
-		// If no channel IDs provided, match nothing (user has no memberships)
-		// We use a predicate that will never match to return empty results
 		if len(ids) == 0 {
-			pq.Where(ent_post.IDEQ(xid.NilID())) // Match posts with nil ID (never matches)
 			return
 		}
 		pq.Where(ent_post.ChannelIDIn(ids...))
