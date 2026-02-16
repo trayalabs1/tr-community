@@ -19,6 +19,7 @@ import (
 	"github.com/rs/xid"
 
 	"github.com/Southclaws/storyden/app/resources/account"
+	"github.com/Southclaws/storyden/app/resources/channel_membership"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/library"
 	"github.com/Southclaws/storyden/app/resources/post"
@@ -26,7 +27,9 @@ import (
 	"github.com/Southclaws/storyden/app/resources/post/reply"
 	"github.com/Southclaws/storyden/app/resources/post/thread"
 	"github.com/Southclaws/storyden/app/resources/profile"
+	"github.com/Southclaws/storyden/app/resources/rbac"
 	"github.com/Southclaws/storyden/app/resources/tag/tag_ref"
+	"github.com/Southclaws/storyden/app/services/authentication/session"
 	"github.com/Southclaws/storyden/app/services/search/searcher"
 	"github.com/Southclaws/storyden/app/services/semdex"
 	"github.com/Southclaws/storyden/app/services/system/instance_info"
@@ -34,19 +37,22 @@ import (
 )
 
 type Datagraph struct {
-	searcher searcher.Searcher
-	asker    semdex.Asker
+	searcher       searcher.Searcher
+	asker          semdex.Asker
+	membershipRepo *channel_membership.Repository
 }
 
 func NewDatagraph(
 	info *instance_info.Provider,
 	searcher searcher.Searcher,
 	asker semdex.Asker,
+	membershipRepo *channel_membership.Repository,
 	router *echo.Echo,
 ) Datagraph {
 	d := Datagraph{
-		searcher: searcher,
-		asker:    asker,
+		searcher:       searcher,
+		asker:          asker,
+		membershipRepo: membershipRepo,
 	}
 
 	// The generated OpenAPI code does not expose the underlying ResponseWriter
@@ -181,11 +187,36 @@ func (d Datagraph) DatagraphSearch(ctx context.Context, request openapi.Datagrap
 		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.InvalidArgument))
 	}
 
+	// Channel-based authorization
+	accountID, ok := session.GetOptAccountID(ctx).Get()
+	if !ok {
+		return nil, fault.Wrap(
+			fault.New("search requires authentication"),
+			fctx.With(ctx),
+			ftag.With(ftag.Unauthenticated),
+		)
+	}
+
+	// Check if user is admin
+	roles := session.GetRoles(ctx)
+	isAdmin := roles.Permissions().HasAny(rbac.PermissionAdministrator)
+
+	var channelFilter opt.Optional[[]xid.ID]
+	if !isAdmin {
+		// TODO: Allow public channels to be searchable by all authenticated users
+		channelIDs, err := d.membershipRepo.GetAccountChannelIDs(ctx, accountID)
+		if err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
+		}
+		channelFilter = opt.New(channelIDs)
+	}
+
 	opts := searcher.Options{
 		Kinds:      kindFilter,
 		Authors:    authorFilter,
 		Categories: categoryFilter,
 		Tags:       tagFilter,
+		Channels:   channelFilter,
 	}
 
 	r, err := d.searcher.Search(ctx, request.Params.Q, pp, opts)
