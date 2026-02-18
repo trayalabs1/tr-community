@@ -6,6 +6,7 @@ import (
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/ftag"
 	"github.com/Southclaws/opt"
+	"github.com/rs/xid"
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
@@ -19,6 +20,7 @@ type Options struct {
 	Authors    opt.Optional[[]account.AccountID]
 	Categories opt.Optional[[]category.CategoryID]
 	Tags       opt.Optional[[]tag_ref.Name]
+	Channels   opt.Optional[[]xid.ID]
 }
 
 var ErrFastMatchesUnavailable = fault.New("datagraph matches are not enabled", ftag.With(ftag.InvalidArgument))

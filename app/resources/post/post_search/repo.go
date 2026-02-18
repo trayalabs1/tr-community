@@ -113,3 +113,14 @@ func WithTags(names ...tag_ref.Name) Filter {
 		pq.Where(ent_post.And(predicates...))
 	}
 }
+
+// WithChannels filters posts to only those in the specified channel IDs.
+// Callers should check for empty IDs and return empty results before calling Search.
+func WithChannels(ids ...xid.ID) Filter {
+	return func(pq *ent.PostQuery) {
+		if len(ids) == 0 {
+			return
+		}
+		pq.Where(ent_post.ChannelIDIn(ids...))
+	}
+}
