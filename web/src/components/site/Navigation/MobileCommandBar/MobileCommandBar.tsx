@@ -38,9 +38,7 @@ export function MobileCommandBar() {
   }, [trackInfoClicked]);
 
   const handleCloseWebView = useCallback(() => {
-    if (window.ReactNativeWebView) {
-      window.ReactNativeWebView.postMessage(JSON.stringify({ type: "CLOSE_WEBVIEW" }));
-    }
+    window.location.href = window.location.origin + "?destination=go_back";
   }, []);
 
   const TabItem = ({
