@@ -6,11 +6,19 @@ import { usePathname } from "next/navigation";
 
 import { HStack, VStack, styled } from "@/styled-system/jsx";
 import { SearchIcon } from "@/components/ui/icons/Search";
-import { HomeIcon } from "@heroicons/react/24/outline";
+import { CommunityIcon } from "@/components/ui/icons/Community";
 import { LibraryIcon } from "@/components/ui/icons/Library";
-import { InformationCircleIcon } from "@heroicons/react/24/outline";
+import { InformationCircleIcon, ArrowUturnLeftIcon } from "@heroicons/react/24/outline";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
+
+declare global {
+  interface Window {
+    ReactNativeWebView?: {
+      postMessage: (message: string) => void;
+    };
+  }
+}
 
 export function MobileCommandBar() {
   const pathname = usePathname();
@@ -28,6 +36,10 @@ export function MobileCommandBar() {
   const handleInfoClick = useCallback(() => {
     trackInfoClicked();
   }, [trackInfoClicked]);
+
+  const handleCloseWebView = useCallback(() => {
+    window.location.href = window.location.origin + "?destination=go_back";
+  }, []);
 
   const TabItem = ({
     href,
@@ -78,6 +90,54 @@ export function MobileCommandBar() {
     </Link>
   );
 
+  const ActionButton = ({
+    icon: Icon,
+    label,
+    onClick,
+  }: {
+    icon: React.ComponentType<any>;
+    label: string;
+    onClick: () => void;
+  }) => (
+    <styled.button
+      type="button"
+      onClick={onClick}
+      style={{ background: "none", border: "none", padding: 0 }}
+      cursor="pointer"
+    >
+      <VStack
+        alignItems="center"
+        justifyContent="center"
+        gap="1"
+        flex="1"
+      >
+        <styled.div
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          width="6"
+          height="6"
+          style={{
+            color: TRAYA_COLORS.neutral.textMuted,
+          }}
+        >
+          <Icon width="24" height="24" strokeWidth={1.5} />
+        </styled.div>
+        <styled.span
+          fontSize="xs"
+          fontWeight="medium"
+          style={{
+            margin: "0",
+            textAlign: "center",
+            color: TRAYA_COLORS.neutral.textMuted,
+          }}
+        >
+          {label}
+        </styled.span>
+      </VStack>
+    </styled.button>
+  );
+
   return (
     <styled.nav
       position="fixed"
@@ -103,10 +163,22 @@ export function MobileCommandBar() {
         py="3"
         px="0"
       >
+        <ActionButton
+          icon={ArrowUturnLeftIcon}
+          label="Home"
+          onClick={handleCloseWebView}
+        />
+        <styled.div
+          height="8"
+          alignSelf="center"
+          ml="-6"
+          mr="-6"
+          style={{ width: "1px", backgroundColor: TRAYA_COLORS.neutral.border }}
+        />
         <TabItem
           href="/"
-          icon={HomeIcon}
-          label="Home"
+          icon={CommunityIcon}
+          label="Community"
           isActive={isHomeActive}
         />
         <TabItem
