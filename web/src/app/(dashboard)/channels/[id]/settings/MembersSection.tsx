@@ -51,8 +51,8 @@ export function MembersSection({ channelID }: Props) {
   const membersPerPage = 20;
   
   const { data: members } = useChannelMemberList(channelID, {
-    page: currentPage.toString(),
-    limit: membersPerPage.toString(),
+    page: currentPage,
+    limit: membersPerPage,
   });
 
   const { register, handleSubmit, reset, control, formState, setValue, watch } =
@@ -115,7 +115,7 @@ export function MembersSection({ channelID }: Props) {
         role: data.role,
       });
       setCurrentPage(1);
-      mutate(getChannelMemberListKey(channelID, { page: "1", limit: membersPerPage.toString() }));
+      mutate(getChannelMemberListKey(channelID, { page: 1, limit: membersPerPage }));
       reset();
       setShowAddForm(false);
       setSearchQuery("");
@@ -133,7 +133,7 @@ export function MembersSection({ channelID }: Props) {
       setIsRemoving(true);
       try {
         await channelMemberRemove(channelID, memberId);
-        mutate(getChannelMemberListKey(channelID, { page: currentPage.toString(), limit: membersPerPage.toString() }));
+        mutate(getChannelMemberListKey(channelID, { page: currentPage, limit: membersPerPage }));
         setRemovingMemberId(null);
       } finally {
         setIsRemoving(false);
