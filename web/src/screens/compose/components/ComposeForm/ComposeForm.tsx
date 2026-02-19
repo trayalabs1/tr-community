@@ -119,7 +119,7 @@ export function ComposeForm(props: Props) {
                 color: "white",
               }}
             >
-              {isAdmin ? "Post" : "Submit for review"}
+              {"Post"}
             </Button>
           </HStack>
         </HStack>

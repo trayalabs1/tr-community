@@ -70,8 +70,8 @@ export function ModalDrawer({ children, ...props }: PropsWithChildren<Props>) {
         .modaldrawer__overlay {
           position: fixed;
           inset: 0;
-          background-color: var(--colors-black-alpha-600);
-          z-index: var(--z-index-overlay);
+          background-color: rgba(0, 0, 0, 0.5);
+          z-index: 50;
         }
 
         /* Modal mode - on desktop screens */
@@ -85,7 +85,7 @@ export function ModalDrawer({ children, ...props }: PropsWithChildren<Props>) {
             justify-content: center;
             align-items: center;
             position: fixed;
-            z-index: var(--z-index-modal);
+            z-index: 51;
           }
         }
 
@@ -100,8 +100,8 @@ export function ModalDrawer({ children, ...props }: PropsWithChildren<Props>) {
             flex-direction: column;
             position: fixed;
             max-height: 90vh;
-            z-index: var(--z-index-modal);
-            border-radius: 1.5rem 1.5rem 0 0;
+            z-index: 51;
+            border-radius: 1rem 1rem 0 0;
             overflow-y: hidden;
             overflow-x: hidden;
             touch-action: none;

@@ -65,7 +65,7 @@ export function ChannelMobileHeader({
       />
 
       {/* Filter and Create Post Bar */}
-      <styled.div display={{ base: "block", md: "none" }} width="full" px="4" py="3">
+      <styled.div display={{ base: "block", md: "none" }} width="full" px="4" pt="3" pb="0">
         <ChannelFilterBar
           channelID={channel?.id}
           categories={categories}
@@ -75,15 +75,6 @@ export function ChannelMobileHeader({
           onVisibilityChange={onVisibilityChange}
         />
       </styled.div>
-
-      {/* Bottom divider */}
-      <styled.div
-        width="full"
-        style={{
-          height: "1px",
-          backgroundColor: "var(--colors-border-default)",
-        }}
-      />
     </VStack>
   );
 }
