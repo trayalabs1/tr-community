@@ -112,10 +112,21 @@ export function ChannelFilterBar({
           </styled.button>
         )}
 
-        <styled.div style={{ marginLeft: "auto" }} />
-
-        <ThreadCreateTrigger channelID={channelID} />
       </HStack>
+
+      {/* Divider - extends beyond parent padding */}
+      <styled.div
+        style={{
+          height: "1px",
+          backgroundColor: "#e5e5e5",
+          marginLeft: "-1rem",
+          marginRight: "-1rem",
+          width: "calc(100% + 2rem)",
+        }}
+      />
+
+      {/* Create Post CTA */}
+      <ThreadCreateTrigger channelID={channelID} />
 
       {/* Expanded Filter View */}
       {showFilters && (
