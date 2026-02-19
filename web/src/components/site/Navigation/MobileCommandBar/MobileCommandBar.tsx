@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -38,7 +38,9 @@ export function MobileCommandBar() {
   }, [trackInfoClicked]);
 
   const handleCloseWebView = useCallback(() => {
-    window.location.href = window.location.origin + "?destination=go_back";
+    const url = new URL(window.location.href);
+    url.searchParams.set("destination", "go_back");
+    window.location.href = url.toString();
   }, []);
 
   const TabItem = ({
@@ -98,45 +100,65 @@ export function MobileCommandBar() {
     icon: React.ComponentType<any>;
     label: string;
     onClick: () => void;
-  }) => (
-    <styled.button
-      type="button"
-      onClick={onClick}
-      style={{ background: "none", border: "none", padding: 0 }}
-      cursor="pointer"
-    >
-      <VStack
-        alignItems="center"
-        justifyContent="center"
-        gap="1"
-        flex="1"
+  }) => {
+    const hasFired = useRef(false);
+
+    const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+      if (hasFired.current) return;
+      hasFired.current = true;
+      e.preventDefault();
+      onClick();
+    }, [onClick]);
+
+    const handleClick = useCallback((e: React.MouseEvent) => {
+      if (hasFired.current) {
+        hasFired.current = false;
+        return;
+      }
+      onClick();
+    }, [onClick]);
+
+    return (
+      <styled.button
+        type="button"
+        onClick={handleClick}
+        onTouchEnd={handleTouchEnd}
+        style={{ background: "none", border: "none", padding: 0 }}
+        cursor="pointer"
       >
-        <styled.div
-          display="flex"
+        <VStack
           alignItems="center"
           justifyContent="center"
-          width="6"
-          height="6"
-          style={{
-            color: TRAYA_COLORS.neutral.textMuted,
-          }}
+          gap="1"
+          flex="1"
         >
-          <Icon width="24" height="24" strokeWidth={1.5} />
-        </styled.div>
-        <styled.span
-          fontSize="xs"
-          fontWeight="medium"
-          style={{
-            margin: "0",
-            textAlign: "center",
-            color: TRAYA_COLORS.neutral.textMuted,
-          }}
-        >
-          {label}
-        </styled.span>
-      </VStack>
-    </styled.button>
-  );
+          <styled.div
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            width="6"
+            height="6"
+            style={{
+              color: TRAYA_COLORS.neutral.textMuted,
+            }}
+          >
+            <Icon width="24" height="24" strokeWidth={1.5} />
+          </styled.div>
+          <styled.span
+            fontSize="xs"
+            fontWeight="medium"
+            style={{
+              margin: "0",
+              textAlign: "center",
+              color: TRAYA_COLORS.neutral.textMuted,
+            }}
+          >
+            {label}
+          </styled.span>
+        </VStack>
+      </styled.button>
+    );
+  };
 
   return (
     <styled.nav

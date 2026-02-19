@@ -2,14 +2,14 @@ import { useCallback } from "react";
 import { useDisclosure } from "src/utils/useDisclosure";
 
 import { ButtonProps } from "@/components/ui/button";
-import { Button } from "@/components/ui/button";
-import { AddIcon } from "@/components/ui/icons/Add";
+import { EditIcon } from "@/components/ui/icons/Edit";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
+import { styled } from "@/styled-system/jsx";
 
 import { ThreadCreateModal } from "./ThreadCreateModal";
 
-type Props = ButtonProps & {
+type Props = Omit<ButtonProps, "onClick"> & {
   channelID: string;
 };
 
@@ -24,29 +24,50 @@ export function ThreadCreateTrigger({ channelID, ...props }: Props) {
 
   return (
     <>
-      <Button
-        size="sm"
+      <styled.button
+        type="button"
         onClick={handleCreatePostClick}
+        display="flex"
+        alignItems="center"
+        gap="3"
+        w="full"
+        py="3"
+        px="4"
+        rounded="full"
+        cursor="pointer"
         style={{
-          background: TRAYA_COLORS.primary,
-          color: "white",
-          borderRadius: "0.875rem",
-          padding: "0.5rem 0.75rem",
-          fontWeight: "500",
-          fontSize: "14px",
-          transition: "all 0.2s ease-in-out",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.opacity = "0.9";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.opacity = "1";
+          background: "white",
+          border: `1.5px solid ${TRAYA_COLORS.primary}`,
         }}
         {...props}
       >
-        <AddIcon width="4" height="4" />
-        Create Post
-      </Button>
+        <styled.div
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          flexShrink="0"
+          rounded="full"
+          style={{
+            width: "32px",
+            height: "32px",
+            backgroundColor: TRAYA_COLORS.tertiary,
+          }}
+        >
+          <EditIcon
+            style={{
+              width: "16px",
+              height: "16px",
+              color: TRAYA_COLORS.primary,
+            }}
+          />
+        </styled.div>
+        <styled.span
+          fontSize="sm"
+          style={{ color: TRAYA_COLORS.neutral.textMuted }}
+        >
+          Type your questions & doubts here...
+        </styled.span>
+      </styled.button>
 
       <ThreadCreateModal
         {...useDisclosureProps}
