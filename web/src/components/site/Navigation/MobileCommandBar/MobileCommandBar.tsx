@@ -11,6 +11,9 @@ import { LibraryIcon } from "@/components/ui/icons/Library";
 import { InformationCircleIcon, ArrowUturnLeftIcon } from "@heroicons/react/24/outline";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
+import { useSession } from "@/auth";
+import { useChannelList } from "@/api/openapi-client/channels";
+import { hasPermission } from "@/utils/permissions";
 
 declare global {
   interface Window {
@@ -23,6 +26,12 @@ declare global {
 export function MobileCommandBar() {
   const pathname = usePathname();
   const { trackSearchClicked, trackInfoClicked } = useEventTracking();
+  const session = useSession();
+  const { data: channelsData } = useChannelList();
+
+  const isAdmin = hasPermission(session, "ADMINISTRATOR");
+  const firstChannelId = channelsData?.channels?.[0]?.id;
+  const communityHref = isAdmin || !firstChannelId ? "/channels" : `/channels/${firstChannelId}`;
 
   const isHomeActive = pathname === "/" || (pathname.startsWith("/channels") && !pathname.includes("/settings"));
   const isSearchActive = pathname.startsWith("/search");
@@ -198,7 +207,7 @@ export function MobileCommandBar() {
           style={{ width: "1px", backgroundColor: TRAYA_COLORS.neutral.border }}
         />
         <TabItem
-          href="/"
+          href={communityHref}
           icon={CommunityIcon}
           label="Community"
           isActive={isHomeActive}
