@@ -22,6 +22,8 @@ import { useChannelPermissions } from "@/lib/channel/permissions";
 type Props = {
   session?: Account;
   channel: Channel;
+  hasUnreadNotifications?: boolean;
+  bookmarkCount?: number;
 };
 
 export function ChannelScreen(props: Props) {
@@ -72,6 +74,8 @@ export function ChannelScreen(props: Props) {
         selectedVisibility={selectedVisibility}
         onCategoryChange={setSelectedCategorySlug}
         onVisibilityChange={setSelectedVisibility}
+        hasUnreadNotifications={props.hasUnreadNotifications}
+        bookmarkCount={props.bookmarkCount}
       />
 
       <LStack gap="6" p="4">
