@@ -13,7 +13,7 @@ export default async function Page(props: Props) {
   const params = await props.params;
   const { handle } = params;
 
-  if (handle.startsWith("temp_")) {
+  if (!handle || handle.startsWith("temp_")) {
     return <TempHandlePrompt />;
   }
 
