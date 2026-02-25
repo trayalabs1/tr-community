@@ -14,6 +14,7 @@ import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
 import { useSession } from "@/auth";
 import { useChannelList } from "@/api/openapi-client/channels";
+import { useAccountGet } from "@/api/openapi-client/accounts";
 import { hasPermission } from "@/utils/permissions";
 
 declare global {
@@ -29,6 +30,12 @@ export function MobileCommandBar() {
   const { trackSearchClicked /* trackInfoClicked */ } = useEventTracking();
   const session = useSession();
   const { data: channelsData } = useChannelList();
+  const { data: account } = useAccountGet({
+    swr: {
+      revalidateOnFocus: true,
+      revalidateOnMount: true,
+    },
+  });
 
   const isAdmin = hasPermission(session, "ADMINISTRATOR");
   const firstChannelId = channelsData?.channels?.[0]?.id;
@@ -40,7 +47,7 @@ export function MobileCommandBar() {
   // const isInfoActive = pathname.startsWith("/info");
   const isProfileActive = pathname.startsWith("/m/") || pathname === "/m";
 
-  const profileHref = `/m/${session?.handle || ""}`;
+  const profileHref = `/m/${account?.handle || session?.handle || ""}`;
 
   const handleSearchClick = useCallback(() => {
     trackSearchClicked();
