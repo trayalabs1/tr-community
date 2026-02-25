@@ -10,21 +10,28 @@ type Props = {
 };
 
 export default async function Page(props: Props) {
-  const params = await props.params;
-  const { handle } = params;
-  const session = await getServerSession();
-
-  const isTempHandle = handle.startsWith("temp_");
-  const isOwnProfile = session?.handle === handle;
-
-  if (isTempHandle && isOwnProfile) {
-    return <TempHandlePrompt initialName={session?.name} />;
-  }
-
   try {
+    const params = await props.params;
+    const { handle } = params;
+
+    const isTempHandle = handle.startsWith("temp_");
+
+    if (isTempHandle) {
+      const session = await getServerSession();
+      return <TempHandlePrompt initialName={session?.name} />;
+    }
+
+    const session = await getServerSession();
     const { data } = await profileGet(handle);
     return <ProfileScreen initialSession={session} profile={data} />;
   } catch (e) {
+    const params = await props.params;
+    const { handle } = params;
+
+    if (handle.startsWith("temp_")) {
+      return <TempHandlePrompt />;
+    }
+
     return <UnreadyBanner error="Something went wrong. Please try again later." />;
   }
 }
