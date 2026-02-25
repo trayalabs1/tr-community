@@ -1,8 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect } from "react";
-import { useDisclosure } from "@/utils/useDisclosure";
+import { useCallback, useState } from "react";
 import { UsernameModal } from "@/screens/auth/UsernameSelectionScreen/UsernameModal";
 import { useAccountGet } from "@/api/openapi-client/accounts";
 
@@ -13,11 +12,7 @@ type Props = {
 export function TempHandlePrompt({ initialName }: Props) {
   const router = useRouter();
   const { mutate: mutateAccount } = useAccountGet();
-  const usernameModal = useDisclosure();
-
-  useEffect(() => {
-    usernameModal.onOpen();
-  }, []);
+  const [isOpen, setIsOpen] = useState(true);
 
   const handleSuccess = useCallback(async () => {
     const account = await mutateAccount();
@@ -26,12 +21,16 @@ export function TempHandlePrompt({ initialName }: Props) {
     }
   }, [mutateAccount, router]);
 
+  const handleOpenChange = useCallback((e: { open: boolean }) => {
+    setIsOpen(e.open);
+  }, []);
+
   return (
     <UsernameModal
-      isOpen={usernameModal.isOpen}
-      onOpen={usernameModal.onOpen}
-      onClose={usernameModal.onClose}
-      onOpenChange={usernameModal.onOpenChange}
+      isOpen={isOpen}
+      onOpen={() => setIsOpen(true)}
+      onClose={() => setIsOpen(false)}
+      onOpenChange={handleOpenChange}
       onSuccess={handleSuccess}
       initialName={initialName}
     />
