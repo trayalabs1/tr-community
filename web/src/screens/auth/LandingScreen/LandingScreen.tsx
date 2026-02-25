@@ -90,20 +90,53 @@ export function LandingScreen({ token }: { token: string }) {
 
   const handleEnterCommunity = async () => {
     trackEnterClicked();
-    setIsLoading(true);
-    setError(null);
 
-    try {
-      if (needsUsername) {
+    if (needsUsername && !error) {
+      setIsLoading(true);
+      try {
         const randomUsername = generateRandomUsername(userName);
         await usernameSet({ username: randomUsername });
         await mutateAccount();
+      } catch {
+        // Silent fail - profile screen will handle it
       }
-    } catch {
-      // Silent fail - profile screen will handle it
+      await redirectToFirstChannel();
+      return;
     }
 
-    await redirectToFirstChannel();
+    if (triggered.current) return;
+    triggered.current = true;
+    setIsLoading(true);
+    setError(null);
+
+    handle(
+      async () => {
+        const response = await trigger();
+
+        if (response?.needs_username) {
+          const account = await mutateAccount();
+          setUserName(account?.name);
+          try {
+            const randomUsername = generateRandomUsername(account?.name);
+            await usernameSet({ username: randomUsername });
+            await mutateAccount();
+          } catch {
+            // Silent fail - profile screen will handle it
+          }
+        } else {
+          await mutateAccount();
+        }
+        await redirectToFirstChannel();
+      },
+      {
+        errorToast: false,
+        onError: async () => {
+          triggered.current = false;
+          setIsLoading(false);
+          setError("Authentication failed. Please try again.");
+        },
+      }
+    );
   };
 
   if (isLoading && !needsUsername) {
