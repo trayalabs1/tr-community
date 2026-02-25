@@ -142,7 +142,7 @@ export function ProfileScreen(props: Props) {
         </VStack>
 
         {session && hasPermission(session, Permission.ADMINISTRATOR) && (
-          <styled.form className={lstack()} p="3" onSubmit={handlers.handleSave}>
+          <styled.div className={lstack()} p="3">
             {isEmpty && !isEditing ? (
               <styled.p color="fg.subtle" fontStyle="italic">
                 This profile has no bio yet...
@@ -156,12 +156,14 @@ export function ProfileScreen(props: Props) {
                 placeholder="This profile has no bio yet..."
               />
             )}
+          </styled.div>
+        )}
 
-            {isSelf && isEditing && (
-              <HStack justify="center">
-                <SaveAction size="sm">Save</SaveAction>
-              </HStack>
-            )}
+        {isSelf && isEditing && (
+          <styled.form p="3" onSubmit={handlers.handleSave}>
+            <HStack justify="center">
+              <SaveAction size="sm">Save</SaveAction>
+            </HStack>
           </styled.form>
         )}
 

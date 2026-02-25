@@ -59,11 +59,8 @@ export function LandingScreen({ token }: { token: string }) {
         if (response?.needs_username) {
           const account = await mutateAccount();
           setUserName(account?.name);
-          // Skip username modal - auto-generate and set username
-          const randomUsername = generateRandomUsername(account?.name);
-          await usernameSet({ username: randomUsername });
-          await mutateAccount();
-          await redirectToFirstChannel();
+          setNeedsUsername(true);
+          setIsLoading(false);
         } else {
           await mutateAccount();
           await redirectToFirstChannel();

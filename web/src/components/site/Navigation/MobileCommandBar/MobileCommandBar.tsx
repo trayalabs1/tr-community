@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { HStack, VStack, styled } from "@/styled-system/jsx";
 import { SearchIcon } from "@/components/ui/icons/Search";
 import { CommunityIcon } from "@/components/ui/icons/Community";
-import { LibraryIcon } from "@/components/ui/icons/Library";
+// import { LibraryIcon } from "@/components/ui/icons/Library";
 import { ProfileIcon } from "@/components/ui/icons/Profile";
 import { /* InformationCircleIcon, */ ArrowUturnLeftIcon } from "@heroicons/react/24/outline";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
@@ -36,9 +36,9 @@ export function MobileCommandBar() {
 
   const isHomeActive = pathname === "/" || (pathname.startsWith("/channels") && !pathname.includes("/settings"));
   const isSearchActive = pathname.startsWith("/search");
-  const isLibraryActive = pathname.startsWith("/l");
+  // const isLibraryActive = pathname.startsWith("/l");
   // const isInfoActive = pathname.startsWith("/info");
-  const isProfileActive = pathname.startsWith("/m/");
+  const isProfileActive = pathname.startsWith("/m/") || pathname === "/m";
 
   const profileHref = session?.handle ? `/m/${session.handle}` : "/m";
 
