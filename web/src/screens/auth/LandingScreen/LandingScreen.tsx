@@ -55,14 +55,14 @@ export function LandingScreen({ token }: { token: string }) {
     handle(
       async () => {
         const response = await trigger();
+        const account = await mutateAccount();
+        const hasTempHandle = account?.handle?.startsWith("temp_");
 
-        if (response?.needs_username) {
-          const account = await mutateAccount();
+        if (response?.needs_username || hasTempHandle) {
           setUserName(account?.name);
           setNeedsUsername(true);
           setIsLoading(false);
         } else {
-          await mutateAccount();
           await redirectToFirstChannel();
         }
       },
