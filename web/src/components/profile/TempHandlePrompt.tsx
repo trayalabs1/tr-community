@@ -1,57 +1,61 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAccountGet } from "@/api/openapi-client/accounts";
-import { UsernameModal } from "@/screens/auth/UsernameSelectionScreen/UsernameModal";
+import { usernameSet } from "@/api/openapi-client/auth";
+import { generateRandomUsername } from "@/utils/generateUsername";
 import { styled } from "@/styled-system/jsx";
 import { Spinner } from "@/components/ui/Spinner";
 
 export function TempHandlePrompt() {
   const router = useRouter();
-  const { data: account, isLoading, mutate: mutateAccount } = useAccountGet({
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { data: account, isLoading, error } = useAccountGet({
     swr: {
       revalidateOnMount: true,
     },
   });
-  const [showModal, setShowModal] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
-
-  const hasValidHandle = account?.handle && !account.handle.startsWith("temp_");
+  const triggered = useRef(false);
 
   useEffect(() => {
-    if (isLoading || isRedirecting) return;
+    if (triggered.current) return;
+
+    if (error) {
+      setErrorMessage("Something went wrong. Please try again later.");
+      return;
+    }
+
+    if (isLoading) return;
+
+    if (!account) {
+      setErrorMessage("Something went wrong. Please try again later.");
+      return;
+    }
+
+    const hasValidHandle = account.handle && !account.handle.startsWith("temp_");
 
     if (hasValidHandle) {
-      setIsRedirecting(true);
       router.replace(`/m/${account.handle}`);
-    } else if (account && !showModal) {
-      setShowModal(true);
+      return;
     }
-  }, [account, hasValidHandle, isLoading, isRedirecting, router, showModal]);
 
-  const handleSuccess = useCallback(async () => {
-    setIsRedirecting(true);
-    const updatedAccount = await mutateAccount();
-    if (updatedAccount?.handle) {
-      router.replace(`/m/${updatedAccount.handle}`);
-    } else {
-      router.push("/channels");
-    }
-  }, [mutateAccount, router]);
+    triggered.current = true;
 
-  const handleClose = useCallback(() => {
-    setShowModal(false);
-    router.push("/channels");
-  }, [router]);
+    const setUsernameAndRedirect = async () => {
+      try {
+        const randomUsername = generateRandomUsername(account.name);
+        await usernameSet({ username: randomUsername });
+        router.push(`/m/${randomUsername}`);
+      } catch {
+        setErrorMessage("Something went wrong. Please try again later.");
+      }
+    };
 
-  const handleOpenChange = useCallback((e: { open: boolean }) => {
-    if (!e.open) {
-      handleClose();
-    }
-  }, [handleClose]);
+    setUsernameAndRedirect();
+  }, [account, isLoading, error, router]);
 
-  if (isLoading || isRedirecting || hasValidHandle) {
+  if (errorMessage) {
     return (
       <styled.div
         display="flex"
@@ -62,10 +66,15 @@ export function TempHandlePrompt() {
         p="6"
         style={{ background: "#f5f5f5" }}
       >
-        <Spinner size="lg" />
-        <styled.p mt="4" color="fg.muted" fontSize="sm">
-          Loading profile...
-        </styled.p>
+        <styled.div
+          p="4"
+          rounded="lg"
+          style={{ background: "#fee2e2", borderColor: "#fca5a5", borderWidth: "1px" }}
+        >
+          <styled.p fontSize="sm" style={{ color: "#dc2626" }}>
+            {errorMessage}
+          </styled.p>
+        </styled.div>
       </styled.div>
     );
   }
@@ -80,14 +89,10 @@ export function TempHandlePrompt() {
       p="6"
       style={{ background: "#f5f5f5" }}
     >
-      <UsernameModal
-        isOpen={showModal}
-        onOpen={() => setShowModal(true)}
-        onClose={handleClose}
-        onOpenChange={handleOpenChange}
-        onSuccess={handleSuccess}
-        initialName={account?.name}
-      />
+      <Spinner size="lg" />
+      <styled.p mt="4" color="fg.muted" fontSize="sm">
+        Setting up your profile...
+      </styled.p>
     </styled.div>
   );
 }
