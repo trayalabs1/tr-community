@@ -47,9 +47,8 @@ export function MobileCommandBar() {
   // const isInfoActive = pathname.startsWith("/info");
   const isProfileActive = pathname.startsWith("/m/") || pathname === "/m";
 
-  const accountHandle = account?.handle && !account.handle.startsWith("temp_") ? account.handle : null;
-  const sessionHandle = session?.handle && !session.handle.startsWith("temp_") ? session.handle : null;
-  const profileHref = `/m/${accountHandle || sessionHandle || ""}`;
+  const handle = account?.handle || session?.handle;
+  const profileHref = handle ? `/m/${handle}` : "#";
 
   const handleSearchClick = useCallback(() => {
     trackSearchClicked();
