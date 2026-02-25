@@ -54,11 +54,21 @@ export function LandingScreen({ token }: { token: string }) {
 
     handle(
       async () => {
-        const response = await trigger();
+        await trigger();
         const account = await mutateAccount();
         const hasTempHandle = account?.handle?.startsWith("temp_");
+        const hasNoHandle = !account?.handle;
 
-        if (response?.needs_username || hasTempHandle) {
+        if (hasTempHandle) {
+          try {
+            const randomUsername = generateRandomUsername(account?.name);
+            await usernameSet({ username: randomUsername });
+            await mutateAccount();
+          } catch {
+            // Silent fail - profile screen will handle it
+          }
+          await redirectToFirstChannel();
+        } else if (hasNoHandle) {
           setUserName(account?.name);
           setNeedsUsername(true);
           setIsLoading(false);
@@ -80,53 +90,20 @@ export function LandingScreen({ token }: { token: string }) {
 
   const handleEnterCommunity = async () => {
     trackEnterClicked();
-
-    // Skip username modal - auto-generate and set username if needed
-    if (needsUsername && !error) {
-      setIsLoading(true);
-      try {
-        const randomUsername = generateRandomUsername(userName);
-        await usernameSet({ username: randomUsername });
-        await mutateAccount();
-        await redirectToFirstChannel();
-      } catch (err) {
-        setIsLoading(false);
-        setError("Failed to set username. Please try again.");
-      }
-      return;
-    }
-
-    if (triggered.current) return;
-    triggered.current = true;
     setIsLoading(true);
     setError(null);
 
-    handle(
-      async () => {
-        const response = await trigger();
-
-        if (response?.needs_username) {
-          const account = await mutateAccount();
-          setUserName(account?.name);
-          // Skip username modal - auto-generate and set username
-          const randomUsername = generateRandomUsername(account?.name);
-          await usernameSet({ username: randomUsername });
-          await mutateAccount();
-          await redirectToFirstChannel();
-        } else {
-          await mutateAccount();
-          await redirectToFirstChannel();
-        }
-      },
-      {
-        errorToast: false,
-        onError: async () => {
-          triggered.current = false;
-          setIsLoading(false);
-          setError("Authentication failed. Please try again.");
-        },
+    try {
+      if (needsUsername) {
+        const randomUsername = generateRandomUsername(userName);
+        await usernameSet({ username: randomUsername });
+        await mutateAccount();
       }
-    );
+    } catch {
+      // Silent fail - profile screen will handle it
+    }
+
+    await redirectToFirstChannel();
   };
 
   if (isLoading && !needsUsername) {
