@@ -58,17 +58,9 @@ export function LandingScreen({ token }: { token: string }) {
         const account = await mutateAccount();
         const hasTempHandle = account?.handle?.startsWith("temp_");
         const hasNoHandle = !account?.handle;
+        const isNewUser = hasNoHandle || hasTempHandle;
 
-        if (hasTempHandle) {
-          try {
-            const randomUsername = generateRandomUsername(account?.name);
-            await usernameSet({ username: randomUsername });
-            await mutateAccount();
-          } catch {
-            // Silent fail - profile screen will handle it
-          }
-          await redirectToFirstChannel();
-        } else if (hasNoHandle) {
+        if (isNewUser) {
           setUserName(account?.name);
           setNeedsUsername(true);
           setIsLoading(false);
@@ -111,11 +103,13 @@ export function LandingScreen({ token }: { token: string }) {
 
     handle(
       async () => {
-        const response = await trigger();
+        await trigger();
+        const account = await mutateAccount();
+        const hasTempHandle = account?.handle?.startsWith("temp_");
+        const hasNoHandle = !account?.handle;
+        const isNewUser = hasNoHandle || hasTempHandle;
 
-        if (response?.needs_username) {
-          const account = await mutateAccount();
-          setUserName(account?.name);
+        if (isNewUser) {
           try {
             const randomUsername = generateRandomUsername(account?.name);
             await usernameSet({ username: randomUsername });
@@ -123,8 +117,6 @@ export function LandingScreen({ token }: { token: string }) {
           } catch {
             // Silent fail - profile screen will handle it
           }
-        } else {
-          await mutateAccount();
         }
         await redirectToFirstChannel();
       },
