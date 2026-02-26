@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthTrayaToken } from "@/api/openapi-client/auth";
+import { useAuthTrayaToken, usernameSet } from "@/api/openapi-client/auth";
 import { useAccountGet } from "@/api/openapi-client/accounts";
+import { channelList } from "@/api/openapi-client/channels";
 import { VStack, styled } from "@/styled-system/jsx";
 import { handle } from "@/api/client";
 import { Button } from "@/components/ui/button";
@@ -11,10 +12,11 @@ import { MembersIcon } from "@/components/ui/icons/Members";
 import { LikeIcon } from "@/components/ui/icons/Like";
 import { DiscussionIcon } from "@/components/ui/icons/Discussion";
 import { IntelligenceIcon } from "@/components/ui/icons/Intelligence";
-import { UsernameModal } from "../UsernameSelectionScreen/UsernameModal";
-import { useDisclosure } from "@/utils/useDisclosure";
+// import { UsernameModal } from "../UsernameSelectionScreen/UsernameModal";
+// import { useDisclosure } from "@/utils/useDisclosure";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
 import { Spinner } from "@/components/ui/Spinner";
+import { generateRandomUsername } from "@/utils/generateUsername";
 
 export function LandingScreen({ token }: { token: string }) {
   const router = useRouter();
@@ -25,8 +27,22 @@ export function LandingScreen({ token }: { token: string }) {
   const [error, setError] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | undefined>();
   const triggered = useRef(false);
-  const usernameModal = useDisclosure();
+  // const usernameModal = useDisclosure();
   const { trackOnboardingLanded, trackEnterClicked } = useEventTracking();
+
+  const redirectToFirstChannel = async () => {
+    try {
+      const channelsResponse = await channelList();
+      const firstChannel = channelsResponse?.channels?.[0];
+      if (firstChannel?.id) {
+        router.push(`/channels/${firstChannel.id}`);
+      } else {
+        router.push("/channels");
+      }
+    } catch {
+      router.push("/channels");
+    }
+  };
 
   useEffect(() => {
     trackOnboardingLanded();
@@ -38,16 +54,18 @@ export function LandingScreen({ token }: { token: string }) {
 
     handle(
       async () => {
-        const response = await trigger();
+        await trigger();
+        const account = await mutateAccount();
+        const hasTempHandle = account?.handle?.startsWith("temp_");
+        const hasNoHandle = !account?.handle;
+        const isNewUser = hasNoHandle || hasTempHandle;
 
-        if (response?.needs_username) {
-          const account = await mutateAccount();
+        if (isNewUser) {
           setUserName(account?.name);
           setNeedsUsername(true);
           setIsLoading(false);
         } else {
-          await mutateAccount();
-          router.push("/channels");
+          await redirectToFirstChannel();
         }
       },
       {
@@ -66,7 +84,15 @@ export function LandingScreen({ token }: { token: string }) {
     trackEnterClicked();
 
     if (needsUsername && !error) {
-      usernameModal.onOpen();
+      setIsLoading(true);
+      try {
+        const randomUsername = generateRandomUsername(userName);
+        await usernameSet({ username: randomUsername });
+        await mutateAccount();
+      } catch {
+        // Silent fail - profile screen will handle it
+      }
+      await redirectToFirstChannel();
       return;
     }
 
@@ -77,17 +103,22 @@ export function LandingScreen({ token }: { token: string }) {
 
     handle(
       async () => {
-        const response = await trigger();
+        await trigger();
+        const account = await mutateAccount();
+        const hasTempHandle = account?.handle?.startsWith("temp_");
+        const hasNoHandle = !account?.handle;
+        const isNewUser = hasNoHandle || hasTempHandle;
 
-        if (response?.needs_username) {
-          const account = await mutateAccount();
-          setUserName(account?.name);
-          setIsLoading(false);
-          usernameModal.onOpen();
-        } else {
-          await mutateAccount();
-          router.push("/channels");
+        if (isNewUser) {
+          try {
+            const randomUsername = generateRandomUsername(account?.name);
+            await usernameSet({ username: randomUsername });
+            await mutateAccount();
+          } catch {
+            // Silent fail - profile screen will handle it
+          }
         }
+        await redirectToFirstChannel();
       },
       {
         errorToast: false,
@@ -112,8 +143,8 @@ export function LandingScreen({ token }: { token: string }) {
         style={{ background: "#f5f5f5" }}
       >
         <Spinner size="lg" />
-        <styled.p mt="4" color="fg.muted" fontSize="sm">
-          Loading...
+        <styled.p mt="4" color="fg.muted" fontSize="sm" textAlign="center">
+          Hang tight, we're connecting you to your community!
         </styled.p>
       </styled.div>
     );
@@ -312,8 +343,8 @@ export function LandingScreen({ token }: { token: string }) {
         </Button>
       </styled.div>
 
-      {/* Username Modal */}
-      <UsernameModal
+      {/* Username Modal - Commented out: auto-generating username instead */}
+      {/* <UsernameModal
         isOpen={usernameModal.isOpen}
         onOpen={usernameModal.onOpen}
         onClose={() => {
@@ -328,7 +359,7 @@ export function LandingScreen({ token }: { token: string }) {
           router.push("/channels");
         }}
         initialName={userName}
-      />
+      /> */}
     </styled.div>
   );
 }

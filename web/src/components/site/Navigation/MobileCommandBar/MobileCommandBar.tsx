@@ -7,10 +7,15 @@ import { usePathname } from "next/navigation";
 import { HStack, VStack, styled } from "@/styled-system/jsx";
 import { SearchIcon } from "@/components/ui/icons/Search";
 import { CommunityIcon } from "@/components/ui/icons/Community";
-import { LibraryIcon } from "@/components/ui/icons/Library";
+// import { LibraryIcon } from "@/components/ui/icons/Library";
+// import { ProfileIcon } from "@/components/ui/icons/Profile";
 import { InformationCircleIcon, ArrowUturnLeftIcon } from "@heroicons/react/24/outline";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
+import { useSession } from "@/auth";
+import { useChannelList } from "@/api/openapi-client/channels";
+import { useAccountGet } from "@/api/openapi-client/accounts";
+import { hasPermission } from "@/utils/permissions";
 
 declare global {
   interface Window {
@@ -22,12 +27,28 @@ declare global {
 
 export function MobileCommandBar() {
   const pathname = usePathname();
-  const { trackSearchClicked, trackInfoClicked } = useEventTracking();
+  const { trackSearchClicked, trackInfoClicked  } = useEventTracking();
+  const session = useSession();
+  const { data: channelsData } = useChannelList();
+  const { data: account } = useAccountGet({
+    swr: {
+      revalidateOnFocus: true,
+      revalidateOnMount: true,
+    },
+  });
+
+  const isAdmin = hasPermission(session, "ADMINISTRATOR");
+  const firstChannelId = channelsData?.channels?.[0]?.id;
+  const communityHref = isAdmin || !firstChannelId ? "/channels" : `/channels/${firstChannelId}`;
 
   const isHomeActive = pathname === "/" || (pathname.startsWith("/channels") && !pathname.includes("/settings"));
   const isSearchActive = pathname.startsWith("/search");
-  const isLibraryActive = pathname.startsWith("/l");
+  // const isLibraryActive = pathname.startsWith("/l");
   const isInfoActive = pathname.startsWith("/info");
+  // const isProfileActive = pathname.startsWith("/m/") || pathname === "/m";
+
+  const handle = account?.handle || session?.handle;
+  // const profileHref = handle ? `/m/${handle}` : "#";
 
   const handleSearchClick = useCallback(() => {
     trackSearchClicked();
@@ -198,7 +219,7 @@ export function MobileCommandBar() {
           style={{ width: "1px", backgroundColor: TRAYA_COLORS.neutral.border }}
         />
         <TabItem
-          href="/"
+          href={communityHref}
           icon={CommunityIcon}
           label="Community"
           isActive={isHomeActive}
@@ -223,6 +244,12 @@ export function MobileCommandBar() {
           isActive={isInfoActive}
           onClick={handleInfoClick}
         />
+        {/* <TabItem
+          href={profileHref}
+          icon={ProfileIcon}
+          label="Profile"
+          isActive={isProfileActive}
+        /> */}
       </HStack>
     </styled.nav>
   );
