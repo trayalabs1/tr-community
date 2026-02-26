@@ -1,7 +1,9 @@
 "use client";
 
-import { Channel } from "@/api/openapi-schema";
+import Link from "next/link";
+import { Account, Channel } from "@/api/openapi-schema";
 import { MembersIcon } from "@/components/ui/icons/Members";
+import { ProfileIcon } from "@/components/ui/icons/Profile";
 import { HeaderWithBackArrow } from "@/components/site/Header";
 import { HStack, VStack, styled } from "@/styled-system/jsx";
 import { getAssetURL } from "@/utils/asset";
@@ -13,6 +15,7 @@ import { useChannelPermissions } from "@/lib/channel/permissions";
 
 type ChannelMobileHeaderProps = {
   channel: Channel;
+  session?: Account;
   categories: any[];
   selectedCategorySlug: string | null;
   selectedVisibility: string | null;
@@ -24,6 +27,7 @@ type ChannelMobileHeaderProps = {
 
 export function ChannelMobileHeader({
   channel,
+  session,
   categories,
   selectedCategorySlug,
   selectedVisibility,
@@ -89,7 +93,26 @@ export function ChannelMobileHeader({
           }}
         >
           <HStack gap="3" flex="1" alignItems="center">
-            {channelIcon}
+            {session ? (
+              <Link href={`/m/${session.handle}`} style={{ textDecoration: "none" }}>
+                <styled.div
+                  w="8"
+                  h="8"
+                  rounded="full"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  flexShrink="0"
+                  style={{
+                    background: TRAYA_COLORS.gradient,
+                  }}
+                >
+                  <ProfileIcon style={{ color: "white", width: "18px", height: "18px" }} />
+                </styled.div>
+              </Link>
+            ) : (
+              channelIcon
+            )}
             <VStack alignItems="start" gap="0.5">
               <styled.h3
                 fontWeight="semibold"
