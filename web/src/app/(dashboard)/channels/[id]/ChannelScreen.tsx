@@ -69,6 +69,7 @@ export function ChannelScreen(props: Props) {
     <LStack gap="0" p="0">
       <ChannelMobileHeader
         channel={props.channel}
+        session={props.session}
         categories={categories?.categories || []}
         selectedCategorySlug={selectedCategorySlug}
         selectedVisibility={selectedVisibility}
