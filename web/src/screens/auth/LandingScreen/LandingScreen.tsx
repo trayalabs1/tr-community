@@ -143,8 +143,8 @@ export function LandingScreen({ token }: { token: string }) {
         style={{ background: "#f5f5f5" }}
       >
         <Spinner size="lg" />
-        <styled.p mt="4" color="fg.muted" fontSize="sm">
-          Loading...
+        <styled.p mt="4" color="fg.muted" fontSize="sm" textAlign="center">
+          Hang tight, we're connecting you to your community!
         </styled.p>
       </styled.div>
     );
