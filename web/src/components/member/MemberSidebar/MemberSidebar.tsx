@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { Account } from "@/api/openapi-schema";
 import { HStack, LStack, styled } from "@/styled-system/jsx";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { getAvatarColor } from "@/utils/avatar-colors";
 import { BookmarkIcon } from "@/components/ui/icons/Bookmark";
 import { NotificationIcon } from "@/components/ui/icons/Notification";
 
@@ -66,7 +67,7 @@ export function MemberSidebar({
           justifyContent="center"
           flexShrink="0"
           style={{
-            background: TRAYA_COLORS.gradient,
+            background: getAvatarColor(account.handle),
           }}
         >
           <styled.span

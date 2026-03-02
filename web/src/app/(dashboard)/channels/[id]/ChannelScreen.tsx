@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 import { Unready } from "src/components/site/Unready";
 import { LoadingBanner } from "@/components/site/Loading";
@@ -10,7 +10,7 @@ import {
   useChannelCategoryList,
   useChannelThreadList,
 } from "@/api/openapi-client/channels";
-import { Account, Channel } from "@/api/openapi-schema";
+import { Account, Channel, ThreadReference } from "@/api/openapi-schema";
 import { ChannelMobileHeader } from "@/components/channel/ChannelMobileHeader";
 import { ChannelFilterBar } from "@/components/channel/ChannelFilterBar";
 import { ThreadReferenceCard } from "@/components/post/ThreadCard";
@@ -30,6 +30,11 @@ export function ChannelScreen(props: Props) {
   const permissions = useChannelPermissions(props.channel.id);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
   const [selectedVisibility, setSelectedVisibility] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [allThreads, setAllThreads] = useState<ThreadReference[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
+  const loadedPagesRef = useRef<Set<number>>(new Set());
 
   const { data: categories, isValidating: isCategoriesLoading } = useChannelCategoryList(props.channel.id, {
     swr: {
@@ -37,7 +42,9 @@ export function ChannelScreen(props: Props) {
     },
   });
 
-  const threadParams: Record<string, any> = {};
+  const threadParams: Record<string, string | string[]> = {
+    page: String(currentPage),
+  };
   if (selectedCategorySlug) {
     threadParams['categories'] = [selectedCategorySlug];
   }
@@ -55,15 +62,56 @@ export function ChannelScreen(props: Props) {
     }
   );
 
+  useEffect(() => {
+    loadedPagesRef.current = new Set();
+    setCurrentPage(1);
+    setAllThreads([]);
+    setHasInitiallyLoaded(false);
+  }, [selectedCategorySlug, selectedVisibility]);
+
+  useEffect(() => {
+    const pageNum = threads?.current_page;
+    if (!threads?.threads || pageNum === undefined) return;
+
+    setHasInitiallyLoaded(true);
+
+    if (loadedPagesRef.current.has(pageNum)) {
+      setIsLoadingMore(false);
+      return;
+    }
+
+    loadedPagesRef.current.add(pageNum);
+
+    if (pageNum === 1) {
+      setAllThreads(threads.threads);
+    } else {
+      setAllThreads((prev) => {
+        const existingIds = new Set(prev.map((t) => t.id));
+        const newThreads = threads.threads.filter((t) => !existingIds.has(t.id));
+        return [...prev, ...newThreads];
+      });
+    }
+    setIsLoadingMore(false);
+  }, [threads]);
+
+  const handleLoadMore = useCallback(() => {
+    if (threads?.next_page) {
+      setIsLoadingMore(true);
+      setCurrentPage(threads.next_page);
+    }
+  }, [threads?.next_page]);
+
   if (error) {
     return <Unready error={error} />;
   }
 
-  const isLoading = isCategoriesLoading || isThreadsLoading;
+  const isInitialLoading = isCategoriesLoading || (isThreadsLoading && allThreads.length === 0);
 
-  if (isLoading && !categories && !threads) {
+  if (isInitialLoading && !categories && !threads) {
     return <LoadingBanner />;
   }
+
+  const hasMore = threads?.next_page !== undefined;
 
   return (
     <LStack gap="0" p="0">
@@ -115,7 +163,7 @@ export function ChannelScreen(props: Props) {
       {/* Threads Section */}
       <VStack alignItems="start" gap="4" width="full">
 
-        {isThreadsLoading && !threads ? (
+        {!hasInitiallyLoaded ? (
           <styled.div
             p="8"
             textAlign="center"
@@ -124,16 +172,31 @@ export function ChannelScreen(props: Props) {
           >
             Loading threads...
           </styled.div>
-        ) : threads && threads.threads.length > 0 ? (
-          <VStack alignItems="start" gap="4" width="full">
-            {threads.threads.map((thread) => (
-              <ThreadReferenceCard
-                key={thread.id}
-                thread={thread}
-                channelID={props.channel.id}
-              />
-            ))}
-          </VStack>
+        ) : allThreads.length > 0 ? (
+          <>
+            <VStack alignItems="start" gap="4" width="full">
+              {allThreads.map((thread) => (
+                <ThreadReferenceCard
+                  key={thread.id}
+                  thread={thread}
+                  channelID={props.channel.id}
+                />
+              ))}
+            </VStack>
+
+            {hasMore && (
+              <styled.div width="full" display="flex" justifyContent="center" py="4">
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? "Loading..." : "Show More"}
+                </Button>
+              </styled.div>
+            )}
+          </>
         ) : (
           <styled.div
             p="8"

@@ -13,6 +13,7 @@ import { Heading } from "@/components/ui/heading";
 import { HStack, LStack, VStack, styled } from "@/styled-system/jsx";
 import { canCreateChannels } from "@/lib/channel/server-permissions";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { getAvatarColor } from "@/utils/avatar-colors";
 
 const isJourneyChannel = (channelName: string): boolean => {
   const lowerName = channelName.toLowerCase();
@@ -75,7 +76,7 @@ export default async function ChannelsPage() {
             justifyContent="center"
             flexShrink="0"
             style={{
-              background: TRAYA_COLORS.gradient,
+              background: getAvatarColor(session.handle),
               lineHeight: "1",
             }}
           >
