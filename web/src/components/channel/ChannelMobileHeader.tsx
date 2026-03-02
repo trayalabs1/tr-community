@@ -9,6 +9,7 @@ import { HStack, VStack, styled } from "@/styled-system/jsx";
 import { getAssetURL } from "@/utils/asset";
 import { ChannelFilterBar } from "@/components/channel/ChannelFilterBar";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { getAvatarColor } from "@/utils/avatar-colors";
 import { BookmarkButton } from "@/components/channel/BookmarkButton";
 import { NotificationButton } from "@/components/channel/NotificationButton";
 import { useChannelPermissions } from "@/lib/channel/permissions";
@@ -113,7 +114,7 @@ export function ChannelMobileHeader({
                   justifyContent="center"
                   flexShrink="0"
                   style={{
-                    background: TRAYA_COLORS.gradient,
+                    background: getAvatarColor(session.handle),
                   }}
                 >
                   <ProfileIcon style={{ color: "white", width: "18px", height: "18px" }} />

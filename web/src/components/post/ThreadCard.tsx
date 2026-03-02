@@ -13,6 +13,7 @@ import { styled } from "@/styled-system/jsx";
 import { timestamp } from "@/utils/date";
 import { hasPermission } from "@/utils/permissions";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { getAvatarColor } from "@/utils/avatar-colors";
 
 import { CategoryBadge } from "../category/CategoryBadge";
 import { PostReviewBadge } from "../thread/PostReviewBadge";
@@ -108,9 +109,9 @@ export const ThreadReferenceCard = memo(
                   fontSize="sm"
                   fontWeight="semibold"
                   style={{
-                    backgroundColor:  TRAYA_COLORS.primary,
-                    color:"white",
-                    border: `2px solid ${TRAYA_COLORS.secondary}`,
+                    backgroundColor: getAvatarColor(thread.author.handle),
+                    color: "white",
+                    border: "none",
                     cursor: "pointer",
                     transition: "opacity 0.2s ease-in-out",
                     flexShrink: 0,

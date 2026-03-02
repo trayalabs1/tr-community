@@ -36,6 +36,7 @@ import { LikeIcon, LikeSavedIcon } from "@/components/ui/icons/Like";
 import { HeaderWithBackArrow } from "@/components/site/Header";
 import { VisibilityBadge } from "@/components/visibility/VisibilityBadge";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { getAvatarColor } from "@/utils/avatar-colors";
 import { HStack, LStack, VStack, WStack, styled } from "@/styled-system/jsx";
 
 import { Form, Props, useThreadScreen } from "./useThreadScreen";
@@ -153,8 +154,8 @@ export function ThreadScreen(props: Props) {
                 fontSize="lg"
                 fontWeight="semibold"
                 style={{
-                  backgroundColor: isAdmin ? TRAYA_COLORS.primary : TRAYA_COLORS.secondary,
-                  color: isAdmin ? "white" : TRAYA_COLORS.primary,
+                  backgroundColor: getAvatarColor(thread.author.handle),
+                  color: "white",
                   border: "none",
                   cursor: "pointer",
                   transition: "opacity 0.2s",

@@ -9,6 +9,7 @@ import { CollectionIcon } from "../ui/icons/Collection";
 import { CollectionMenu } from "./CollectionMenu/CollectionMenu";
 import { ProfileHoverTooltip } from "../post/ProfileHoverTooltip";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { getAvatarColor } from "@/utils/avatar-colors";
 
 type Props = {
   collection: Collection;
@@ -67,7 +68,7 @@ export const CollectionCard = memo(({ collection, hideOwner = false }: Props) =>
                   fontSize="sm"
                   fontWeight="semibold"
                   style={{
-                    background: TRAYA_COLORS.gradient,
+                    background: getAvatarColor(collection.owner.handle),
                     color: "white",
                     border: "none",
                     cursor: "pointer",

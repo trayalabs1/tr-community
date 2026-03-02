@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { MediaAddIcon } from "@/components/ui/icons/Media";
 import { css } from "@/styled-system/css";
 import { Box, styled } from "@/styled-system/jsx";
-import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { getAvatarColor } from "@/utils/avatar-colors";
 
 import { EditAvatarTrigger } from "../EditAvatar/EditAvatarModal";
 
@@ -54,7 +54,7 @@ export function MemberAvatar({ profile, size, editable }: Props) {
         style={{
           width: `${width}px`,
           height: `${height}px`,
-          background: TRAYA_COLORS.gradient,
+          background: getAvatarColor(profile.handle),
           fontSize: size === "xs" ? "10px" : size === "sm" ? "12px" : size === "md" ? "14px" : "36px",
         }}
       >
