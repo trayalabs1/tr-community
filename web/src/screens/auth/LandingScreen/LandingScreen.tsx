@@ -36,9 +36,11 @@ export function LandingScreen({ token }: { token: string }) {
   const redirectToFirstChannel = async () => {
     try {
       const channelsResponse = await channelList();
-      const firstChannel = channelsResponse?.channels?.[0];
-      if (firstChannel?.id) {
-        router.push(`/channels/${firstChannel.id}`);
+      const channels = channelsResponse?.channels ?? [];
+      const monthChannel = channels.find((c) => c.name?.toLowerCase().includes("month"));
+      const targetChannel = monthChannel ?? channels[0];
+      if (targetChannel?.id) {
+        router.push(`/channels/${targetChannel.id}`);
       } else {
         router.push("/channels");
       }
