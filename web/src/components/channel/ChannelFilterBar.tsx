@@ -115,7 +115,7 @@ export function ChannelFilterBar({
         </HStack>
       )}
 
-      {/* Divider - extends beyond parent padding, only shown when filters visible */}
+      {/* Divider - only shown when filters visible */}
       {canManagePosts && (
         <styled.div
           style={{

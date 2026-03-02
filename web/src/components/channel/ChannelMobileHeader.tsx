@@ -67,7 +67,16 @@ export function ChannelMobileHeader({
   );
 
   return (
-    <VStack alignItems="start" gap="0" width="full">
+    <VStack
+      alignItems="start"
+      gap="0"
+      width="full"
+      position="sticky"
+      top="0"
+      zIndex="sticky"
+      bg="white"
+      display={{ base: "flex", md: "none" }}
+    >
       {isAdmin ? (
         <HeaderWithBackArrow
           title={channel.name}
@@ -146,10 +155,10 @@ export function ChannelMobileHeader({
         </HStack>
       )}
 
-      {/* Filter and Create Post Bar */}
+      {/* Filter Bar and Create Post - Mobile */}
       <styled.div display={{ base: "block", md: "none" }} width="full" px="4" pt="3" pb="0">
         <ChannelFilterBar
-          channelID={channel?.id}
+          channelID={channel.id}
           categories={categories}
           selectedCategorySlug={selectedCategorySlug}
           selectedVisibility={selectedVisibility}
