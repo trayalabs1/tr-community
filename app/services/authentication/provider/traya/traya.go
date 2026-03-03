@@ -180,7 +180,7 @@ func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*ac
 		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.InvalidArgument))
 	}
 
-	orderCount := userData.TotalKitCount
+	orderCount := userData.RunningMonthForHairKit
 
 	acc, err := p.getOrCreateAccount(ctx, userData.User.ID, *emailAddress, userData.User.FirstName, userData.User.LastName, userData.User.PhoneNumber)
 	if err != nil {
