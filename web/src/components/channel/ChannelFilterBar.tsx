@@ -41,89 +41,92 @@ export function ChannelFilterBar({
 
   return (
     <VStack alignItems="start" gap="3" width="full">
-      {/* Filter and Create Post Button Row */}
-      <HStack alignItems="center" gap="2" width="full">
-        <styled.button
-          onClick={() => setShowFilters(!showFilters)}
-          display="flex"
-          alignItems="center"
-          gap="2"
-          fontSize="sm"
-          fontWeight="medium"
-          cursor="pointer"
-          style={{
-            backgroundColor: "#ecf4eecc",
-            color:  "#2d5340",
-            border: "none",
-            padding: "0.5rem 0.75rem",
-            borderRadius: "0.875rem",
-            transition: "all 0.2s ease-in-out",
-          }}
-        >
-          <Filter size={16} strokeWidth={2}/>
-          <styled.span>Filters</styled.span>
-          {hasActiveFilters && (
-            <styled.div
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              style={{
-                width: "1.25rem",
-                height: "1.25rem",
-                borderRadius: "50%",
-                backgroundColor: "rgba(255, 255, 255, 0.2)",
-                fontSize: "11px",
-                fontWeight: "600",
-                color: "white",
-              }}
-            >
-              {activeFilterCount}
-            </styled.div>
-          )}
-        </styled.button>
-
-        {hasActiveFilters && (
+      {/* Filter and Create Post Button Row - Filters only for admins */}
+      {canManagePosts && (
+        <HStack alignItems="center" gap="2" width="full">
           <styled.button
-            onClick={clearFilters}
+            onClick={() => setShowFilters(!showFilters)}
             display="flex"
             alignItems="center"
-            gap="1"
+            gap="2"
             fontSize="sm"
+            fontWeight="medium"
             cursor="pointer"
             style={{
-              backgroundColor: "transparent",
-              color: "var(--colors-fg-muted)",
+              backgroundColor: "#ecf4eecc",
+              color:  "#2d5340",
               border: "none",
-              padding: "0.5rem 0.5rem",
+              padding: "0.5rem 0.75rem",
               borderRadius: "0.875rem",
               transition: "all 0.2s ease-in-out",
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--colors-fg-default)";
-              e.currentTarget.style.backgroundColor = TRAYA_COLORS.tertiary;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--colors-fg-muted)";
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
           >
-            <X size={16} strokeWidth={2} />
-            <styled.span>Clear</styled.span>
+            <Filter size={16} strokeWidth={2}/>
+            <styled.span>Filters</styled.span>
+            {hasActiveFilters && (
+              <styled.div
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                style={{
+                  width: "1.25rem",
+                  height: "1.25rem",
+                  borderRadius: "50%",
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  fontSize: "11px",
+                  fontWeight: "600",
+                  color: "white",
+                }}
+              >
+                {activeFilterCount}
+              </styled.div>
+            )}
           </styled.button>
-        )}
 
-      </HStack>
+          {hasActiveFilters && (
+            <styled.button
+              onClick={clearFilters}
+              display="flex"
+              alignItems="center"
+              gap="1"
+              fontSize="sm"
+              cursor="pointer"
+              style={{
+                backgroundColor: "transparent",
+                color: "var(--colors-fg-muted)",
+                border: "none",
+                padding: "0.5rem 0.5rem",
+                borderRadius: "0.875rem",
+                transition: "all 0.2s ease-in-out",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--colors-fg-default)";
+                e.currentTarget.style.backgroundColor = TRAYA_COLORS.tertiary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--colors-fg-muted)";
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+            >
+              <X size={16} strokeWidth={2} />
+              <styled.span>Clear</styled.span>
+            </styled.button>
+          )}
+        </HStack>
+      )}
 
-      {/* Divider - extends beyond parent padding */}
-      <styled.div
-        style={{
-          height: "1px",
-          backgroundColor: "#e5e5e5",
-          marginLeft: "-1rem",
-          marginRight: "-1rem",
-          width: "calc(100% + 2rem)",
-        }}
-      />
+      {/* Divider - only shown when filters visible */}
+      {canManagePosts && (
+        <styled.div
+          style={{
+            height: "1px",
+            backgroundColor: "#e5e5e5",
+            marginLeft: "-1rem",
+            marginRight: "-1rem",
+            width: "calc(100% + 2rem)",
+          }}
+        />
+      )}
 
       {/* Create Post CTA */}
       <ThreadCreateTrigger channelID={channelID} />

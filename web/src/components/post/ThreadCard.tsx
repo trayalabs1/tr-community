@@ -13,6 +13,7 @@ import { styled } from "@/styled-system/jsx";
 import { timestamp } from "@/utils/date";
 import { hasPermission } from "@/utils/permissions";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { getAvatarColor } from "@/utils/avatar-colors";
 
 import { CategoryBadge } from "../category/CategoryBadge";
 import { PostReviewBadge } from "../thread/PostReviewBadge";
@@ -63,6 +64,14 @@ export const ThreadReferenceCard = memo(
     const isInReview = thread.visibility === Visibility.review;
     const isAdmin = hasPermission(session, Permission.ADMINISTRATOR);
 
+    const getFirstImageFromBody = (body: string | undefined): string | null => {
+      if (!body) return null;
+      const imgMatch = body.match(/<img[^>]+src=["']([^"']+)["']/i);
+      return imgMatch?.[1] ?? null;
+    };
+
+    const firstImageUrl = getFirstImageFromBody(thread.body);
+
     return (
       <styled.div
         display="flex"
@@ -108,9 +117,9 @@ export const ThreadReferenceCard = memo(
                   fontSize="sm"
                   fontWeight="semibold"
                   style={{
-                    backgroundColor:  TRAYA_COLORS.primary,
-                    color:"white",
-                    border: `2px solid ${TRAYA_COLORS.secondary}`,
+                    backgroundColor: getAvatarColor(thread.author.handle),
+                    color: "white",
+                    border: "none",
                     cursor: "pointer",
                     transition: "opacity 0.2s ease-in-out",
                     flexShrink: 0,
@@ -198,6 +207,30 @@ export const ThreadReferenceCard = memo(
               {thread.description || title}
             </styled.p>
           </Link>
+
+          {firstImageUrl && (
+            <Link href={permalink} style={{ textDecoration: "none" }}>
+              <styled.div
+                mt="2"
+                borderRadius="lg"
+                overflow="hidden"
+                style={{
+                  height: "140px",
+                  width: "100%",
+                }}
+              >
+                <styled.img
+                  src={firstImageUrl}
+                  alt=""
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              </styled.div>
+            </Link>
+          )}
 
           {(!hideCategoryBadge && thread.category) || isInReview ? (
             <styled.div display="flex" gap="2.5" flexWrap="wrap">

@@ -17,6 +17,7 @@ import { Timestamp } from "../site/Timestamp";
 import { Badge } from "../ui/badge";
 import { ProfileHoverTooltip } from "../post/ProfileHoverTooltip";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { getAvatarColor } from "@/utils/avatar-colors";
 
 type Props = {
   item: DatagraphItem;
@@ -101,7 +102,7 @@ export function DatagraphItemPostGenericCard({
                 fontSize="sm"
                 fontWeight="semibold"
                 style={{
-                  backgroundColor: TRAYA_COLORS.primary,
+                  backgroundColor: getAvatarColor(ref.author.handle),
                   color: "white",
                   border: "none",
                   cursor: "pointer",
@@ -233,7 +234,7 @@ export function DatagraphItemReplyCard({ item }: { item: DatagraphItemReply }) {
                 fontSize="sm"
                 fontWeight="semibold"
                 style={{
-                  backgroundColor: TRAYA_COLORS.primary,
+                  backgroundColor: getAvatarColor(ref.author.handle),
                   color: 'white',
                   border: "none",
                   cursor: "pointer",
@@ -365,7 +366,7 @@ export function DatagraphItemNodeCard({ item }: { item: DatagraphItemNode }) {
                 fontSize="sm"
                 fontWeight="semibold"
                 style={{
-                  backgroundColor: TRAYA_COLORS.secondary,
+                  backgroundColor: getAvatarColor(ref.owner.handle),
                   color: "white",
                   border: "none",
                   cursor: "pointer",
@@ -501,7 +502,7 @@ export function DatagraphItemProfileCard({
                 fontSize="sm"
                 fontWeight="semibold"
                 style={{
-                  backgroundColor: TRAYA_COLORS.secondary,
+                  backgroundColor: getAvatarColor(ref.handle),
                   color: "white",
                   border: "none",
                   cursor: "pointer",

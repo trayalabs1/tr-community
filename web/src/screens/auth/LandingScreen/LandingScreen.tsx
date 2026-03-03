@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import { useAuthTrayaToken, usernameSet } from "@/api/openapi-client/auth";
 import { useAccountGet } from "@/api/openapi-client/accounts";
 import { channelList } from "@/api/openapi-client/channels";
-import { VStack, styled } from "@/styled-system/jsx";
+import { styled } from "@/styled-system/jsx";
 import { handle } from "@/api/client";
 import { Button } from "@/components/ui/button";
-import { MembersIcon } from "@/components/ui/icons/Members";
-import { LikeIcon } from "@/components/ui/icons/Like";
-import { DiscussionIcon } from "@/components/ui/icons/Discussion";
-import { IntelligenceIcon } from "@/components/ui/icons/Intelligence";
+// Icons commented out - Enter Community screen disabled
+// import { VStack } from "@/styled-system/jsx";
+// import { MembersIcon } from "@/components/ui/icons/Members";
+// import { LikeIcon } from "@/components/ui/icons/Like";
+// import { DiscussionIcon } from "@/components/ui/icons/Discussion";
+// import { IntelligenceIcon } from "@/components/ui/icons/Intelligence";
 // import { UsernameModal } from "../UsernameSelectionScreen/UsernameModal";
 // import { useDisclosure } from "@/utils/useDisclosure";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
@@ -23,10 +25,11 @@ export function LandingScreen({ token }: { token: string }) {
   const { trigger } = useAuthTrayaToken({ token });
   const { mutate: mutateAccount } = useAccountGet();
   const [isLoading, setIsLoading] = useState(true);
-  const [needsUsername, setNeedsUsername] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | undefined>();
   const triggered = useRef(false);
+  // States commented out - Enter Community screen disabled (direct landing)
+  // const [needsUsername, setNeedsUsername] = useState(false);
+  // const [userName, setUserName] = useState<string | undefined>();
   // const usernameModal = useDisclosure();
   const { trackOnboardingLanded, trackEnterClicked } = useEventTracking();
 
@@ -63,40 +66,30 @@ export function LandingScreen({ token }: { token: string }) {
         const isNewUser = hasNoHandle || hasTempHandle;
 
         if (isNewUser) {
-          setUserName(account?.name);
-          setNeedsUsername(true);
-          setIsLoading(false);
-        } else {
-          await redirectToFirstChannel();
+          try {
+            const randomUsername = generateRandomUsername(account?.name);
+            await usernameSet({ username: randomUsername });
+            await mutateAccount();
+          } catch {
+            // Silent fail - profile screen will handle it
+          }
         }
+        await redirectToFirstChannel();
       },
       {
         errorToast: false,
         onError: async () => {
           triggered.current = false;
           setIsLoading(false);
-          setNeedsUsername(true);
           setError("Authentication failed. Please try again.");
         },
       }
     );
   }, [trigger, router, mutateAccount]);
 
+  // Retry handler for error state
   const handleEnterCommunity = async () => {
     trackEnterClicked();
-
-    if (needsUsername && !error) {
-      setIsLoading(true);
-      try {
-        const randomUsername = generateRandomUsername(userName);
-        await usernameSet({ username: randomUsername });
-        await mutateAccount();
-      } catch {
-        // Silent fail - profile screen will handle it
-      }
-      await redirectToFirstChannel();
-      return;
-    }
 
     if (triggered.current) return;
     triggered.current = true;
@@ -133,7 +126,8 @@ export function LandingScreen({ token }: { token: string }) {
     );
   };
 
-  if (isLoading && !needsUsername) {
+  // Direct landing - skip Enter Community screen, auto-redirect
+  if (isLoading && !error) {
     return (
       <styled.div
         display="flex"
@@ -152,6 +146,72 @@ export function LandingScreen({ token }: { token: string }) {
     );
   }
 
+  // Error state - show retry option
+  if (error) {
+    return (
+      <styled.div
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        minH="screen"
+        p="6"
+        style={{ background: "#f5f5f5" }}
+      >
+        <styled.div w="full" maxW="sm">
+          <styled.div
+            p="4"
+            mb="6"
+            rounded="lg"
+            style={{ background: "#fee2e2", borderColor: "#fca5a5", borderWidth: "1px" }}
+          >
+            <styled.p fontSize="sm" style={{ color: "#dc2626" }}>
+              {error}
+            </styled.p>
+          </styled.div>
+
+          <Button
+            w="full"
+            onClick={handleEnterCommunity}
+            loading={isLoading}
+            disabled={isLoading}
+            style={{
+              background: "#4a9d6f",
+              color: "#ffffff",
+              padding: "12px 24px",
+              borderRadius: "8px",
+              fontSize: "16px",
+              fontWeight: "500",
+              border: "none",
+              cursor: isLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            {isLoading ? "Authenticating..." : "Try Again"}
+          </Button>
+        </styled.div>
+      </styled.div>
+    );
+  }
+
+  // Fallback loading state
+  return (
+    <styled.div
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+      minH="screen"
+      p="6"
+      style={{ background: "#f5f5f5" }}
+    >
+      <Spinner size="lg" />
+      <styled.p mt="4" color="fg.muted" fontSize="sm" textAlign="center">
+        Hang tight, we're connecting you to your community!
+      </styled.p>
+    </styled.div>
+  );
+
+  /* Enter Community Screen - Commented out: direct landing instead
   return (
     <styled.div
       display="flex"
@@ -163,7 +223,6 @@ export function LandingScreen({ token }: { token: string }) {
       style={{ background: "#f5f5f5" }}
     >
       <styled.div w="full" maxW="sm">
-        {/* Icon Container */}
         <styled.div
           w="16"
           h="16"
@@ -180,7 +239,6 @@ export function LandingScreen({ token }: { token: string }) {
           <MembersIcon width="8" height="8" style={{ color: "#ffffff" }} />
         </styled.div>
 
-        {/* Heading */}
         <styled.h1
           fontSize="2xl"
           fontWeight="bold"
@@ -191,7 +249,6 @@ export function LandingScreen({ token }: { token: string }) {
           Welcome to Your Community
         </styled.h1>
 
-        {/* Description */}
         <styled.p
           fontSize="sm"
           color="fg.muted"
@@ -202,9 +259,7 @@ export function LandingScreen({ token }: { token: string }) {
           transformation journey
         </styled.p>
 
-        {/* Feature Cards */}
         <VStack gap="3" mb="8" w="full">
-          {/* Real Support Card */}
           <styled.div
             display="flex"
             alignItems="center"
@@ -239,7 +294,6 @@ export function LandingScreen({ token }: { token: string }) {
             </VStack>
           </styled.div>
 
-          {/* Share Your Journey Card */}
           <styled.div
             display="flex"
             alignItems="center"
@@ -274,7 +328,6 @@ export function LandingScreen({ token }: { token: string }) {
             </VStack>
           </styled.div>
 
-          {/* Expert Access Card */}
           <styled.div
             display="flex"
             alignItems="center"
@@ -310,7 +363,6 @@ export function LandingScreen({ token }: { token: string }) {
           </styled.div>
         </VStack>
 
-        {/* Error Message */}
         {error && (
           <styled.div
             p="4"
@@ -324,7 +376,6 @@ export function LandingScreen({ token }: { token: string }) {
           </styled.div>
         )}
 
-        {/* Join Button */}
         <Button
           w="full"
           onClick={handleEnterCommunity}
@@ -344,24 +395,7 @@ export function LandingScreen({ token }: { token: string }) {
           {isLoading ? "Authenticating..." : error ? "Try Again" : "Enter Community"}
         </Button>
       </styled.div>
-
-      {/* Username Modal - Commented out: auto-generating username instead */}
-      {/* <UsernameModal
-        isOpen={usernameModal.isOpen}
-        onOpen={usernameModal.onOpen}
-        onClose={() => {
-          // Reset the triggered flag and loading state if modal is dismissed
-          triggered.current = false;
-          setIsLoading(false);
-          usernameModal.onClose();
-        }}
-        onOpenChange={usernameModal.onOpenChange}
-        onSuccess={() => {
-          setIsLoading(false);
-          router.push("/channels");
-        }}
-        initialName={userName}
-      /> */}
     </styled.div>
   );
+  */
 }
