@@ -75,7 +75,12 @@ export function ChannelScreen(props: Props) {
 
     setHasInitiallyLoaded(true);
 
+    // If page already loaded, sync updates (for optimistic updates like likes)
     if (loadedPagesRef.current.has(pageNum)) {
+      const updatedThreadsMap = new Map(threads.threads.map((t) => [t.id, t]));
+      setAllThreads((prev) =>
+        prev.map((t) => updatedThreadsMap.get(t.id) ?? t)
+      );
       setIsLoadingMore(false);
       return;
     }

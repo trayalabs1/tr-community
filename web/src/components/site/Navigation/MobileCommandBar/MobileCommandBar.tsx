@@ -38,8 +38,10 @@ export function MobileCommandBar() {
   });
 
   const isAdmin = hasPermission(session, "ADMINISTRATOR");
-  const firstChannelId = channelsData?.channels?.[0]?.id;
-  const communityHref = isAdmin || !firstChannelId ? "/channels" : `/channels/${firstChannelId}`;
+  const channels = channelsData?.channels ?? [];
+  const monthChannel = channels.find((c) => c.name?.toLowerCase().includes("month"));
+  const targetChannelId = monthChannel?.id ?? channels[0]?.id;
+  const communityHref = isAdmin || !targetChannelId ? "/channels" : `/channels/${targetChannelId}`;
 
   const isHomeActive = pathname === "/" || (pathname.startsWith("/channels") && !pathname.includes("/settings"));
   const isSearchActive = pathname.startsWith("/search");
