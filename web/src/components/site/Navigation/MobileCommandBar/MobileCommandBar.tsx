@@ -9,7 +9,7 @@ import { SearchIcon } from "@/components/ui/icons/Search";
 import { CommunityIcon } from "@/components/ui/icons/Community";
 // import { LibraryIcon } from "@/components/ui/icons/Library";
 // import { ProfileIcon } from "@/components/ui/icons/Profile";
-import { InformationCircleIcon, ArrowUturnLeftIcon } from "@heroicons/react/24/outline";
+import { DocumentTextIcon, ArrowUturnLeftIcon } from "@heroicons/react/24/outline";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
 import { useSession } from "@/auth";
@@ -27,7 +27,7 @@ declare global {
 
 export function MobileCommandBar() {
   const pathname = usePathname();
-  const { trackSearchClicked, trackInfoClicked  } = useEventTracking();
+  const { trackSearchClicked, trackMyPostsClicked  } = useEventTracking();
   const session = useSession();
   const { data: channelsData } = useChannelList();
   const { data: account } = useAccountGet({
@@ -46,7 +46,7 @@ export function MobileCommandBar() {
   const isHomeActive = pathname === "/" || (pathname.startsWith("/channels") && !pathname.includes("/settings"));
   const isSearchActive = pathname.startsWith("/search");
   // const isLibraryActive = pathname.startsWith("/l");
-  const isInfoActive = pathname.startsWith("/info");
+  const isMyPostsActive = pathname.startsWith("/my-posts");
   // const isProfileActive = pathname.startsWith("/m/") || pathname === "/m";
 
   const handle = account?.handle || session?.handle;
@@ -56,9 +56,9 @@ export function MobileCommandBar() {
     trackSearchClicked();
   }, [trackSearchClicked]);
 
-  const handleInfoClick = useCallback(() => {
-    trackInfoClicked();
-  }, [trackInfoClicked]);
+  const handleMyPostsClick = useCallback(() => {
+    trackMyPostsClicked();
+  }, [trackMyPostsClicked]);
 
   const handleCloseWebView = useCallback(() => {
     const url = new URL(window.location.href);
@@ -239,12 +239,19 @@ export function MobileCommandBar() {
           label="Library"
           isActive={isLibraryActive}
         /> */}
-        <TabItem
+        {/* <TabItem
           href="/info"
           icon={InformationCircleIcon}
           label="Info"
           isActive={isInfoActive}
           onClick={handleInfoClick}
+        /> */}
+        <TabItem
+          href="/my-posts"
+          icon={DocumentTextIcon}
+          label="My Posts"
+          isActive={isMyPostsActive}
+          onClick={handleMyPostsClick}
         />
         {/* <TabItem
           href={profileHref}

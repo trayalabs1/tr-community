@@ -92,6 +92,10 @@ export function useEventTracking() {
     trackEvent("community_info_clicked");
   }, [trackEvent]);
 
+  const trackMyPostsClicked = useCallback(() => {
+    trackEvent("community_my_posts_clicked");
+  }, [trackEvent]);
+
   const trackPostClicked = useCallback(
     (channelId?: string, postType?: string) => {
       trackEvent("community_post_clicked", {
@@ -201,6 +205,7 @@ export function useEventTracking() {
     trackSearchClicked,
     trackSearchDone,
     trackInfoClicked,
+    trackMyPostsClicked,
     trackPostClicked,
     trackSubmitForReview,
     trackCardReply,
