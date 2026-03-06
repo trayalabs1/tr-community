@@ -99,11 +99,11 @@ func (r *aiReviewer) handleThreadSubmittedForReview(ctx context.Context, evt *me
 
 	result, err := r.prompter.PromptWithModel(reviewCtx, reviewModel, prompt)
 	if err != nil {
-		r.logger.Error("ai review failed, leaving post in manual review",
+		r.logger.Error("ai review failed, will retry",
 			slog.String("thread_id", evt.ID.String()),
 			slog.String("error", err.Error()),
 		)
-		return nil
+		return fault.Wrap(err, fctx.With(ctx))
 	}
 
 	if result == nil {
