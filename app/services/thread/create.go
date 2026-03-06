@@ -71,7 +71,7 @@ func (s *service) Create(ctx context.Context,
 		return nil, fault.Wrap(err, fctx.With(ctx), fmsg.With("failed to create thread"))
 	}
 
-	if content, ok := partial.Content.Get(); ok && thr.Visibility == visibility.VisibilityPublished {
+	if content, ok := partial.Content.Get(); ok {
 		result, err := s.cpm.CheckContent(ctx, xid.ID(thr.ID), datagraph.KindThread, title, content)
 		if err != nil {
 			return nil, fault.Wrap(err, fctx.With(ctx))
@@ -82,6 +82,14 @@ func (s *service) Create(ctx context.Context,
 			if err != nil {
 				return nil, fault.Wrap(err, fctx.With(ctx))
 			}
+		}
+
+		if thr.Visibility == visibility.VisibilityReview {
+			s.bus.Publish(ctx, &message.EventThreadSubmittedForReview{
+				ID:    thr.ID,
+				Title: thr.Title,
+				Body:  thr.Content.Plaintext(),
+			})
 		}
 	}
 

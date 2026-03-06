@@ -115,6 +115,12 @@ func (s *service) Update(ctx context.Context, threadID post.ID, partial Partial)
 			s.bus.Publish(ctx, &message.EventThreadPublished{
 				ID: thr.ID,
 			})
+		} else if thr.Visibility == visibility.VisibilityReview {
+			s.bus.Publish(ctx, &message.EventThreadSubmittedForReview{
+				ID:    thr.ID,
+				Title: thr.Title,
+				Body:  thr.Content.Plaintext(),
+			})
 		} else {
 			s.bus.Publish(ctx, &message.EventThreadUnpublished{
 				ID: thr.ID,

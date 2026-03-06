@@ -59,4 +59,16 @@ will be ignored, only the value containing "null" will be considered.
 
  */
   categories?: CategorySlugListQueryParameter;
+  /**
+   * Show only threads created after this date/time.
+   */
+  created_after?: string;
+  /**
+   * Show only threads created before this date/time.
+   */
+  created_before?: string;
+  /**
+   * Show only threads that have no replies.
+   */
+  no_replies?: boolean;
 };
