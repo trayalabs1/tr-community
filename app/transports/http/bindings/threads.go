@@ -201,15 +201,21 @@ func (i *Threads) ThreadList(ctx context.Context, request openapi.ThreadListRequ
 
 	cats := deserialiseCategorySlugQueryParam(request.Params.Categories)
 	ignorePinned := opt.NewPtr(request.Params.IgnorePinned)
+	createdAfter := opt.NewPtr(request.Params.CreatedAfter)
+	createdBefore := opt.NewPtr(request.Params.CreatedBefore)
+	noReplies := opt.NewPtr(request.Params.NoReplies)
 
 	page = max(0, page-1)
 	result, err := i.thread_svc.List(ctx, page, pageSize, thread_service.Params{
-		Query:        query,
-		AccountID:    author,
-		Visibility:   visibilities,
-		Tags:         tags,
-		Categories:   cats,
-		IgnorePinned: ignorePinned,
+		Query:         query,
+		AccountID:     author,
+		Visibility:    visibilities,
+		Tags:          tags,
+		Categories:    cats,
+		IgnorePinned:  ignorePinned,
+		CreatedAfter:  createdAfter,
+		CreatedBefore: createdBefore,
+		NoReplies:     noReplies,
 	})
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))

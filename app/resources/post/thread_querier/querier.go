@@ -74,6 +74,18 @@ func HasCreatedDateBefore(t time.Time) Query {
 	}
 }
 
+func HasCreatedDateAfter(t time.Time) Query {
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.CreatedAtGT(t))
+	}
+}
+
+func HasNoReplies() Query {
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.Not(ent_post.HasPosts()))
+	}
+}
+
 func HasUpdatedDateBefore(t time.Time) Query {
 	return func(q *threadListOptions) {
 		q.q.Where(ent_post.UpdatedAtLT(t))

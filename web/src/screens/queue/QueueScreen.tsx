@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Filter, X } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Filter } from "lucide-react";
+import { today, getLocalTimeZone, type DateValue } from "@internationalized/date";
+import { DateRangePicker } from "@/components/ui/date-picker";
 import { useChannelList } from "@/api/openapi-client/channels";
 import { useNodeList } from "@/api/openapi-client/nodes";
 import { useThreadList } from "@/api/openapi-client/threads";
 import { Visibility } from "@/api/openapi-schema";
+import { PendingReplyThreadList } from "@/components/queue/PendingReplyThreadList";
 import { QueueNodeList } from "@/components/queue/QueueNodeList";
 import { QueueThreadList } from "@/components/queue/QueueThreadList";
 import { LoadingBanner } from "@/components/site/Loading";
@@ -16,11 +19,26 @@ import { getAssetURL } from "@/utils/asset";
 import { MembersIcon } from "@/components/ui/icons/Members";
 
 type ContentType = "threads" | "nodes" | "all";
+type QueueTab = "pending_review" | "pending_reply";
 
 export function QueueScreen() {
+  const [activeTab, setActiveTab] = useState<QueueTab>("pending_review");
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("all");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  const todayVal = useMemo(() => today(getLocalTimeZone()), []);
+
+  const [pendingReplyRange, setPendingReplyRange] = useState<{
+    createdAfter: string;
+    createdBefore: string;
+  }>(() => {
+    const start = todayVal.toDate(getLocalTimeZone());
+    start.setHours(0, 0, 0, 0);
+    const end = todayVal.toDate(getLocalTimeZone());
+    end.setHours(23, 59, 59, 999);
+    return { createdAfter: start.toISOString(), createdBefore: end.toISOString() };
+  });
 
   const { data: channelData } = useChannelList({});
 
@@ -33,9 +51,18 @@ export function QueueScreen() {
     visibility: [Visibility.review],
   });
 
-  const isLoading = isThreadsLoading && isNodesLoading;
+  const { data: pendingReplyData, isValidating: isPendingReplyLoading } = useThreadList({
+    visibility: [Visibility.published],
+    created_after: pendingReplyRange.createdAfter,
+    created_before: pendingReplyRange.createdBefore,
+    no_replies: true,
+  });
 
-  if (isLoading && !nodeData && !threadData) {
+  const isLoading = activeTab === "pending_review"
+    ? isThreadsLoading && isNodesLoading
+    : isPendingReplyLoading;
+
+  if (isLoading) {
     return <LoadingBanner />;
   }
 
@@ -72,21 +99,56 @@ export function QueueScreen() {
   const shouldShowThreads = selectedContentType === "threads" || selectedContentType === "all";
   const shouldShowNodes = selectedContentType === "nodes" || selectedContentType === "all";
 
-  const totalPending = (threadData?.threads?.length || 0) + (nodeData?.nodes?.length || 0);
+  const pendingReplyThreads = pendingReplyData?.threads ?? [];
+
+  const allChannelIds = new Set([
+    ...Array.from(threadsByChannel.keys()),
+    ...pendingReplyThreads.map((t) => t.channel_id).filter((id): id is string => !!id),
+  ]);
+  const allChannelOptions = Array.from(allChannelIds)
+    .map((id) => channelMap.get(id))
+    .filter((ch): ch is NonNullable<typeof ch> => ch != null)
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+  const filteredPendingReplyThreads = selectedChannelId
+    ? pendingReplyThreads.filter((t) => t.channel_id === selectedChannelId)
+    : pendingReplyThreads;
+
+  const handlePendingReplyDateChange = ({ value }: { value: DateValue[] }) => {
+    const [start, end] = value;
+
+    if (!start) {
+      const s = todayVal.toDate(getLocalTimeZone());
+      s.setHours(0, 0, 0, 0);
+      const e = todayVal.toDate(getLocalTimeZone());
+      e.setHours(23, 59, 59, 999);
+      setPendingReplyRange({ createdAfter: s.toISOString(), createdBefore: e.toISOString() });
+      return;
+    }
+
+    if (!end) return;
+
+    const [earlier, later] = start.compare(end) <= 0 ? [start, end] : [end, start];
+    const effectiveEnd = later.compare(earlier) > 2 ? earlier.add({ days: 2 }) : later;
+
+    const startDate = earlier.toDate(getLocalTimeZone());
+    startDate.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(effectiveEnd.add({ days: 1 }).toDate(getLocalTimeZone()).getTime() - 1);
+
+    setPendingReplyRange({
+      createdAfter: startDate.toISOString(),
+      createdBefore: endOfDay.toISOString(),
+    });
+  };
 
   return (
     <LStack gap="6" p="4">
       {/* Header */}
       <VStack alignItems="start" gap="2" width="full">
         <HStack justifyContent="space-between" width="full" alignItems="center">
-          <VStack alignItems="start" gap="1">
-            <Heading as="h1" size="2xl">
-              Submission Queue
-            </Heading>
-            <styled.p fontSize="sm" color="fg.muted">
-              {totalPending} {totalPending === 1 ? "submission" : "submissions"} pending review
-            </styled.p>
-          </VStack>
+          <Heading as="h1" size="2xl">
+            Submission Queue
+          </Heading>
           <styled.button
             onClick={() => setIsFiltersOpen(!isFiltersOpen)}
             display="flex"
@@ -108,6 +170,30 @@ export function QueueScreen() {
             <Filter size={18} strokeWidth={2} />
             <styled.span>Filters</styled.span>
           </styled.button>
+        </HStack>
+
+        {/* Tabs */}
+        <HStack gap="0" width="full" style={{ borderBottom: "1px solid var(--colors-border-default)" }}>
+          {(["pending_review", "pending_reply"] as const).map((tab) => (
+            <styled.button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              fontSize="sm"
+              cursor="pointer"
+              px="4"
+              py="2"
+              style={{
+                background: "none",
+                border: "none",
+                borderBottom: activeTab === tab ? "2px solid var(--colors-fg-default)" : "2px solid transparent",
+                marginBottom: "-1px",
+                fontWeight: activeTab === tab ? "600" : "400",
+                color: activeTab === tab ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
+              }}
+            >
+              {tab === "pending_review" ? "Pending Review" : "Pending Reply"}
+            </styled.button>
+          ))}
         </HStack>
       </VStack>
 
@@ -152,8 +238,7 @@ export function QueueScreen() {
             </HStack>
           </VStack>
 
-          {/* Channel Filter */}
-          {hasThreads && (
+          {allChannelOptions.length > 0 && (
             <VStack alignItems="start" gap="2" width="full">
               <HStack justifyContent="space-between" width="full">
                 <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
@@ -177,11 +262,11 @@ export function QueueScreen() {
                 )}
               </HStack>
               <HStack gap="2" flexWrap="wrap">
-                {sortedChannels.map(({ channel }) => (
+                {allChannelOptions.map((channel) => (
                   <styled.button
-                    key={channel?.id}
+                    key={channel.id}
                     onClick={() =>
-                      setSelectedChannelId(selectedChannelId === channel?.id ? null : channel?.id || null)
+                      setSelectedChannelId(selectedChannelId === channel.id ? null : channel.id)
                     }
                     fontSize="xs"
                     cursor="pointer"
@@ -191,28 +276,80 @@ export function QueueScreen() {
                     transition="all"
                     style={{
                       backgroundColor:
-                        selectedChannelId === channel?.id
+                        selectedChannelId === channel.id
                           ? "var(--colors-bg-default)"
                           : "var(--colors-bg-subtle)",
                       color:
-                        selectedChannelId === channel?.id
+                        selectedChannelId === channel.id
                           ? "var(--colors-fg-default)"
                           : "var(--colors-fg-muted)",
                       border: "1px solid var(--colors-border-default)",
-                      fontWeight: selectedChannelId === channel?.id ? "600" : "400",
+                      fontWeight: selectedChannelId === channel.id ? "600" : "400",
                     }}
                   >
-                    {channel?.name || "Unknown"}
+                    {channel.name || "Unknown"}
                   </styled.button>
                 ))}
               </HStack>
             </VStack>
           )}
+
+          {activeTab === "pending_reply" && (
+            <VStack alignItems="start" gap="2" width="full">
+              <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
+                Date Range
+              </styled.label>
+              <DateRangePicker
+                hideInputs={true}
+                min={todayVal.subtract({ days: 3 })}
+                max={todayVal}
+                onValueChange={handlePendingReplyDateChange}
+              />
+            </VStack>
+          )}
         </VStack>
       )}
 
-      {/* Content */}
-      <VStack gap="8" width="full">
+      {/* Pending Reply Tab */}
+      {activeTab === "pending_reply" && (
+        <VStack gap="4" width="full">
+          <HStack justifyContent="space-between" width="full" alignItems="center">
+            <Heading as="h2" size="lg">
+              Threads Pending Reply
+            </Heading>
+            <styled.span fontSize="xs" color="fg.muted" fontWeight="semibold">
+              {filteredPendingReplyThreads.length} pending
+            </styled.span>
+          </HStack>
+          {shouldShowThreads && filteredPendingReplyThreads.length > 0 ? (
+            <PendingReplyThreadList threads={filteredPendingReplyThreads} />
+          ) : (
+            <VStack
+              gap="4"
+              width="full"
+              p="12"
+              alignItems="center"
+              justifyContent="center"
+              style={{
+                border: "1px dashed var(--colors-border-default)",
+                borderRadius: "0.75rem",
+                backgroundColor: "var(--colors-bg-muted)",
+                minHeight: "300px",
+              }}
+            >
+              <styled.div fontSize="lg" fontWeight="semibold" color="fg.muted">
+                All Replied!
+              </styled.div>
+              <styled.p fontSize="sm" color="fg.muted">
+                No threads pending reply for the selected filters.
+              </styled.p>
+            </VStack>
+          )}
+        </VStack>
+      )}
+
+      {/* Pending Review Tab */}
+      {activeTab === "pending_review" && <VStack gap="8" width="full">
         {/* Threads Section */}
         {shouldShowThreads && hasThreads && (
           <VStack gap="6" width="full">
@@ -323,7 +460,7 @@ export function QueueScreen() {
             </styled.p>
           </VStack>
         )}
-      </VStack>
+      </VStack>}
     </LStack>
   );
 }
