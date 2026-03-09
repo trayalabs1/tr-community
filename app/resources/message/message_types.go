@@ -37,6 +37,12 @@ type EventThreadDeleted struct {
 	ID post.ID
 }
 
+type EventThreadSubmittedForReview struct {
+	ID    post.ID
+	Title string
+	Body  string
+}
+
 type EventThreadReplyCreated struct {
 	ThreadID        post.ID
 	ReplyID         post.ID

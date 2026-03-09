@@ -20,6 +20,7 @@ import (
 type Params struct {
 	Query         opt.Optional[string]
 	CreatedBefore opt.Optional[time.Time]
+	CreatedAfter  opt.Optional[time.Time]
 	UpdatedBefore opt.Optional[time.Time]
 	AccountID     opt.Optional[account.AccountID]
 	Visibility    opt.Optional[[]visibility.Visibility]
@@ -27,6 +28,7 @@ type Params struct {
 	Categories    opt.Optional[thread_querier.CategoryFilter]
 	ChannelID     opt.Optional[xid.ID]
 	IgnorePinned  opt.Optional[bool]
+	NoReplies     opt.Optional[bool]
 }
 
 func (s *service) List(ctx context.Context,
@@ -42,12 +44,18 @@ func (s *service) List(ctx context.Context,
 
 	opts.Query.Call(func(value string) { q = append(q, thread_querier.HasKeyword(value)) })
 	opts.CreatedBefore.Call(func(value time.Time) { q = append(q, thread_querier.HasCreatedDateBefore(value)) })
+	opts.CreatedAfter.Call(func(value time.Time) { q = append(q, thread_querier.HasCreatedDateAfter(value)) })
 	opts.UpdatedBefore.Call(func(value time.Time) { q = append(q, thread_querier.HasUpdatedDateBefore(value)) })
 	opts.AccountID.Call(func(a account.AccountID) { q = append(q, thread_querier.HasAuthor(a)) })
 	opts.Tags.Call(func(a []xid.ID) { q = append(q, thread_querier.HasTags(a)) })
 	opts.Categories.Call(func(cf thread_querier.CategoryFilter) { q = append(q, thread_querier.HasCategories(cf)) })
 	opts.ChannelID.Call(func(channelID xid.ID) { q = append(q, thread_querier.HasChannel(channelID)) })
 	opts.IgnorePinned.Call(func(value bool) { q = append(q, thread_querier.HasNoPinnedOrdering(value)) })
+	opts.NoReplies.Call(func(value bool) {
+		if value {
+			q = append(q, thread_querier.HasNoReplies())
+		}
+	})
 
 	vq := func() thread_querier.Query {
 		v, ok := opts.Visibility.Get()

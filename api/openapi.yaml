@@ -1902,6 +1902,26 @@ paths:
           in: query
           schema: { $ref: "#/components/schemas/TagListIDs" }
         - $ref: "#/components/parameters/CategorySlugListQuery"
+        - name: created_after
+          description: Show only threads created after this date/time.
+          required: false
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: created_before
+          description: Show only threads created before this date/time.
+          required: false
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: no_replies
+          description: Show only threads that have no replies.
+          required: false
+          in: query
+          schema:
+            type: boolean
       responses:
         default: { $ref: "#/components/responses/InternalServerError" }
         "404": { $ref: "#/components/responses/NotFound" }

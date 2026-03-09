@@ -43,6 +43,26 @@ func (o *OpenAI) Prompt(ctx context.Context, input string) (*Result, error) {
 	}, nil
 }
 
+func (o *OpenAI) PromptWithModel(ctx context.Context, model, input string) (*Result, error) {
+	res, err := o.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
+		Model: openai.ChatModel(model),
+		Messages: []openai.ChatCompletionMessageParamUnion{
+			openai.UserMessage(input),
+		},
+	})
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	if len(res.Choices) == 0 {
+		return nil, fault.New("result is empty")
+	}
+
+	return &Result{
+		Answer: res.Choices[0].Message.Content,
+	}, nil
+}
+
 func (o *OpenAI) PromptStream(ctx context.Context, input string) (func(yield func(string, error) bool), error) {
 	iter := func(yield func(string, error) bool) {
 		stream := o.client.Chat.Completions.NewStreaming(ctx, openai.ChatCompletionNewParams{
