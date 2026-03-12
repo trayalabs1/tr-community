@@ -45,7 +45,7 @@ type Partial struct {
 func Build() fx.Option {
 	return fx.Options(
 		fx.Provide(New),
-		fx.Invoke(setupSubscribers),
+		// fx.Invoke(setupSubscribers),
 	)
 }
 
