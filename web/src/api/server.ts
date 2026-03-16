@@ -67,8 +67,7 @@ export const fetcher = async <T>(
 
 async function getCookieHeader(): Promise<string> {
   const c = await cookies();
-  return c
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join("; ");
+  const session = c.get("storyden-session");
+  if (!session) return "";
+  return `${session.name}=${session.value}`;
 }
