@@ -27,6 +27,12 @@ export const EVENTS = {
   community_admin_replied: {
     optional: ["post_id", "reply_length", "post_owner_id", "channel_id"],
   },
+  community_view_post_clicked: {
+    optional: ["reply_id", "channel_id"],
+  },
+  community_dismiss_clicked: {
+    optional: ["reply_id", "channel_id"],
+  },
 } as const;
 
 export type EventName = keyof typeof EVENTS;

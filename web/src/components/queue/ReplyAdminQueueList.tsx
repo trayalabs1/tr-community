@@ -5,6 +5,7 @@ import { useState } from "react";
 import { styled, VStack, HStack } from "@/styled-system/jsx";
 import { ReplyQueueEntry } from "@/api/openapi-schema";
 import { EmptyState } from "@/components/site/EmptyState";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 type Props = {
   entries: ReplyQueueEntry[];
@@ -15,6 +16,7 @@ type Props = {
 export function ReplyAdminQueueList({ entries, channelMap, onDismiss }: Props) {
   const [dismissing, setDismissing] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const { trackViewPostClicked, trackDismissClicked } = useEventTracking();
 
   if (entries.length === 0) {
     return (
@@ -61,6 +63,7 @@ export function ReplyAdminQueueList({ entries, channelMap, onDismiss }: Props) {
                 <Link
                   href={`/channels/${entry.channel_id}/threads/locate/${entry.reply_id}`}
                   style={{ textDecoration: "underline" }}
+                  onClick={() => trackViewPostClicked(entry.reply_id, entry.channel_id)}
                 >
                   View reply
                 </Link>
@@ -74,6 +77,7 @@ export function ReplyAdminQueueList({ entries, channelMap, onDismiss }: Props) {
             </VStack>
             <styled.button
               onClick={async () => {
+                trackDismissClicked(entry.reply_id, entry.channel_id);
                 setDismissing((prev) => new Set(prev).add(entry.id));
                 setError(null);
                 try {
