@@ -38,6 +38,7 @@ import { VisibilityBadge } from "@/components/visibility/VisibilityBadge";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { getAvatarColor } from "@/utils/avatar-colors";
 import { HStack, LStack, VStack, WStack, styled } from "@/styled-system/jsx";
+import Link from "next/link";
 
 import { Form, Props, useThreadScreen } from "./useThreadScreen";
 
@@ -144,55 +145,40 @@ export function ThreadScreen(props: Props) {
 
             {/* Post Header */}
             <HStack gap="3" alignItems="start" width="full" mb="1">
-              <styled.button
-                w="12"
-                h="12"
-                rounded="full"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                fontSize="lg"
-                fontWeight="semibold"
-                style={{
-                  backgroundColor: getAvatarColor(thread.author.handle),
-                  color: "white",
-                  border: "none",
-                  cursor: "pointer",
-                  transition: "opacity 0.2s",
-                  flexShrink: 0,
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.opacity = "0.8";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.opacity = "1";
-                }}
-              >
-                {thread.author.handle.charAt(0).toUpperCase()}
-              </styled.button>
+              <Link href={`/m/${thread.author.handle}`} style={{ textDecoration: "none" }}>
+                <styled.div
+                  w="12"
+                  h="12"
+                  rounded="full"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  fontSize="lg"
+                  fontWeight="semibold"
+                  style={{
+                    backgroundColor: getAvatarColor(thread.author.handle),
+                    color: "white",
+                    cursor: "pointer",
+                    transition: "opacity 0.2s",
+                    flexShrink: 0,
+                  }}
+                  _hover={{ opacity: 0.8 }}
+                >
+                  {thread.author.handle.charAt(0).toUpperCase()}
+                </styled.div>
+              </Link>
 
               <VStack alignItems="start" gap="1" flex="1">
                 <HStack gap="2" alignItems="center">
-                  <styled.button
-                    fontWeight="semibold"
-                    color="fg.default"
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: "0",
-                      textDecoration: "none",
-                      transition: "text-decoration 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.textDecoration = "underline";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.textDecoration = "none";
-                    }}
-                  >
-                    @{thread.author.handle}
-                  </styled.button>
+                  <Link href={`/m/${thread.author.handle}`} style={{ textDecoration: "none" }}>
+                    <styled.span
+                      fontWeight="semibold"
+                      color="fg.default"
+                      _hover={{ textDecoration: "underline" }}
+                    >
+                      @{thread.author.handle}
+                    </styled.span>
+                  </Link>
                   {isAdmin && (
                     <styled.span
                       px="2"
