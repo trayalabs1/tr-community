@@ -16,6 +16,8 @@ import { fetcher } from "../client";
 import type {
   AccountGetOKResponse,
   AdminAccessKeyListOKResponse,
+  AdminReplyQueueListOKResponse,
+  AdminReplyQueueListParams,
   AdminSettingsGetOKResponse,
   AdminSettingsUpdateBody,
   AdminSettingsUpdateOKResponse,
@@ -25,6 +27,7 @@ import type {
   AuditEventListParams,
   BadRequestResponse,
   ForbiddenResponse,
+  Identifier,
   InternalServerErrorResponse,
   ModerationActionCreateBody,
   NoContentResponse,
@@ -524,6 +527,127 @@ export const useAdminAccessKeyDelete = <
   const swrKey =
     swrOptions?.swrKey ?? getAdminAccessKeyDeleteMutationKey(accessKeyId);
   const swrFn = getAdminAccessKeyDeleteMutationFetcher(accessKeyId);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+/**
+ * List non-admin replies pending admin attention. Requires ADMINISTRATOR
+permission. Supports pagination and date range filtering.
+
+ */
+export const adminReplyQueueList = (params?: AdminReplyQueueListParams) => {
+  return fetcher<AdminReplyQueueListOKResponse>({
+    url: `/admin/reply-queue`,
+    method: "GET",
+    params,
+  });
+};
+
+export const getAdminReplyQueueListKey = (params?: AdminReplyQueueListParams) =>
+  [`/admin/reply-queue`, ...(params ? [params] : [])] as const;
+
+export type AdminReplyQueueListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminReplyQueueList>>
+>;
+export type AdminReplyQueueListQueryError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | InternalServerErrorResponse;
+
+export const useAdminReplyQueueList = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | InternalServerErrorResponse,
+>(
+  params?: AdminReplyQueueListParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof adminReplyQueueList>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getAdminReplyQueueListKey(params) : null));
+  const swrFn = () => adminReplyQueueList(params);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Dismiss a reply queue entry. Permanently deletes the entry.
+Requires ADMINISTRATOR permission.
+
+ */
+export const adminReplyQueueDismiss = (replyQueueId: Identifier) => {
+  return fetcher<NoContentResponse>({
+    url: `/admin/reply-queue/${replyQueueId}`,
+    method: "DELETE",
+  });
+};
+
+export const getAdminReplyQueueDismissMutationFetcher = (
+  replyQueueId: Identifier,
+) => {
+  return (_: Key, __: { arg: Arguments }): Promise<NoContentResponse> => {
+    return adminReplyQueueDismiss(replyQueueId);
+  };
+};
+export const getAdminReplyQueueDismissMutationKey = (
+  replyQueueId: Identifier,
+) => [`/admin/reply-queue/${replyQueueId}`] as const;
+
+export type AdminReplyQueueDismissMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminReplyQueueDismiss>>
+>;
+export type AdminReplyQueueDismissMutationError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useAdminReplyQueueDismiss = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  replyQueueId: Identifier,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof adminReplyQueueDismiss>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof adminReplyQueueDismiss>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getAdminReplyQueueDismissMutationKey(replyQueueId);
+  const swrFn = getAdminReplyQueueDismissMutationFetcher(replyQueueId);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

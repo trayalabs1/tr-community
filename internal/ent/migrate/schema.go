@@ -1118,6 +1118,42 @@ var (
 			},
 		},
 	}
+	// ReplyAdminQueuesColumns holds the columns for the "reply_admin_queues" table.
+	ReplyAdminQueuesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "channel_id", Type: field.TypeString},
+		{Name: "content_snippet", Type: field.TypeString, Default: ""},
+		{Name: "reply_id", Type: field.TypeString, Size: 20},
+		{Name: "thread_id", Type: field.TypeString, Size: 20},
+	}
+	// ReplyAdminQueuesTable holds the schema information for the "reply_admin_queues" table.
+	ReplyAdminQueuesTable = &schema.Table{
+		Name:       "reply_admin_queues",
+		Columns:    ReplyAdminQueuesColumns,
+		PrimaryKey: []*schema.Column{ReplyAdminQueuesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "reply_admin_queues_posts_reply",
+				Columns:    []*schema.Column{ReplyAdminQueuesColumns[4]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "reply_admin_queues_posts_thread",
+				Columns:    []*schema.Column{ReplyAdminQueuesColumns[5]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "replyadminqueue_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ReplyAdminQueuesColumns[1]},
+			},
+		},
+	}
 	// ReportsColumns holds the columns for the "reports" table.
 	ReportsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Size: 20},
@@ -1443,6 +1479,7 @@ var (
 		PropertySchemaFieldsTable,
 		QuestionsTable,
 		ReactsTable,
+		ReplyAdminQueuesTable,
 		ReportsTable,
 		RolesTable,
 		SessionsTable,
@@ -1518,6 +1555,8 @@ func init() {
 	QuestionsTable.ForeignKeys[1].RefTable = QuestionsTable
 	ReactsTable.ForeignKeys[0].RefTable = AccountsTable
 	ReactsTable.ForeignKeys[1].RefTable = PostsTable
+	ReplyAdminQueuesTable.ForeignKeys[0].RefTable = PostsTable
+	ReplyAdminQueuesTable.ForeignKeys[1].RefTable = PostsTable
 	ReportsTable.ForeignKeys[0].RefTable = AccountsTable
 	ReportsTable.ForeignKeys[1].RefTable = AccountsTable
 	SessionsTable.ForeignKeys[0].RefTable = AccountsTable

@@ -40,6 +40,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/propertyschemafield"
 	"github.com/Southclaws/storyden/internal/ent/question"
 	"github.com/Southclaws/storyden/internal/ent/react"
+	"github.com/Southclaws/storyden/internal/ent/replyadminqueue"
 	"github.com/Southclaws/storyden/internal/ent/report"
 	"github.com/Southclaws/storyden/internal/ent/role"
 	"github.com/Southclaws/storyden/internal/ent/session"
@@ -133,6 +134,7 @@ func checkColumn(t, c string) error {
 			propertyschemafield.Table: propertyschemafield.ValidColumn,
 			question.Table:            question.ValidColumn,
 			react.Table:               react.ValidColumn,
+			replyadminqueue.Table:     replyadminqueue.ValidColumn,
 			report.Table:              report.ValidColumn,
 			role.Table:                role.ValidColumn,
 			session.Table:             session.ValidColumn,

@@ -345,6 +345,18 @@ func (f ReactFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReactMutation", m)
 }
 
+// The ReplyAdminQueueFunc type is an adapter to allow the use of ordinary
+// function as ReplyAdminQueue mutator.
+type ReplyAdminQueueFunc func(context.Context, *ent.ReplyAdminQueueMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ReplyAdminQueueFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ReplyAdminQueueMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReplyAdminQueueMutation", m)
+}
+
 // The ReportFunc type is an adapter to allow the use of ordinary
 // function as Report mutator.
 type ReportFunc func(context.Context, *ent.ReportMutation) (ent.Value, error)

@@ -62,6 +62,12 @@ type EventThreadReplyUpdated struct {
 	ReplyID  post.ID
 }
 
+type EventReplyRequiresAdminAttention struct {
+	ThreadID post.ID
+	ReplyID  post.ID
+	Snippet  string
+}
+
 type EventThreadReplyPublished struct {
 	ThreadID post.ID
 	ReplyID  post.ID

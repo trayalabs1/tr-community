@@ -15,7 +15,9 @@ import (
 	"github.com/Southclaws/storyden/app/resources/post"
 	"github.com/Southclaws/storyden/app/resources/post/reply"
 	"github.com/Southclaws/storyden/app/resources/post/reply_writer"
+	"github.com/Southclaws/storyden/app/resources/rbac"
 	"github.com/Southclaws/storyden/app/resources/visibility"
+	"github.com/Southclaws/storyden/app/services/authentication/session"
 	"github.com/Southclaws/storyden/app/services/moderation/checker"
 )
 
@@ -66,6 +68,15 @@ func (s *Mutator) Create(
 		return r.ID
 	})
 
+	snippet := ""
+	if content, ok := partial.Content.Get(); ok {
+		runes := []rune(content.Plaintext())
+		if len(runes) > 100 {
+			runes = runes[:100]
+		}
+		snippet = string(runes)
+	}
+
 	// Only emit created event (which triggers indexing) if reply is published
 	if !wasMovedToReview {
 		s.bus.Publish(ctx, &message.EventThreadReplyCreated{
@@ -76,6 +87,14 @@ func (s *Mutator) Create(
 			ReplyToAuthorID: replyToAuthorID,
 			ReplyToTargetID: replyToReplyID,
 		})
+
+		if !session.GetRoles(ctx).Permissions().HasAny(rbac.PermissionAdministrator) {
+			s.bus.Publish(ctx, &message.EventReplyRequiresAdminAttention{
+				ThreadID: p.RootPostID,
+				ReplyID:  p.ID,
+				Snippet:  snippet,
+			})
+		}
 	}
 
 	return p, nil

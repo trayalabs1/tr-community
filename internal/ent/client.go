@@ -44,6 +44,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/propertyschemafield"
 	"github.com/Southclaws/storyden/internal/ent/question"
 	"github.com/Southclaws/storyden/internal/ent/react"
+	"github.com/Southclaws/storyden/internal/ent/replyadminqueue"
 	"github.com/Southclaws/storyden/internal/ent/report"
 	"github.com/Southclaws/storyden/internal/ent/role"
 	"github.com/Southclaws/storyden/internal/ent/session"
@@ -114,6 +115,8 @@ type Client struct {
 	Question *QuestionClient
 	// React is the client for interacting with the React builders.
 	React *ReactClient
+	// ReplyAdminQueue is the client for interacting with the ReplyAdminQueue builders.
+	ReplyAdminQueue *ReplyAdminQueueClient
 	// Report is the client for interacting with the Report builders.
 	Report *ReportClient
 	// Role is the client for interacting with the Role builders.
@@ -163,6 +166,7 @@ func (c *Client) init() {
 	c.PropertySchemaField = NewPropertySchemaFieldClient(c.config)
 	c.Question = NewQuestionClient(c.config)
 	c.React = NewReactClient(c.config)
+	c.ReplyAdminQueue = NewReplyAdminQueueClient(c.config)
 	c.Report = NewReportClient(c.config)
 	c.Role = NewRoleClient(c.config)
 	c.Session = NewSessionClient(c.config)
@@ -288,6 +292,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PropertySchemaField: NewPropertySchemaFieldClient(cfg),
 		Question:            NewQuestionClient(cfg),
 		React:               NewReactClient(cfg),
+		ReplyAdminQueue:     NewReplyAdminQueueClient(cfg),
 		Report:              NewReportClient(cfg),
 		Role:                NewRoleClient(cfg),
 		Session:             NewSessionClient(cfg),
@@ -340,6 +345,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PropertySchemaField: NewPropertySchemaFieldClient(cfg),
 		Question:            NewQuestionClient(cfg),
 		React:               NewReactClient(cfg),
+		ReplyAdminQueue:     NewReplyAdminQueueClient(cfg),
 		Report:              NewReportClient(cfg),
 		Role:                NewRoleClient(cfg),
 		Session:             NewSessionClient(cfg),
@@ -379,7 +385,8 @@ func (c *Client) Use(hooks ...Hook) {
 		c.CollectionNode, c.CollectionPost, c.Email, c.Event, c.EventParticipant,
 		c.Invitation, c.LikePost, c.Link, c.MentionProfile, c.Node, c.Notification,
 		c.Post, c.PostRead, c.Property, c.PropertySchema, c.PropertySchemaField,
-		c.Question, c.React, c.Report, c.Role, c.Session, c.Setting, c.Tag,
+		c.Question, c.React, c.ReplyAdminQueue, c.Report, c.Role, c.Session, c.Setting,
+		c.Tag,
 	} {
 		n.Use(hooks...)
 	}
@@ -394,7 +401,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.CollectionNode, c.CollectionPost, c.Email, c.Event, c.EventParticipant,
 		c.Invitation, c.LikePost, c.Link, c.MentionProfile, c.Node, c.Notification,
 		c.Post, c.PostRead, c.Property, c.PropertySchema, c.PropertySchemaField,
-		c.Question, c.React, c.Report, c.Role, c.Session, c.Setting, c.Tag,
+		c.Question, c.React, c.ReplyAdminQueue, c.Report, c.Role, c.Session, c.Setting,
+		c.Tag,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -459,6 +467,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Question.mutate(ctx, m)
 	case *ReactMutation:
 		return c.React.mutate(ctx, m)
+	case *ReplyAdminQueueMutation:
+		return c.ReplyAdminQueue.mutate(ctx, m)
 	case *ReportMutation:
 		return c.Report.mutate(ctx, m)
 	case *RoleMutation:
@@ -6100,6 +6110,171 @@ func (c *ReactClient) mutate(ctx context.Context, m *ReactMutation) (Value, erro
 	}
 }
 
+// ReplyAdminQueueClient is a client for the ReplyAdminQueue schema.
+type ReplyAdminQueueClient struct {
+	config
+}
+
+// NewReplyAdminQueueClient returns a client for the ReplyAdminQueue from the given config.
+func NewReplyAdminQueueClient(c config) *ReplyAdminQueueClient {
+	return &ReplyAdminQueueClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `replyadminqueue.Hooks(f(g(h())))`.
+func (c *ReplyAdminQueueClient) Use(hooks ...Hook) {
+	c.hooks.ReplyAdminQueue = append(c.hooks.ReplyAdminQueue, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `replyadminqueue.Intercept(f(g(h())))`.
+func (c *ReplyAdminQueueClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ReplyAdminQueue = append(c.inters.ReplyAdminQueue, interceptors...)
+}
+
+// Create returns a builder for creating a ReplyAdminQueue entity.
+func (c *ReplyAdminQueueClient) Create() *ReplyAdminQueueCreate {
+	mutation := newReplyAdminQueueMutation(c.config, OpCreate)
+	return &ReplyAdminQueueCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ReplyAdminQueue entities.
+func (c *ReplyAdminQueueClient) CreateBulk(builders ...*ReplyAdminQueueCreate) *ReplyAdminQueueCreateBulk {
+	return &ReplyAdminQueueCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ReplyAdminQueueClient) MapCreateBulk(slice any, setFunc func(*ReplyAdminQueueCreate, int)) *ReplyAdminQueueCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ReplyAdminQueueCreateBulk{err: fmt.Errorf("calling to ReplyAdminQueueClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ReplyAdminQueueCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ReplyAdminQueueCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ReplyAdminQueue.
+func (c *ReplyAdminQueueClient) Update() *ReplyAdminQueueUpdate {
+	mutation := newReplyAdminQueueMutation(c.config, OpUpdate)
+	return &ReplyAdminQueueUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ReplyAdminQueueClient) UpdateOne(_m *ReplyAdminQueue) *ReplyAdminQueueUpdateOne {
+	mutation := newReplyAdminQueueMutation(c.config, OpUpdateOne, withReplyAdminQueue(_m))
+	return &ReplyAdminQueueUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ReplyAdminQueueClient) UpdateOneID(id xid.ID) *ReplyAdminQueueUpdateOne {
+	mutation := newReplyAdminQueueMutation(c.config, OpUpdateOne, withReplyAdminQueueID(id))
+	return &ReplyAdminQueueUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ReplyAdminQueue.
+func (c *ReplyAdminQueueClient) Delete() *ReplyAdminQueueDelete {
+	mutation := newReplyAdminQueueMutation(c.config, OpDelete)
+	return &ReplyAdminQueueDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ReplyAdminQueueClient) DeleteOne(_m *ReplyAdminQueue) *ReplyAdminQueueDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ReplyAdminQueueClient) DeleteOneID(id xid.ID) *ReplyAdminQueueDeleteOne {
+	builder := c.Delete().Where(replyadminqueue.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ReplyAdminQueueDeleteOne{builder}
+}
+
+// Query returns a query builder for ReplyAdminQueue.
+func (c *ReplyAdminQueueClient) Query() *ReplyAdminQueueQuery {
+	return &ReplyAdminQueueQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeReplyAdminQueue},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ReplyAdminQueue entity by its id.
+func (c *ReplyAdminQueueClient) Get(ctx context.Context, id xid.ID) (*ReplyAdminQueue, error) {
+	return c.Query().Where(replyadminqueue.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ReplyAdminQueueClient) GetX(ctx context.Context, id xid.ID) *ReplyAdminQueue {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryReply queries the reply edge of a ReplyAdminQueue.
+func (c *ReplyAdminQueueClient) QueryReply(_m *ReplyAdminQueue) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(replyadminqueue.Table, replyadminqueue.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, replyadminqueue.ReplyTable, replyadminqueue.ReplyColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryThread queries the thread edge of a ReplyAdminQueue.
+func (c *ReplyAdminQueueClient) QueryThread(_m *ReplyAdminQueue) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(replyadminqueue.Table, replyadminqueue.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, replyadminqueue.ThreadTable, replyadminqueue.ThreadColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ReplyAdminQueueClient) Hooks() []Hook {
+	return c.hooks.ReplyAdminQueue
+}
+
+// Interceptors returns the client interceptors.
+func (c *ReplyAdminQueueClient) Interceptors() []Interceptor {
+	return c.inters.ReplyAdminQueue
+}
+
+func (c *ReplyAdminQueueClient) mutate(ctx context.Context, m *ReplyAdminQueueMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ReplyAdminQueueCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ReplyAdminQueueUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ReplyAdminQueueUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ReplyAdminQueueDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ReplyAdminQueue mutation op: %q", m.Op())
+	}
+}
+
 // ReportClient is a client for the Report schema.
 type ReportClient struct {
 	config
@@ -6900,14 +7075,16 @@ type (
 		Channel, ChannelMembership, Collection, CollectionNode, CollectionPost, Email,
 		Event, EventParticipant, Invitation, LikePost, Link, MentionProfile, Node,
 		Notification, Post, PostRead, Property, PropertySchema, PropertySchemaField,
-		Question, React, Report, Role, Session, Setting, Tag []ent.Hook
+		Question, React, ReplyAdminQueue, Report, Role, Session, Setting,
+		Tag []ent.Hook
 	}
 	inters struct {
 		Account, AccountFollow, AccountRoles, Asset, AuditLog, Authentication, Category,
 		Channel, ChannelMembership, Collection, CollectionNode, CollectionPost, Email,
 		Event, EventParticipant, Invitation, LikePost, Link, MentionProfile, Node,
 		Notification, Post, PostRead, Property, PropertySchema, PropertySchemaField,
-		Question, React, Report, Role, Session, Setting, Tag []ent.Interceptor
+		Question, React, ReplyAdminQueue, Report, Role, Session, Setting,
+		Tag []ent.Interceptor
 	}
 )
 

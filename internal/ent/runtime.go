@@ -34,6 +34,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/propertyschemafield"
 	"github.com/Southclaws/storyden/internal/ent/question"
 	"github.com/Southclaws/storyden/internal/ent/react"
+	"github.com/Southclaws/storyden/internal/ent/replyadminqueue"
 	"github.com/Southclaws/storyden/internal/ent/report"
 	"github.com/Southclaws/storyden/internal/ent/role"
 	"github.com/Southclaws/storyden/internal/ent/schema"
@@ -1080,6 +1081,41 @@ func init() {
 	// react.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	react.IDValidator = func() func(string) error {
 		validators := reactDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	replyadminqueueMixin := schema.ReplyAdminQueue{}.Mixin()
+	replyadminqueueMixinFields0 := replyadminqueueMixin[0].Fields()
+	_ = replyadminqueueMixinFields0
+	replyadminqueueMixinFields1 := replyadminqueueMixin[1].Fields()
+	_ = replyadminqueueMixinFields1
+	replyadminqueueFields := schema.ReplyAdminQueue{}.Fields()
+	_ = replyadminqueueFields
+	// replyadminqueueDescCreatedAt is the schema descriptor for created_at field.
+	replyadminqueueDescCreatedAt := replyadminqueueMixinFields1[0].Descriptor()
+	// replyadminqueue.DefaultCreatedAt holds the default value on creation for the created_at field.
+	replyadminqueue.DefaultCreatedAt = replyadminqueueDescCreatedAt.Default.(func() time.Time)
+	// replyadminqueueDescContentSnippet is the schema descriptor for content_snippet field.
+	replyadminqueueDescContentSnippet := replyadminqueueFields[3].Descriptor()
+	// replyadminqueue.DefaultContentSnippet holds the default value on creation for the content_snippet field.
+	replyadminqueue.DefaultContentSnippet = replyadminqueueDescContentSnippet.Default.(string)
+	// replyadminqueueDescID is the schema descriptor for id field.
+	replyadminqueueDescID := replyadminqueueMixinFields0[0].Descriptor()
+	// replyadminqueue.DefaultID holds the default value on creation for the id field.
+	replyadminqueue.DefaultID = replyadminqueueDescID.Default.(func() xid.ID)
+	// replyadminqueue.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	replyadminqueue.IDValidator = func() func(string) error {
+		validators := replyadminqueueDescID.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),

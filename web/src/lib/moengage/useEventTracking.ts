@@ -192,6 +192,26 @@ export function useEventTracking() {
     [trackEvent]
   );
 
+  const trackViewPostClicked = useCallback(
+    (replyId?: string, channelId?: string) => {
+      trackEvent("community_view_post_clicked", {
+        reply_id: replyId,
+        channel_id: channelId,
+      });
+    },
+    [trackEvent]
+  );
+
+  const trackDismissClicked = useCallback(
+    (replyId?: string, channelId?: string) => {
+      trackEvent("community_dismiss_clicked", {
+        reply_id: replyId,
+        channel_id: channelId,
+      });
+    },
+    [trackEvent]
+  );
+
   return {
     trackEvent,
     trackOnboardingLanded,
@@ -215,5 +235,7 @@ export function useEventTracking() {
     trackCardSave,
     trackAdminApproved,
     trackAdminReplied,
+    trackViewPostClicked,
+    trackDismissClicked,
   };
 }

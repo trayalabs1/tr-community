@@ -41,6 +41,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/propertyschemafield"
 	"github.com/Southclaws/storyden/internal/ent/question"
 	"github.com/Southclaws/storyden/internal/ent/react"
+	"github.com/Southclaws/storyden/internal/ent/replyadminqueue"
 	"github.com/Southclaws/storyden/internal/ent/report"
 	"github.com/Southclaws/storyden/internal/ent/role"
 	"github.com/Southclaws/storyden/internal/ent/schema"
@@ -87,6 +88,7 @@ const (
 	TypePropertySchemaField = "PropertySchemaField"
 	TypeQuestion            = "Question"
 	TypeReact               = "React"
+	TypeReplyAdminQueue     = "ReplyAdminQueue"
 	TypeReport              = "Report"
 	TypeRole                = "Role"
 	TypeSession             = "Session"
@@ -28585,6 +28587,654 @@ func (m *ReactMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown React edge %s", name)
+}
+
+// ReplyAdminQueueMutation represents an operation that mutates the ReplyAdminQueue nodes in the graph.
+type ReplyAdminQueueMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *xid.ID
+	created_at      *time.Time
+	channel_id      *xid.ID
+	content_snippet *string
+	clearedFields   map[string]struct{}
+	reply           *xid.ID
+	clearedreply    bool
+	thread          *xid.ID
+	clearedthread   bool
+	done            bool
+	oldValue        func(context.Context) (*ReplyAdminQueue, error)
+	predicates      []predicate.ReplyAdminQueue
+}
+
+var _ ent.Mutation = (*ReplyAdminQueueMutation)(nil)
+
+// replyadminqueueOption allows management of the mutation configuration using functional options.
+type replyadminqueueOption func(*ReplyAdminQueueMutation)
+
+// newReplyAdminQueueMutation creates new mutation for the ReplyAdminQueue entity.
+func newReplyAdminQueueMutation(c config, op Op, opts ...replyadminqueueOption) *ReplyAdminQueueMutation {
+	m := &ReplyAdminQueueMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeReplyAdminQueue,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withReplyAdminQueueID sets the ID field of the mutation.
+func withReplyAdminQueueID(id xid.ID) replyadminqueueOption {
+	return func(m *ReplyAdminQueueMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ReplyAdminQueue
+		)
+		m.oldValue = func(ctx context.Context) (*ReplyAdminQueue, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ReplyAdminQueue.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withReplyAdminQueue sets the old ReplyAdminQueue of the mutation.
+func withReplyAdminQueue(node *ReplyAdminQueue) replyadminqueueOption {
+	return func(m *ReplyAdminQueueMutation) {
+		m.oldValue = func(context.Context) (*ReplyAdminQueue, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ReplyAdminQueueMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ReplyAdminQueueMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ReplyAdminQueue entities.
+func (m *ReplyAdminQueueMutation) SetID(id xid.ID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ReplyAdminQueueMutation) ID() (id xid.ID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ReplyAdminQueueMutation) IDs(ctx context.Context) ([]xid.ID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []xid.ID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ReplyAdminQueue.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ReplyAdminQueueMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ReplyAdminQueueMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ReplyAdminQueue entity.
+// If the ReplyAdminQueue object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ReplyAdminQueueMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ReplyAdminQueueMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetReplyID sets the "reply_id" field.
+func (m *ReplyAdminQueueMutation) SetReplyID(x xid.ID) {
+	m.reply = &x
+}
+
+// ReplyID returns the value of the "reply_id" field in the mutation.
+func (m *ReplyAdminQueueMutation) ReplyID() (r xid.ID, exists bool) {
+	v := m.reply
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReplyID returns the old "reply_id" field's value of the ReplyAdminQueue entity.
+// If the ReplyAdminQueue object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ReplyAdminQueueMutation) OldReplyID(ctx context.Context) (v xid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReplyID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReplyID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReplyID: %w", err)
+	}
+	return oldValue.ReplyID, nil
+}
+
+// ResetReplyID resets all changes to the "reply_id" field.
+func (m *ReplyAdminQueueMutation) ResetReplyID() {
+	m.reply = nil
+}
+
+// SetThreadID sets the "thread_id" field.
+func (m *ReplyAdminQueueMutation) SetThreadID(x xid.ID) {
+	m.thread = &x
+}
+
+// ThreadID returns the value of the "thread_id" field in the mutation.
+func (m *ReplyAdminQueueMutation) ThreadID() (r xid.ID, exists bool) {
+	v := m.thread
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldThreadID returns the old "thread_id" field's value of the ReplyAdminQueue entity.
+// If the ReplyAdminQueue object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ReplyAdminQueueMutation) OldThreadID(ctx context.Context) (v xid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldThreadID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldThreadID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldThreadID: %w", err)
+	}
+	return oldValue.ThreadID, nil
+}
+
+// ResetThreadID resets all changes to the "thread_id" field.
+func (m *ReplyAdminQueueMutation) ResetThreadID() {
+	m.thread = nil
+}
+
+// SetChannelID sets the "channel_id" field.
+func (m *ReplyAdminQueueMutation) SetChannelID(x xid.ID) {
+	m.channel_id = &x
+}
+
+// ChannelID returns the value of the "channel_id" field in the mutation.
+func (m *ReplyAdminQueueMutation) ChannelID() (r xid.ID, exists bool) {
+	v := m.channel_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannelID returns the old "channel_id" field's value of the ReplyAdminQueue entity.
+// If the ReplyAdminQueue object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ReplyAdminQueueMutation) OldChannelID(ctx context.Context) (v xid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannelID: %w", err)
+	}
+	return oldValue.ChannelID, nil
+}
+
+// ResetChannelID resets all changes to the "channel_id" field.
+func (m *ReplyAdminQueueMutation) ResetChannelID() {
+	m.channel_id = nil
+}
+
+// SetContentSnippet sets the "content_snippet" field.
+func (m *ReplyAdminQueueMutation) SetContentSnippet(s string) {
+	m.content_snippet = &s
+}
+
+// ContentSnippet returns the value of the "content_snippet" field in the mutation.
+func (m *ReplyAdminQueueMutation) ContentSnippet() (r string, exists bool) {
+	v := m.content_snippet
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContentSnippet returns the old "content_snippet" field's value of the ReplyAdminQueue entity.
+// If the ReplyAdminQueue object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ReplyAdminQueueMutation) OldContentSnippet(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContentSnippet is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContentSnippet requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContentSnippet: %w", err)
+	}
+	return oldValue.ContentSnippet, nil
+}
+
+// ResetContentSnippet resets all changes to the "content_snippet" field.
+func (m *ReplyAdminQueueMutation) ResetContentSnippet() {
+	m.content_snippet = nil
+}
+
+// ClearReply clears the "reply" edge to the Post entity.
+func (m *ReplyAdminQueueMutation) ClearReply() {
+	m.clearedreply = true
+	m.clearedFields[replyadminqueue.FieldReplyID] = struct{}{}
+}
+
+// ReplyCleared reports if the "reply" edge to the Post entity was cleared.
+func (m *ReplyAdminQueueMutation) ReplyCleared() bool {
+	return m.clearedreply
+}
+
+// ReplyIDs returns the "reply" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ReplyID instead. It exists only for internal usage by the builders.
+func (m *ReplyAdminQueueMutation) ReplyIDs() (ids []xid.ID) {
+	if id := m.reply; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetReply resets all changes to the "reply" edge.
+func (m *ReplyAdminQueueMutation) ResetReply() {
+	m.reply = nil
+	m.clearedreply = false
+}
+
+// ClearThread clears the "thread" edge to the Post entity.
+func (m *ReplyAdminQueueMutation) ClearThread() {
+	m.clearedthread = true
+	m.clearedFields[replyadminqueue.FieldThreadID] = struct{}{}
+}
+
+// ThreadCleared reports if the "thread" edge to the Post entity was cleared.
+func (m *ReplyAdminQueueMutation) ThreadCleared() bool {
+	return m.clearedthread
+}
+
+// ThreadIDs returns the "thread" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ThreadID instead. It exists only for internal usage by the builders.
+func (m *ReplyAdminQueueMutation) ThreadIDs() (ids []xid.ID) {
+	if id := m.thread; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetThread resets all changes to the "thread" edge.
+func (m *ReplyAdminQueueMutation) ResetThread() {
+	m.thread = nil
+	m.clearedthread = false
+}
+
+// Where appends a list predicates to the ReplyAdminQueueMutation builder.
+func (m *ReplyAdminQueueMutation) Where(ps ...predicate.ReplyAdminQueue) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ReplyAdminQueueMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ReplyAdminQueueMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ReplyAdminQueue, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ReplyAdminQueueMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ReplyAdminQueueMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ReplyAdminQueue).
+func (m *ReplyAdminQueueMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ReplyAdminQueueMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.created_at != nil {
+		fields = append(fields, replyadminqueue.FieldCreatedAt)
+	}
+	if m.reply != nil {
+		fields = append(fields, replyadminqueue.FieldReplyID)
+	}
+	if m.thread != nil {
+		fields = append(fields, replyadminqueue.FieldThreadID)
+	}
+	if m.channel_id != nil {
+		fields = append(fields, replyadminqueue.FieldChannelID)
+	}
+	if m.content_snippet != nil {
+		fields = append(fields, replyadminqueue.FieldContentSnippet)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ReplyAdminQueueMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case replyadminqueue.FieldCreatedAt:
+		return m.CreatedAt()
+	case replyadminqueue.FieldReplyID:
+		return m.ReplyID()
+	case replyadminqueue.FieldThreadID:
+		return m.ThreadID()
+	case replyadminqueue.FieldChannelID:
+		return m.ChannelID()
+	case replyadminqueue.FieldContentSnippet:
+		return m.ContentSnippet()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ReplyAdminQueueMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case replyadminqueue.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case replyadminqueue.FieldReplyID:
+		return m.OldReplyID(ctx)
+	case replyadminqueue.FieldThreadID:
+		return m.OldThreadID(ctx)
+	case replyadminqueue.FieldChannelID:
+		return m.OldChannelID(ctx)
+	case replyadminqueue.FieldContentSnippet:
+		return m.OldContentSnippet(ctx)
+	}
+	return nil, fmt.Errorf("unknown ReplyAdminQueue field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ReplyAdminQueueMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case replyadminqueue.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case replyadminqueue.FieldReplyID:
+		v, ok := value.(xid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReplyID(v)
+		return nil
+	case replyadminqueue.FieldThreadID:
+		v, ok := value.(xid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetThreadID(v)
+		return nil
+	case replyadminqueue.FieldChannelID:
+		v, ok := value.(xid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannelID(v)
+		return nil
+	case replyadminqueue.FieldContentSnippet:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContentSnippet(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ReplyAdminQueue field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ReplyAdminQueueMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ReplyAdminQueueMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ReplyAdminQueueMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ReplyAdminQueue numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ReplyAdminQueueMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ReplyAdminQueueMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ReplyAdminQueueMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ReplyAdminQueue nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ReplyAdminQueueMutation) ResetField(name string) error {
+	switch name {
+	case replyadminqueue.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case replyadminqueue.FieldReplyID:
+		m.ResetReplyID()
+		return nil
+	case replyadminqueue.FieldThreadID:
+		m.ResetThreadID()
+		return nil
+	case replyadminqueue.FieldChannelID:
+		m.ResetChannelID()
+		return nil
+	case replyadminqueue.FieldContentSnippet:
+		m.ResetContentSnippet()
+		return nil
+	}
+	return fmt.Errorf("unknown ReplyAdminQueue field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ReplyAdminQueueMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.reply != nil {
+		edges = append(edges, replyadminqueue.EdgeReply)
+	}
+	if m.thread != nil {
+		edges = append(edges, replyadminqueue.EdgeThread)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ReplyAdminQueueMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case replyadminqueue.EdgeReply:
+		if id := m.reply; id != nil {
+			return []ent.Value{*id}
+		}
+	case replyadminqueue.EdgeThread:
+		if id := m.thread; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ReplyAdminQueueMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ReplyAdminQueueMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ReplyAdminQueueMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedreply {
+		edges = append(edges, replyadminqueue.EdgeReply)
+	}
+	if m.clearedthread {
+		edges = append(edges, replyadminqueue.EdgeThread)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ReplyAdminQueueMutation) EdgeCleared(name string) bool {
+	switch name {
+	case replyadminqueue.EdgeReply:
+		return m.clearedreply
+	case replyadminqueue.EdgeThread:
+		return m.clearedthread
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ReplyAdminQueueMutation) ClearEdge(name string) error {
+	switch name {
+	case replyadminqueue.EdgeReply:
+		m.ClearReply()
+		return nil
+	case replyadminqueue.EdgeThread:
+		m.ClearThread()
+		return nil
+	}
+	return fmt.Errorf("unknown ReplyAdminQueue unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ReplyAdminQueueMutation) ResetEdge(name string) error {
+	switch name {
+	case replyadminqueue.EdgeReply:
+		m.ResetReply()
+		return nil
+	case replyadminqueue.EdgeThread:
+		m.ResetThread()
+		return nil
+	}
+	return fmt.Errorf("unknown ReplyAdminQueue edge %s", name)
 }
 
 // ReportMutation represents an operation that mutates the Report nodes in the graph.

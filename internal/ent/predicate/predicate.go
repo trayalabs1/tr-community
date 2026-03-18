@@ -90,6 +90,9 @@ type Question func(*sql.Selector)
 // React is the predicate function for react builders.
 type React func(*sql.Selector)
 
+// ReplyAdminQueue is the predicate function for replyadminqueue builders.
+type ReplyAdminQueue func(*sql.Selector)
+
 // Report is the predicate function for report builders.
 type Report func(*sql.Selector)
 

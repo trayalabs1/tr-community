@@ -75,6 +75,7 @@ type Bindings struct {
 	Invitations
 	Notifications
 	Reports
+	ReplyQueue
 	Profiles
 	Channels
 	Categories
@@ -112,6 +113,7 @@ func bindingsProviders() fx.Option {
 		NewInvitations,
 		NewNotifications,
 		NewReports,
+		NewReplyQueue,
 		NewProfiles,
 		NewChannels,
 		NewCategories,
