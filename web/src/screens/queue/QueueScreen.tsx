@@ -5,6 +5,7 @@ import { useState, useMemo } from "react";
 import { Filter } from "lucide-react";
 import { today, getLocalTimeZone, type DateValue } from "@internationalized/date";
 import { DateRangePicker } from "@/components/ui/date-picker";
+import { useAdminReplyQueueList, adminReplyQueueDismiss } from "@/api/openapi-client/admin";
 import { useChannelList } from "@/api/openapi-client/channels";
 import { useNodeList } from "@/api/openapi-client/nodes";
 import { useThreadList } from "@/api/openapi-client/threads";
@@ -12,6 +13,7 @@ import { Visibility } from "@/api/openapi-schema";
 import { PendingReplyThreadList } from "@/components/queue/PendingReplyThreadList";
 import { QueueNodeList } from "@/components/queue/QueueNodeList";
 import { QueueThreadList } from "@/components/queue/QueueThreadList";
+import { ReplyAdminQueueList } from "@/components/queue/ReplyAdminQueueList";
 import { LoadingBanner } from "@/components/site/Loading";
 import { Heading } from "@/components/ui/heading";
 import { VStack, LStack, HStack, styled } from "@/styled-system/jsx";
@@ -19,7 +21,7 @@ import { getAssetURL } from "@/utils/asset";
 import { MembersIcon } from "@/components/ui/icons/Members";
 
 type ContentType = "threads" | "nodes" | "all";
-type QueueTab = "pending_review" | "pending_reply";
+type QueueTab = "pending_review" | "pending_reply" | "pending_reply_to_reply";
 
 export function QueueScreen() {
   const [activeTab, setActiveTab] = useState<QueueTab>("pending_review");
@@ -58,9 +60,15 @@ export function QueueScreen() {
     no_replies: true,
   });
 
-  const isLoading = activeTab === "pending_review"
-    ? isThreadsLoading && isNodesLoading
-    : isPendingReplyLoading;
+  const { data: replyQueueData, mutate: mutateReplyQueue, isValidating: isReplyQueueLoading } = useAdminReplyQueueList({
+    created_after: pendingReplyRange.createdAfter,
+    created_before: pendingReplyRange.createdBefore,
+  });
+
+  const isLoading =
+    activeTab === "pending_review" ? isThreadsLoading && isNodesLoading :
+    activeTab === "pending_reply" ? isPendingReplyLoading :
+    isReplyQueueLoading;
 
   if (isLoading) {
     return <LoadingBanner />;
@@ -100,10 +108,12 @@ export function QueueScreen() {
   const shouldShowNodes = selectedContentType === "nodes" || selectedContentType === "all";
 
   const pendingReplyThreads = pendingReplyData?.threads ?? [];
+  const replyQueueEntries = replyQueueData?.reply_queue_entries ?? [];
 
   const allChannelIds = new Set([
     ...Array.from(threadsByChannel.keys()),
     ...pendingReplyThreads.map((t) => t.channel_id).filter((id): id is string => !!id),
+    ...replyQueueEntries.map((e) => e.channel_id).filter((id): id is string => !!id),
   ]);
   const allChannelOptions = Array.from(allChannelIds)
     .map((id) => channelMap.get(id))
@@ -174,7 +184,7 @@ export function QueueScreen() {
 
         {/* Tabs */}
         <HStack gap="0" width="full" style={{ borderBottom: "1px solid var(--colors-border-default)" }}>
-          {(["pending_review", "pending_reply"] as const).map((tab) => (
+          {(["pending_review", "pending_reply", "pending_reply_to_reply"] as const).map((tab) => (
             <styled.button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -191,7 +201,7 @@ export function QueueScreen() {
                 color: activeTab === tab ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
               }}
             >
-              {tab === "pending_review" ? "Pending Review" : "Pending Reply"}
+              {tab === "pending_review" ? "Pending Review" : tab === "pending_reply" ? "Pending Reply" : "Pending Reply to Reply"}
             </styled.button>
           ))}
         </HStack>
@@ -294,7 +304,7 @@ export function QueueScreen() {
             </VStack>
           )}
 
-          {activeTab === "pending_reply" && (
+          {(activeTab === "pending_reply" || activeTab === "pending_reply_to_reply") && (
             <VStack alignItems="start" gap="2" width="full">
               <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
                 Date Range
@@ -345,6 +355,30 @@ export function QueueScreen() {
               </styled.p>
             </VStack>
           )}
+        </VStack>
+      )}
+
+      {/* Pending Reply to Reply Tab */}
+      {activeTab === "pending_reply_to_reply" && (
+        <VStack gap="4" width="full">
+          <HStack justifyContent="space-between" width="full" alignItems="center">
+            <Heading as="h2" size="lg">
+              Replies Pending Admin Attention
+            </Heading>
+            <styled.span fontSize="xs" color="fg.muted" fontWeight="semibold">
+              {replyQueueEntries.length} pending
+            </styled.span>
+          </HStack>
+          <ReplyAdminQueueList
+            entries={selectedChannelId
+              ? replyQueueEntries.filter((e) => e.channel_id === selectedChannelId)
+              : replyQueueEntries}
+            channelMap={channelMap}
+            onDismiss={async (id) => {
+              await adminReplyQueueDismiss(id);
+              await mutateReplyQueue();
+            }}
+          />
         </VStack>
       )}
 
