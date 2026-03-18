@@ -49,6 +49,8 @@ import (
 	"github.com/Southclaws/storyden/app/resources/post/post_search"
 	"github.com/Southclaws/storyden/app/resources/post/post_writer"
 	"github.com/Southclaws/storyden/app/resources/post/reaction"
+	"github.com/Southclaws/storyden/app/resources/post/reply_admin_queue_querier"
+	"github.com/Southclaws/storyden/app/resources/post/reply_admin_queue_writer"
 	"github.com/Southclaws/storyden/app/resources/post/reply_querier"
 	"github.com/Southclaws/storyden/app/resources/post/reply_writer"
 	"github.com/Southclaws/storyden/app/resources/post/thread_cache"
@@ -129,6 +131,8 @@ func Build() fx.Option {
 			participant_writer.New,
 			hydrate.New,
 			question.New,
+			reply_admin_queue_querier.New,
+			reply_admin_queue_writer.New,
 			report_querier.New,
 			report_writer.New,
 		),

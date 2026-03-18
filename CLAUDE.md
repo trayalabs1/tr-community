@@ -68,6 +68,9 @@ task release
 ```bash
 # Run all code-generation
 task generate
+
+# Run end-to-end tests (boots backend + frontend on ports 8001/3001, shuts down after)
+task test:e2e
 ```
 
 ### Backend (Go)
@@ -85,8 +88,14 @@ go test ./tests/account/...
 # Seed database with test data
 go run ./cmd/seed
 
-# Generate database bindings (Ent)
+# Clean database
+go run ./cmd/clean
+
+# Generate database bindings (Ent) — use when only schema changes
 task generate:db
+
+# Generate OpenAPI stubs (backend + frontend client + home/ docs) — use when only API changes
+task generate:openapi
 ```
 
 ### Frontend (Next.js)
@@ -140,15 +149,16 @@ yarn lint
 
 ## Code Generation
 
-The project heavily relies on code generation. Before making changes to:
+The project heavily relies on code generation. Edit the source of truth first, then generate:
 
-- HTTP endpoints
-- Database tables and columns
-- Enumerated types in Golang code
+| What changed | Source of truth | Command |
+|---|---|---|
+| HTTP endpoints / RBAC | `api/openapi.yaml` | `task generate:openapi` |
+| Database tables/columns | `internal/ent/schema/` | `task generate:db` |
+| App config parameters | `internal/config/config.yaml` | `task generate` |
+| Everything | — | `task generate` |
 
-You must first edit the source of truth and generate the code.
-
-Run `task generate` to regenerate everything.
+`generate:openapi` regenerates the Go HTTP server stubs, the `web/` TypeScript client, and the `home/` API reference docs all at once.
 
 **Note**: Panda CSS changes (design tokens, recipes, patterns) in `web/panda.config.ts` do NOT require running `task generate`. Panda CSS generates its output automatically.
 

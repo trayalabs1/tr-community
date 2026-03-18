@@ -10,6 +10,8 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
 import type {
   AccountGetOKResponse,
   AdminAccessKeyListOKResponse,
+  AdminReplyQueueListOKResponse,
+  AdminReplyQueueListParams,
   AdminSettingsGetOKResponse,
   AdminSettingsUpdateBody,
   AdminSettingsUpdateOKResponse,
@@ -17,6 +19,7 @@ import type {
   AuditEventGetOKResponse,
   AuditEventListOKResponse,
   AuditEventListParams,
+  Identifier,
   ModerationActionCreateBody,
   NoContentResponse,
 } from "../openapi-schema";
@@ -274,6 +277,72 @@ export const adminAccessKeyDelete = async (
 ): Promise<adminAccessKeyDeleteResponse> => {
   return fetcher<Promise<adminAccessKeyDeleteResponse>>(
     getAdminAccessKeyDeleteUrl(accessKeyId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+/**
+ * List non-admin replies pending admin attention. Requires ADMINISTRATOR
+permission. Supports pagination and date range filtering.
+
+ */
+export type adminReplyQueueListResponse = {
+  data: AdminReplyQueueListOKResponse;
+  status: number;
+};
+
+export const getAdminReplyQueueListUrl = (
+  params?: AdminReplyQueueListParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/admin/reply-queue?${normalizedParams.toString()}`
+    : `/admin/reply-queue`;
+};
+
+export const adminReplyQueueList = async (
+  params?: AdminReplyQueueListParams,
+  options?: RequestInit,
+): Promise<adminReplyQueueListResponse> => {
+  return fetcher<Promise<adminReplyQueueListResponse>>(
+    getAdminReplyQueueListUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Dismiss a reply queue entry. Permanently deletes the entry.
+Requires ADMINISTRATOR permission.
+
+ */
+export type adminReplyQueueDismissResponse = {
+  data: NoContentResponse;
+  status: number;
+};
+
+export const getAdminReplyQueueDismissUrl = (replyQueueId: Identifier) => {
+  return `/admin/reply-queue/${replyQueueId}`;
+};
+
+export const adminReplyQueueDismiss = async (
+  replyQueueId: Identifier,
+  options?: RequestInit,
+): Promise<adminReplyQueueDismissResponse> => {
+  return fetcher<Promise<adminReplyQueueDismissResponse>>(
+    getAdminReplyQueueDismissUrl(replyQueueId),
     {
       ...options,
       method: "DELETE",

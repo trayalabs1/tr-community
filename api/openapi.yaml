@@ -378,6 +378,50 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "204": { $ref: "#/components/responses/NoContent" }
 
+  /admin/reply-queue:
+    get:
+      operationId: AdminReplyQueueList
+      description: |
+        List non-admin replies pending admin attention. Requires ADMINISTRATOR
+        permission. Supports pagination and date range filtering.
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/PaginationQuery"
+        - name: created_after
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: created_before
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "200": { $ref: "#/components/responses/AdminReplyQueueListOK" }
+
+  /admin/reply-queue/{reply_queue_id}:
+    delete:
+      operationId: AdminReplyQueueDismiss
+      description: |
+        Dismiss a reply queue entry. Permanently deletes the entry.
+        Requires ADMINISTRATOR permission.
+      tags: [admin]
+      parameters:
+        - name: reply_queue_id
+          in: path
+          required: true
+          schema: { $ref: "#/components/schemas/Identifier" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "204": { $ref: "#/components/responses/NoContent" }
+
   #
   #                 888
   #                 888
@@ -3963,6 +4007,13 @@ components:
           schema:
             $ref: "#/components/schemas/ReportListResult"
 
+    AdminReplyQueueListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReplyQueueListResult"
+
     ReportUpdateOK:
       description: OK
       content:
@@ -5846,6 +5897,37 @@ components:
           required: [reports]
           properties:
             reports: { $ref: "#/components/schemas/ReportList" }
+
+    ReplyQueueEntry:
+      type: object
+      required: [id, reply_id, thread_id, channel_id, content_snippet, created_at]
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        reply_id:
+          $ref: "#/components/schemas/Identifier"
+        thread_id:
+          $ref: "#/components/schemas/Identifier"
+        channel_id:
+          $ref: "#/components/schemas/Identifier"
+        content_snippet:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    ReplyQueueList:
+      type: array
+      items: { $ref: "#/components/schemas/ReplyQueueEntry" }
+
+    ReplyQueueListResult:
+      type: object
+      allOf:
+        - { $ref: "#/components/schemas/PaginatedResult" }
+        - type: object
+          required: [reply_queue_entries]
+          properties:
+            reply_queue_entries: { $ref: "#/components/schemas/ReplyQueueList" }
 
     ReportProps:
       type: object

@@ -8,12 +8,14 @@ import (
 	"github.com/Southclaws/storyden/app/resources/account/account_querier"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/post"
+	"github.com/Southclaws/storyden/app/resources/post/reply_admin_queue_writer"
 	"github.com/Southclaws/storyden/app/resources/post/reply_querier"
 	"github.com/Southclaws/storyden/app/resources/post/reply_writer"
 	"github.com/Southclaws/storyden/app/resources/post/thread_cache"
 	"github.com/Southclaws/storyden/app/resources/visibility"
 	"github.com/Southclaws/storyden/app/services/link/fetcher"
 	"github.com/Southclaws/storyden/app/services/moderation"
+	"github.com/Southclaws/storyden/app/services/reply/reply_admin_queue_consumer"
 	"github.com/Southclaws/storyden/app/services/reply/reply_notify"
 	"github.com/Southclaws/storyden/app/services/report/system_report"
 	"github.com/Southclaws/storyden/internal/infrastructure/pubsub"
@@ -38,24 +40,27 @@ func Build() fx.Option {
 	return fx.Options(
 		fx.Provide(New),
 		reply_notify.Build(),
+		reply_admin_queue_consumer.Build(),
 	)
 }
 
 type Mutator struct {
-	accountQuery  *account_querier.Querier
-	replyQuerier  *reply_querier.Querier
-	replyWriter   *reply_writer.Writer
-	fetcher       *fetcher.Fetcher
-	bus           *pubsub.Bus
-	cpm           *moderation.Manager
-	cache         *thread_cache.Cache
-	systemReporter *system_report.Manager
+	accountQuery          *account_querier.Querier
+	replyQuerier          *reply_querier.Querier
+	replyWriter           *reply_writer.Writer
+	replyAdminQueueWriter *reply_admin_queue_writer.Writer
+	fetcher               *fetcher.Fetcher
+	bus                   *pubsub.Bus
+	cpm                   *moderation.Manager
+	cache                 *thread_cache.Cache
+	systemReporter        *system_report.Manager
 }
 
 func New(
 	accountQuery *account_querier.Querier,
 	replyQuerier *reply_querier.Querier,
 	replyWriter *reply_writer.Writer,
+	replyAdminQueueWriter *reply_admin_queue_writer.Writer,
 	fetcher *fetcher.Fetcher,
 	bus *pubsub.Bus,
 	cpm *moderation.Manager,
@@ -63,13 +68,14 @@ func New(
 	systemReporter *system_report.Manager,
 ) *Mutator {
 	return &Mutator{
-		accountQuery:   accountQuery,
-		replyQuerier:   replyQuerier,
-		replyWriter:    replyWriter,
-		fetcher:        fetcher,
-		bus:            bus,
-		cpm:            cpm,
-		cache:          cache,
-		systemReporter: systemReporter,
+		accountQuery:          accountQuery,
+		replyQuerier:          replyQuerier,
+		replyWriter:           replyWriter,
+		replyAdminQueueWriter: replyAdminQueueWriter,
+		fetcher:               fetcher,
+		bus:                   bus,
+		cpm:                   cpm,
+		cache:                 cache,
+		systemReporter:        systemReporter,
 	}
 }

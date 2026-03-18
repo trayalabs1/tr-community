@@ -55,6 +55,10 @@ func (s *Mutator) Delete(ctx context.Context, postID post.ID) error {
 		return fault.Wrap(err, fctx.With(ctx))
 	}
 
+	if err := s.replyAdminQueueWriter.DismissByReplyID(ctx, postID); err != nil {
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+
 	s.bus.Publish(ctx, &message.EventThreadReplyDeleted{
 		ThreadID: p.RootPostID,
 		ReplyID:  p.ID,

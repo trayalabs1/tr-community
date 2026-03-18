@@ -701,3 +701,11 @@ func (m *Mapping) EventParticipantRemove() (bool, *rbac.Permission) {
 	// Requires PermissionManageEvents unless deleting self
 	return true, nil
 }
+
+func (m *Mapping) AdminReplyQueueList() (bool, *rbac.Permission) {
+	return true, &rbac.PermissionAdministrator
+}
+
+func (m *Mapping) AdminReplyQueueDismiss() (bool, *rbac.Permission) {
+	return true, &rbac.PermissionAdministrator
+}
