@@ -15,6 +15,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/accountfollow"
 	"github.com/Southclaws/storyden/internal/ent/accountroles"
+	"github.com/Southclaws/storyden/internal/ent/adminreplytime"
 	"github.com/Southclaws/storyden/internal/ent/asset"
 	"github.com/Southclaws/storyden/internal/ent/auditlog"
 	"github.com/Southclaws/storyden/internal/ent/authentication"
@@ -63,6 +64,7 @@ const (
 	TypeAccount             = "Account"
 	TypeAccountFollow       = "AccountFollow"
 	TypeAccountRoles        = "AccountRoles"
+	TypeAdminReplyTime      = "AdminReplyTime"
 	TypeAsset               = "Asset"
 	TypeAuditLog            = "AuditLog"
 	TypeAuthentication      = "Authentication"
@@ -4384,6 +4386,898 @@ func (m *AccountRolesMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown AccountRoles edge %s", name)
+}
+
+// AdminReplyTimeMutation represents an operation that mutates the AdminReplyTime nodes in the graph.
+type AdminReplyTimeMutation struct {
+	config
+	op                         Op
+	typ                        string
+	id                         *xid.ID
+	created_at                 *time.Time
+	user_post_time             *time.Time
+	admin_post_time            *time.Time
+	admin_handle               *string
+	time_difference_seconds    *int64
+	addtime_difference_seconds *int64
+	clearedFields              map[string]struct{}
+	user_post                  *xid.ID
+	cleareduser_post           bool
+	admin_post                 *xid.ID
+	clearedadmin_post          bool
+	admin_account              *xid.ID
+	clearedadmin_account       bool
+	done                       bool
+	oldValue                   func(context.Context) (*AdminReplyTime, error)
+	predicates                 []predicate.AdminReplyTime
+}
+
+var _ ent.Mutation = (*AdminReplyTimeMutation)(nil)
+
+// adminreplytimeOption allows management of the mutation configuration using functional options.
+type adminreplytimeOption func(*AdminReplyTimeMutation)
+
+// newAdminReplyTimeMutation creates new mutation for the AdminReplyTime entity.
+func newAdminReplyTimeMutation(c config, op Op, opts ...adminreplytimeOption) *AdminReplyTimeMutation {
+	m := &AdminReplyTimeMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAdminReplyTime,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAdminReplyTimeID sets the ID field of the mutation.
+func withAdminReplyTimeID(id xid.ID) adminreplytimeOption {
+	return func(m *AdminReplyTimeMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AdminReplyTime
+		)
+		m.oldValue = func(ctx context.Context) (*AdminReplyTime, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AdminReplyTime.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAdminReplyTime sets the old AdminReplyTime of the mutation.
+func withAdminReplyTime(node *AdminReplyTime) adminreplytimeOption {
+	return func(m *AdminReplyTimeMutation) {
+		m.oldValue = func(context.Context) (*AdminReplyTime, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AdminReplyTimeMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AdminReplyTimeMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of AdminReplyTime entities.
+func (m *AdminReplyTimeMutation) SetID(id xid.ID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AdminReplyTimeMutation) ID() (id xid.ID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AdminReplyTimeMutation) IDs(ctx context.Context) ([]xid.ID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []xid.ID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AdminReplyTime.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AdminReplyTimeMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AdminReplyTimeMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the AdminReplyTime entity.
+// If the AdminReplyTime object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminReplyTimeMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AdminReplyTimeMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUserPostID sets the "user_post_id" field.
+func (m *AdminReplyTimeMutation) SetUserPostID(x xid.ID) {
+	m.user_post = &x
+}
+
+// UserPostID returns the value of the "user_post_id" field in the mutation.
+func (m *AdminReplyTimeMutation) UserPostID() (r xid.ID, exists bool) {
+	v := m.user_post
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserPostID returns the old "user_post_id" field's value of the AdminReplyTime entity.
+// If the AdminReplyTime object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminReplyTimeMutation) OldUserPostID(ctx context.Context) (v xid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserPostID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserPostID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserPostID: %w", err)
+	}
+	return oldValue.UserPostID, nil
+}
+
+// ResetUserPostID resets all changes to the "user_post_id" field.
+func (m *AdminReplyTimeMutation) ResetUserPostID() {
+	m.user_post = nil
+}
+
+// SetAdminPostID sets the "admin_post_id" field.
+func (m *AdminReplyTimeMutation) SetAdminPostID(x xid.ID) {
+	m.admin_post = &x
+}
+
+// AdminPostID returns the value of the "admin_post_id" field in the mutation.
+func (m *AdminReplyTimeMutation) AdminPostID() (r xid.ID, exists bool) {
+	v := m.admin_post
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAdminPostID returns the old "admin_post_id" field's value of the AdminReplyTime entity.
+// If the AdminReplyTime object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminReplyTimeMutation) OldAdminPostID(ctx context.Context) (v xid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAdminPostID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAdminPostID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAdminPostID: %w", err)
+	}
+	return oldValue.AdminPostID, nil
+}
+
+// ResetAdminPostID resets all changes to the "admin_post_id" field.
+func (m *AdminReplyTimeMutation) ResetAdminPostID() {
+	m.admin_post = nil
+}
+
+// SetUserPostTime sets the "user_post_time" field.
+func (m *AdminReplyTimeMutation) SetUserPostTime(t time.Time) {
+	m.user_post_time = &t
+}
+
+// UserPostTime returns the value of the "user_post_time" field in the mutation.
+func (m *AdminReplyTimeMutation) UserPostTime() (r time.Time, exists bool) {
+	v := m.user_post_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserPostTime returns the old "user_post_time" field's value of the AdminReplyTime entity.
+// If the AdminReplyTime object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminReplyTimeMutation) OldUserPostTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserPostTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserPostTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserPostTime: %w", err)
+	}
+	return oldValue.UserPostTime, nil
+}
+
+// ResetUserPostTime resets all changes to the "user_post_time" field.
+func (m *AdminReplyTimeMutation) ResetUserPostTime() {
+	m.user_post_time = nil
+}
+
+// SetAdminPostTime sets the "admin_post_time" field.
+func (m *AdminReplyTimeMutation) SetAdminPostTime(t time.Time) {
+	m.admin_post_time = &t
+}
+
+// AdminPostTime returns the value of the "admin_post_time" field in the mutation.
+func (m *AdminReplyTimeMutation) AdminPostTime() (r time.Time, exists bool) {
+	v := m.admin_post_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAdminPostTime returns the old "admin_post_time" field's value of the AdminReplyTime entity.
+// If the AdminReplyTime object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminReplyTimeMutation) OldAdminPostTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAdminPostTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAdminPostTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAdminPostTime: %w", err)
+	}
+	return oldValue.AdminPostTime, nil
+}
+
+// ResetAdminPostTime resets all changes to the "admin_post_time" field.
+func (m *AdminReplyTimeMutation) ResetAdminPostTime() {
+	m.admin_post_time = nil
+}
+
+// SetAdminAccountID sets the "admin_account_id" field.
+func (m *AdminReplyTimeMutation) SetAdminAccountID(x xid.ID) {
+	m.admin_account = &x
+}
+
+// AdminAccountID returns the value of the "admin_account_id" field in the mutation.
+func (m *AdminReplyTimeMutation) AdminAccountID() (r xid.ID, exists bool) {
+	v := m.admin_account
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAdminAccountID returns the old "admin_account_id" field's value of the AdminReplyTime entity.
+// If the AdminReplyTime object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminReplyTimeMutation) OldAdminAccountID(ctx context.Context) (v xid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAdminAccountID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAdminAccountID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAdminAccountID: %w", err)
+	}
+	return oldValue.AdminAccountID, nil
+}
+
+// ResetAdminAccountID resets all changes to the "admin_account_id" field.
+func (m *AdminReplyTimeMutation) ResetAdminAccountID() {
+	m.admin_account = nil
+}
+
+// SetAdminHandle sets the "admin_handle" field.
+func (m *AdminReplyTimeMutation) SetAdminHandle(s string) {
+	m.admin_handle = &s
+}
+
+// AdminHandle returns the value of the "admin_handle" field in the mutation.
+func (m *AdminReplyTimeMutation) AdminHandle() (r string, exists bool) {
+	v := m.admin_handle
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAdminHandle returns the old "admin_handle" field's value of the AdminReplyTime entity.
+// If the AdminReplyTime object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminReplyTimeMutation) OldAdminHandle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAdminHandle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAdminHandle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAdminHandle: %w", err)
+	}
+	return oldValue.AdminHandle, nil
+}
+
+// ResetAdminHandle resets all changes to the "admin_handle" field.
+func (m *AdminReplyTimeMutation) ResetAdminHandle() {
+	m.admin_handle = nil
+}
+
+// SetTimeDifferenceSeconds sets the "time_difference_seconds" field.
+func (m *AdminReplyTimeMutation) SetTimeDifferenceSeconds(i int64) {
+	m.time_difference_seconds = &i
+	m.addtime_difference_seconds = nil
+}
+
+// TimeDifferenceSeconds returns the value of the "time_difference_seconds" field in the mutation.
+func (m *AdminReplyTimeMutation) TimeDifferenceSeconds() (r int64, exists bool) {
+	v := m.time_difference_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTimeDifferenceSeconds returns the old "time_difference_seconds" field's value of the AdminReplyTime entity.
+// If the AdminReplyTime object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminReplyTimeMutation) OldTimeDifferenceSeconds(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTimeDifferenceSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTimeDifferenceSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTimeDifferenceSeconds: %w", err)
+	}
+	return oldValue.TimeDifferenceSeconds, nil
+}
+
+// AddTimeDifferenceSeconds adds i to the "time_difference_seconds" field.
+func (m *AdminReplyTimeMutation) AddTimeDifferenceSeconds(i int64) {
+	if m.addtime_difference_seconds != nil {
+		*m.addtime_difference_seconds += i
+	} else {
+		m.addtime_difference_seconds = &i
+	}
+}
+
+// AddedTimeDifferenceSeconds returns the value that was added to the "time_difference_seconds" field in this mutation.
+func (m *AdminReplyTimeMutation) AddedTimeDifferenceSeconds() (r int64, exists bool) {
+	v := m.addtime_difference_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTimeDifferenceSeconds resets all changes to the "time_difference_seconds" field.
+func (m *AdminReplyTimeMutation) ResetTimeDifferenceSeconds() {
+	m.time_difference_seconds = nil
+	m.addtime_difference_seconds = nil
+}
+
+// ClearUserPost clears the "user_post" edge to the Post entity.
+func (m *AdminReplyTimeMutation) ClearUserPost() {
+	m.cleareduser_post = true
+	m.clearedFields[adminreplytime.FieldUserPostID] = struct{}{}
+}
+
+// UserPostCleared reports if the "user_post" edge to the Post entity was cleared.
+func (m *AdminReplyTimeMutation) UserPostCleared() bool {
+	return m.cleareduser_post
+}
+
+// UserPostIDs returns the "user_post" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserPostID instead. It exists only for internal usage by the builders.
+func (m *AdminReplyTimeMutation) UserPostIDs() (ids []xid.ID) {
+	if id := m.user_post; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUserPost resets all changes to the "user_post" edge.
+func (m *AdminReplyTimeMutation) ResetUserPost() {
+	m.user_post = nil
+	m.cleareduser_post = false
+}
+
+// ClearAdminPost clears the "admin_post" edge to the Post entity.
+func (m *AdminReplyTimeMutation) ClearAdminPost() {
+	m.clearedadmin_post = true
+	m.clearedFields[adminreplytime.FieldAdminPostID] = struct{}{}
+}
+
+// AdminPostCleared reports if the "admin_post" edge to the Post entity was cleared.
+func (m *AdminReplyTimeMutation) AdminPostCleared() bool {
+	return m.clearedadmin_post
+}
+
+// AdminPostIDs returns the "admin_post" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AdminPostID instead. It exists only for internal usage by the builders.
+func (m *AdminReplyTimeMutation) AdminPostIDs() (ids []xid.ID) {
+	if id := m.admin_post; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAdminPost resets all changes to the "admin_post" edge.
+func (m *AdminReplyTimeMutation) ResetAdminPost() {
+	m.admin_post = nil
+	m.clearedadmin_post = false
+}
+
+// ClearAdminAccount clears the "admin_account" edge to the Account entity.
+func (m *AdminReplyTimeMutation) ClearAdminAccount() {
+	m.clearedadmin_account = true
+	m.clearedFields[adminreplytime.FieldAdminAccountID] = struct{}{}
+}
+
+// AdminAccountCleared reports if the "admin_account" edge to the Account entity was cleared.
+func (m *AdminReplyTimeMutation) AdminAccountCleared() bool {
+	return m.clearedadmin_account
+}
+
+// AdminAccountIDs returns the "admin_account" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AdminAccountID instead. It exists only for internal usage by the builders.
+func (m *AdminReplyTimeMutation) AdminAccountIDs() (ids []xid.ID) {
+	if id := m.admin_account; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAdminAccount resets all changes to the "admin_account" edge.
+func (m *AdminReplyTimeMutation) ResetAdminAccount() {
+	m.admin_account = nil
+	m.clearedadmin_account = false
+}
+
+// Where appends a list predicates to the AdminReplyTimeMutation builder.
+func (m *AdminReplyTimeMutation) Where(ps ...predicate.AdminReplyTime) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AdminReplyTimeMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AdminReplyTimeMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AdminReplyTime, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AdminReplyTimeMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AdminReplyTimeMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AdminReplyTime).
+func (m *AdminReplyTimeMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AdminReplyTimeMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, adminreplytime.FieldCreatedAt)
+	}
+	if m.user_post != nil {
+		fields = append(fields, adminreplytime.FieldUserPostID)
+	}
+	if m.admin_post != nil {
+		fields = append(fields, adminreplytime.FieldAdminPostID)
+	}
+	if m.user_post_time != nil {
+		fields = append(fields, adminreplytime.FieldUserPostTime)
+	}
+	if m.admin_post_time != nil {
+		fields = append(fields, adminreplytime.FieldAdminPostTime)
+	}
+	if m.admin_account != nil {
+		fields = append(fields, adminreplytime.FieldAdminAccountID)
+	}
+	if m.admin_handle != nil {
+		fields = append(fields, adminreplytime.FieldAdminHandle)
+	}
+	if m.time_difference_seconds != nil {
+		fields = append(fields, adminreplytime.FieldTimeDifferenceSeconds)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AdminReplyTimeMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case adminreplytime.FieldCreatedAt:
+		return m.CreatedAt()
+	case adminreplytime.FieldUserPostID:
+		return m.UserPostID()
+	case adminreplytime.FieldAdminPostID:
+		return m.AdminPostID()
+	case adminreplytime.FieldUserPostTime:
+		return m.UserPostTime()
+	case adminreplytime.FieldAdminPostTime:
+		return m.AdminPostTime()
+	case adminreplytime.FieldAdminAccountID:
+		return m.AdminAccountID()
+	case adminreplytime.FieldAdminHandle:
+		return m.AdminHandle()
+	case adminreplytime.FieldTimeDifferenceSeconds:
+		return m.TimeDifferenceSeconds()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AdminReplyTimeMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case adminreplytime.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case adminreplytime.FieldUserPostID:
+		return m.OldUserPostID(ctx)
+	case adminreplytime.FieldAdminPostID:
+		return m.OldAdminPostID(ctx)
+	case adminreplytime.FieldUserPostTime:
+		return m.OldUserPostTime(ctx)
+	case adminreplytime.FieldAdminPostTime:
+		return m.OldAdminPostTime(ctx)
+	case adminreplytime.FieldAdminAccountID:
+		return m.OldAdminAccountID(ctx)
+	case adminreplytime.FieldAdminHandle:
+		return m.OldAdminHandle(ctx)
+	case adminreplytime.FieldTimeDifferenceSeconds:
+		return m.OldTimeDifferenceSeconds(ctx)
+	}
+	return nil, fmt.Errorf("unknown AdminReplyTime field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AdminReplyTimeMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case adminreplytime.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case adminreplytime.FieldUserPostID:
+		v, ok := value.(xid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserPostID(v)
+		return nil
+	case adminreplytime.FieldAdminPostID:
+		v, ok := value.(xid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAdminPostID(v)
+		return nil
+	case adminreplytime.FieldUserPostTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserPostTime(v)
+		return nil
+	case adminreplytime.FieldAdminPostTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAdminPostTime(v)
+		return nil
+	case adminreplytime.FieldAdminAccountID:
+		v, ok := value.(xid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAdminAccountID(v)
+		return nil
+	case adminreplytime.FieldAdminHandle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAdminHandle(v)
+		return nil
+	case adminreplytime.FieldTimeDifferenceSeconds:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTimeDifferenceSeconds(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AdminReplyTime field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AdminReplyTimeMutation) AddedFields() []string {
+	var fields []string
+	if m.addtime_difference_seconds != nil {
+		fields = append(fields, adminreplytime.FieldTimeDifferenceSeconds)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AdminReplyTimeMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case adminreplytime.FieldTimeDifferenceSeconds:
+		return m.AddedTimeDifferenceSeconds()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AdminReplyTimeMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case adminreplytime.FieldTimeDifferenceSeconds:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTimeDifferenceSeconds(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AdminReplyTime numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AdminReplyTimeMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AdminReplyTimeMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AdminReplyTimeMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown AdminReplyTime nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AdminReplyTimeMutation) ResetField(name string) error {
+	switch name {
+	case adminreplytime.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case adminreplytime.FieldUserPostID:
+		m.ResetUserPostID()
+		return nil
+	case adminreplytime.FieldAdminPostID:
+		m.ResetAdminPostID()
+		return nil
+	case adminreplytime.FieldUserPostTime:
+		m.ResetUserPostTime()
+		return nil
+	case adminreplytime.FieldAdminPostTime:
+		m.ResetAdminPostTime()
+		return nil
+	case adminreplytime.FieldAdminAccountID:
+		m.ResetAdminAccountID()
+		return nil
+	case adminreplytime.FieldAdminHandle:
+		m.ResetAdminHandle()
+		return nil
+	case adminreplytime.FieldTimeDifferenceSeconds:
+		m.ResetTimeDifferenceSeconds()
+		return nil
+	}
+	return fmt.Errorf("unknown AdminReplyTime field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AdminReplyTimeMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.user_post != nil {
+		edges = append(edges, adminreplytime.EdgeUserPost)
+	}
+	if m.admin_post != nil {
+		edges = append(edges, adminreplytime.EdgeAdminPost)
+	}
+	if m.admin_account != nil {
+		edges = append(edges, adminreplytime.EdgeAdminAccount)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AdminReplyTimeMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case adminreplytime.EdgeUserPost:
+		if id := m.user_post; id != nil {
+			return []ent.Value{*id}
+		}
+	case adminreplytime.EdgeAdminPost:
+		if id := m.admin_post; id != nil {
+			return []ent.Value{*id}
+		}
+	case adminreplytime.EdgeAdminAccount:
+		if id := m.admin_account; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AdminReplyTimeMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AdminReplyTimeMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AdminReplyTimeMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.cleareduser_post {
+		edges = append(edges, adminreplytime.EdgeUserPost)
+	}
+	if m.clearedadmin_post {
+		edges = append(edges, adminreplytime.EdgeAdminPost)
+	}
+	if m.clearedadmin_account {
+		edges = append(edges, adminreplytime.EdgeAdminAccount)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AdminReplyTimeMutation) EdgeCleared(name string) bool {
+	switch name {
+	case adminreplytime.EdgeUserPost:
+		return m.cleareduser_post
+	case adminreplytime.EdgeAdminPost:
+		return m.clearedadmin_post
+	case adminreplytime.EdgeAdminAccount:
+		return m.clearedadmin_account
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AdminReplyTimeMutation) ClearEdge(name string) error {
+	switch name {
+	case adminreplytime.EdgeUserPost:
+		m.ClearUserPost()
+		return nil
+	case adminreplytime.EdgeAdminPost:
+		m.ClearAdminPost()
+		return nil
+	case adminreplytime.EdgeAdminAccount:
+		m.ClearAdminAccount()
+		return nil
+	}
+	return fmt.Errorf("unknown AdminReplyTime unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AdminReplyTimeMutation) ResetEdge(name string) error {
+	switch name {
+	case adminreplytime.EdgeUserPost:
+		m.ResetUserPost()
+		return nil
+	case adminreplytime.EdgeAdminPost:
+		m.ResetAdminPost()
+		return nil
+	case adminreplytime.EdgeAdminAccount:
+		m.ResetAdminAccount()
+		return nil
+	}
+	return fmt.Errorf("unknown AdminReplyTime edge %s", name)
 }
 
 // AssetMutation represents an operation that mutates the Asset nodes in the graph.

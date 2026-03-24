@@ -15,6 +15,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/accountfollow"
 	"github.com/Southclaws/storyden/internal/ent/accountroles"
+	"github.com/Southclaws/storyden/internal/ent/adminreplytime"
 	"github.com/Southclaws/storyden/internal/ent/asset"
 	"github.com/Southclaws/storyden/internal/ent/auditlog"
 	"github.com/Southclaws/storyden/internal/ent/authentication"
@@ -109,6 +110,7 @@ func checkColumn(t, c string) error {
 			account.Table:             account.ValidColumn,
 			accountfollow.Table:       accountfollow.ValidColumn,
 			accountroles.Table:        accountroles.ValidColumn,
+			adminreplytime.Table:      adminreplytime.ValidColumn,
 			asset.Table:               asset.ValidColumn,
 			auditlog.Table:            auditlog.ValidColumn,
 			authentication.Table:      authentication.ValidColumn,
