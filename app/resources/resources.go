@@ -17,6 +17,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/account/role/role_querier"
 	"github.com/Southclaws/storyden/app/resources/account/role/role_writer"
 	"github.com/Southclaws/storyden/app/resources/account/token"
+	"github.com/Southclaws/storyden/app/resources/analytics"
 	"github.com/Southclaws/storyden/app/resources/asset/asset_querier"
 	"github.com/Southclaws/storyden/app/resources/asset/asset_writer"
 	"github.com/Southclaws/storyden/app/resources/audit/audit_querier"
@@ -131,6 +132,7 @@ func Build() fx.Option {
 			participant_writer.New,
 			hydrate.New,
 			question.New,
+			analytics.New,
 			reply_admin_queue_querier.New,
 			reply_admin_queue_writer.New,
 			report_querier.New,

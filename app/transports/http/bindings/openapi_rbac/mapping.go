@@ -709,3 +709,7 @@ func (m *Mapping) AdminReplyQueueList() (bool, *rbac.Permission) {
 func (m *Mapping) AdminReplyQueueDismiss() (bool, *rbac.Permission) {
 	return true, &rbac.PermissionAdministrator
 }
+
+func (m *Mapping) AdminAnalyticsGet() (bool, *rbac.Permission) {
+	return true, &rbac.PermissionAdministrator
+}

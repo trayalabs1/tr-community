@@ -9,6 +9,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/accountfollow"
 	"github.com/Southclaws/storyden/internal/ent/accountroles"
+	"github.com/Southclaws/storyden/internal/ent/adminreplytime"
 	"github.com/Southclaws/storyden/internal/ent/asset"
 	"github.com/Southclaws/storyden/internal/ent/auditlog"
 	"github.com/Southclaws/storyden/internal/ent/authentication"
@@ -148,6 +149,37 @@ func init() {
 	// accountroles.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	accountroles.IDValidator = func() func(string) error {
 		validators := accountrolesDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	adminreplytimeMixin := schema.AdminReplyTime{}.Mixin()
+	adminreplytimeMixinFields0 := adminreplytimeMixin[0].Fields()
+	_ = adminreplytimeMixinFields0
+	adminreplytimeMixinFields1 := adminreplytimeMixin[1].Fields()
+	_ = adminreplytimeMixinFields1
+	adminreplytimeFields := schema.AdminReplyTime{}.Fields()
+	_ = adminreplytimeFields
+	// adminreplytimeDescCreatedAt is the schema descriptor for created_at field.
+	adminreplytimeDescCreatedAt := adminreplytimeMixinFields1[0].Descriptor()
+	// adminreplytime.DefaultCreatedAt holds the default value on creation for the created_at field.
+	adminreplytime.DefaultCreatedAt = adminreplytimeDescCreatedAt.Default.(func() time.Time)
+	// adminreplytimeDescID is the schema descriptor for id field.
+	adminreplytimeDescID := adminreplytimeMixinFields0[0].Descriptor()
+	// adminreplytime.DefaultID holds the default value on creation for the id field.
+	adminreplytime.DefaultID = adminreplytimeDescID.Default.(func() xid.ID)
+	// adminreplytime.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	adminreplytime.IDValidator = func() func(string) error {
+		validators := adminreplytimeDescID.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),

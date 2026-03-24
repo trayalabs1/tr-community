@@ -13,6 +13,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/post/reply_writer"
 	"github.com/Southclaws/storyden/app/resources/post/thread_cache"
 	"github.com/Southclaws/storyden/app/resources/visibility"
+	"github.com/Southclaws/storyden/app/services/analytics/reply_admin_time_consumer"
 	"github.com/Southclaws/storyden/app/services/link/fetcher"
 	"github.com/Southclaws/storyden/app/services/moderation"
 	"github.com/Southclaws/storyden/app/services/reply/reply_admin_queue_consumer"
@@ -41,6 +42,7 @@ func Build() fx.Option {
 		fx.Provide(New),
 		reply_notify.Build(),
 		reply_admin_queue_consumer.Build(),
+		reply_admin_time_consumer.Build(),
 	)
 }
 

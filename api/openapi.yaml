@@ -422,6 +422,28 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "204": { $ref: "#/components/responses/NoContent" }
 
+  /admin/analytics:
+    get:
+      operationId: AdminAnalyticsGet
+      summary: Get analytics dashboard data
+      tags: [admin]
+      parameters:
+        - in: query
+          name: start
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: end
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200": { $ref: "#/components/responses/AdminAnalyticsGetOK" }
+        default: { $ref: "#/components/responses/InternalServerError" }
+
   #
   #                 888
   #                 888
@@ -4014,6 +4036,13 @@ components:
           schema:
             $ref: "#/components/schemas/ReplyQueueListResult"
 
+    AdminAnalyticsGetOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AdminAnalyticsGetOKBody"
+
     ReportUpdateOK:
       description: OK
       content:
@@ -5897,6 +5926,42 @@ components:
           required: [reports]
           properties:
             reports: { $ref: "#/components/schemas/ReportList" }
+
+    AdminAnalyticsGetOKBody:
+      type: object
+      required: [channel_onboardings, channel_posts, admin_reply_times]
+      properties:
+        channel_onboardings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChannelAnalyticsStat"
+        channel_posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChannelAnalyticsStat"
+        admin_reply_times:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminReplyTimeStat"
+
+    ChannelAnalyticsStat:
+      type: object
+      required: [channel_name, count]
+      properties:
+        channel_name:
+          type: string
+        count:
+          type: integer
+
+    AdminReplyTimeStat:
+      type: object
+      required: [admin_handle, avg_time_minutes]
+      properties:
+        admin_handle:
+          type: string
+        avg_time_minutes:
+          type: number
+          format: double
 
     ReplyQueueEntry:
       type: object

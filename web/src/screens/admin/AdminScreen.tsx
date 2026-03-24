@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import * as Tabs from "@/components/ui/tabs";
 
 import { AccessKeySettingsScreen } from "./AccessKeySettingsScreen";
+import { AnalyticsScreen } from "./AnalyticsScreen/AnalyticsScreen";
 import { AuditLogSettingsScreen } from "./AuditLogSettingsScreen/AuditLogSettingsScreen";
 import { AuthenticationSettingsScreen } from "./AuthenticationSettingsScreen";
 import { BrandSettingsScreen } from "./BrandSettingsScreen";
@@ -51,6 +52,7 @@ export function AdminScreen() {
         <Tabs.Trigger value="interface">Interface</Tabs.Trigger>
         <Tabs.Trigger value="authentication">Authentication</Tabs.Trigger>
         <Tabs.Trigger value="access_keys">Access keys</Tabs.Trigger>
+        <Tabs.Trigger value="analytics">Analytics</Tabs.Trigger>
         <Tabs.Indicator />
       </Tabs.List>
 
@@ -76,6 +78,10 @@ export function AdminScreen() {
 
       <Tabs.Content value="access_keys">
         <AccessKeySettingsScreen />
+      </Tabs.Content>
+
+      <Tabs.Content value="analytics">
+        <AnalyticsScreen />
       </Tabs.Content>
     </Tabs.Root>
   );
