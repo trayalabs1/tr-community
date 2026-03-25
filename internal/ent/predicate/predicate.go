@@ -15,6 +15,9 @@ type AccountFollow func(*sql.Selector)
 // AccountRoles is the predicate function for accountroles builders.
 type AccountRoles func(*sql.Selector)
 
+// AdminReplyTime is the predicate function for adminreplytime builders.
+type AdminReplyTime func(*sql.Selector)
+
 // Asset is the predicate function for asset builders.
 type Asset func(*sql.Selector)
 

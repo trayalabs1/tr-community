@@ -65,6 +65,7 @@ type Bindings struct {
 	Info
 	Beacon
 	Admin
+	*Analytics
 	Roles
 	Authentication
 	WebAuthn
@@ -103,6 +104,7 @@ func bindingsProviders() fx.Option {
 		NewInfo,
 		NewBeacon,
 		NewAdmin,
+		NewAnalytics,
 		NewRoles,
 		NewAuthentication,
 		NewWebAuthn,

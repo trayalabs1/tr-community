@@ -2,6 +2,7 @@ package message
 
 import (
 	"net/url"
+	"time"
 
 	"github.com/Southclaws/opt"
 	"github.com/rs/xid"
@@ -66,6 +67,13 @@ type EventReplyRequiresAdminAttention struct {
 	ThreadID post.ID
 	ReplyID  post.ID
 	Snippet  string
+}
+
+type EventAdminReplied struct {
+	AdminAccountID account.AccountID
+	AdminPostID    post.ID
+	AdminPostTime  time.Time
+	ParentPostID   post.ID
 }
 
 type EventThreadReplyPublished struct {

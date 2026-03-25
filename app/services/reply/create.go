@@ -94,6 +94,13 @@ func (s *Mutator) Create(
 				ReplyID:  p.ID,
 				Snippet:  snippet,
 			})
+		} else {
+			s.bus.Publish(ctx, &message.EventAdminReplied{
+				AdminAccountID: authorID,
+				AdminPostID:    p.ID,
+				AdminPostTime:  p.CreatedAt,
+				ParentPostID:   parentID,
+			})
 		}
 	}
 

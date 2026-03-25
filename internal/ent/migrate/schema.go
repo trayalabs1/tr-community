@@ -112,6 +112,56 @@ var (
 			},
 		},
 	}
+	// AdminReplyTimesColumns holds the columns for the "admin_reply_times" table.
+	AdminReplyTimesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "user_post_time", Type: field.TypeTime},
+		{Name: "admin_post_time", Type: field.TypeTime},
+		{Name: "admin_handle", Type: field.TypeString},
+		{Name: "time_difference_seconds", Type: field.TypeInt64},
+		{Name: "user_post_id", Type: field.TypeString, Size: 20},
+		{Name: "admin_post_id", Type: field.TypeString, Size: 20},
+		{Name: "admin_account_id", Type: field.TypeString, Size: 20},
+	}
+	// AdminReplyTimesTable holds the schema information for the "admin_reply_times" table.
+	AdminReplyTimesTable = &schema.Table{
+		Name:       "admin_reply_times",
+		Columns:    AdminReplyTimesColumns,
+		PrimaryKey: []*schema.Column{AdminReplyTimesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "admin_reply_times_posts_user_post",
+				Columns:    []*schema.Column{AdminReplyTimesColumns[6]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "admin_reply_times_posts_admin_post",
+				Columns:    []*schema.Column{AdminReplyTimesColumns[7]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "admin_reply_times_accounts_admin_account",
+				Columns:    []*schema.Column{AdminReplyTimesColumns[8]},
+				RefColumns: []*schema.Column{AccountsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "adminreplytime_admin_account_id_admin_post_time",
+				Unique:  false,
+				Columns: []*schema.Column{AdminReplyTimesColumns[8], AdminReplyTimesColumns[3]},
+			},
+			{
+				Name:    "adminreplytime_admin_post_time",
+				Unique:  false,
+				Columns: []*schema.Column{AdminReplyTimesColumns[3]},
+			},
+		},
+	}
 	// AssetsColumns holds the columns for the "assets" table.
 	AssetsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Size: 20},
@@ -1454,6 +1504,7 @@ var (
 		AccountsTable,
 		AccountFollowsTable,
 		AccountRolesTable,
+		AdminReplyTimesTable,
 		AssetsTable,
 		AuditLogsTable,
 		AuthenticationsTable,
@@ -1502,6 +1553,9 @@ func init() {
 	AccountFollowsTable.ForeignKeys[1].RefTable = AccountsTable
 	AccountRolesTable.ForeignKeys[0].RefTable = AccountsTable
 	AccountRolesTable.ForeignKeys[1].RefTable = RolesTable
+	AdminReplyTimesTable.ForeignKeys[0].RefTable = PostsTable
+	AdminReplyTimesTable.ForeignKeys[1].RefTable = PostsTable
+	AdminReplyTimesTable.ForeignKeys[2].RefTable = AccountsTable
 	AssetsTable.ForeignKeys[0].RefTable = AccountsTable
 	AssetsTable.ForeignKeys[1].RefTable = AssetsTable
 	AuditLogsTable.ForeignKeys[0].RefTable = AccountsTable

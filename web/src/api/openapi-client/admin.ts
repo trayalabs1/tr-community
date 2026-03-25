@@ -16,6 +16,8 @@ import { fetcher } from "../client";
 import type {
   AccountGetOKResponse,
   AdminAccessKeyListOKResponse,
+  AdminAnalyticsGetOKResponse,
+  AdminAnalyticsGetParams,
   AdminReplyQueueListOKResponse,
   AdminReplyQueueListParams,
   AdminSettingsGetOKResponse,
@@ -650,6 +652,59 @@ export const useAdminReplyQueueDismiss = <
   const swrFn = getAdminReplyQueueDismissMutationFetcher(replyQueueId);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export const adminAnalyticsGet = (params: AdminAnalyticsGetParams) => {
+  return fetcher<AdminAnalyticsGetOKResponse>({
+    url: `/admin/analytics`,
+    method: "GET",
+    params,
+  });
+};
+
+export const getAdminAnalyticsGetKey = (params: AdminAnalyticsGetParams) =>
+  [`/admin/analytics`, ...[params]] as const;
+
+export type AdminAnalyticsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminAnalyticsGet>>
+>;
+export type AdminAnalyticsGetQueryError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | InternalServerErrorResponse;
+
+export const useAdminAnalyticsGet = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | InternalServerErrorResponse,
+>(
+  params: AdminAnalyticsGetParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof adminAnalyticsGet>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getAdminAnalyticsGetKey(params) : null));
+  const swrFn = () => adminAnalyticsGet(params);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
 
   return {
     swrKey,

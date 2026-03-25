@@ -45,6 +45,18 @@ func (f AccountRolesFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AccountRolesMutation", m)
 }
 
+// The AdminReplyTimeFunc type is an adapter to allow the use of ordinary
+// function as AdminReplyTime mutator.
+type AdminReplyTimeFunc func(context.Context, *ent.AdminReplyTimeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AdminReplyTimeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AdminReplyTimeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdminReplyTimeMutation", m)
+}
+
 // The AssetFunc type is an adapter to allow the use of ordinary
 // function as Asset mutator.
 type AssetFunc func(context.Context, *ent.AssetMutation) (ent.Value, error)
