@@ -10,6 +10,8 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
 import type {
   AccountGetOKResponse,
   AdminAccessKeyListOKResponse,
+  AdminAnalyticsGetOKResponse,
+  AdminAnalyticsGetParams,
   AdminReplyQueueListOKResponse,
   AdminReplyQueueListParams,
   AdminSettingsGetOKResponse,
@@ -346,6 +348,41 @@ export const adminReplyQueueDismiss = async (
     {
       ...options,
       method: "DELETE",
+    },
+  );
+};
+
+/**
+ * @summary Get analytics dashboard data
+ */
+export type adminAnalyticsGetResponse = {
+  data: AdminAnalyticsGetOKResponse;
+  status: number;
+};
+
+export const getAdminAnalyticsGetUrl = (params: AdminAnalyticsGetParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/admin/analytics?${normalizedParams.toString()}`
+    : `/admin/analytics`;
+};
+
+export const adminAnalyticsGet = async (
+  params: AdminAnalyticsGetParams,
+  options?: RequestInit,
+): Promise<adminAnalyticsGetResponse> => {
+  return fetcher<Promise<adminAnalyticsGetResponse>>(
+    getAdminAnalyticsGetUrl(params),
+    {
+      ...options,
+      method: "GET",
     },
   );
 };

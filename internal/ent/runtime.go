@@ -28,6 +28,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/mentionprofile"
 	"github.com/Southclaws/storyden/internal/ent/node"
 	"github.com/Southclaws/storyden/internal/ent/notification"
+	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
 	"github.com/Southclaws/storyden/internal/ent/property"
@@ -910,6 +911,37 @@ func init() {
 	// notification.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	notification.IDValidator = func() func(string) error {
 		validators := notificationDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	pollvoteMixin := schema.PollVote{}.Mixin()
+	pollvoteMixinFields0 := pollvoteMixin[0].Fields()
+	_ = pollvoteMixinFields0
+	pollvoteMixinFields1 := pollvoteMixin[1].Fields()
+	_ = pollvoteMixinFields1
+	pollvoteFields := schema.PollVote{}.Fields()
+	_ = pollvoteFields
+	// pollvoteDescCreatedAt is the schema descriptor for created_at field.
+	pollvoteDescCreatedAt := pollvoteMixinFields1[0].Descriptor()
+	// pollvote.DefaultCreatedAt holds the default value on creation for the created_at field.
+	pollvote.DefaultCreatedAt = pollvoteDescCreatedAt.Default.(func() time.Time)
+	// pollvoteDescID is the schema descriptor for id field.
+	pollvoteDescID := pollvoteMixinFields0[0].Descriptor()
+	// pollvote.DefaultID holds the default value on creation for the id field.
+	pollvote.DefaultID = pollvoteDescID.Default.(func() xid.ID)
+	// pollvote.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	pollvote.IDValidator = func() func(string) error {
+		validators := pollvoteDescID.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),

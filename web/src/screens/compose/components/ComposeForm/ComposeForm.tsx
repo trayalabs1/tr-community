@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { FormProvider } from "react-hook-form";
 
 import { Permission } from "src/api/openapi-schema";
 import { CategorySelectFlat } from "@/components/category/CategorySelect/CategorySelectFlat";
 import { useCategorySelect } from "@/components/category/CategorySelect/useCategorySelect";
 // import { TagListField } from "@/components/thread/ThreadTagList";
+import { PollComposer } from "@/components/poll/PollComposer";
 import { Button } from "@/components/ui/button";
 import { HStack, VStack, LStack, styled } from "@/styled-system/jsx";
 import { hasPermission } from "@/utils/permissions";
@@ -19,8 +21,8 @@ export function ComposeForm(props: Props) {
   const session = useSession();
   const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
   const { ready, collection } = useCategorySelect(props.channelID);
+  const [isPoll, setIsPoll] = useState(false);
 
-  // Check if there are any categories available
   const hasCategories = ready && collection.items && collection.items.length > 0;
 
   return (
@@ -30,7 +32,7 @@ export function ComposeForm(props: Props) {
       alignItems="start"
       w="full"
       h="full"
-      onSubmit={handlers.handlePublish}
+      onSubmit={handlers.handlePublish(isPoll)}
       borderRadius={{ base: "lg", md: "2xl" }}
       overflow="hidden"
       style={{
@@ -47,8 +49,55 @@ export function ComposeForm(props: Props) {
             <TitleInput />
           </styled.div> */}
 
-          {/* Body Input */}
-          <BodyInput onAssetUpload={handlers.handleAssetUpload} />
+          {isAdmin && (
+            <HStack gap="2" w="full">
+              <styled.button
+                type="button"
+                onClick={() => setIsPoll(false)}
+                px="4"
+                py="2"
+                fontSize="sm"
+                fontWeight="medium"
+                borderRadius="full"
+                cursor="pointer"
+                style={{
+                  backgroundColor: !isPoll ? TRAYA_COLORS.primary : TRAYA_COLORS.tertiary,
+                  color: !isPoll ? "#ffffff" : TRAYA_COLORS.primary,
+                  border: "none",
+                }}
+              >
+                Post
+              </styled.button>
+              <styled.button
+                type="button"
+                onClick={() => setIsPoll(true)}
+                px="4"
+                py="2"
+                fontSize="sm"
+                fontWeight="medium"
+                borderRadius="full"
+                cursor="pointer"
+                style={{
+                  backgroundColor: isPoll ? TRAYA_COLORS.primary : TRAYA_COLORS.tertiary,
+                  color: isPoll ? "#ffffff" : TRAYA_COLORS.primary,
+                  border: "none",
+                }}
+              >
+                Poll
+              </styled.button>
+            </HStack>
+          )}
+
+          {isPoll ? (
+            <PollComposer
+              question={state.pollQuestion}
+              options={state.pollOptions}
+              onQuestionChange={handlers.setPollQuestion}
+              onOptionsChange={handlers.setPollOptions}
+            />
+          ) : (
+            <BodyInput onAssetUpload={handlers.handleAssetUpload} />
+          )}
 
           {/* Category Selection - Only show if admin and categories exist */}
           {isAdmin && hasCategories && (

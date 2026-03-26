@@ -58,6 +58,8 @@ type Tx struct {
 	Node *NodeClient
 	// Notification is the client for interacting with the Notification builders.
 	Notification *NotificationClient
+	// PollVote is the client for interacting with the PollVote builders.
+	PollVote *PollVoteClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
 	// PostRead is the client for interacting with the PostRead builders.
@@ -237,6 +239,7 @@ func (tx *Tx) init() {
 	tx.MentionProfile = NewMentionProfileClient(tx.config)
 	tx.Node = NewNodeClient(tx.config)
 	tx.Notification = NewNotificationClient(tx.config)
+	tx.PollVote = NewPollVoteClient(tx.config)
 	tx.Post = NewPostClient(tx.config)
 	tx.PostRead = NewPostReadClient(tx.config)
 	tx.Property = NewPropertyClient(tx.config)

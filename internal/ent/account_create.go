@@ -26,6 +26,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/mentionprofile"
 	"github.com/Southclaws/storyden/internal/ent/node"
 	"github.com/Southclaws/storyden/internal/ent/notification"
+	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
 	"github.com/Southclaws/storyden/internal/ent/question"
@@ -544,6 +545,21 @@ func (_c *AccountCreate) AddAuditLogs(v ...*AuditLog) *AccountCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddAuditLogIDs(ids...)
+}
+
+// AddPollVoteIDs adds the "poll_votes" edge to the PollVote entity by IDs.
+func (_c *AccountCreate) AddPollVoteIDs(ids ...xid.ID) *AccountCreate {
+	_c.mutation.AddPollVoteIDs(ids...)
+	return _c
+}
+
+// AddPollVotes adds the "poll_votes" edges to the PollVote entity.
+func (_c *AccountCreate) AddPollVotes(v ...*PollVote) *AccountCreate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddPollVoteIDs(ids...)
 }
 
 // AddAccountRoleIDs adds the "account_roles" edge to the AccountRoles entity by IDs.
@@ -1123,6 +1139,22 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(auditlog.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.PollVotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.PollVotesTable,
+			Columns: []string{account.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

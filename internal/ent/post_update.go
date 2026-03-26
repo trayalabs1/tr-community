@@ -20,6 +20,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/likepost"
 	"github.com/Southclaws/storyden/internal/ent/link"
 	"github.com/Southclaws/storyden/internal/ent/mentionprofile"
+	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
 	"github.com/Southclaws/storyden/internal/ent/predicate"
@@ -562,6 +563,21 @@ func (_u *PostUpdate) AddPostReads(v ...*PostRead) *PostUpdate {
 	return _u.AddPostReadIDs(ids...)
 }
 
+// AddPollVoteIDs adds the "poll_votes" edge to the PollVote entity by IDs.
+func (_u *PostUpdate) AddPollVoteIDs(ids ...xid.ID) *PostUpdate {
+	_u.mutation.AddPollVoteIDs(ids...)
+	return _u
+}
+
+// AddPollVotes adds the "poll_votes" edges to the PollVote entity.
+func (_u *PostUpdate) AddPollVotes(v ...*PollVote) *PostUpdate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPollVoteIDs(ids...)
+}
+
 // Mutation returns the PostMutation object of the builder.
 func (_u *PostUpdate) Mutation() *PostMutation {
 	return _u.mutation
@@ -832,6 +848,27 @@ func (_u *PostUpdate) RemovePostReads(v ...*PostRead) *PostUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePostReadIDs(ids...)
+}
+
+// ClearPollVotes clears all "poll_votes" edges to the PollVote entity.
+func (_u *PostUpdate) ClearPollVotes() *PostUpdate {
+	_u.mutation.ClearPollVotes()
+	return _u
+}
+
+// RemovePollVoteIDs removes the "poll_votes" edge to PollVote entities by IDs.
+func (_u *PostUpdate) RemovePollVoteIDs(ids ...xid.ID) *PostUpdate {
+	_u.mutation.RemovePollVoteIDs(ids...)
+	return _u
+}
+
+// RemovePollVotes removes "poll_votes" edges to PollVote entities.
+func (_u *PostUpdate) RemovePollVotes(v ...*PollVote) *PostUpdate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePollVoteIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -1615,6 +1652,51 @@ func (_u *PostUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.PollVotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.PollVotesTable,
+			Columns: []string{post.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPollVotesIDs(); len(nodes) > 0 && !_u.mutation.PollVotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.PollVotesTable,
+			Columns: []string{post.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PollVotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.PollVotesTable,
+			Columns: []string{post.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -2157,6 +2239,21 @@ func (_u *PostUpdateOne) AddPostReads(v ...*PostRead) *PostUpdateOne {
 	return _u.AddPostReadIDs(ids...)
 }
 
+// AddPollVoteIDs adds the "poll_votes" edge to the PollVote entity by IDs.
+func (_u *PostUpdateOne) AddPollVoteIDs(ids ...xid.ID) *PostUpdateOne {
+	_u.mutation.AddPollVoteIDs(ids...)
+	return _u
+}
+
+// AddPollVotes adds the "poll_votes" edges to the PollVote entity.
+func (_u *PostUpdateOne) AddPollVotes(v ...*PollVote) *PostUpdateOne {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPollVoteIDs(ids...)
+}
+
 // Mutation returns the PostMutation object of the builder.
 func (_u *PostUpdateOne) Mutation() *PostMutation {
 	return _u.mutation
@@ -2427,6 +2524,27 @@ func (_u *PostUpdateOne) RemovePostReads(v ...*PostRead) *PostUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePostReadIDs(ids...)
+}
+
+// ClearPollVotes clears all "poll_votes" edges to the PollVote entity.
+func (_u *PostUpdateOne) ClearPollVotes() *PostUpdateOne {
+	_u.mutation.ClearPollVotes()
+	return _u
+}
+
+// RemovePollVoteIDs removes the "poll_votes" edge to PollVote entities by IDs.
+func (_u *PostUpdateOne) RemovePollVoteIDs(ids ...xid.ID) *PostUpdateOne {
+	_u.mutation.RemovePollVoteIDs(ids...)
+	return _u
+}
+
+// RemovePollVotes removes "poll_votes" edges to PollVote entities.
+func (_u *PostUpdateOne) RemovePollVotes(v ...*PollVote) *PostUpdateOne {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePollVoteIDs(ids...)
 }
 
 // Where appends a list predicates to the PostUpdate builder.
@@ -3233,6 +3351,51 @@ func (_u *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(postread.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PollVotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.PollVotesTable,
+			Columns: []string{post.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPollVotesIDs(); len(nodes) > 0 && !_u.mutation.PollVotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.PollVotesTable,
+			Columns: []string{post.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PollVotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.PollVotesTable,
+			Columns: []string{post.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

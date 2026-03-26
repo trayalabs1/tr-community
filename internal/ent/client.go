@@ -38,6 +38,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/mentionprofile"
 	"github.com/Southclaws/storyden/internal/ent/node"
 	"github.com/Southclaws/storyden/internal/ent/notification"
+	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
 	"github.com/Southclaws/storyden/internal/ent/property"
@@ -104,6 +105,8 @@ type Client struct {
 	Node *NodeClient
 	// Notification is the client for interacting with the Notification builders.
 	Notification *NotificationClient
+	// PollVote is the client for interacting with the PollVote builders.
+	PollVote *PollVoteClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
 	// PostRead is the client for interacting with the PostRead builders.
@@ -163,6 +166,7 @@ func (c *Client) init() {
 	c.MentionProfile = NewMentionProfileClient(c.config)
 	c.Node = NewNodeClient(c.config)
 	c.Notification = NewNotificationClient(c.config)
+	c.PollVote = NewPollVoteClient(c.config)
 	c.Post = NewPostClient(c.config)
 	c.PostRead = NewPostReadClient(c.config)
 	c.Property = NewPropertyClient(c.config)
@@ -290,6 +294,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		MentionProfile:      NewMentionProfileClient(cfg),
 		Node:                NewNodeClient(cfg),
 		Notification:        NewNotificationClient(cfg),
+		PollVote:            NewPollVoteClient(cfg),
 		Post:                NewPostClient(cfg),
 		PostRead:            NewPostReadClient(cfg),
 		Property:            NewPropertyClient(cfg),
@@ -344,6 +349,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		MentionProfile:      NewMentionProfileClient(cfg),
 		Node:                NewNodeClient(cfg),
 		Notification:        NewNotificationClient(cfg),
+		PollVote:            NewPollVoteClient(cfg),
 		Post:                NewPostClient(cfg),
 		PostRead:            NewPostReadClient(cfg),
 		Property:            NewPropertyClient(cfg),
@@ -390,7 +396,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.AuditLog, c.Authentication, c.Category, c.Channel, c.ChannelMembership,
 		c.Collection, c.CollectionNode, c.CollectionPost, c.Email, c.Event,
 		c.EventParticipant, c.Invitation, c.LikePost, c.Link, c.MentionProfile, c.Node,
-		c.Notification, c.Post, c.PostRead, c.Property, c.PropertySchema,
+		c.Notification, c.PollVote, c.Post, c.PostRead, c.Property, c.PropertySchema,
 		c.PropertySchemaField, c.Question, c.React, c.ReplyAdminQueue, c.Report,
 		c.Role, c.Session, c.Setting, c.Tag,
 	} {
@@ -406,7 +412,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.AuditLog, c.Authentication, c.Category, c.Channel, c.ChannelMembership,
 		c.Collection, c.CollectionNode, c.CollectionPost, c.Email, c.Event,
 		c.EventParticipant, c.Invitation, c.LikePost, c.Link, c.MentionProfile, c.Node,
-		c.Notification, c.Post, c.PostRead, c.Property, c.PropertySchema,
+		c.Notification, c.PollVote, c.Post, c.PostRead, c.Property, c.PropertySchema,
 		c.PropertySchemaField, c.Question, c.React, c.ReplyAdminQueue, c.Report,
 		c.Role, c.Session, c.Setting, c.Tag,
 	} {
@@ -461,6 +467,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Node.mutate(ctx, m)
 	case *NotificationMutation:
 		return c.Notification.mutate(ctx, m)
+	case *PollVoteMutation:
+		return c.PollVote.mutate(ctx, m)
 	case *PostMutation:
 		return c.Post.mutate(ctx, m)
 	case *PostReadMutation:
@@ -977,6 +985,22 @@ func (c *AccountClient) QueryAuditLogs(_m *Account) *AuditLogQuery {
 			sqlgraph.From(account.Table, account.FieldID, id),
 			sqlgraph.To(auditlog.Table, auditlog.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, account.AuditLogsTable, account.AuditLogsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPollVotes queries the poll_votes edge of a Account.
+func (c *AccountClient) QueryPollVotes(_m *Account) *PollVoteQuery {
+	query := (&PollVoteClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, id),
+			sqlgraph.To(pollvote.Table, pollvote.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, account.PollVotesTable, account.PollVotesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -4888,6 +4912,171 @@ func (c *NotificationClient) mutate(ctx context.Context, m *NotificationMutation
 	}
 }
 
+// PollVoteClient is a client for the PollVote schema.
+type PollVoteClient struct {
+	config
+}
+
+// NewPollVoteClient returns a client for the PollVote from the given config.
+func NewPollVoteClient(c config) *PollVoteClient {
+	return &PollVoteClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `pollvote.Hooks(f(g(h())))`.
+func (c *PollVoteClient) Use(hooks ...Hook) {
+	c.hooks.PollVote = append(c.hooks.PollVote, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `pollvote.Intercept(f(g(h())))`.
+func (c *PollVoteClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PollVote = append(c.inters.PollVote, interceptors...)
+}
+
+// Create returns a builder for creating a PollVote entity.
+func (c *PollVoteClient) Create() *PollVoteCreate {
+	mutation := newPollVoteMutation(c.config, OpCreate)
+	return &PollVoteCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PollVote entities.
+func (c *PollVoteClient) CreateBulk(builders ...*PollVoteCreate) *PollVoteCreateBulk {
+	return &PollVoteCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PollVoteClient) MapCreateBulk(slice any, setFunc func(*PollVoteCreate, int)) *PollVoteCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PollVoteCreateBulk{err: fmt.Errorf("calling to PollVoteClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PollVoteCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PollVoteCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PollVote.
+func (c *PollVoteClient) Update() *PollVoteUpdate {
+	mutation := newPollVoteMutation(c.config, OpUpdate)
+	return &PollVoteUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PollVoteClient) UpdateOne(_m *PollVote) *PollVoteUpdateOne {
+	mutation := newPollVoteMutation(c.config, OpUpdateOne, withPollVote(_m))
+	return &PollVoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PollVoteClient) UpdateOneID(id xid.ID) *PollVoteUpdateOne {
+	mutation := newPollVoteMutation(c.config, OpUpdateOne, withPollVoteID(id))
+	return &PollVoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PollVote.
+func (c *PollVoteClient) Delete() *PollVoteDelete {
+	mutation := newPollVoteMutation(c.config, OpDelete)
+	return &PollVoteDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PollVoteClient) DeleteOne(_m *PollVote) *PollVoteDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PollVoteClient) DeleteOneID(id xid.ID) *PollVoteDeleteOne {
+	builder := c.Delete().Where(pollvote.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PollVoteDeleteOne{builder}
+}
+
+// Query returns a query builder for PollVote.
+func (c *PollVoteClient) Query() *PollVoteQuery {
+	return &PollVoteQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePollVote},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PollVote entity by its id.
+func (c *PollVoteClient) Get(ctx context.Context, id xid.ID) (*PollVote, error) {
+	return c.Query().Where(pollvote.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PollVoteClient) GetX(ctx context.Context, id xid.ID) *PollVote {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAccount queries the account edge of a PollVote.
+func (c *PollVoteClient) QueryAccount(_m *PollVote) *AccountQuery {
+	query := (&AccountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(pollvote.Table, pollvote.FieldID, id),
+			sqlgraph.To(account.Table, account.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, pollvote.AccountTable, pollvote.AccountColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPost queries the post edge of a PollVote.
+func (c *PollVoteClient) QueryPost(_m *PollVote) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(pollvote.Table, pollvote.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, pollvote.PostTable, pollvote.PostColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PollVoteClient) Hooks() []Hook {
+	return c.hooks.PollVote
+}
+
+// Interceptors returns the client interceptors.
+func (c *PollVoteClient) Interceptors() []Interceptor {
+	return c.inters.PollVote
+}
+
+func (c *PollVoteClient) mutate(ctx context.Context, m *PollVoteMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PollVoteCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PollVoteUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PollVoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PollVoteDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PollVote mutation op: %q", m.Op())
+	}
+}
+
 // PostClient is a client for the Post schema.
 type PostClient struct {
 	config
@@ -5261,6 +5450,22 @@ func (c *PostClient) QueryPostReads(_m *Post) *PostReadQuery {
 			sqlgraph.From(post.Table, post.FieldID, id),
 			sqlgraph.To(postread.Table, postread.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, post.PostReadsTable, post.PostReadsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPollVotes queries the poll_votes edge of a Post.
+func (c *PostClient) QueryPollVotes(_m *Post) *PollVoteQuery {
+	query := (&PollVoteClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(pollvote.Table, pollvote.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, post.PollVotesTable, post.PollVotesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -7263,17 +7468,17 @@ type (
 		Account, AccountFollow, AccountRoles, AdminReplyTime, Asset, AuditLog,
 		Authentication, Category, Channel, ChannelMembership, Collection,
 		CollectionNode, CollectionPost, Email, Event, EventParticipant, Invitation,
-		LikePost, Link, MentionProfile, Node, Notification, Post, PostRead, Property,
-		PropertySchema, PropertySchemaField, Question, React, ReplyAdminQueue, Report,
-		Role, Session, Setting, Tag []ent.Hook
+		LikePost, Link, MentionProfile, Node, Notification, PollVote, Post, PostRead,
+		Property, PropertySchema, PropertySchemaField, Question, React,
+		ReplyAdminQueue, Report, Role, Session, Setting, Tag []ent.Hook
 	}
 	inters struct {
 		Account, AccountFollow, AccountRoles, AdminReplyTime, Asset, AuditLog,
 		Authentication, Category, Channel, ChannelMembership, Collection,
 		CollectionNode, CollectionPost, Email, Event, EventParticipant, Invitation,
-		LikePost, Link, MentionProfile, Node, Notification, Post, PostRead, Property,
-		PropertySchema, PropertySchemaField, Question, React, ReplyAdminQueue, Report,
-		Role, Session, Setting, Tag []ent.Interceptor
+		LikePost, Link, MentionProfile, Node, Notification, PollVote, Post, PostRead,
+		Property, PropertySchema, PropertySchemaField, Question, React,
+		ReplyAdminQueue, Report, Role, Session, Setting, Tag []ent.Interceptor
 	}
 )
 

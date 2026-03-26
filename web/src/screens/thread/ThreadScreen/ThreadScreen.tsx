@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Controller, ControllerProps } from "react-hook-form";
 import { match } from "ts-pattern";
 
@@ -7,15 +8,14 @@ import { Unready } from "src/components/site/Unready";
 
 import { Permission, Thread, Visibility } from "@/api/openapi-schema";
 import { useSession } from "@/auth";
-import { hasPermission } from "@/utils/permissions";
-import { CategoryBadge } from "@/components/category/CategoryBadge";
-import { Byline } from "@/components/content/Byline";
 import { ContentComposer } from "@/components/content/ContentComposer/ContentComposer";
 import { LinkCard } from "@/components/library/links/LinkCard";
+import { PollCard } from "@/components/poll/PollCard";
+import { LikeButton } from "@/components/post/LikeButton/LikeButton";
 import { CancelAction } from "@/components/site/Action/Cancel";
 import { SaveAction } from "@/components/site/Action/Save";
+import { HeaderWithBackArrow } from "@/components/site/Header";
 import { PaginationControls } from "@/components/site/PaginationControls/PaginationControls";
-import { TagBadgeList } from "@/components/tag/TagBadgeList";
 import { Breadcrumbs } from "@/components/thread/Breadcrumbs";
 import { PostReviewBadge } from "@/components/thread/PostReviewBadge";
 import { ReplyBox } from "@/components/thread/ReplyBox/ReplyBox";
@@ -28,17 +28,13 @@ import { FormErrorText } from "@/components/ui/FormErrorText";
 import { Heading } from "@/components/ui/heading";
 import { HeadingInput } from "@/components/ui/heading-input";
 import { ArrowLeftIcon } from "@/components/ui/icons/Arrow";
-import {
-  DiscussionIcon,
-  DiscussionParticipatingIcon,
-} from "@/components/ui/icons/Discussion";
+import { DiscussionIcon, DiscussionParticipatingIcon } from "@/components/ui/icons/Discussion";
 import { LikeIcon, LikeSavedIcon } from "@/components/ui/icons/Like";
-import { HeaderWithBackArrow } from "@/components/site/Header";
 import { VisibilityBadge } from "@/components/visibility/VisibilityBadge";
+import { HStack, LStack, VStack, WStack, styled } from "@/styled-system/jsx";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { getAvatarColor } from "@/utils/avatar-colors";
-import { HStack, LStack, VStack, WStack, styled } from "@/styled-system/jsx";
-import Link from "next/link";
+import { hasPermission } from "@/utils/permissions";
 
 import { Form, Props, useThreadScreen } from "./useThreadScreen";
 
@@ -68,6 +64,12 @@ export function ThreadScreen(props: Props) {
 
   const session = useSession(props.initialSession);
   const isAdmin = hasPermission(session, Permission.ADMINISTRATOR);
+
+  const threadMeta = thread.meta as Record<string, unknown> | undefined;
+  const isPoll = threadMeta?.["is_poll"] === true;
+  const pollOptionDefs = isPoll
+    ? (threadMeta?.["poll_options"] as Array<{ id: string; text: string }> | undefined) ?? []
+    : [];
 
   return (
     <ReplyProvider>
@@ -210,24 +212,26 @@ export function ThreadScreen(props: Props) {
             </HStack>
 
             {/* Post Content */}
-            <styled.div mb="1">
-              {isEditing ? (
-                <TitleInput name="title" control={form.control} />
-              ) : (
-                <styled.p
-                  fontSize="sm"
-                  color="fg.default"
-                  style={{
-                    whiteSpace: "pre-wrap",
-                    lineHeight: "1.6",
-                    margin: "0",
-                    fontSize: "15px",
-                  }}
-                >
-                  {thread.title}
-                </styled.p>
-              )}
-            </styled.div>
+            {!isPoll && (
+              <styled.div mb="1">
+                {isEditing ? (
+                  <TitleInput name="title" control={form.control} />
+                ) : (
+                  <styled.p
+                    fontSize="sm"
+                    color="fg.default"
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      lineHeight: "1.6",
+                      margin: "0",
+                      fontSize: "15px",
+                    }}
+                  >
+                    {thread.title}
+                  </styled.p>
+                )}
+              </styled.div>
+            )}
 
             {/* Tags/Category */}
             <HStack gap="2" mb="4" flexWrap="wrap">
@@ -251,14 +255,31 @@ export function ThreadScreen(props: Props) {
             {/* Body Content */}
             {thread.link && <LinkCard link={thread.link} />}
 
-            <ThreadBodyInput
-              control={form.control}
-              name="body"
-              initialValue={thread.body}
-              resetKey={resetKey}
-              disabled={!isEditing}
-              handleEmptyStateChange={handlers.handleEmptyStateChange}
-            />
+            {isPoll ? (
+              <styled.div mb="4">
+                {thread.description && (
+                  <styled.p
+                    fontSize="md"
+                    fontWeight="semibold"
+                    color="fg.default"
+                    mb="3"
+                    style={{ lineHeight: "1.5" }}
+                  >
+                    {thread.description}
+                  </styled.p>
+                )}
+                <PollCard threadMark={thread.slug} optionDefs={pollOptionDefs} />
+              </styled.div>
+            ) : (
+              <ThreadBodyInput
+                control={form.control}
+                name="body"
+                initialValue={thread.body}
+                resetKey={resetKey}
+                disabled={!isEditing}
+                handleEmptyStateChange={handlers.handleEmptyStateChange}
+              />
+            )}
 
             {/* Actions */}
             <HStack
@@ -271,36 +292,7 @@ export function ThreadScreen(props: Props) {
                 borderTopColor: TRAYA_COLORS.border.subtle,
               }}
             >
-              <styled.button
-                display="flex"
-                alignItems="center"
-                gap="2"
-                fontSize="sm"
-                fontWeight="medium"
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "0",
-                  color: thread.likes.liked ? TRAYA_COLORS.heart : "var(--colors-fg-muted)",
-                  transition: "color 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = TRAYA_COLORS.heart;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = thread.likes.liked ? TRAYA_COLORS.heart : "var(--colors-fg-muted)";
-                }}
-              >
-                <span>
-                  {thread.likes.liked ? (
-                    <LikeSavedIcon width="5" />
-                  ) : (
-                    <LikeIcon width="5" />
-                  )}
-                </span>
-                <span>{thread.likes.likes}</span>
-              </styled.button>
+              <LikeButton thread={thread} showCount />
 
               <HStack gap="2" fontSize="sm" fontWeight="medium" color="fg.muted">
                 <span>

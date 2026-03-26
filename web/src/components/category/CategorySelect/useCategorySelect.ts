@@ -40,6 +40,7 @@ export function useCategorySelect(channelID?: string) {
     items: data.categories.map((category) => ({
       label: category.name,
       value: category.id,
+      slug: category.slug,
     })),
   });
 

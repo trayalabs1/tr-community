@@ -23,6 +23,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/post/reply"
 	"github.com/Southclaws/storyden/app/resources/post/thread_cache"
 	"github.com/Southclaws/storyden/app/resources/profile/profile_querier"
+	"github.com/Southclaws/storyden/app/resources/rbac"
 	"github.com/Southclaws/storyden/app/resources/tag/tag_ref"
 	"github.com/Southclaws/storyden/app/services/authentication/session"
 	category_svc "github.com/Southclaws/storyden/app/services/category"
@@ -701,6 +702,12 @@ func (c Channels) ChannelThreadCreate(ctx context.Context, request openapi.Chann
 		meta = *request.Body.Meta
 	}
 
+	if isPoll, _ := meta["is_poll"].(bool); isPoll {
+		if err := session.Authorise(ctx, nil, rbac.PermissionAdministrator); err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.PermissionDenied))
+		}
+	}
+
 	tags := opt.Map(opt.NewPtr(request.Body.Tags), func(tags []string) tag_ref.Names {
 		return dt.Map(tags, deserialiseTagName)
 	})
@@ -922,6 +929,14 @@ func (c Channels) ChannelThreadUpdate(ctx context.Context, request openapi.Chann
 	// Verify the thread belongs to this channel
 	if existingThread.ChannelID != xid.ID(channelID) {
 		return nil, fault.Wrap(fault.New("thread not found in this channel"), fctx.With(ctx))
+	}
+
+	if isPoll, _ := existingThread.Meta["is_poll"].(bool); isPoll {
+		return nil, fault.Wrap(
+			fault.New("poll posts cannot be edited"),
+			fctx.With(ctx),
+			ftag.With(ftag.InvalidArgument),
+		)
 	}
 
 	tags := opt.Map(opt.NewPtr(request.Body.Tags), func(tags []string) tag_ref.Names {

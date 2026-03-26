@@ -26,6 +26,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/mentionprofile"
 	"github.com/Southclaws/storyden/internal/ent/node"
 	"github.com/Southclaws/storyden/internal/ent/notification"
+	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
 	"github.com/Southclaws/storyden/internal/ent/predicate"
@@ -575,6 +576,21 @@ func (_u *AccountUpdate) AddAuditLogs(v ...*AuditLog) *AccountUpdate {
 	return _u.AddAuditLogIDs(ids...)
 }
 
+// AddPollVoteIDs adds the "poll_votes" edge to the PollVote entity by IDs.
+func (_u *AccountUpdate) AddPollVoteIDs(ids ...xid.ID) *AccountUpdate {
+	_u.mutation.AddPollVoteIDs(ids...)
+	return _u
+}
+
+// AddPollVotes adds the "poll_votes" edges to the PollVote entity.
+func (_u *AccountUpdate) AddPollVotes(v ...*PollVote) *AccountUpdate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPollVoteIDs(ids...)
+}
+
 // AddAccountRoleIDs adds the "account_roles" edge to the AccountRoles entity by IDs.
 func (_u *AccountUpdate) AddAccountRoleIDs(ids ...xid.ID) *AccountUpdate {
 	_u.mutation.AddAccountRoleIDs(ids...)
@@ -1082,6 +1098,27 @@ func (_u *AccountUpdate) RemoveAuditLogs(v ...*AuditLog) *AccountUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAuditLogIDs(ids...)
+}
+
+// ClearPollVotes clears all "poll_votes" edges to the PollVote entity.
+func (_u *AccountUpdate) ClearPollVotes() *AccountUpdate {
+	_u.mutation.ClearPollVotes()
+	return _u
+}
+
+// RemovePollVoteIDs removes the "poll_votes" edge to PollVote entities by IDs.
+func (_u *AccountUpdate) RemovePollVoteIDs(ids ...xid.ID) *AccountUpdate {
+	_u.mutation.RemovePollVoteIDs(ids...)
+	return _u
+}
+
+// RemovePollVotes removes "poll_votes" edges to PollVote entities.
+func (_u *AccountUpdate) RemovePollVotes(v ...*PollVote) *AccountUpdate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePollVoteIDs(ids...)
 }
 
 // ClearAccountRoles clears all "account_roles" edges to the AccountRoles entity.
@@ -2314,6 +2351,51 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.PollVotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.PollVotesTable,
+			Columns: []string{account.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPollVotesIDs(); len(nodes) > 0 && !_u.mutation.PollVotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.PollVotesTable,
+			Columns: []string{account.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PollVotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.PollVotesTable,
+			Columns: []string{account.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.AccountRolesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -2903,6 +2985,21 @@ func (_u *AccountUpdateOne) AddAuditLogs(v ...*AuditLog) *AccountUpdateOne {
 	return _u.AddAuditLogIDs(ids...)
 }
 
+// AddPollVoteIDs adds the "poll_votes" edge to the PollVote entity by IDs.
+func (_u *AccountUpdateOne) AddPollVoteIDs(ids ...xid.ID) *AccountUpdateOne {
+	_u.mutation.AddPollVoteIDs(ids...)
+	return _u
+}
+
+// AddPollVotes adds the "poll_votes" edges to the PollVote entity.
+func (_u *AccountUpdateOne) AddPollVotes(v ...*PollVote) *AccountUpdateOne {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPollVoteIDs(ids...)
+}
+
 // AddAccountRoleIDs adds the "account_roles" edge to the AccountRoles entity by IDs.
 func (_u *AccountUpdateOne) AddAccountRoleIDs(ids ...xid.ID) *AccountUpdateOne {
 	_u.mutation.AddAccountRoleIDs(ids...)
@@ -3410,6 +3507,27 @@ func (_u *AccountUpdateOne) RemoveAuditLogs(v ...*AuditLog) *AccountUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAuditLogIDs(ids...)
+}
+
+// ClearPollVotes clears all "poll_votes" edges to the PollVote entity.
+func (_u *AccountUpdateOne) ClearPollVotes() *AccountUpdateOne {
+	_u.mutation.ClearPollVotes()
+	return _u
+}
+
+// RemovePollVoteIDs removes the "poll_votes" edge to PollVote entities by IDs.
+func (_u *AccountUpdateOne) RemovePollVoteIDs(ids ...xid.ID) *AccountUpdateOne {
+	_u.mutation.RemovePollVoteIDs(ids...)
+	return _u
+}
+
+// RemovePollVotes removes "poll_votes" edges to PollVote entities.
+func (_u *AccountUpdateOne) RemovePollVotes(v ...*PollVote) *AccountUpdateOne {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePollVoteIDs(ids...)
 }
 
 // ClearAccountRoles clears all "account_roles" edges to the AccountRoles entity.
@@ -4665,6 +4783,51 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(auditlog.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PollVotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.PollVotesTable,
+			Columns: []string{account.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPollVotesIDs(); len(nodes) > 0 && !_u.mutation.PollVotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.PollVotesTable,
+			Columns: []string{account.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PollVotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.PollVotesTable,
+			Columns: []string{account.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

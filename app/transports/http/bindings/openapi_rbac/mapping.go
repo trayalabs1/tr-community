@@ -713,3 +713,11 @@ func (m *Mapping) AdminReplyQueueDismiss() (bool, *rbac.Permission) {
 func (m *Mapping) AdminAnalyticsGet() (bool, *rbac.Permission) {
 	return true, &rbac.PermissionAdministrator
 }
+
+func (m *Mapping) ThreadGetPoll() (bool, *rbac.Permission) {
+	return false, &rbac.PermissionReadPublishedThreads
+}
+
+func (m *Mapping) ThreadVotePoll() (bool, *rbac.Permission) {
+	return true, &rbac.PermissionCreatePost
+}
