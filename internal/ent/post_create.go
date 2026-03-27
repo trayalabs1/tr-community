@@ -21,6 +21,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/likepost"
 	"github.com/Southclaws/storyden/internal/ent/link"
 	"github.com/Southclaws/storyden/internal/ent/mentionprofile"
+	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
 	"github.com/Southclaws/storyden/internal/ent/react"
@@ -473,6 +474,21 @@ func (_c *PostCreate) AddPostReads(v ...*PostRead) *PostCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddPostReadIDs(ids...)
+}
+
+// AddPollVoteIDs adds the "poll_votes" edge to the PollVote entity by IDs.
+func (_c *PostCreate) AddPollVoteIDs(ids ...xid.ID) *PostCreate {
+	_c.mutation.AddPollVoteIDs(ids...)
+	return _c
+}
+
+// AddPollVotes adds the "poll_votes" edges to the PollVote entity.
+func (_c *PostCreate) AddPollVotes(v ...*PollVote) *PostCreate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddPollVoteIDs(ids...)
 }
 
 // Mutation returns the PostMutation object of the builder.
@@ -928,6 +944,22 @@ func (_c *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(postread.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.PollVotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.PollVotesTable,
+			Columns: []string{post.PollVotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

@@ -86,6 +86,8 @@ const (
 	EdgeEvent = "event"
 	// EdgePostReads holds the string denoting the post_reads edge name in mutations.
 	EdgePostReads = "post_reads"
+	// EdgePollVotes holds the string denoting the poll_votes edge name in mutations.
+	EdgePollVotes = "poll_votes"
 	// Table holds the table name of the post in the database.
 	Table = "posts"
 	// AuthorTable is the table that holds the author relation/edge.
@@ -187,6 +189,13 @@ const (
 	PostReadsInverseTable = "post_reads"
 	// PostReadsColumn is the table column denoting the post_reads relation/edge.
 	PostReadsColumn = "root_post_id"
+	// PollVotesTable is the table that holds the poll_votes relation/edge.
+	PollVotesTable = "poll_votes"
+	// PollVotesInverseTable is the table name for the PollVote entity.
+	// It exists in this package in order to avoid circular dependency with the "pollvote" package.
+	PollVotesInverseTable = "poll_votes"
+	// PollVotesColumn is the table column denoting the poll_votes relation/edge.
+	PollVotesColumn = "post_id"
 )
 
 // Columns holds all SQL columns for post fields.
@@ -564,6 +573,20 @@ func ByPostReads(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newPostReadsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByPollVotesCount orders the results by poll_votes count.
+func ByPollVotesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPollVotesStep(), opts...)
+	}
+}
+
+// ByPollVotes orders the results by poll_votes terms.
+func ByPollVotes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPollVotesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newAuthorStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -681,5 +704,12 @@ func newPostReadsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PostReadsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PostReadsTable, PostReadsColumn),
+	)
+}
+func newPollVotesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PollVotesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PollVotesTable, PollVotesColumn),
 	)
 }

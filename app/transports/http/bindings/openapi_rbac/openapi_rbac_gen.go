@@ -122,6 +122,8 @@ type OperationPermissions interface {
 	ThreadUpdate() (bool, *rbac.Permission)
 	ThreadDelete() (bool, *rbac.Permission)
 	ReplyCreate() (bool, *rbac.Permission)
+	ThreadGetPoll() (bool, *rbac.Permission)
+	ThreadVotePoll() (bool, *rbac.Permission)
 	PostUpdate() (bool, *rbac.Permission)
 	PostDelete() (bool, *rbac.Permission)
 	PostReactAdd() (bool, *rbac.Permission)
@@ -415,6 +417,10 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.ThreadDelete()
 	case "ReplyCreate":
 		return optable.ReplyCreate()
+	case "ThreadGetPoll":
+		return optable.ThreadGetPoll()
+	case "ThreadVotePoll":
+		return optable.ThreadVotePoll()
 	case "PostUpdate":
 		return optable.PostUpdate()
 	case "PostDelete":

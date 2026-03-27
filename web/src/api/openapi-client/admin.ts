@@ -537,7 +537,6 @@ export const useAdminAccessKeyDelete = <
     ...query,
   };
 };
-
 /**
  * List non-admin replies pending admin attention. Requires ADMINISTRATOR
 permission. Supports pagination and date range filtering.
@@ -658,7 +657,9 @@ export const useAdminReplyQueueDismiss = <
     ...query,
   };
 };
-
+/**
+ * @summary Get analytics dashboard data
+ */
 export const adminAnalyticsGet = (params: AdminAnalyticsGetParams) => {
   return fetcher<AdminAnalyticsGetOKResponse>({
     url: `/admin/analytics`,
@@ -668,22 +669,17 @@ export const adminAnalyticsGet = (params: AdminAnalyticsGetParams) => {
 };
 
 export const getAdminAnalyticsGetKey = (params: AdminAnalyticsGetParams) =>
-  [`/admin/analytics`, ...[params]] as const;
+  [`/admin/analytics`, ...(params ? [params] : [])] as const;
 
 export type AdminAnalyticsGetQueryResult = NonNullable<
   Awaited<ReturnType<typeof adminAnalyticsGet>>
 >;
-export type AdminAnalyticsGetQueryError =
-  | UnauthorisedResponse
-  | ForbiddenResponse
-  | InternalServerErrorResponse;
+export type AdminAnalyticsGetQueryError = InternalServerErrorResponse;
 
-export const useAdminAnalyticsGet = <
-  TError =
-    | UnauthorisedResponse
-    | ForbiddenResponse
-    | InternalServerErrorResponse,
->(
+/**
+ * @summary Get analytics dashboard data
+ */
+export const useAdminAnalyticsGet = <TError = InternalServerErrorResponse>(
   params: AdminAnalyticsGetParams,
   options?: {
     swr?: SWRConfiguration<

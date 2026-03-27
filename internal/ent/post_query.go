@@ -21,6 +21,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/likepost"
 	"github.com/Southclaws/storyden/internal/ent/link"
 	"github.com/Southclaws/storyden/internal/ent/mentionprofile"
+	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
 	"github.com/Southclaws/storyden/internal/ent/predicate"
@@ -53,6 +54,7 @@ type PostQuery struct {
 	withContentLinks *LinkQuery
 	withEvent        *EventQuery
 	withPostReads    *PostReadQuery
+	withPollVotes    *PollVoteQuery
 	modifiers        []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -464,6 +466,28 @@ func (_q *PostQuery) QueryPostReads() *PostReadQuery {
 	return query
 }
 
+// QueryPollVotes chains the current query on the "poll_votes" edge.
+func (_q *PostQuery) QueryPollVotes() *PollVoteQuery {
+	query := (&PollVoteClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, selector),
+			sqlgraph.To(pollvote.Table, pollvote.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, post.PollVotesTable, post.PollVotesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Post entity from the query.
 // Returns a *NotFoundError when no Post was found.
 func (_q *PostQuery) First(ctx context.Context) (*Post, error) {
@@ -673,6 +697,7 @@ func (_q *PostQuery) Clone() *PostQuery {
 		withContentLinks: _q.withContentLinks.Clone(),
 		withEvent:        _q.withEvent.Clone(),
 		withPostReads:    _q.withPostReads.Clone(),
+		withPollVotes:    _q.withPollVotes.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -867,6 +892,17 @@ func (_q *PostQuery) WithPostReads(opts ...func(*PostReadQuery)) *PostQuery {
 	return _q
 }
 
+// WithPollVotes tells the query-builder to eager-load the nodes that are connected to
+// the "poll_votes" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *PostQuery) WithPollVotes(opts ...func(*PollVoteQuery)) *PostQuery {
+	query := (&PollVoteClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withPollVotes = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -945,7 +981,7 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 	var (
 		nodes       = []*Post{}
 		_spec       = _q.querySpec()
-		loadedTypes = [17]bool{
+		loadedTypes = [18]bool{
 			_q.withAuthor != nil,
 			_q.withCategory != nil,
 			_q.withChannel != nil,
@@ -963,6 +999,7 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 			_q.withContentLinks != nil,
 			_q.withEvent != nil,
 			_q.withPostReads != nil,
+			_q.withPollVotes != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -1096,6 +1133,13 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 		if err := _q.loadPostReads(ctx, query, nodes,
 			func(n *Post) { n.Edges.PostReads = []*PostRead{} },
 			func(n *Post, e *PostRead) { n.Edges.PostReads = append(n.Edges.PostReads, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withPollVotes; query != nil {
+		if err := _q.loadPollVotes(ctx, query, nodes,
+			func(n *Post) { n.Edges.PollVotes = []*PollVote{} },
+			func(n *Post, e *PollVote) { n.Edges.PollVotes = append(n.Edges.PollVotes, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1738,6 +1782,36 @@ func (_q *PostQuery) loadPostReads(ctx context.Context, query *PostReadQuery, no
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "root_post_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *PostQuery) loadPollVotes(ctx context.Context, query *PollVoteQuery, nodes []*Post, init func(*Post), assign func(*Post, *PollVote)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[xid.ID]*Post)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(pollvote.FieldPostID)
+	}
+	query.Where(predicate.PollVote(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(post.PollVotesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.PostID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "post_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

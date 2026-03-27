@@ -870,6 +870,46 @@ var (
 			},
 		},
 	}
+	// PollVotesColumns holds the columns for the "poll_votes" table.
+	PollVotesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "option_id", Type: field.TypeString},
+		{Name: "account_id", Type: field.TypeString, Size: 20},
+		{Name: "post_id", Type: field.TypeString, Size: 20},
+	}
+	// PollVotesTable holds the schema information for the "poll_votes" table.
+	PollVotesTable = &schema.Table{
+		Name:       "poll_votes",
+		Columns:    PollVotesColumns,
+		PrimaryKey: []*schema.Column{PollVotesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "poll_votes_accounts_poll_votes",
+				Columns:    []*schema.Column{PollVotesColumns[3]},
+				RefColumns: []*schema.Column{AccountsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "poll_votes_posts_poll_votes",
+				Columns:    []*schema.Column{PollVotesColumns[4]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "unique_poll_vote_per_user",
+				Unique:  true,
+				Columns: []*schema.Column{PollVotesColumns[3], PollVotesColumns[4]},
+			},
+			{
+				Name:    "pollvote_post_id_option_id",
+				Unique:  false,
+				Columns: []*schema.Column{PollVotesColumns[4], PollVotesColumns[2]},
+			},
+		},
+	}
 	// PostsColumns holds the columns for the "posts" table.
 	PostsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Size: 20},
@@ -1523,6 +1563,7 @@ var (
 		MentionProfilesTable,
 		NodesTable,
 		NotificationsTable,
+		PollVotesTable,
 		PostsTable,
 		PostReadsTable,
 		PropertiesTable,
@@ -1594,6 +1635,8 @@ func init() {
 	NodesTable.ForeignKeys[5].RefTable = PropertySchemasTable
 	NotificationsTable.ForeignKeys[0].RefTable = AccountsTable
 	NotificationsTable.ForeignKeys[1].RefTable = AccountsTable
+	PollVotesTable.ForeignKeys[0].RefTable = AccountsTable
+	PollVotesTable.ForeignKeys[1].RefTable = PostsTable
 	PostsTable.ForeignKeys[0].RefTable = AccountsTable
 	PostsTable.ForeignKeys[1].RefTable = CategoriesTable
 	PostsTable.ForeignKeys[2].RefTable = ChannelsTable
