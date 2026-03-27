@@ -10,16 +10,19 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
 import type {
   ChannelThreadGetParams,
   ChannelThreadListParams,
+  PollVoteBody,
   ReplyCreateBody,
   ReplyCreateOKResponse,
   ThreadCreateBody,
   ThreadCreateOKResponse,
   ThreadGetParams,
+  ThreadGetPollOKResponse,
   ThreadGetResponse,
   ThreadListOKResponse,
   ThreadListParams,
   ThreadUpdateBody,
   ThreadUpdateOKResponse,
+  ThreadVotePollOKResponse,
 } from "../openapi-schema";
 import { fetcher } from "../server";
 
@@ -390,6 +393,59 @@ export const threadDelete = async (
     {
       ...options,
       method: "DELETE",
+    },
+  );
+};
+
+/**
+ * @summary Get poll status for a thread
+ */
+export type threadGetPollResponse = {
+  data: ThreadGetPollOKResponse;
+  status: number;
+};
+
+export const getThreadGetPollUrl = (threadMark: string) => {
+  return `/threads/${threadMark}/poll`;
+};
+
+export const threadGetPoll = async (
+  threadMark: string,
+  options?: RequestInit,
+): Promise<threadGetPollResponse> => {
+  return fetcher<Promise<threadGetPollResponse>>(
+    getThreadGetPollUrl(threadMark),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * @summary Cast a vote on a poll
+ */
+export type threadVotePollResponse = {
+  data: ThreadVotePollOKResponse;
+  status: number;
+};
+
+export const getThreadVotePollUrl = (threadMark: string) => {
+  return `/threads/${threadMark}/poll/vote`;
+};
+
+export const threadVotePoll = async (
+  threadMark: string,
+  pollVoteBody: PollVoteBody,
+  options?: RequestInit,
+): Promise<threadVotePollResponse> => {
+  return fetcher<Promise<threadVotePollResponse>>(
+    getThreadVotePollUrl(threadMark),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(pollVoteBody),
     },
   );
 };

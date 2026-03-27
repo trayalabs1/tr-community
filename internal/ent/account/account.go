@@ -88,6 +88,8 @@ const (
 	EdgeHandledReports = "handled_reports"
 	// EdgeAuditLogs holds the string denoting the audit_logs edge name in mutations.
 	EdgeAuditLogs = "audit_logs"
+	// EdgePollVotes holds the string denoting the poll_votes edge name in mutations.
+	EdgePollVotes = "poll_votes"
 	// EdgeAccountRoles holds the string denoting the account_roles edge name in mutations.
 	EdgeAccountRoles = "account_roles"
 	// Table holds the table name of the account in the database.
@@ -256,6 +258,13 @@ const (
 	AuditLogsInverseTable = "audit_logs"
 	// AuditLogsColumn is the table column denoting the audit_logs relation/edge.
 	AuditLogsColumn = "enacted_by_id"
+	// PollVotesTable is the table that holds the poll_votes relation/edge.
+	PollVotesTable = "poll_votes"
+	// PollVotesInverseTable is the table name for the PollVote entity.
+	// It exists in this package in order to avoid circular dependency with the "pollvote" package.
+	PollVotesInverseTable = "poll_votes"
+	// PollVotesColumn is the table column denoting the poll_votes relation/edge.
+	PollVotesColumn = "account_id"
 	// AccountRolesTable is the table that holds the account_roles relation/edge.
 	AccountRolesTable = "account_roles"
 	// AccountRolesInverseTable is the table name for the AccountRoles entity.
@@ -733,6 +742,20 @@ func ByAuditLogs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByPollVotesCount orders the results by poll_votes count.
+func ByPollVotesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPollVotesStep(), opts...)
+	}
+}
+
+// ByPollVotes orders the results by poll_votes terms.
+func ByPollVotes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPollVotesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByAccountRolesCount orders the results by account_roles count.
 func ByAccountRolesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -912,6 +935,13 @@ func newAuditLogsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AuditLogsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AuditLogsTable, AuditLogsColumn),
+	)
+}
+func newPollVotesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PollVotesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PollVotesTable, PollVotesColumn),
 	)
 }
 func newAccountRolesStep() *sqlgraph.Step {

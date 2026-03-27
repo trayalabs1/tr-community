@@ -2060,6 +2060,43 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorised" }
         "200": { $ref: "#/components/responses/ReplyCreateOK" }
 
+  /threads/{thread_mark}/poll:
+    get:
+      operationId: ThreadGetPoll
+      summary: Get poll status for a thread
+      tags: [threads]
+      security:
+        - {}
+        - browser: []
+      parameters:
+        - $ref: '#/components/parameters/ThreadMarkParam'
+      responses:
+        200:
+          $ref: '#/components/responses/ThreadGetPollOK'
+        default:
+          $ref: '#/components/responses/InternalServerError'
+
+  /threads/{thread_mark}/poll/vote:
+    post:
+      operationId: ThreadVotePoll
+      summary: Cast a vote on a poll
+      tags: [threads]
+      security:
+        - browser: []
+      parameters:
+        - $ref: '#/components/parameters/ThreadMarkParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PollVoteBody'
+      responses:
+        200:
+          $ref: '#/components/responses/ThreadVotePollOK'
+        default:
+          $ref: '#/components/responses/InternalServerError'
+
   #
   #                            888
   #                            888
@@ -4192,6 +4229,20 @@ components:
           schema:
             $ref: "#/components/schemas/Reply"
 
+    ThreadGetPollOK:
+      description: Poll status for a thread.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PollStatus'
+
+    ThreadVotePollOK:
+      description: Updated poll status after voting.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PollStatus'
+
     PostUpdateOK:
       description: Post updated successfully.
       content:
@@ -5993,6 +6044,39 @@ components:
           required: [reply_queue_entries]
           properties:
             reply_queue_entries: { $ref: "#/components/schemas/ReplyQueueList" }
+
+    PollOptionStatus:
+      type: object
+      required: [id, text, votes]
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        votes:
+          type: integer
+
+    PollStatus:
+      type: object
+      required: [total_votes, options]
+      properties:
+        total_votes:
+          type: integer
+        user_vote:
+          type: string
+          nullable: true
+          description: option_id the authenticated user voted for, null if not voted
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/PollOptionStatus'
+
+    PollVoteBody:
+      type: object
+      required: [option_id]
+      properties:
+        option_id:
+          type: string
 
     ReportProps:
       type: object

@@ -1557,6 +1557,29 @@ func HasPostReadsWith(preds ...predicate.PostRead) predicate.Post {
 	})
 }
 
+// HasPollVotes applies the HasEdge predicate on the "poll_votes" edge.
+func HasPollVotes() predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PollVotesTable, PollVotesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPollVotesWith applies the HasEdge predicate on the "poll_votes" edge with a given conditions (other predicates).
+func HasPollVotesWith(preds ...predicate.PollVote) predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := newPollVotesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Post) predicate.Post {
 	return predicate.Post(sql.AndPredicates(predicates...))

@@ -87,6 +87,7 @@ type Bindings struct {
 	Reacts
 	Assets
 	Likes
+	Polls
 	Collections
 	Nodes
 	Links
@@ -126,6 +127,7 @@ func bindingsProviders() fx.Option {
 		NewReacts,
 		NewAssets,
 		NewLikes,
+		NewPolls,
 		NewCollections,
 		NewNodes,
 		NewLinks,

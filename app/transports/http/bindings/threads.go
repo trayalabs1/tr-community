@@ -21,6 +21,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/post/thread_cache"
 	"github.com/Southclaws/storyden/app/resources/post/thread_querier"
 	"github.com/Southclaws/storyden/app/resources/profile/profile_querier"
+	"github.com/Southclaws/storyden/app/resources/rbac"
 	"github.com/Southclaws/storyden/app/resources/tag/tag_ref"
 	"github.com/Southclaws/storyden/app/resources/visibility"
 	"github.com/Southclaws/storyden/app/services/authentication/session"
@@ -62,6 +63,12 @@ func (i *Threads) ThreadCreate(ctx context.Context, request openapi.ThreadCreate
 	var meta map[string]any
 	if request.Body.Meta != nil {
 		meta = *request.Body.Meta
+	}
+
+	if isPoll, _ := meta["is_poll"].(bool); isPoll {
+		if err := session.Authorise(ctx, nil, rbac.PermissionAdministrator); err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.PermissionDenied))
+		}
 	}
 
 	tags := opt.Map(opt.NewPtr(request.Body.Tags), func(tags []string) tag_ref.Names {
@@ -118,6 +125,19 @@ func (i *Threads) ThreadUpdate(ctx context.Context, request openapi.ThreadUpdate
 	postID, err := i.thread_mark_svc.Lookup(ctx, string(request.ThreadMark))
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	existing, err := i.thread_svc.Get(ctx, postID, deserialisePageParams(nil, reply.RepliesPerPage))
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	if isPoll, _ := existing.Meta["is_poll"].(bool); isPoll {
+		return nil, fault.Wrap(
+			fault.New("poll posts cannot be edited"),
+			fctx.With(ctx),
+			ftag.With(ftag.InvalidArgument),
+		)
 	}
 
 	tags := opt.Map(opt.NewPtr(request.Body.Tags), func(tags []string) tag_ref.Names {

@@ -101,9 +101,11 @@ type PostEdges struct {
 	Event []*Event `json:"event,omitempty"`
 	// PostReads holds the value of the post_reads edge.
 	PostReads []*PostRead `json:"post_reads,omitempty"`
+	// PollVotes holds the value of the poll_votes edge.
+	PollVotes []*PollVote `json:"poll_votes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [17]bool
+	loadedTypes [18]bool
 }
 
 // AuthorOrErr returns the Author value or an error if the edge
@@ -269,6 +271,15 @@ func (e PostEdges) PostReadsOrErr() ([]*PostRead, error) {
 		return e.PostReads, nil
 	}
 	return nil, &NotLoadedError{edge: "post_reads"}
+}
+
+// PollVotesOrErr returns the PollVotes value or an error if the edge
+// was not loaded in eager-loading.
+func (e PostEdges) PollVotesOrErr() ([]*PollVote, error) {
+	if e.loadedTypes[17] {
+		return e.PollVotes, nil
+	}
+	return nil, &NotLoadedError{edge: "poll_votes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -519,6 +530,11 @@ func (_m *Post) QueryEvent() *EventQuery {
 // QueryPostReads queries the "post_reads" edge of the Post entity.
 func (_m *Post) QueryPostReads() *PostReadQuery {
 	return NewPostClient(_m.config).QueryPostReads(_m)
+}
+
+// QueryPollVotes queries the "poll_votes" edge of the Post entity.
+func (_m *Post) QueryPollVotes() *PollVoteQuery {
+	return NewPostClient(_m.config).QueryPollVotes(_m)
 }
 
 // Update returns a builder for updating this Post.

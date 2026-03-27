@@ -23,6 +23,7 @@ import {
   DiscussionParticipatingIcon,
 } from "../ui/icons/Discussion";
 
+import { PollCard } from "../poll/PollCard";
 import { LikeButton } from "./LikeButton/LikeButton";
 import { useThreadCardModeration } from "./useThreadCardModeration";
 import { ProfileHoverTooltip } from "./ProfileHoverTooltip";
@@ -71,6 +72,12 @@ export const ThreadReferenceCard = memo(
     };
 
     const firstImageUrl = getFirstImageFromBody(thread.body);
+
+    const meta = thread.meta as Record<string, unknown> | undefined;
+    const isPoll = meta?.["is_poll"] === true;
+    const pollOptionDefs = isPoll
+      ? (meta?.["poll_options"] as Array<{ id: string; text: string }> | undefined) ?? []
+      : [];
 
     return (
       <styled.div
@@ -187,49 +194,69 @@ export const ThreadReferenceCard = memo(
           pt="2"
           pb="4"
         >
-          <Link href={permalink} style={{ textDecoration: "none" }}>
-            <styled.p
-              fontSize="sm"
-              color="fg.default"
-              fontWeight="medium"
-              style={{
-                margin: "0",
-                lineHeight: "1.6",
-                whiteSpace: "pre-wrap",
-                overflow: "hidden",
-                display: "-webkit-box",
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: "vertical",
-                textOverflow: "ellipsis",
-                cursor: "pointer",
-              }}
-            >
-              {thread.description || title}
-            </styled.p>
-          </Link>
-
-          {firstImageUrl && (
-            <Link href={permalink} style={{ textDecoration: "none" }}>
-              <styled.div
-                mt="2"
-                borderRadius="lg"
-                overflow="hidden"
-                style={{
-                  height: "140px",
-                  width: "100%",
-                }}
-              >
-                <styled.img
-                  src={firstImageUrl}
-                  alt=""
+          {isPoll ? (
+            <>
+              <Link href={permalink} style={{ textDecoration: "none" }}>
+                {thread.description && (
+                  <styled.p
+                    fontSize="sm"
+                    fontWeight="semibold"
+                    color="fg.default"
+                    style={{ margin: "0 0 8px 0", lineHeight: "1.5" }}
+                  >
+                    {thread.description}
+                  </styled.p>
+                )}
+              </Link>
+              <PollCard threadMark={thread.slug} optionDefs={pollOptionDefs} />
+            </>
+          ) : (
+            <>
+              <Link href={permalink} style={{ textDecoration: "none" }}>
+                <styled.p
+                  fontSize="sm"
+                  color="fg.default"
+                  fontWeight="medium"
                   style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
+                    margin: "0",
+                    lineHeight: "1.6",
+                    whiteSpace: "pre-wrap",
+                    overflow: "hidden",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: "vertical",
+                    textOverflow: "ellipsis",
+                    cursor: "pointer",
                   }}
-                />
-              </styled.div>
-            </Link>
+                >
+                  {thread.description || title}
+                </styled.p>
+              </Link>
+
+              {firstImageUrl && (
+                <Link href={permalink} style={{ textDecoration: "none" }}>
+                  <styled.div
+                    mt="2"
+                    borderRadius="lg"
+                    overflow="hidden"
+                    style={{
+                      height: "140px",
+                      width: "100%",
+                    }}
+                  >
+                    <styled.img
+                      src={firstImageUrl}
+                      alt=""
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  </styled.div>
+                </Link>
+              )}
+            </>
           )}
 
           {(!hideCategoryBadge && thread.category) || isInReview ? (

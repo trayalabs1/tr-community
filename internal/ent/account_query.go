@@ -26,6 +26,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/mentionprofile"
 	"github.com/Southclaws/storyden/internal/ent/node"
 	"github.com/Southclaws/storyden/internal/ent/notification"
+	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
 	"github.com/Southclaws/storyden/internal/ent/predicate"
@@ -69,6 +70,7 @@ type AccountQuery struct {
 	withReports                *ReportQuery
 	withHandledReports         *ReportQuery
 	withAuditLogs              *AuditLogQuery
+	withPollVotes              *PollVoteQuery
 	withAccountRoles           *AccountRolesQuery
 	modifiers                  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
@@ -635,6 +637,28 @@ func (_q *AccountQuery) QueryAuditLogs() *AuditLogQuery {
 	return query
 }
 
+// QueryPollVotes chains the current query on the "poll_votes" edge.
+func (_q *AccountQuery) QueryPollVotes() *PollVoteQuery {
+	query := (&PollVoteClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, selector),
+			sqlgraph.To(pollvote.Table, pollvote.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, account.PollVotesTable, account.PollVotesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryAccountRoles chains the current query on the "account_roles" edge.
 func (_q *AccountQuery) QueryAccountRoles() *AccountRolesQuery {
 	query := (&AccountRolesClient{config: _q.config}).Query()
@@ -873,6 +897,7 @@ func (_q *AccountQuery) Clone() *AccountQuery {
 		withReports:                _q.withReports.Clone(),
 		withHandledReports:         _q.withHandledReports.Clone(),
 		withAuditLogs:              _q.withAuditLogs.Clone(),
+		withPollVotes:              _q.withPollVotes.Clone(),
 		withAccountRoles:           _q.withAccountRoles.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
@@ -1145,6 +1170,17 @@ func (_q *AccountQuery) WithAuditLogs(opts ...func(*AuditLogQuery)) *AccountQuer
 	return _q
 }
 
+// WithPollVotes tells the query-builder to eager-load the nodes that are connected to
+// the "poll_votes" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *AccountQuery) WithPollVotes(opts ...func(*PollVoteQuery)) *AccountQuery {
+	query := (&PollVoteClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withPollVotes = query
+	return _q
+}
+
 // WithAccountRoles tells the query-builder to eager-load the nodes that are connected to
 // the "account_roles" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *AccountQuery) WithAccountRoles(opts ...func(*AccountRolesQuery)) *AccountQuery {
@@ -1234,7 +1270,7 @@ func (_q *AccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Acco
 	var (
 		nodes       = []*Account{}
 		_spec       = _q.querySpec()
-		loadedTypes = [25]bool{
+		loadedTypes = [26]bool{
 			_q.withSessions != nil,
 			_q.withEmails != nil,
 			_q.withNotifications != nil,
@@ -1259,6 +1295,7 @@ func (_q *AccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Acco
 			_q.withReports != nil,
 			_q.withHandledReports != nil,
 			_q.withAuditLogs != nil,
+			_q.withPollVotes != nil,
 			_q.withAccountRoles != nil,
 		}
 	)
@@ -1449,6 +1486,13 @@ func (_q *AccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Acco
 		if err := _q.loadAuditLogs(ctx, query, nodes,
 			func(n *Account) { n.Edges.AuditLogs = []*AuditLog{} },
 			func(n *Account, e *AuditLog) { n.Edges.AuditLogs = append(n.Edges.AuditLogs, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withPollVotes; query != nil {
+		if err := _q.loadPollVotes(ctx, query, nodes,
+			func(n *Account) { n.Edges.PollVotes = []*PollVote{} },
+			func(n *Account, e *PollVote) { n.Edges.PollVotes = append(n.Edges.PollVotes, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -2257,6 +2301,36 @@ func (_q *AccountQuery) loadAuditLogs(ctx context.Context, query *AuditLogQuery,
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "enacted_by_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *AccountQuery) loadPollVotes(ctx context.Context, query *PollVoteQuery, nodes []*Account, init func(*Account), assign func(*Account, *PollVote)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[xid.ID]*Account)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(pollvote.FieldAccountID)
+	}
+	query.Where(predicate.PollVote(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(account.PollVotesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.AccountID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "account_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

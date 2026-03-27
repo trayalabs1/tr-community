@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form";
 import { useSWRConfig } from "swr";
 import { z } from "zod";
 
+import { PollOption } from "@/components/poll/PollComposer";
+
 import {
   channelThreadCreate,
   getChannelThreadListKey,
@@ -28,7 +30,7 @@ export type Props = {
 
 export const FormShapeSchema = z.object({
   title: z.string().optional(),
-  body: z.string().min(1),
+  body: z.string().optional(),
   category: z.string().optional(),
   tags: z.string().array().optional(),
   url: z.string().optional(),
@@ -50,6 +52,11 @@ export function useComposeForm({
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<PollOption[]>([
+    { id: crypto.randomUUID(), text: "" },
+    { id: crypto.randomUUID(), text: "" },
+  ]);
 
   const form = useForm<FormShape>({
     resolver: zodResolver(FormShapeSchema),
@@ -99,17 +106,28 @@ export function useComposeForm({
     }
   };
 
-  const publish = async ({ title, body, category, tags, url }: FormShape) => {
+  const publish = async ({ body = "", category, tags, url }: FormShape, isPoll: boolean) => {
+    if (!isPoll && !body.trim()) {
+      form.setError("body", { message: "Body is required" });
+      return;
+    }
+
     const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
     const targetVisibility = isAdmin ? Visibility.published : Visibility.review;
 
-    const payload = {
-      title: title || "",
-      body,
+    const payload: ThreadInitialProps = {
+      title: "",
+      body: isPoll ? pollQuestion : body,
       category: category || undefined,
       visibility: targetVisibility,
       tags,
       url,
+      ...(isPoll && {
+        meta: {
+          is_poll: true,
+          poll_options: pollOptions,
+        },
+      }),
     };
 
     if (editing) {
@@ -162,28 +180,29 @@ export function useComposeForm({
     ),
   );
 
-  const handlePublish = form.handleSubmit((data) => {
-    trackSubmitForReview(data.body?.length, false, false, channelID);
-    return handle(
-      async () => {
-        setIsPublishing(true);
-        await publish(data);
-      },
-      {
-        promiseToast: {
-          loading: session && hasPermission(session, Permission.ADMINISTRATOR)
-            ? "Publishing post..."
-            : "Submitting for review...",
-          success: session && hasPermission(session, Permission.ADMINISTRATOR)
-            ? "Post published!"
-            : "Submitted for review! Your post will be visible once approved by a moderator.",
+  const handlePublish = (isPoll: boolean) =>
+    form.handleSubmit((data) => {
+      trackSubmitForReview(data.body?.length, false, false, channelID);
+      return handle(
+        async () => {
+          setIsPublishing(true);
+          await publish(data, isPoll);
         },
-        cleanup: async () => {
-          setIsPublishing(false);
+        {
+          promiseToast: {
+            loading: session && hasPermission(session, Permission.ADMINISTRATOR)
+              ? "Publishing post..."
+              : "Submitting for review...",
+            success: session && hasPermission(session, Permission.ADMINISTRATOR)
+              ? "Post published!"
+              : "Submitted for review! Your post will be visible once approved by a moderator.",
+          },
+          cleanup: async () => {
+            setIsPublishing(false);
+          },
         },
-      },
-    );
-  });
+      );
+    });
 
   const handleAssetUpload = async () => {
     await handle(
@@ -232,6 +251,8 @@ export function useComposeForm({
     state: {
       isPublishing,
       isSavingDraft,
+      pollQuestion,
+      pollOptions,
     },
     handlers: {
       handleSaveDraft,
@@ -239,6 +260,8 @@ export function useComposeForm({
       handleAssetDelete,
       handleAssetUpload,
       handleBack,
+      setPollQuestion,
+      setPollOptions,
     },
   };
 }

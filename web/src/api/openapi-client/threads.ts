@@ -21,16 +21,19 @@ import type {
   InternalServerErrorResponse,
   NotFoundResponse,
   NotModifiedResponse,
+  PollVoteBody,
   ReplyCreateBody,
   ReplyCreateOKResponse,
   ThreadCreateBody,
   ThreadCreateOKResponse,
   ThreadGetParams,
+  ThreadGetPollOKResponse,
   ThreadGetResponse,
   ThreadListOKResponse,
   ThreadListParams,
   ThreadUpdateBody,
   ThreadUpdateOKResponse,
+  ThreadVotePollOKResponse,
   UnauthorisedResponse,
 } from "../openapi-schema";
 
@@ -741,6 +744,113 @@ export const useThreadDelete = <
 
   const swrKey = swrOptions?.swrKey ?? getThreadDeleteMutationKey(threadMark);
   const swrFn = getThreadDeleteMutationFetcher(threadMark);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * @summary Get poll status for a thread
+ */
+export const threadGetPoll = (threadMark: string) => {
+  return fetcher<ThreadGetPollOKResponse>({
+    url: `/threads/${threadMark}/poll`,
+    method: "GET",
+  });
+};
+
+export const getThreadGetPollKey = (threadMark: string) =>
+  [`/threads/${threadMark}/poll`] as const;
+
+export type ThreadGetPollQueryResult = NonNullable<
+  Awaited<ReturnType<typeof threadGetPoll>>
+>;
+export type ThreadGetPollQueryError = InternalServerErrorResponse;
+
+/**
+ * @summary Get poll status for a thread
+ */
+export const useThreadGetPoll = <TError = InternalServerErrorResponse>(
+  threadMark: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof threadGetPoll>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false && !!threadMark;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getThreadGetPollKey(threadMark) : null));
+  const swrFn = () => threadGetPoll(threadMark);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * @summary Cast a vote on a poll
+ */
+export const threadVotePoll = (
+  threadMark: string,
+  pollVoteBody: PollVoteBody,
+) => {
+  return fetcher<ThreadVotePollOKResponse>({
+    url: `/threads/${threadMark}/poll/vote`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: pollVoteBody,
+  });
+};
+
+export const getThreadVotePollMutationFetcher = (threadMark: string) => {
+  return (
+    _: Key,
+    { arg }: { arg: PollVoteBody },
+  ): Promise<ThreadVotePollOKResponse> => {
+    return threadVotePoll(threadMark, arg);
+  };
+};
+export const getThreadVotePollMutationKey = (threadMark: string) =>
+  [`/threads/${threadMark}/poll/vote`] as const;
+
+export type ThreadVotePollMutationResult = NonNullable<
+  Awaited<ReturnType<typeof threadVotePoll>>
+>;
+export type ThreadVotePollMutationError = InternalServerErrorResponse;
+
+/**
+ * @summary Cast a vote on a poll
+ */
+export const useThreadVotePoll = <TError = InternalServerErrorResponse>(
+  threadMark: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof threadVotePoll>>,
+      TError,
+      Key,
+      PollVoteBody,
+      Awaited<ReturnType<typeof threadVotePoll>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getThreadVotePollMutationKey(threadMark);
+  const swrFn = getThreadVotePollMutationFetcher(threadMark);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
