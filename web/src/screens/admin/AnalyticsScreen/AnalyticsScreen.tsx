@@ -16,16 +16,26 @@ export function AnalyticsScreen() {
     setStartHour,
     endHour,
     setEndHour,
+    customStartHour,
+    setCustomStartHour,
+    customEndHour,
+    setCustomEndHour,
     handleDateChange,
+    handleApplyCustom,
+    appliedCustomRange,
     data,
     isLoading,
   } = useAnalyticsScreen();
 
   const [startInput, setStartInput] = useState(String(startHour));
   const [endInput, setEndInput] = useState(String(endHour));
+  const [customStartInput, setCustomStartInput] = useState(String(customStartHour));
+  const [customEndInput, setCustomEndInput] = useState(String(customEndHour));
 
   useEffect(() => { setStartInput(String(startHour)); }, [startHour]);
   useEffect(() => { setEndInput(String(endHour)); }, [endHour]);
+  useEffect(() => { setCustomStartInput(String(customStartHour)); }, [customStartHour]);
+  useEffect(() => { setCustomEndInput(String(customEndHour)); }, [customEndHour]);
 
   const totalOnboardings =
     data?.channel_onboardings?.reduce((s, r) => s + r.count, 0) ?? 0;
@@ -92,11 +102,62 @@ export function AnalyticsScreen() {
         )}
 
         {mode === "custom" && (
-          <DateRangePicker hideInputs={true} max={todayVal} onValueChange={handleDateChange} />
+          <HStack gap="2" alignItems="center" flexWrap="wrap">
+            <DateRangePicker hideInputs={true} max={todayVal} onValueChange={handleDateChange} />
+            <input
+              type="number"
+              min={0}
+              max={23}
+              value={customStartInput}
+              onChange={(e) => {
+                setCustomStartInput(e.target.value);
+                const n = parseInt(e.target.value, 10);
+                if (!isNaN(n)) setCustomStartHour(Math.min(23, Math.max(0, n)));
+              }}
+              onBlur={() => {
+                const n = parseInt(customStartInput, 10);
+                const clamped = isNaN(n) ? 0 : Math.min(23, Math.max(0, n));
+                setCustomStartHour(clamped);
+                setCustomStartInput(String(clamped));
+              }}
+              className={css({ width: "14", borderWidth: "thin", borderStyle: "solid", borderColor: "border.default", borderRadius: "md", px: "2", py: "1", fontSize: "sm" })}
+            />
+            <span className={css({ fontSize: "sm", color: "fg.muted" })}>to</span>
+            <input
+              type="number"
+              min={0}
+              max={23}
+              value={customEndInput}
+              onChange={(e) => {
+                setCustomEndInput(e.target.value);
+                const n = parseInt(e.target.value, 10);
+                if (!isNaN(n)) setCustomEndHour(Math.min(23, Math.max(0, n)));
+              }}
+              onBlur={() => {
+                const n = parseInt(customEndInput, 10);
+                const clamped = isNaN(n) ? 23 : Math.min(23, Math.max(0, n));
+                setCustomEndHour(clamped);
+                setCustomEndInput(String(clamped));
+              }}
+              className={css({ width: "14", borderWidth: "thin", borderStyle: "solid", borderColor: "border.default", borderRadius: "md", px: "2", py: "1", fontSize: "sm" })}
+            />
+            <button
+              type="button"
+              onClick={handleApplyCustom}
+              className={css({ px: "3", py: "1.5", fontSize: "sm", fontWeight: "semibold", cursor: "pointer", borderRadius: "md" })}
+              style={{ background: "var(--colors-bg-muted)", border: "1px solid var(--colors-border-default)", color: "var(--colors-fg-default)" }}
+            >
+              Apply
+            </button>
+          </HStack>
         )}
       </HStack>
 
       {isLoading && <p>Loading…</p>}
+
+      {mode === "custom" && !appliedCustomRange && !isLoading && (
+        <p className={css({ fontSize: "sm", color: "fg.muted" })}>Select a date range and hours, then click Apply.</p>
+      )}
 
       {data && (
         <HStack gap="4" alignItems="flex-start" flexWrap="wrap">
