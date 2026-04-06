@@ -12,6 +12,7 @@ type Props = {
   time: Date;
   updated: Date;
   more?: React.ReactElement;
+  absolute?: boolean;
 };
 
 export function Byline(props: Props) {
@@ -26,7 +27,7 @@ export function Byline(props: Props) {
       >
         <MemberBadge profile={props.author} size="sm" name="handle" />
         <DotSeparator />
-        <Timestamp created={props.time} href={props.href} />
+        <Timestamp created={props.time} href={props.href} absolute={props.absolute} />
       </HStack>
 
       {props.more}

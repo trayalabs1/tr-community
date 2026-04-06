@@ -10,7 +10,7 @@ import { useSession } from "src/auth";
 import { CollectionMenu } from "src/components/content/CollectionMenu/CollectionMenu";
 
 import { styled } from "@/styled-system/jsx";
-import { timestamp } from "@/utils/date";
+import { formatDateTime } from "@/utils/date";
 import { hasPermission } from "@/utils/permissions";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { getAvatarColor } from "@/utils/avatar-colors";
@@ -162,7 +162,7 @@ export const ThreadReferenceCard = memo(
                   margin: "0",
                 }}
               >
-                {timestamp(new Date(thread.createdAt), false)}
+                {formatDateTime(thread.createdAt)}
               </styled.p>
             </styled.div>
           </styled.div>
