@@ -1,20 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useMemo } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Filter } from "lucide-react";
-import { today, getLocalTimeZone, type DateValue } from "@internationalized/date";
-import { DateRangePicker } from "@/components/ui/date-picker";
+// import { today, getLocalTimeZone, type DateValue } from "@internationalized/date";
+// import { DateRangePicker } from "@/components/ui/date-picker";
 import { useAdminReplyQueueList, adminReplyQueueDismiss } from "@/api/openapi-client/admin";
 import { useChannelList } from "@/api/openapi-client/channels";
 import { useNodeList } from "@/api/openapi-client/nodes";
 import { useThreadList } from "@/api/openapi-client/threads";
-import { Visibility } from "@/api/openapi-schema";
+import { Visibility, ThreadReference, ReplyQueueEntry } from "@/api/openapi-schema";
 import { PendingReplyThreadList } from "@/components/queue/PendingReplyThreadList";
 import { QueueNodeList } from "@/components/queue/QueueNodeList";
 import { QueueThreadList } from "@/components/queue/QueueThreadList";
 import { ReplyAdminQueueList } from "@/components/queue/ReplyAdminQueueList";
 import { LoadingBanner } from "@/components/site/Loading";
+import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { VStack, LStack, HStack, styled } from "@/styled-system/jsx";
 import { getAssetURL } from "@/utils/asset";
@@ -29,18 +30,28 @@ export function QueueScreen() {
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("all");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
-  const todayVal = useMemo(() => today(getLocalTimeZone()), []);
+  // Date filter — commented out, not removed
+  // const todayVal = useMemo(() => today(getLocalTimeZone()), []);
+  // const [pendingReplyRange, setPendingReplyRange] = useState<{
+  //   createdAfter: string;
+  //   createdBefore: string;
+  // }>(() => {
+  //   const start = todayVal.toDate(getLocalTimeZone());
+  //   start.setHours(0, 0, 0, 0);
+  //   const end = todayVal.toDate(getLocalTimeZone());
+  //   end.setHours(23, 59, 59, 999);
+  //   return { createdAfter: start.toISOString(), createdBefore: end.toISOString() };
+  // });
 
-  const [pendingReplyRange, setPendingReplyRange] = useState<{
-    createdAfter: string;
-    createdBefore: string;
-  }>(() => {
-    const start = todayVal.toDate(getLocalTimeZone());
-    start.setHours(0, 0, 0, 0);
-    const end = todayVal.toDate(getLocalTimeZone());
-    end.setHours(23, 59, 59, 999);
-    return { createdAfter: start.toISOString(), createdBefore: end.toISOString() };
-  });
+  const [pendingReplyPage, setPendingReplyPage] = useState(1);
+  const [allPendingReplyThreads, setAllPendingReplyThreads] = useState<ThreadReference[]>([]);
+  const [isPendingReplyLoadingMore, setIsPendingReplyLoadingMore] = useState(false);
+  const pendingReplyLoadedPages = useRef<Set<number>>(new Set());
+
+  const [replyQueuePage, setReplyQueuePage] = useState(1);
+  const [allReplyQueueEntries, setAllReplyQueueEntries] = useState<ReplyQueueEntry[]>([]);
+  const [isReplyQueueLoadingMore, setIsReplyQueueLoadingMore] = useState(false);
+  const replyQueueLoadedPages = useRef<Set<number>>(new Set());
 
   const { data: channelData } = useChannelList({});
 
@@ -55,22 +66,78 @@ export function QueueScreen() {
 
   const { data: pendingReplyData, isValidating: isPendingReplyLoading } = useThreadList({
     visibility: [Visibility.published],
-    created_after: pendingReplyRange.createdAfter,
-    created_before: pendingReplyRange.createdBefore,
     no_replies: true,
+    page: String(pendingReplyPage),
   });
 
   const { data: replyQueueData, mutate: mutateReplyQueue, isValidating: isReplyQueueLoading } = useAdminReplyQueueList({
-    created_after: pendingReplyRange.createdAfter,
-    created_before: pendingReplyRange.createdBefore,
+    page: String(replyQueuePage),
   });
 
-  const isLoading =
-    activeTab === "pending_review" ? isThreadsLoading && isNodesLoading :
-    activeTab === "pending_reply" ? isPendingReplyLoading :
-    isReplyQueueLoading;
+  useEffect(() => {
+    const pageNum = pendingReplyData?.current_page;
+    if (!pendingReplyData?.threads || pageNum === undefined) return;
 
-  if (isLoading) {
+    if (pendingReplyLoadedPages.current.has(pageNum)) {
+      setIsPendingReplyLoadingMore(false);
+      return;
+    }
+    pendingReplyLoadedPages.current.add(pageNum);
+
+    if (pageNum === 1) {
+      setAllPendingReplyThreads(pendingReplyData.threads);
+    } else {
+      setAllPendingReplyThreads((prev) => {
+        const existingIds = new Set(prev.map((t) => t.id));
+        const newThreads = pendingReplyData.threads.filter((t) => !existingIds.has(t.id));
+        return [...prev, ...newThreads];
+      });
+    }
+    setIsPendingReplyLoadingMore(false);
+  }, [pendingReplyData]);
+
+  useEffect(() => {
+    const pageNum = replyQueueData?.current_page;
+    if (!replyQueueData?.reply_queue_entries || pageNum === undefined) return;
+
+    if (replyQueueLoadedPages.current.has(pageNum)) {
+      setIsReplyQueueLoadingMore(false);
+      return;
+    }
+    replyQueueLoadedPages.current.add(pageNum);
+
+    if (pageNum === 1) {
+      setAllReplyQueueEntries(replyQueueData.reply_queue_entries);
+    } else {
+      setAllReplyQueueEntries((prev) => {
+        const existingIds = new Set(prev.map((e) => e.id));
+        const newEntries = replyQueueData.reply_queue_entries.filter((e) => !existingIds.has(e.id));
+        return [...prev, ...newEntries];
+      });
+    }
+    setIsReplyQueueLoadingMore(false);
+  }, [replyQueueData]);
+
+  const handleLoadMorePendingReply = useCallback(() => {
+    if (pendingReplyData?.next_page) {
+      setIsPendingReplyLoadingMore(true);
+      setPendingReplyPage(pendingReplyData.next_page);
+    }
+  }, [pendingReplyData?.next_page]);
+
+  const handleLoadMoreReplyQueue = useCallback(() => {
+    if (replyQueueData?.next_page) {
+      setIsReplyQueueLoadingMore(true);
+      setReplyQueuePage(replyQueueData.next_page);
+    }
+  }, [replyQueueData?.next_page]);
+
+  const isInitialLoading =
+    activeTab === "pending_review" ? isThreadsLoading && isNodesLoading :
+    activeTab === "pending_reply" ? isPendingReplyLoading && allPendingReplyThreads.length === 0 :
+    isReplyQueueLoading && allReplyQueueEntries.length === 0;
+
+  if (isInitialLoading) {
     return <LoadingBanner />;
   }
 
@@ -107,8 +174,8 @@ export function QueueScreen() {
   const shouldShowThreads = selectedContentType === "threads" || selectedContentType === "all";
   const shouldShowNodes = selectedContentType === "nodes" || selectedContentType === "all";
 
-  const pendingReplyThreads = pendingReplyData?.threads ?? [];
-  const replyQueueEntries = replyQueueData?.reply_queue_entries ?? [];
+  const pendingReplyThreads = allPendingReplyThreads;
+  const replyQueueEntries = allReplyQueueEntries;
 
   const allChannelIds = new Set([
     ...Array.from(threadsByChannel.keys()),
@@ -124,32 +191,28 @@ export function QueueScreen() {
     ? pendingReplyThreads.filter((t) => t.channel_id === selectedChannelId)
     : pendingReplyThreads;
 
-  const handlePendingReplyDateChange = ({ value }: { value: DateValue[] }) => {
-    const [start, end] = value;
-
-    if (!start) {
-      const s = todayVal.toDate(getLocalTimeZone());
-      s.setHours(0, 0, 0, 0);
-      const e = todayVal.toDate(getLocalTimeZone());
-      e.setHours(23, 59, 59, 999);
-      setPendingReplyRange({ createdAfter: s.toISOString(), createdBefore: e.toISOString() });
-      return;
-    }
-
-    if (!end) return;
-
-    const [earlier, later] = start.compare(end) <= 0 ? [start, end] : [end, start];
-    const effectiveEnd = later.compare(earlier) > 2 ? earlier.add({ days: 2 }) : later;
-
-    const startDate = earlier.toDate(getLocalTimeZone());
-    startDate.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(effectiveEnd.add({ days: 1 }).toDate(getLocalTimeZone()).getTime() - 1);
-
-    setPendingReplyRange({
-      createdAfter: startDate.toISOString(),
-      createdBefore: endOfDay.toISOString(),
-    });
-  };
+  // Date change handler — commented out, not removed
+  // const handlePendingReplyDateChange = ({ value }: { value: DateValue[] }) => {
+  //   const [start, end] = value;
+  //   if (!start) {
+  //     const s = todayVal.toDate(getLocalTimeZone());
+  //     s.setHours(0, 0, 0, 0);
+  //     const e = todayVal.toDate(getLocalTimeZone());
+  //     e.setHours(23, 59, 59, 999);
+  //     setPendingReplyRange({ createdAfter: s.toISOString(), createdBefore: e.toISOString() });
+  //     return;
+  //   }
+  //   if (!end) return;
+  //   const [earlier, later] = start.compare(end) <= 0 ? [start, end] : [end, start];
+  //   const effectiveEnd = later.compare(earlier) > 2 ? earlier.add({ days: 2 }) : later;
+  //   const startDate = earlier.toDate(getLocalTimeZone());
+  //   startDate.setHours(0, 0, 0, 0);
+  //   const endOfDay = new Date(effectiveEnd.add({ days: 1 }).toDate(getLocalTimeZone()).getTime() - 1);
+  //   setPendingReplyRange({
+  //     createdAfter: startDate.toISOString(),
+  //     createdBefore: endOfDay.toISOString(),
+  //   });
+  // };
 
   return (
     <LStack gap="6" p="4">
@@ -304,6 +367,7 @@ export function QueueScreen() {
             </VStack>
           )}
 
+          {/* Date filter — commented out, not removed
           {(activeTab === "pending_reply" || activeTab === "pending_reply_to_reply") && (
             <VStack alignItems="start" gap="2" width="full">
               <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
@@ -317,6 +381,7 @@ export function QueueScreen() {
               />
             </VStack>
           )}
+          */}
         </VStack>
       )}
 
@@ -332,7 +397,21 @@ export function QueueScreen() {
             </styled.span>
           </HStack>
           {shouldShowThreads && filteredPendingReplyThreads.length > 0 ? (
-            <PendingReplyThreadList threads={filteredPendingReplyThreads} />
+            <>
+              <PendingReplyThreadList threads={filteredPendingReplyThreads} />
+              {pendingReplyData?.next_page && (
+                <styled.div width="full" display="flex" justifyContent="center" py="4">
+                  <Button
+                    variant="outline"
+                    size="md"
+                    onClick={handleLoadMorePendingReply}
+                    disabled={isPendingReplyLoadingMore}
+                  >
+                    {isPendingReplyLoadingMore ? "Loading..." : "Load More"}
+                  </Button>
+                </styled.div>
+              )}
+            </>
           ) : (
             <VStack
               gap="4"
@@ -376,9 +455,22 @@ export function QueueScreen() {
             channelMap={channelMap}
             onDismiss={async (id) => {
               await adminReplyQueueDismiss(id);
+              setAllReplyQueueEntries((prev) => prev.filter((e) => e.id !== id));
               await mutateReplyQueue();
             }}
           />
+          {replyQueueData?.next_page && (
+            <styled.div width="full" display="flex" justifyContent="center" py="4">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={handleLoadMoreReplyQueue}
+                disabled={isReplyQueueLoadingMore}
+              >
+                {isReplyQueueLoadingMore ? "Loading..." : "Load More"}
+              </Button>
+            </styled.div>
+          )}
         </VStack>
       )}
 
