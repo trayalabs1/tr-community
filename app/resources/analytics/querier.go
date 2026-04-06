@@ -142,8 +142,8 @@ func (q *Querier) adminReplyTimes(ctx context.Context, start, end time.Time) ([]
 	}
 	err := q.db.AdminReplyTime.Query().
 		Where(
-			ent_art.AdminPostTimeGTE(start),
-			ent_art.AdminPostTimeLTE(end),
+			ent_art.UserPostTimeGTE(start),
+			ent_art.UserPostTimeLTE(end),
 		).
 		GroupBy(ent_art.FieldAdminHandle).
 		Aggregate(ent.Mean(ent_art.FieldTimeDifferenceSeconds)).
