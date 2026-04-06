@@ -47,7 +47,7 @@ PASS if the post does ANY of these:
 - Expresses concern about early hair fall increase while seeking reassurance (this is normal during treatment)
 
 EDGE CASES — apply these rules:
-- Damaged product complaints without bashing Traya → PASS
+- Damaged product complacan ints without bashing Traya → PASS
 - "No results yet" framed as a question seeking help → PASS
 - "No results" framed as a verdict condemning Traya → FAIL
 - Neutral questions doubting efficacy ("does this really work?") → PASS

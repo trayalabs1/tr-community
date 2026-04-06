@@ -64,6 +64,8 @@ type Tx struct {
 	Post *PostClient
 	// PostRead is the client for interacting with the PostRead builders.
 	PostRead *PostReadClient
+	// PostSentiment is the client for interacting with the PostSentiment builders.
+	PostSentiment *PostSentimentClient
 	// Property is the client for interacting with the Property builders.
 	Property *PropertyClient
 	// PropertySchema is the client for interacting with the PropertySchema builders.
@@ -242,6 +244,7 @@ func (tx *Tx) init() {
 	tx.PollVote = NewPollVoteClient(tx.config)
 	tx.Post = NewPostClient(tx.config)
 	tx.PostRead = NewPostReadClient(tx.config)
+	tx.PostSentiment = NewPostSentimentClient(tx.config)
 	tx.Property = NewPropertyClient(tx.config)
 	tx.PropertySchema = NewPropertySchemaClient(tx.config)
 	tx.PropertySchemaField = NewPropertySchemaFieldClient(tx.config)

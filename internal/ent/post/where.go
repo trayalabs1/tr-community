@@ -1580,6 +1580,29 @@ func HasPollVotesWith(preds ...predicate.PollVote) predicate.Post {
 	})
 }
 
+// HasSentiment applies the HasEdge predicate on the "sentiment" edge.
+func HasSentiment() predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, SentimentTable, SentimentColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSentimentWith applies the HasEdge predicate on the "sentiment" edge with a given conditions (other predicates).
+func HasSentimentWith(preds ...predicate.PostSentiment) predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := newSentimentStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Post) predicate.Post {
 	return predicate.Post(sql.AndPredicates(predicates...))

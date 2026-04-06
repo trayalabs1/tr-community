@@ -15,6 +15,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/link"
 	"github.com/Southclaws/storyden/internal/ent/post"
+	"github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/rs/xid"
 )
 
@@ -103,9 +104,11 @@ type PostEdges struct {
 	PostReads []*PostRead `json:"post_reads,omitempty"`
 	// PollVotes holds the value of the poll_votes edge.
 	PollVotes []*PollVote `json:"poll_votes,omitempty"`
+	// Sentiment holds the value of the sentiment edge.
+	Sentiment *PostSentiment `json:"sentiment,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [18]bool
+	loadedTypes [19]bool
 }
 
 // AuthorOrErr returns the Author value or an error if the edge
@@ -280,6 +283,17 @@ func (e PostEdges) PollVotesOrErr() ([]*PollVote, error) {
 		return e.PollVotes, nil
 	}
 	return nil, &NotLoadedError{edge: "poll_votes"}
+}
+
+// SentimentOrErr returns the Sentiment value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e PostEdges) SentimentOrErr() (*PostSentiment, error) {
+	if e.Sentiment != nil {
+		return e.Sentiment, nil
+	} else if e.loadedTypes[18] {
+		return nil, &NotFoundError{label: postsentiment.Label}
+	}
+	return nil, &NotLoadedError{edge: "sentiment"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -535,6 +549,11 @@ func (_m *Post) QueryPostReads() *PostReadQuery {
 // QueryPollVotes queries the "poll_votes" edge of the Post entity.
 func (_m *Post) QueryPollVotes() *PollVoteQuery {
 	return NewPostClient(_m.config).QueryPollVotes(_m)
+}
+
+// QuerySentiment queries the "sentiment" edge of the Post entity.
+func (_m *Post) QuerySentiment() *PostSentimentQuery {
+	return NewPostClient(_m.config).QuerySentiment(_m)
 }
 
 // Update returns a builder for updating this Post.

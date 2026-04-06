@@ -37,6 +37,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
+	"github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/Southclaws/storyden/internal/ent/predicate"
 	"github.com/Southclaws/storyden/internal/ent/property"
 	"github.com/Southclaws/storyden/internal/ent/propertyschema"
@@ -87,6 +88,7 @@ const (
 	TypePollVote            = "PollVote"
 	TypePost                = "Post"
 	TypePostRead            = "PostRead"
+	TypePostSentiment       = "PostSentiment"
 	TypeProperty            = "Property"
 	TypePropertySchema      = "PropertySchema"
 	TypePropertySchemaField = "PropertySchemaField"
@@ -23712,6 +23714,8 @@ type PostMutation struct {
 	poll_votes           map[xid.ID]struct{}
 	removedpoll_votes    map[xid.ID]struct{}
 	clearedpoll_votes    bool
+	sentiment            *xid.ID
+	clearedsentiment     bool
 	done                 bool
 	oldValue             func(context.Context) (*Post, error)
 	predicates           []predicate.Post
@@ -25455,6 +25459,45 @@ func (m *PostMutation) ResetPollVotes() {
 	m.removedpoll_votes = nil
 }
 
+// SetSentimentID sets the "sentiment" edge to the PostSentiment entity by id.
+func (m *PostMutation) SetSentimentID(id xid.ID) {
+	m.sentiment = &id
+}
+
+// ClearSentiment clears the "sentiment" edge to the PostSentiment entity.
+func (m *PostMutation) ClearSentiment() {
+	m.clearedsentiment = true
+}
+
+// SentimentCleared reports if the "sentiment" edge to the PostSentiment entity was cleared.
+func (m *PostMutation) SentimentCleared() bool {
+	return m.clearedsentiment
+}
+
+// SentimentID returns the "sentiment" edge ID in the mutation.
+func (m *PostMutation) SentimentID() (id xid.ID, exists bool) {
+	if m.sentiment != nil {
+		return *m.sentiment, true
+	}
+	return
+}
+
+// SentimentIDs returns the "sentiment" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// SentimentID instead. It exists only for internal usage by the builders.
+func (m *PostMutation) SentimentIDs() (ids []xid.ID) {
+	if id := m.sentiment; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetSentiment resets all changes to the "sentiment" edge.
+func (m *PostMutation) ResetSentiment() {
+	m.sentiment = nil
+	m.clearedsentiment = false
+}
+
 // Where appends a list predicates to the PostMutation builder.
 func (m *PostMutation) Where(ps ...predicate.Post) {
 	m.predicates = append(m.predicates, ps...)
@@ -25949,7 +25992,7 @@ func (m *PostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 18)
+	edges := make([]string, 0, 19)
 	if m.author != nil {
 		edges = append(edges, post.EdgeAuthor)
 	}
@@ -26003,6 +26046,9 @@ func (m *PostMutation) AddedEdges() []string {
 	}
 	if m.poll_votes != nil {
 		edges = append(edges, post.EdgePollVotes)
+	}
+	if m.sentiment != nil {
+		edges = append(edges, post.EdgeSentiment)
 	}
 	return edges
 }
@@ -26107,13 +26153,17 @@ func (m *PostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case post.EdgeSentiment:
+		if id := m.sentiment; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 18)
+	edges := make([]string, 0, 19)
 	if m.removedtags != nil {
 		edges = append(edges, post.EdgeTags)
 	}
@@ -26235,7 +26285,7 @@ func (m *PostMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 18)
+	edges := make([]string, 0, 19)
 	if m.clearedauthor {
 		edges = append(edges, post.EdgeAuthor)
 	}
@@ -26290,6 +26340,9 @@ func (m *PostMutation) ClearedEdges() []string {
 	if m.clearedpoll_votes {
 		edges = append(edges, post.EdgePollVotes)
 	}
+	if m.clearedsentiment {
+		edges = append(edges, post.EdgeSentiment)
+	}
 	return edges
 }
 
@@ -26333,6 +26386,8 @@ func (m *PostMutation) EdgeCleared(name string) bool {
 		return m.clearedpost_reads
 	case post.EdgePollVotes:
 		return m.clearedpoll_votes
+	case post.EdgeSentiment:
+		return m.clearedsentiment
 	}
 	return false
 }
@@ -26358,6 +26413,9 @@ func (m *PostMutation) ClearEdge(name string) error {
 		return nil
 	case post.EdgeLink:
 		m.ClearLink()
+		return nil
+	case post.EdgeSentiment:
+		m.ClearSentiment()
 		return nil
 	}
 	return fmt.Errorf("unknown Post unique edge %s", name)
@@ -26420,6 +26478,9 @@ func (m *PostMutation) ResetEdge(name string) error {
 		return nil
 	case post.EdgePollVotes:
 		m.ResetPollVotes()
+		return nil
+	case post.EdgeSentiment:
+		m.ResetSentiment()
 		return nil
 	}
 	return fmt.Errorf("unknown Post edge %s", name)
@@ -26963,6 +27024,900 @@ func (m *PostReadMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown PostRead edge %s", name)
+}
+
+// PostSentimentMutation represents an operation that mutates the PostSentiment nodes in the graph.
+type PostSentimentMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *xid.ID
+	created_at          *time.Time
+	updated_at          *time.Time
+	sentiment_tag       *string
+	positivity_score    *int
+	addpositivity_score *int
+	primary_topic       *string
+	scoring_status      *postsentiment.ScoringStatus
+	rank_score          *float64
+	addrank_score       *float64
+	clearedFields       map[string]struct{}
+	post                *xid.ID
+	clearedpost         bool
+	done                bool
+	oldValue            func(context.Context) (*PostSentiment, error)
+	predicates          []predicate.PostSentiment
+}
+
+var _ ent.Mutation = (*PostSentimentMutation)(nil)
+
+// postsentimentOption allows management of the mutation configuration using functional options.
+type postsentimentOption func(*PostSentimentMutation)
+
+// newPostSentimentMutation creates new mutation for the PostSentiment entity.
+func newPostSentimentMutation(c config, op Op, opts ...postsentimentOption) *PostSentimentMutation {
+	m := &PostSentimentMutation{
+		config:        c,
+		op:            op,
+		typ:           TypePostSentiment,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withPostSentimentID sets the ID field of the mutation.
+func withPostSentimentID(id xid.ID) postsentimentOption {
+	return func(m *PostSentimentMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *PostSentiment
+		)
+		m.oldValue = func(ctx context.Context) (*PostSentiment, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().PostSentiment.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withPostSentiment sets the old PostSentiment of the mutation.
+func withPostSentiment(node *PostSentiment) postsentimentOption {
+	return func(m *PostSentimentMutation) {
+		m.oldValue = func(context.Context) (*PostSentiment, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m PostSentimentMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m PostSentimentMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of PostSentiment entities.
+func (m *PostSentimentMutation) SetID(id xid.ID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *PostSentimentMutation) ID() (id xid.ID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *PostSentimentMutation) IDs(ctx context.Context) ([]xid.ID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []xid.ID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().PostSentiment.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *PostSentimentMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *PostSentimentMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the PostSentiment entity.
+// If the PostSentiment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostSentimentMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *PostSentimentMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *PostSentimentMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *PostSentimentMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the PostSentiment entity.
+// If the PostSentiment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostSentimentMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *PostSentimentMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetPostID sets the "post_id" field.
+func (m *PostSentimentMutation) SetPostID(x xid.ID) {
+	m.post = &x
+}
+
+// PostID returns the value of the "post_id" field in the mutation.
+func (m *PostSentimentMutation) PostID() (r xid.ID, exists bool) {
+	v := m.post
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPostID returns the old "post_id" field's value of the PostSentiment entity.
+// If the PostSentiment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostSentimentMutation) OldPostID(ctx context.Context) (v xid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPostID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPostID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPostID: %w", err)
+	}
+	return oldValue.PostID, nil
+}
+
+// ResetPostID resets all changes to the "post_id" field.
+func (m *PostSentimentMutation) ResetPostID() {
+	m.post = nil
+}
+
+// SetSentimentTag sets the "sentiment_tag" field.
+func (m *PostSentimentMutation) SetSentimentTag(s string) {
+	m.sentiment_tag = &s
+}
+
+// SentimentTag returns the value of the "sentiment_tag" field in the mutation.
+func (m *PostSentimentMutation) SentimentTag() (r string, exists bool) {
+	v := m.sentiment_tag
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSentimentTag returns the old "sentiment_tag" field's value of the PostSentiment entity.
+// If the PostSentiment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostSentimentMutation) OldSentimentTag(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSentimentTag is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSentimentTag requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSentimentTag: %w", err)
+	}
+	return oldValue.SentimentTag, nil
+}
+
+// ClearSentimentTag clears the value of the "sentiment_tag" field.
+func (m *PostSentimentMutation) ClearSentimentTag() {
+	m.sentiment_tag = nil
+	m.clearedFields[postsentiment.FieldSentimentTag] = struct{}{}
+}
+
+// SentimentTagCleared returns if the "sentiment_tag" field was cleared in this mutation.
+func (m *PostSentimentMutation) SentimentTagCleared() bool {
+	_, ok := m.clearedFields[postsentiment.FieldSentimentTag]
+	return ok
+}
+
+// ResetSentimentTag resets all changes to the "sentiment_tag" field.
+func (m *PostSentimentMutation) ResetSentimentTag() {
+	m.sentiment_tag = nil
+	delete(m.clearedFields, postsentiment.FieldSentimentTag)
+}
+
+// SetPositivityScore sets the "positivity_score" field.
+func (m *PostSentimentMutation) SetPositivityScore(i int) {
+	m.positivity_score = &i
+	m.addpositivity_score = nil
+}
+
+// PositivityScore returns the value of the "positivity_score" field in the mutation.
+func (m *PostSentimentMutation) PositivityScore() (r int, exists bool) {
+	v := m.positivity_score
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPositivityScore returns the old "positivity_score" field's value of the PostSentiment entity.
+// If the PostSentiment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostSentimentMutation) OldPositivityScore(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPositivityScore is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPositivityScore requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPositivityScore: %w", err)
+	}
+	return oldValue.PositivityScore, nil
+}
+
+// AddPositivityScore adds i to the "positivity_score" field.
+func (m *PostSentimentMutation) AddPositivityScore(i int) {
+	if m.addpositivity_score != nil {
+		*m.addpositivity_score += i
+	} else {
+		m.addpositivity_score = &i
+	}
+}
+
+// AddedPositivityScore returns the value that was added to the "positivity_score" field in this mutation.
+func (m *PostSentimentMutation) AddedPositivityScore() (r int, exists bool) {
+	v := m.addpositivity_score
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearPositivityScore clears the value of the "positivity_score" field.
+func (m *PostSentimentMutation) ClearPositivityScore() {
+	m.positivity_score = nil
+	m.addpositivity_score = nil
+	m.clearedFields[postsentiment.FieldPositivityScore] = struct{}{}
+}
+
+// PositivityScoreCleared returns if the "positivity_score" field was cleared in this mutation.
+func (m *PostSentimentMutation) PositivityScoreCleared() bool {
+	_, ok := m.clearedFields[postsentiment.FieldPositivityScore]
+	return ok
+}
+
+// ResetPositivityScore resets all changes to the "positivity_score" field.
+func (m *PostSentimentMutation) ResetPositivityScore() {
+	m.positivity_score = nil
+	m.addpositivity_score = nil
+	delete(m.clearedFields, postsentiment.FieldPositivityScore)
+}
+
+// SetPrimaryTopic sets the "primary_topic" field.
+func (m *PostSentimentMutation) SetPrimaryTopic(s string) {
+	m.primary_topic = &s
+}
+
+// PrimaryTopic returns the value of the "primary_topic" field in the mutation.
+func (m *PostSentimentMutation) PrimaryTopic() (r string, exists bool) {
+	v := m.primary_topic
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrimaryTopic returns the old "primary_topic" field's value of the PostSentiment entity.
+// If the PostSentiment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostSentimentMutation) OldPrimaryTopic(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrimaryTopic is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrimaryTopic requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrimaryTopic: %w", err)
+	}
+	return oldValue.PrimaryTopic, nil
+}
+
+// ClearPrimaryTopic clears the value of the "primary_topic" field.
+func (m *PostSentimentMutation) ClearPrimaryTopic() {
+	m.primary_topic = nil
+	m.clearedFields[postsentiment.FieldPrimaryTopic] = struct{}{}
+}
+
+// PrimaryTopicCleared returns if the "primary_topic" field was cleared in this mutation.
+func (m *PostSentimentMutation) PrimaryTopicCleared() bool {
+	_, ok := m.clearedFields[postsentiment.FieldPrimaryTopic]
+	return ok
+}
+
+// ResetPrimaryTopic resets all changes to the "primary_topic" field.
+func (m *PostSentimentMutation) ResetPrimaryTopic() {
+	m.primary_topic = nil
+	delete(m.clearedFields, postsentiment.FieldPrimaryTopic)
+}
+
+// SetScoringStatus sets the "scoring_status" field.
+func (m *PostSentimentMutation) SetScoringStatus(ps postsentiment.ScoringStatus) {
+	m.scoring_status = &ps
+}
+
+// ScoringStatus returns the value of the "scoring_status" field in the mutation.
+func (m *PostSentimentMutation) ScoringStatus() (r postsentiment.ScoringStatus, exists bool) {
+	v := m.scoring_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldScoringStatus returns the old "scoring_status" field's value of the PostSentiment entity.
+// If the PostSentiment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostSentimentMutation) OldScoringStatus(ctx context.Context) (v postsentiment.ScoringStatus, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldScoringStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldScoringStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldScoringStatus: %w", err)
+	}
+	return oldValue.ScoringStatus, nil
+}
+
+// ResetScoringStatus resets all changes to the "scoring_status" field.
+func (m *PostSentimentMutation) ResetScoringStatus() {
+	m.scoring_status = nil
+}
+
+// SetRankScore sets the "rank_score" field.
+func (m *PostSentimentMutation) SetRankScore(f float64) {
+	m.rank_score = &f
+	m.addrank_score = nil
+}
+
+// RankScore returns the value of the "rank_score" field in the mutation.
+func (m *PostSentimentMutation) RankScore() (r float64, exists bool) {
+	v := m.rank_score
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRankScore returns the old "rank_score" field's value of the PostSentiment entity.
+// If the PostSentiment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostSentimentMutation) OldRankScore(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRankScore is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRankScore requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRankScore: %w", err)
+	}
+	return oldValue.RankScore, nil
+}
+
+// AddRankScore adds f to the "rank_score" field.
+func (m *PostSentimentMutation) AddRankScore(f float64) {
+	if m.addrank_score != nil {
+		*m.addrank_score += f
+	} else {
+		m.addrank_score = &f
+	}
+}
+
+// AddedRankScore returns the value that was added to the "rank_score" field in this mutation.
+func (m *PostSentimentMutation) AddedRankScore() (r float64, exists bool) {
+	v := m.addrank_score
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRankScore resets all changes to the "rank_score" field.
+func (m *PostSentimentMutation) ResetRankScore() {
+	m.rank_score = nil
+	m.addrank_score = nil
+}
+
+// ClearPost clears the "post" edge to the Post entity.
+func (m *PostSentimentMutation) ClearPost() {
+	m.clearedpost = true
+	m.clearedFields[postsentiment.FieldPostID] = struct{}{}
+}
+
+// PostCleared reports if the "post" edge to the Post entity was cleared.
+func (m *PostSentimentMutation) PostCleared() bool {
+	return m.clearedpost
+}
+
+// PostIDs returns the "post" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PostID instead. It exists only for internal usage by the builders.
+func (m *PostSentimentMutation) PostIDs() (ids []xid.ID) {
+	if id := m.post; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPost resets all changes to the "post" edge.
+func (m *PostSentimentMutation) ResetPost() {
+	m.post = nil
+	m.clearedpost = false
+}
+
+// Where appends a list predicates to the PostSentimentMutation builder.
+func (m *PostSentimentMutation) Where(ps ...predicate.PostSentiment) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the PostSentimentMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *PostSentimentMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.PostSentiment, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *PostSentimentMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *PostSentimentMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (PostSentiment).
+func (m *PostSentimentMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *PostSentimentMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, postsentiment.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, postsentiment.FieldUpdatedAt)
+	}
+	if m.post != nil {
+		fields = append(fields, postsentiment.FieldPostID)
+	}
+	if m.sentiment_tag != nil {
+		fields = append(fields, postsentiment.FieldSentimentTag)
+	}
+	if m.positivity_score != nil {
+		fields = append(fields, postsentiment.FieldPositivityScore)
+	}
+	if m.primary_topic != nil {
+		fields = append(fields, postsentiment.FieldPrimaryTopic)
+	}
+	if m.scoring_status != nil {
+		fields = append(fields, postsentiment.FieldScoringStatus)
+	}
+	if m.rank_score != nil {
+		fields = append(fields, postsentiment.FieldRankScore)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *PostSentimentMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case postsentiment.FieldCreatedAt:
+		return m.CreatedAt()
+	case postsentiment.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case postsentiment.FieldPostID:
+		return m.PostID()
+	case postsentiment.FieldSentimentTag:
+		return m.SentimentTag()
+	case postsentiment.FieldPositivityScore:
+		return m.PositivityScore()
+	case postsentiment.FieldPrimaryTopic:
+		return m.PrimaryTopic()
+	case postsentiment.FieldScoringStatus:
+		return m.ScoringStatus()
+	case postsentiment.FieldRankScore:
+		return m.RankScore()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *PostSentimentMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case postsentiment.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case postsentiment.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case postsentiment.FieldPostID:
+		return m.OldPostID(ctx)
+	case postsentiment.FieldSentimentTag:
+		return m.OldSentimentTag(ctx)
+	case postsentiment.FieldPositivityScore:
+		return m.OldPositivityScore(ctx)
+	case postsentiment.FieldPrimaryTopic:
+		return m.OldPrimaryTopic(ctx)
+	case postsentiment.FieldScoringStatus:
+		return m.OldScoringStatus(ctx)
+	case postsentiment.FieldRankScore:
+		return m.OldRankScore(ctx)
+	}
+	return nil, fmt.Errorf("unknown PostSentiment field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PostSentimentMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case postsentiment.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case postsentiment.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case postsentiment.FieldPostID:
+		v, ok := value.(xid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPostID(v)
+		return nil
+	case postsentiment.FieldSentimentTag:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSentimentTag(v)
+		return nil
+	case postsentiment.FieldPositivityScore:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPositivityScore(v)
+		return nil
+	case postsentiment.FieldPrimaryTopic:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrimaryTopic(v)
+		return nil
+	case postsentiment.FieldScoringStatus:
+		v, ok := value.(postsentiment.ScoringStatus)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetScoringStatus(v)
+		return nil
+	case postsentiment.FieldRankScore:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRankScore(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PostSentiment field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *PostSentimentMutation) AddedFields() []string {
+	var fields []string
+	if m.addpositivity_score != nil {
+		fields = append(fields, postsentiment.FieldPositivityScore)
+	}
+	if m.addrank_score != nil {
+		fields = append(fields, postsentiment.FieldRankScore)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *PostSentimentMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case postsentiment.FieldPositivityScore:
+		return m.AddedPositivityScore()
+	case postsentiment.FieldRankScore:
+		return m.AddedRankScore()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PostSentimentMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case postsentiment.FieldPositivityScore:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPositivityScore(v)
+		return nil
+	case postsentiment.FieldRankScore:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRankScore(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PostSentiment numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *PostSentimentMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(postsentiment.FieldSentimentTag) {
+		fields = append(fields, postsentiment.FieldSentimentTag)
+	}
+	if m.FieldCleared(postsentiment.FieldPositivityScore) {
+		fields = append(fields, postsentiment.FieldPositivityScore)
+	}
+	if m.FieldCleared(postsentiment.FieldPrimaryTopic) {
+		fields = append(fields, postsentiment.FieldPrimaryTopic)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *PostSentimentMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *PostSentimentMutation) ClearField(name string) error {
+	switch name {
+	case postsentiment.FieldSentimentTag:
+		m.ClearSentimentTag()
+		return nil
+	case postsentiment.FieldPositivityScore:
+		m.ClearPositivityScore()
+		return nil
+	case postsentiment.FieldPrimaryTopic:
+		m.ClearPrimaryTopic()
+		return nil
+	}
+	return fmt.Errorf("unknown PostSentiment nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *PostSentimentMutation) ResetField(name string) error {
+	switch name {
+	case postsentiment.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case postsentiment.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case postsentiment.FieldPostID:
+		m.ResetPostID()
+		return nil
+	case postsentiment.FieldSentimentTag:
+		m.ResetSentimentTag()
+		return nil
+	case postsentiment.FieldPositivityScore:
+		m.ResetPositivityScore()
+		return nil
+	case postsentiment.FieldPrimaryTopic:
+		m.ResetPrimaryTopic()
+		return nil
+	case postsentiment.FieldScoringStatus:
+		m.ResetScoringStatus()
+		return nil
+	case postsentiment.FieldRankScore:
+		m.ResetRankScore()
+		return nil
+	}
+	return fmt.Errorf("unknown PostSentiment field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *PostSentimentMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.post != nil {
+		edges = append(edges, postsentiment.EdgePost)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *PostSentimentMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case postsentiment.EdgePost:
+		if id := m.post; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *PostSentimentMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *PostSentimentMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *PostSentimentMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedpost {
+		edges = append(edges, postsentiment.EdgePost)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *PostSentimentMutation) EdgeCleared(name string) bool {
+	switch name {
+	case postsentiment.EdgePost:
+		return m.clearedpost
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *PostSentimentMutation) ClearEdge(name string) error {
+	switch name {
+	case postsentiment.EdgePost:
+		m.ClearPost()
+		return nil
+	}
+	return fmt.Errorf("unknown PostSentiment unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *PostSentimentMutation) ResetEdge(name string) error {
+	switch name {
+	case postsentiment.EdgePost:
+		m.ResetPost()
+		return nil
+	}
+	return fmt.Errorf("unknown PostSentiment edge %s", name)
 }
 
 // PropertyMutation represents an operation that mutates the Property nodes in the graph.

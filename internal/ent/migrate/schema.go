@@ -1047,6 +1047,49 @@ var (
 			},
 		},
 	}
+	// PostSentimentsColumns holds the columns for the "post_sentiments" table.
+	PostSentimentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "sentiment_tag", Type: field.TypeString, Nullable: true},
+		{Name: "positivity_score", Type: field.TypeInt, Nullable: true},
+		{Name: "primary_topic", Type: field.TypeString, Nullable: true},
+		{Name: "scoring_status", Type: field.TypeEnum, Enums: []string{"unscored", "scored", "failed"}, Default: "unscored"},
+		{Name: "rank_score", Type: field.TypeFloat64, Default: 0},
+		{Name: "post_id", Type: field.TypeString, Unique: true, Size: 20},
+	}
+	// PostSentimentsTable holds the schema information for the "post_sentiments" table.
+	PostSentimentsTable = &schema.Table{
+		Name:       "post_sentiments",
+		Columns:    PostSentimentsColumns,
+		PrimaryKey: []*schema.Column{PostSentimentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "post_sentiments_posts_sentiment",
+				Columns:    []*schema.Column{PostSentimentsColumns[8]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "postsentiment_scoring_status",
+				Unique:  false,
+				Columns: []*schema.Column{PostSentimentsColumns[6]},
+			},
+			{
+				Name:    "postsentiment_rank_score",
+				Unique:  false,
+				Columns: []*schema.Column{PostSentimentsColumns[7]},
+			},
+			{
+				Name:    "postsentiment_sentiment_tag",
+				Unique:  false,
+				Columns: []*schema.Column{PostSentimentsColumns[3]},
+			},
+		},
+	}
 	// PropertiesColumns holds the columns for the "properties" table.
 	PropertiesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Size: 20},
@@ -1566,6 +1609,7 @@ var (
 		PollVotesTable,
 		PostsTable,
 		PostReadsTable,
+		PostSentimentsTable,
 		PropertiesTable,
 		PropertySchemasTable,
 		PropertySchemaFieldsTable,
@@ -1645,6 +1689,7 @@ func init() {
 	PostsTable.ForeignKeys[5].RefTable = PostsTable
 	PostReadsTable.ForeignKeys[0].RefTable = AccountsTable
 	PostReadsTable.ForeignKeys[1].RefTable = PostsTable
+	PostSentimentsTable.ForeignKeys[0].RefTable = PostsTable
 	PropertiesTable.ForeignKeys[0].RefTable = NodesTable
 	PropertiesTable.ForeignKeys[1].RefTable = PropertySchemaFieldsTable
 	PropertySchemaFieldsTable.ForeignKeys[0].RefTable = PropertySchemasTable

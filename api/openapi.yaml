@@ -1804,6 +1804,44 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "200": { $ref: "#/components/responses/ReplyCreateOK" }
 
+  /channels/{channelID}/feed:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    get:
+      operationId: ChannelFeedGet
+      summary: Get sentiment-ranked feed for a channel.
+      description: |
+        Returns threads in a channel ranked by sentiment tiers.
+        Threads are organized in tiers: pinned, positive recent, positive older,
+        neutral recent, neutral older, unscored/organic, and negative.
+      tags: [channels, threads]
+      parameters:
+        - $ref: "#/components/parameters/PaginationQuery"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadListOK" }
+
+  /channels/{channelID}/ranking/recalculate:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    post:
+      operationId: ChannelRankingRecalculate
+      summary: Recalculate rank scores for all scored posts in a channel.
+      description: |
+        Triggers a synchronous recalculation of rank_score for all posts in
+        the channel that have been scored. Returns the number of posts updated
+        and the duration of the operation.
+      tags: [channels, admin]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/RankingRecalculateOK" }
+
   #
   #                   888                                      d8b
   #                   888                                      Y8P
@@ -4214,6 +4252,12 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/ThreadListResult" }
+
+    RankingRecalculateOK:
+      description: Ranking recalculation completed successfully.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/RankingRecalculateResult" }
 
     ThreadGet:
       description: The information about a thread and its posts.
@@ -6863,6 +6907,25 @@ components:
           required: [threads]
           properties:
             threads: { $ref: "#/components/schemas/ThreadList" }
+
+    RankingRecalculateResult:
+      type: object
+      description: Result of a ranking recalculation operation.
+      required:
+        - success
+        - posts_updated
+        - duration_ms
+      properties:
+        success:
+          type: boolean
+          description: Whether the recalculation completed successfully.
+        posts_updated:
+          type: integer
+          description: Number of posts that had their rank score recalculated.
+        duration_ms:
+          type: integer
+          format: int64
+          description: Time taken to complete the recalculation in milliseconds.
 
     #
     # 8888888b.                   888

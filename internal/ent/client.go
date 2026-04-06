@@ -41,6 +41,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
+	"github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/Southclaws/storyden/internal/ent/property"
 	"github.com/Southclaws/storyden/internal/ent/propertyschema"
 	"github.com/Southclaws/storyden/internal/ent/propertyschemafield"
@@ -111,6 +112,8 @@ type Client struct {
 	Post *PostClient
 	// PostRead is the client for interacting with the PostRead builders.
 	PostRead *PostReadClient
+	// PostSentiment is the client for interacting with the PostSentiment builders.
+	PostSentiment *PostSentimentClient
 	// Property is the client for interacting with the Property builders.
 	Property *PropertyClient
 	// PropertySchema is the client for interacting with the PropertySchema builders.
@@ -169,6 +172,7 @@ func (c *Client) init() {
 	c.PollVote = NewPollVoteClient(c.config)
 	c.Post = NewPostClient(c.config)
 	c.PostRead = NewPostReadClient(c.config)
+	c.PostSentiment = NewPostSentimentClient(c.config)
 	c.Property = NewPropertyClient(c.config)
 	c.PropertySchema = NewPropertySchemaClient(c.config)
 	c.PropertySchemaField = NewPropertySchemaFieldClient(c.config)
@@ -297,6 +301,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PollVote:            NewPollVoteClient(cfg),
 		Post:                NewPostClient(cfg),
 		PostRead:            NewPostReadClient(cfg),
+		PostSentiment:       NewPostSentimentClient(cfg),
 		Property:            NewPropertyClient(cfg),
 		PropertySchema:      NewPropertySchemaClient(cfg),
 		PropertySchemaField: NewPropertySchemaFieldClient(cfg),
@@ -352,6 +357,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PollVote:            NewPollVoteClient(cfg),
 		Post:                NewPostClient(cfg),
 		PostRead:            NewPostReadClient(cfg),
+		PostSentiment:       NewPostSentimentClient(cfg),
 		Property:            NewPropertyClient(cfg),
 		PropertySchema:      NewPropertySchemaClient(cfg),
 		PropertySchemaField: NewPropertySchemaFieldClient(cfg),
@@ -396,9 +402,9 @@ func (c *Client) Use(hooks ...Hook) {
 		c.AuditLog, c.Authentication, c.Category, c.Channel, c.ChannelMembership,
 		c.Collection, c.CollectionNode, c.CollectionPost, c.Email, c.Event,
 		c.EventParticipant, c.Invitation, c.LikePost, c.Link, c.MentionProfile, c.Node,
-		c.Notification, c.PollVote, c.Post, c.PostRead, c.Property, c.PropertySchema,
-		c.PropertySchemaField, c.Question, c.React, c.ReplyAdminQueue, c.Report,
-		c.Role, c.Session, c.Setting, c.Tag,
+		c.Notification, c.PollVote, c.Post, c.PostRead, c.PostSentiment, c.Property,
+		c.PropertySchema, c.PropertySchemaField, c.Question, c.React,
+		c.ReplyAdminQueue, c.Report, c.Role, c.Session, c.Setting, c.Tag,
 	} {
 		n.Use(hooks...)
 	}
@@ -412,9 +418,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.AuditLog, c.Authentication, c.Category, c.Channel, c.ChannelMembership,
 		c.Collection, c.CollectionNode, c.CollectionPost, c.Email, c.Event,
 		c.EventParticipant, c.Invitation, c.LikePost, c.Link, c.MentionProfile, c.Node,
-		c.Notification, c.PollVote, c.Post, c.PostRead, c.Property, c.PropertySchema,
-		c.PropertySchemaField, c.Question, c.React, c.ReplyAdminQueue, c.Report,
-		c.Role, c.Session, c.Setting, c.Tag,
+		c.Notification, c.PollVote, c.Post, c.PostRead, c.PostSentiment, c.Property,
+		c.PropertySchema, c.PropertySchemaField, c.Question, c.React,
+		c.ReplyAdminQueue, c.Report, c.Role, c.Session, c.Setting, c.Tag,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -473,6 +479,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Post.mutate(ctx, m)
 	case *PostReadMutation:
 		return c.PostRead.mutate(ctx, m)
+	case *PostSentimentMutation:
+		return c.PostSentiment.mutate(ctx, m)
 	case *PropertyMutation:
 		return c.Property.mutate(ctx, m)
 	case *PropertySchemaMutation:
@@ -5473,6 +5481,22 @@ func (c *PostClient) QueryPollVotes(_m *Post) *PollVoteQuery {
 	return query
 }
 
+// QuerySentiment queries the sentiment edge of a Post.
+func (c *PostClient) QuerySentiment(_m *Post) *PostSentimentQuery {
+	query := (&PostSentimentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(postsentiment.Table, postsentiment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, post.SentimentTable, post.SentimentColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *PostClient) Hooks() []Hook {
 	return c.hooks.Post
@@ -5660,6 +5684,155 @@ func (c *PostReadClient) mutate(ctx context.Context, m *PostReadMutation) (Value
 		return (&PostReadDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown PostRead mutation op: %q", m.Op())
+	}
+}
+
+// PostSentimentClient is a client for the PostSentiment schema.
+type PostSentimentClient struct {
+	config
+}
+
+// NewPostSentimentClient returns a client for the PostSentiment from the given config.
+func NewPostSentimentClient(c config) *PostSentimentClient {
+	return &PostSentimentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `postsentiment.Hooks(f(g(h())))`.
+func (c *PostSentimentClient) Use(hooks ...Hook) {
+	c.hooks.PostSentiment = append(c.hooks.PostSentiment, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `postsentiment.Intercept(f(g(h())))`.
+func (c *PostSentimentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PostSentiment = append(c.inters.PostSentiment, interceptors...)
+}
+
+// Create returns a builder for creating a PostSentiment entity.
+func (c *PostSentimentClient) Create() *PostSentimentCreate {
+	mutation := newPostSentimentMutation(c.config, OpCreate)
+	return &PostSentimentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PostSentiment entities.
+func (c *PostSentimentClient) CreateBulk(builders ...*PostSentimentCreate) *PostSentimentCreateBulk {
+	return &PostSentimentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PostSentimentClient) MapCreateBulk(slice any, setFunc func(*PostSentimentCreate, int)) *PostSentimentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PostSentimentCreateBulk{err: fmt.Errorf("calling to PostSentimentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PostSentimentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PostSentimentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PostSentiment.
+func (c *PostSentimentClient) Update() *PostSentimentUpdate {
+	mutation := newPostSentimentMutation(c.config, OpUpdate)
+	return &PostSentimentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PostSentimentClient) UpdateOne(_m *PostSentiment) *PostSentimentUpdateOne {
+	mutation := newPostSentimentMutation(c.config, OpUpdateOne, withPostSentiment(_m))
+	return &PostSentimentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PostSentimentClient) UpdateOneID(id xid.ID) *PostSentimentUpdateOne {
+	mutation := newPostSentimentMutation(c.config, OpUpdateOne, withPostSentimentID(id))
+	return &PostSentimentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PostSentiment.
+func (c *PostSentimentClient) Delete() *PostSentimentDelete {
+	mutation := newPostSentimentMutation(c.config, OpDelete)
+	return &PostSentimentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PostSentimentClient) DeleteOne(_m *PostSentiment) *PostSentimentDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PostSentimentClient) DeleteOneID(id xid.ID) *PostSentimentDeleteOne {
+	builder := c.Delete().Where(postsentiment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PostSentimentDeleteOne{builder}
+}
+
+// Query returns a query builder for PostSentiment.
+func (c *PostSentimentClient) Query() *PostSentimentQuery {
+	return &PostSentimentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePostSentiment},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PostSentiment entity by its id.
+func (c *PostSentimentClient) Get(ctx context.Context, id xid.ID) (*PostSentiment, error) {
+	return c.Query().Where(postsentiment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PostSentimentClient) GetX(ctx context.Context, id xid.ID) *PostSentiment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPost queries the post edge of a PostSentiment.
+func (c *PostSentimentClient) QueryPost(_m *PostSentiment) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(postsentiment.Table, postsentiment.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, postsentiment.PostTable, postsentiment.PostColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PostSentimentClient) Hooks() []Hook {
+	return c.hooks.PostSentiment
+}
+
+// Interceptors returns the client interceptors.
+func (c *PostSentimentClient) Interceptors() []Interceptor {
+	return c.inters.PostSentiment
+}
+
+func (c *PostSentimentClient) mutate(ctx context.Context, m *PostSentimentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PostSentimentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PostSentimentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PostSentimentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PostSentimentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PostSentiment mutation op: %q", m.Op())
 	}
 }
 
@@ -7469,7 +7642,7 @@ type (
 		Authentication, Category, Channel, ChannelMembership, Collection,
 		CollectionNode, CollectionPost, Email, Event, EventParticipant, Invitation,
 		LikePost, Link, MentionProfile, Node, Notification, PollVote, Post, PostRead,
-		Property, PropertySchema, PropertySchemaField, Question, React,
+		PostSentiment, Property, PropertySchema, PropertySchemaField, Question, React,
 		ReplyAdminQueue, Report, Role, Session, Setting, Tag []ent.Hook
 	}
 	inters struct {
@@ -7477,7 +7650,7 @@ type (
 		Authentication, Category, Channel, ChannelMembership, Collection,
 		CollectionNode, CollectionPost, Email, Event, EventParticipant, Invitation,
 		LikePost, Link, MentionProfile, Node, Notification, PollVote, Post, PostRead,
-		Property, PropertySchema, PropertySchemaField, Question, React,
+		PostSentiment, Property, PropertySchema, PropertySchemaField, Question, React,
 		ReplyAdminQueue, Report, Role, Session, Setting, Tag []ent.Interceptor
 	}
 )
