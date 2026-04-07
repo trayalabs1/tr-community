@@ -23,6 +23,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
+	"github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/Southclaws/storyden/internal/ent/predicate"
 	"github.com/Southclaws/storyden/internal/ent/react"
 	"github.com/Southclaws/storyden/internal/ent/tag"
@@ -578,6 +579,25 @@ func (_u *PostUpdate) AddPollVotes(v ...*PollVote) *PostUpdate {
 	return _u.AddPollVoteIDs(ids...)
 }
 
+// SetSentimentID sets the "sentiment" edge to the PostSentiment entity by ID.
+func (_u *PostUpdate) SetSentimentID(id xid.ID) *PostUpdate {
+	_u.mutation.SetSentimentID(id)
+	return _u
+}
+
+// SetNillableSentimentID sets the "sentiment" edge to the PostSentiment entity by ID if the given value is not nil.
+func (_u *PostUpdate) SetNillableSentimentID(id *xid.ID) *PostUpdate {
+	if id != nil {
+		_u = _u.SetSentimentID(*id)
+	}
+	return _u
+}
+
+// SetSentiment sets the "sentiment" edge to the PostSentiment entity.
+func (_u *PostUpdate) SetSentiment(v *PostSentiment) *PostUpdate {
+	return _u.SetSentimentID(v.ID)
+}
+
 // Mutation returns the PostMutation object of the builder.
 func (_u *PostUpdate) Mutation() *PostMutation {
 	return _u.mutation
@@ -869,6 +889,12 @@ func (_u *PostUpdate) RemovePollVotes(v ...*PollVote) *PostUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePollVoteIDs(ids...)
+}
+
+// ClearSentiment clears the "sentiment" edge to the PostSentiment entity.
+func (_u *PostUpdate) ClearSentiment() *PostUpdate {
+	_u.mutation.ClearSentiment()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -1697,6 +1723,35 @@ func (_u *PostUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.SentimentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   post.SentimentTable,
+			Columns: []string{post.SentimentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(postsentiment.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SentimentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   post.SentimentTable,
+			Columns: []string{post.SentimentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(postsentiment.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -2254,6 +2309,25 @@ func (_u *PostUpdateOne) AddPollVotes(v ...*PollVote) *PostUpdateOne {
 	return _u.AddPollVoteIDs(ids...)
 }
 
+// SetSentimentID sets the "sentiment" edge to the PostSentiment entity by ID.
+func (_u *PostUpdateOne) SetSentimentID(id xid.ID) *PostUpdateOne {
+	_u.mutation.SetSentimentID(id)
+	return _u
+}
+
+// SetNillableSentimentID sets the "sentiment" edge to the PostSentiment entity by ID if the given value is not nil.
+func (_u *PostUpdateOne) SetNillableSentimentID(id *xid.ID) *PostUpdateOne {
+	if id != nil {
+		_u = _u.SetSentimentID(*id)
+	}
+	return _u
+}
+
+// SetSentiment sets the "sentiment" edge to the PostSentiment entity.
+func (_u *PostUpdateOne) SetSentiment(v *PostSentiment) *PostUpdateOne {
+	return _u.SetSentimentID(v.ID)
+}
+
 // Mutation returns the PostMutation object of the builder.
 func (_u *PostUpdateOne) Mutation() *PostMutation {
 	return _u.mutation
@@ -2545,6 +2619,12 @@ func (_u *PostUpdateOne) RemovePollVotes(v ...*PollVote) *PostUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemovePollVoteIDs(ids...)
+}
+
+// ClearSentiment clears the "sentiment" edge to the PostSentiment entity.
+func (_u *PostUpdateOne) ClearSentiment() *PostUpdateOne {
+	_u.mutation.ClearSentiment()
+	return _u
 }
 
 // Where appends a list predicates to the PostUpdate builder.
@@ -3396,6 +3476,35 @@ func (_u *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SentimentCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   post.SentimentTable,
+			Columns: []string{post.SentimentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(postsentiment.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SentimentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   post.SentimentTable,
+			Columns: []string{post.SentimentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(postsentiment.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

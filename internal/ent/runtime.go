@@ -31,6 +31,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
+	"github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/Southclaws/storyden/internal/ent/property"
 	"github.com/Southclaws/storyden/internal/ent/propertyschema"
 	"github.com/Southclaws/storyden/internal/ent/propertyschemafield"
@@ -1002,6 +1003,49 @@ func init() {
 	// postread.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	postread.IDValidator = func() func(string) error {
 		validators := postreadDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	postsentimentMixin := schema.PostSentiment{}.Mixin()
+	postsentimentMixinFields0 := postsentimentMixin[0].Fields()
+	_ = postsentimentMixinFields0
+	postsentimentMixinFields1 := postsentimentMixin[1].Fields()
+	_ = postsentimentMixinFields1
+	postsentimentMixinFields2 := postsentimentMixin[2].Fields()
+	_ = postsentimentMixinFields2
+	postsentimentFields := schema.PostSentiment{}.Fields()
+	_ = postsentimentFields
+	// postsentimentDescCreatedAt is the schema descriptor for created_at field.
+	postsentimentDescCreatedAt := postsentimentMixinFields1[0].Descriptor()
+	// postsentiment.DefaultCreatedAt holds the default value on creation for the created_at field.
+	postsentiment.DefaultCreatedAt = postsentimentDescCreatedAt.Default.(func() time.Time)
+	// postsentimentDescUpdatedAt is the schema descriptor for updated_at field.
+	postsentimentDescUpdatedAt := postsentimentMixinFields2[0].Descriptor()
+	// postsentiment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	postsentiment.DefaultUpdatedAt = postsentimentDescUpdatedAt.Default.(func() time.Time)
+	// postsentiment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	postsentiment.UpdateDefaultUpdatedAt = postsentimentDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// postsentimentDescRankScore is the schema descriptor for rank_score field.
+	postsentimentDescRankScore := postsentimentFields[5].Descriptor()
+	// postsentiment.DefaultRankScore holds the default value on creation for the rank_score field.
+	postsentiment.DefaultRankScore = postsentimentDescRankScore.Default.(float64)
+	// postsentimentDescID is the schema descriptor for id field.
+	postsentimentDescID := postsentimentMixinFields0[0].Descriptor()
+	// postsentiment.DefaultID holds the default value on creation for the id field.
+	postsentiment.DefaultID = postsentimentDescID.Default.(func() xid.ID)
+	// postsentiment.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	postsentiment.IDValidator = func() func(string) error {
+		validators := postsentimentDescID.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),

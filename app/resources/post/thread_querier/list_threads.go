@@ -30,6 +30,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/link"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
 	ent_react "github.com/Southclaws/storyden/internal/ent/react"
+	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
 	ent_tag "github.com/Southclaws/storyden/internal/ent/tag"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/kv"
 )
@@ -70,22 +71,33 @@ func (d *Querier) List(
 		WithLink(func(lq *ent.LinkQuery) {
 			lq.WithFaviconImage().WithPrimaryImage()
 			lq.WithAssets().Order(link.ByCreatedAt(sql.OrderDesc()))
-		})
+		}).
+		WithSentiment()
 
-	if queryOptions.ignorePinned {
-		query.Order(
-			ent.Desc(ent_post.FieldLastReplyAt),
-		)
-	} else {
-		query.Order(
-			ent.Desc(ent_post.FieldPinnedRank),
-			ent.Desc(ent_post.FieldLastReplyAt),
-		)
-	}
-
-	total, err := query.Count(ctx)
+	total, err := query.Clone().Count(ctx)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	if queryOptions.ignorePinned {
+		query.Modify(func(s *sql.Selector) {
+			t := sql.Table(ent_post_sentiment.Table)
+			s.LeftJoin(t).On(s.C(ent_post.FieldID), t.C(ent_post_sentiment.FieldPostID))
+			s.OrderExpr(
+				sql.Expr("COALESCE("+t.C(ent_post_sentiment.FieldRankScore)+", -1) DESC"),
+				sql.Expr(s.C(ent_post.FieldCreatedAt)+" DESC"),
+			)
+		})
+	} else {
+		query.Modify(func(s *sql.Selector) {
+			t := sql.Table(ent_post_sentiment.Table)
+			s.LeftJoin(t).On(s.C(ent_post.FieldID), t.C(ent_post_sentiment.FieldPostID))
+			s.OrderExpr(
+				sql.Expr(s.C(ent_post.FieldPinnedRank)+" DESC"),
+				sql.Expr("COALESCE("+t.C(ent_post_sentiment.FieldRankScore)+", -1) DESC"),
+				sql.Expr(s.C(ent_post.FieldCreatedAt)+" DESC"),
+			)
+		})
 	}
 
 	query.

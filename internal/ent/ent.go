@@ -37,6 +37,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
+	"github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/Southclaws/storyden/internal/ent/property"
 	"github.com/Southclaws/storyden/internal/ent/propertyschema"
 	"github.com/Southclaws/storyden/internal/ent/propertyschemafield"
@@ -133,6 +134,7 @@ func checkColumn(t, c string) error {
 			pollvote.Table:            pollvote.ValidColumn,
 			post.Table:                post.ValidColumn,
 			postread.Table:            postread.ValidColumn,
+			postsentiment.Table:       postsentiment.ValidColumn,
 			property.Table:            property.ValidColumn,
 			propertyschema.Table:      propertyschema.ValidColumn,
 			propertyschemafield.Table: propertyschemafield.ValidColumn,

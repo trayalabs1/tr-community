@@ -24,6 +24,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
+	"github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/Southclaws/storyden/internal/ent/react"
 	"github.com/Southclaws/storyden/internal/ent/tag"
 	"github.com/rs/xid"
@@ -489,6 +490,25 @@ func (_c *PostCreate) AddPollVotes(v ...*PollVote) *PostCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddPollVoteIDs(ids...)
+}
+
+// SetSentimentID sets the "sentiment" edge to the PostSentiment entity by ID.
+func (_c *PostCreate) SetSentimentID(id xid.ID) *PostCreate {
+	_c.mutation.SetSentimentID(id)
+	return _c
+}
+
+// SetNillableSentimentID sets the "sentiment" edge to the PostSentiment entity by ID if the given value is not nil.
+func (_c *PostCreate) SetNillableSentimentID(id *xid.ID) *PostCreate {
+	if id != nil {
+		_c = _c.SetSentimentID(*id)
+	}
+	return _c
+}
+
+// SetSentiment sets the "sentiment" edge to the PostSentiment entity.
+func (_c *PostCreate) SetSentiment(v *PostSentiment) *PostCreate {
+	return _c.SetSentimentID(v.ID)
 }
 
 // Mutation returns the PostMutation object of the builder.
@@ -960,6 +980,22 @@ func (_c *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(pollvote.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SentimentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   post.SentimentTable,
+			Columns: []string{post.SentimentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(postsentiment.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
