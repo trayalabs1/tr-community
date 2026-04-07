@@ -1804,26 +1804,6 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "200": { $ref: "#/components/responses/ReplyCreateOK" }
 
-  /channels/{channelID}/feed:
-    parameters:
-      - $ref: "#/components/parameters/ChannelID"
-    get:
-      operationId: ChannelFeedGet
-      summary: Get sentiment-ranked feed for a channel.
-      description: |
-        Returns threads in a channel ranked by sentiment tiers.
-        Threads are organized in tiers: pinned, positive recent, positive older,
-        neutral recent, neutral older, unscored/organic, and negative.
-      tags: [channels, threads]
-      parameters:
-        - $ref: "#/components/parameters/PaginationQuery"
-      responses:
-        default: { $ref: "#/components/responses/InternalServerError" }
-        "401": { $ref: "#/components/responses/Unauthorised" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/NotFound" }
-        "200": { $ref: "#/components/responses/ThreadListOK" }
-
   /channels/{channelID}/ranking/recalculate:
     parameters:
       - $ref: "#/components/parameters/ChannelID"

@@ -19,9 +19,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/channel"
 	"github.com/Southclaws/storyden/app/resources/channel_membership"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
-	"github.com/Southclaws/storyden/app/resources/pagination"
 	"github.com/Southclaws/storyden/app/resources/post/category"
-	"github.com/Southclaws/storyden/app/resources/post/feed_querier"
 	"github.com/Southclaws/storyden/app/resources/post/reply"
 	"github.com/Southclaws/storyden/app/resources/post/thread_cache"
 	"github.com/Southclaws/storyden/app/resources/profile/profile_querier"
@@ -52,7 +50,6 @@ type Channels struct {
 	reply_svc       *reply_svc.Mutator
 	accountQuery    *account_querier.Querier
 	profileQuery    *profile_querier.Querier
-	feedQuerier     *feed_querier.Querier
 	ranker          *ranker.Ranker
 }
 
@@ -68,7 +65,6 @@ func NewChannels(
 	reply_svc *reply_svc.Mutator,
 	accountQuery *account_querier.Querier,
 	profileQuery *profile_querier.Querier,
-	feedQuerier *feed_querier.Querier,
 	ranker *ranker.Ranker,
 ) Channels {
 	return Channels{
@@ -83,7 +79,6 @@ func NewChannels(
 		reply_svc:       reply_svc,
 		accountQuery:    accountQuery,
 		profileQuery:    profileQuery,
-		feedQuerier:     feedQuerier,
 		ranker:          ranker,
 	}
 }
@@ -1076,63 +1071,6 @@ func (c Channels) ChannelReplyCreate(ctx context.Context, request openapi.Channe
 
 	return openapi.ChannelReplyCreate200JSONResponse{
 		ReplyCreateOKJSONResponse: openapi.ReplyCreateOKJSONResponse(serialiseReplyPtr(post)),
-	}, nil
-}
-
-func (c Channels) ChannelFeedGet(ctx context.Context, request openapi.ChannelFeedGetRequestObject) (openapi.ChannelFeedGetResponseObject, error) {
-	accountID, err := session.GetAccountID(ctx)
-	if err != nil {
-		return nil, fault.Wrap(err, fctx.With(ctx))
-	}
-
-	channelID := channel.ChannelID(openapi.ParseID(request.ChannelID))
-
-	hasAccess, err := c.channel_svc.CheckAccess(ctx, channelID, accountID)
-	if err != nil {
-		return nil, fault.Wrap(err, fctx.With(ctx))
-	}
-	if !hasAccess {
-		return nil, fault.Wrap(fault.New("access denied"), fctx.With(ctx))
-	}
-
-	pageSize := 50
-	page := opt.NewPtrMap(request.Params.Page, func(s string) int {
-		v, err := strconv.ParseInt(s, 10, 32)
-		if err != nil {
-			return 0
-		}
-		return max(1, int(v))
-	}).Or(1)
-
-	page = max(0, page-1)
-	params := pagination.NewPageParams(uint(page), uint(pageSize))
-
-	result, err := c.feedQuerier.GetFeed(ctx, xid.ID(channelID), params)
-	if err != nil {
-		return nil, fault.Wrap(err, fctx.With(ctx))
-	}
-
-	page = result.CurrentPage
-	var nextPage *int
-	if page < result.TotalPages {
-		next := page + 1
-		nextPage = &next
-	}
-
-	return openapi.ChannelFeedGet200JSONResponse{
-		ThreadListOKJSONResponse: openapi.ThreadListOKJSONResponse{
-			Body: openapi.ThreadListResult{
-				CurrentPage: page,
-				NextPage:    nextPage,
-				PageSize:    result.PageSize,
-				Results:     result.Results,
-				Threads:     dt.Map(result.Threads, serialiseThreadReference),
-				TotalPages:  result.TotalPages,
-			},
-			Headers: openapi.ThreadListOKResponseHeaders{
-				CacheControl: "no-store",
-			},
-		},
 	}, nil
 }
 

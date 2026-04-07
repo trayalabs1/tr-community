@@ -46,7 +46,6 @@ import (
 	poll_vote "github.com/Southclaws/storyden/app/resources/poll_vote"
 	"github.com/Southclaws/storyden/app/resources/post/category"
 	"github.com/Southclaws/storyden/app/resources/post/category_cache"
-	"github.com/Southclaws/storyden/app/resources/post/feed_querier"
 	"github.com/Southclaws/storyden/app/resources/post/post_querier"
 	"github.com/Southclaws/storyden/app/resources/post/post_read_state"
 	"github.com/Southclaws/storyden/app/resources/post/post_search"
@@ -109,7 +108,6 @@ func Build() fx.Option {
 			like_querier.New,
 			like_writer.New,
 			post_querier.New,
-			feed_querier.New,
 			post_search.New,
 			post_writer.New,
 			post_read_state.New,
