@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Filter } from "lucide-react";
-// import { today, getLocalTimeZone, type DateValue } from "@internationalized/date";
-// import { DateRangePicker } from "@/components/ui/date-picker";
+import { today, getLocalTimeZone, type DateValue } from "@internationalized/date";
+import { DateRangePicker } from "@/components/ui/date-picker";
 import { useAdminReplyQueueList, adminReplyQueueDismiss } from "@/api/openapi-client/admin";
 import { useChannelList } from "@/api/openapi-client/channels";
 import { useNodeList } from "@/api/openapi-client/nodes";
@@ -30,18 +30,19 @@ export function QueueScreen() {
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("all");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
-  // Date filter — commented out, not removed
-  // const todayVal = useMemo(() => today(getLocalTimeZone()), []);
-  // const [pendingReplyRange, setPendingReplyRange] = useState<{
-  //   createdAfter: string;
-  //   createdBefore: string;
-  // }>(() => {
-  //   const start = todayVal.toDate(getLocalTimeZone());
-  //   start.setHours(0, 0, 0, 0);
-  //   const end = todayVal.toDate(getLocalTimeZone());
-  //   end.setHours(23, 59, 59, 999);
-  //   return { createdAfter: start.toISOString(), createdBefore: end.toISOString() };
-  // });
+  const todayVal = useMemo(() => today(getLocalTimeZone()), []);
+
+  const [pendingReplyRange, setPendingReplyRange] = useState<{
+    createdAfter: string;
+    createdBefore: string;
+  }>(() => {
+    const tz = getLocalTimeZone();
+    const start = todayVal.subtract({ days: 2 }).toDate(tz);
+    start.setHours(0, 0, 0, 0);
+    const end = todayVal.toDate(tz);
+    end.setHours(23, 59, 59, 999);
+    return { createdAfter: start.toISOString(), createdBefore: end.toISOString() };
+  });
 
   const [pendingReplyPage, setPendingReplyPage] = useState(1);
   const [allPendingReplyThreads, setAllPendingReplyThreads] = useState<ThreadReference[]>([]);
@@ -66,11 +67,15 @@ export function QueueScreen() {
 
   const { data: pendingReplyData, isValidating: isPendingReplyLoading } = useThreadList({
     visibility: [Visibility.published],
+    created_after: pendingReplyRange.createdAfter,
+    created_before: pendingReplyRange.createdBefore,
     no_replies: true,
     page: String(pendingReplyPage),
   });
 
   const { data: replyQueueData, mutate: mutateReplyQueue, isValidating: isReplyQueueLoading } = useAdminReplyQueueList({
+    created_after: pendingReplyRange.createdAfter,
+    created_before: pendingReplyRange.createdBefore,
     page: String(replyQueuePage),
   });
 
@@ -132,6 +137,45 @@ export function QueueScreen() {
     }
   }, [replyQueueData?.next_page]);
 
+  const resetPagination = useCallback(() => {
+    setPendingReplyPage(1);
+    setAllPendingReplyThreads([]);
+    pendingReplyLoadedPages.current = new Set();
+    setReplyQueuePage(1);
+    setAllReplyQueueEntries([]);
+    replyQueueLoadedPages.current = new Set();
+  }, []);
+
+  const handlePendingReplyDateChange = useCallback(({ value }: { value: DateValue[] }) => {
+    const [start, end] = value;
+
+    if (!start) {
+      const tz = getLocalTimeZone();
+      const s = todayVal.subtract({ days: 2 }).toDate(tz);
+      s.setHours(0, 0, 0, 0);
+      const e = todayVal.toDate(tz);
+      e.setHours(23, 59, 59, 999);
+      setPendingReplyRange({ createdAfter: s.toISOString(), createdBefore: e.toISOString() });
+      resetPagination();
+      return;
+    }
+
+    if (!end) return;
+
+    const [earlier, later] = start.compare(end) <= 0 ? [start, end] : [end, start];
+    const effectiveEnd = later.compare(earlier) > 2 ? earlier.add({ days: 2 }) : later;
+
+    const startDate = earlier.toDate(getLocalTimeZone());
+    startDate.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(effectiveEnd.add({ days: 1 }).toDate(getLocalTimeZone()).getTime() - 1);
+
+    setPendingReplyRange({
+      createdAfter: startDate.toISOString(),
+      createdBefore: endOfDay.toISOString(),
+    });
+    resetPagination();
+  }, [todayVal, resetPagination]);
+
   const isInitialLoading =
     activeTab === "pending_review" ? isThreadsLoading && isNodesLoading :
     activeTab === "pending_reply" ? isPendingReplyLoading && allPendingReplyThreads.length === 0 :
@@ -190,29 +234,6 @@ export function QueueScreen() {
   const filteredPendingReplyThreads = selectedChannelId
     ? pendingReplyThreads.filter((t) => t.channel_id === selectedChannelId)
     : pendingReplyThreads;
-
-  // Date change handler — commented out, not removed
-  // const handlePendingReplyDateChange = ({ value }: { value: DateValue[] }) => {
-  //   const [start, end] = value;
-  //   if (!start) {
-  //     const s = todayVal.toDate(getLocalTimeZone());
-  //     s.setHours(0, 0, 0, 0);
-  //     const e = todayVal.toDate(getLocalTimeZone());
-  //     e.setHours(23, 59, 59, 999);
-  //     setPendingReplyRange({ createdAfter: s.toISOString(), createdBefore: e.toISOString() });
-  //     return;
-  //   }
-  //   if (!end) return;
-  //   const [earlier, later] = start.compare(end) <= 0 ? [start, end] : [end, start];
-  //   const effectiveEnd = later.compare(earlier) > 2 ? earlier.add({ days: 2 }) : later;
-  //   const startDate = earlier.toDate(getLocalTimeZone());
-  //   startDate.setHours(0, 0, 0, 0);
-  //   const endOfDay = new Date(effectiveEnd.add({ days: 1 }).toDate(getLocalTimeZone()).getTime() - 1);
-  //   setPendingReplyRange({
-  //     createdAfter: startDate.toISOString(),
-  //     createdBefore: endOfDay.toISOString(),
-  //   });
-  // };
 
   return (
     <LStack gap="6" p="4">
@@ -367,7 +388,6 @@ export function QueueScreen() {
             </VStack>
           )}
 
-          {/* Date filter — commented out, not removed
           {(activeTab === "pending_reply" || activeTab === "pending_reply_to_reply") && (
             <VStack alignItems="start" gap="2" width="full">
               <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
@@ -381,7 +401,6 @@ export function QueueScreen() {
               />
             </VStack>
           )}
-          */}
         </VStack>
       )}
 
