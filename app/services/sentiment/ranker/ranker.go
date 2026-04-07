@@ -75,7 +75,8 @@ func (r *Ranker) RecalculateBulk(ctx context.Context, channelID xid.ID) (*Recalc
 }
 
 func calculateRankScore(sentimentTag string, positivityScore int, primaryTopic string) float64 {
-	sentimentWeight := scorer.SentimentTag(sentimentTag).Weight()
-	topicBooster := scorer.AllowedTopic(primaryTopic).Booster()
+	sentiment := scorer.SentimentTag(sentimentTag)
+	sentimentWeight := sentiment.Weight()
+	topicBooster := scorer.AllowedTopic(primaryTopic).Booster(sentiment)
 	return sentimentWeight + float64(positivityScore) + topicBooster
 }

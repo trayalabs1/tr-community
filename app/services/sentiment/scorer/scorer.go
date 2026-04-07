@@ -13,7 +13,7 @@ import (
 )
 
 var SentimentPrompt = template.Must(template.New("sentiment").Parse(`
-You are a sentiment analysis system for a hair loss treatment community forum. Analyze the following post and classify it.
+You are a sentiment analysis system for Traya, a hair loss treatment company's community forum. Analyze the following post and classify it.
 
 CLASSIFICATION RULES:
 
@@ -29,15 +29,18 @@ Positivity Score (0-100):
 - 61-80: Somewhat positive (hope, mild progress, cautious optimism)
 - 81-100: Very positive (success stories, strong progress, enthusiasm)
 
-Primary Topic - Choose the most relevant:
-- "results": Progress updates, before/after, visible changes
-- "product_review": Reviews or opinions about specific products
-- "treatment_plan": Discussion of treatment regimens, protocols, routines
-- "question": Asking for advice, help, or information
-- "hair_loss": General discussion about hair loss causes, patterns
-- "lifestyle": Diet, exercise, stress, sleep related to hair health
-- "side_effects": Discussion of medication or treatment side effects
-- "other": Does not fit other categories
+Primary Topic - Pick exactly one from this list:
+- "usage_regimen": How to use minoxidil, oil, shampoo, tablets, timing, frequency
+- "results_timeline": When results will show, how long it takes
+- "hairfall_shedding": Hair fall increase, shedding, breakage, regrowth concerns
+- "side_effects_safety": Itching, dandruff, acne, nausea, allergy, safety concerns
+- "order_delivery_refill": Order delay, missing item, cancel, refund, refill
+- "build_a_habit": App logging, streak, coins, redeem, habit tracking
+- "diet_lifestyle_compatibility": Diet plan, smoking, travel, pregnancy, periods, other meds
+- "product_effectiveness_trust": No improvement, waste of money, scam, doubt on effectiveness
+- "doctor_support_call": Missed calls, support complaints, doctor/coach issues
+- "progress_success_story": Visible progress, reduced hair fall, gratitude, encouragement, excitement, hopeful
+- "other": Greeting, unclear, untitled, irrelevant
 
 IMPORTANT INSTRUCTIONS:
 - If a sentence contains contradictory phrases (e.g., negative phrase + positive phrase), check the overall intent.
@@ -81,43 +84,83 @@ func (s SentimentTag) Weight() float64 {
 type AllowedTopic string
 
 const (
-	TopicHairLoss      AllowedTopic = "hair_loss"
-	TopicProductReview AllowedTopic = "product_review"
-	TopicTreatmentPlan AllowedTopic = "treatment_plan"
-	TopicResults       AllowedTopic = "results"
-	TopicSideEffects   AllowedTopic = "side_effects"
-	TopicLifestyle     AllowedTopic = "lifestyle"
-	TopicQuestion      AllowedTopic = "question"
-	TopicOther         AllowedTopic = "other"
+	TopicUsageRegimen              AllowedTopic = "usage_regimen"
+	TopicResultsTimeline           AllowedTopic = "results_timeline"
+	TopicHairfallShedding          AllowedTopic = "hairfall_shedding"
+	TopicSideEffectsSafety         AllowedTopic = "side_effects_safety"
+	TopicOrderDeliveryRefill       AllowedTopic = "order_delivery_refill"
+	TopicBuildAHabit               AllowedTopic = "build_a_habit"
+	TopicDietLifestyleCompat       AllowedTopic = "diet_lifestyle_compatibility"
+	TopicProductEffectivenessTrust AllowedTopic = "product_effectiveness_trust"
+	TopicDoctorSupportCall         AllowedTopic = "doctor_support_call"
+	TopicProgressSuccessStory      AllowedTopic = "progress_success_story"
+	TopicOther                     AllowedTopic = "other"
 )
 
-func (t AllowedTopic) Booster() float64 {
+func (t AllowedTopic) Booster(sentiment SentimentTag) float64 {
 	switch t {
-	case TopicResults:
-		return 20
-	case TopicProductReview:
-		return 15
-	case TopicTreatmentPlan:
-		return 10
-	case TopicQuestion:
-		return 10
-	case TopicHairLoss:
-		return 5
-	case TopicLifestyle:
-		return 5
-	case TopicSideEffects:
-		return 0
-	case TopicOther:
-		return 0
-	default:
-		return 0
+	case TopicProgressSuccessStory:
+		switch sentiment {
+		case SentimentPositive:
+			return 20
+		case SentimentNeutral:
+			return 5
+		case SentimentNegative:
+			return -20
+		}
+	case TopicProductEffectivenessTrust:
+		switch sentiment {
+		case SentimentPositive:
+			return 10
+		case SentimentNeutral:
+			return 5
+		case SentimentNegative:
+			return -10
+		}
+	case TopicHairfallShedding:
+		switch sentiment {
+		case SentimentPositive:
+			return 0
+		case SentimentNeutral:
+			return 0
+		case SentimentNegative:
+			return -5
+		}
+	case TopicSideEffectsSafety:
+		switch sentiment {
+		case SentimentPositive:
+			return 0
+		case SentimentNeutral:
+			return 0
+		case SentimentNegative:
+			return -10
+		}
+	case TopicOrderDeliveryRefill:
+		switch sentiment {
+		case SentimentPositive:
+			return 0
+		case SentimentNeutral:
+			return -5
+		case SentimentNegative:
+			return -10
+		}
+	case TopicBuildAHabit:
+		switch sentiment {
+		case SentimentPositive:
+			return 15
+		case SentimentNeutral:
+			return 10
+		case SentimentNegative:
+			return 0
+		}
 	}
+	return 0
 }
 
 type ScoringResult struct {
 	SentimentTag    SentimentTag `json:"sentiment_tag" jsonschema:"enum=positive,enum=neutral,enum=negative,description=The overall sentiment of the post"`
 	PositivityScore int          `json:"positivity_score" jsonschema:"minimum=0,maximum=100,description=A score from 0-100 indicating how positive the content is"`
-	PrimaryTopic    AllowedTopic `json:"primary_topic" jsonschema:"enum=hair_loss,enum=product_review,enum=treatment_plan,enum=results,enum=side_effects,enum=lifestyle,enum=question,enum=other,description=The primary topic of the post"`
+	PrimaryTopic    AllowedTopic `json:"primary_topic" jsonschema:"enum=usage_regimen,enum=results_timeline,enum=hairfall_shedding,enum=side_effects_safety,enum=order_delivery_refill,enum=build_a_habit,enum=diet_lifestyle_compatibility,enum=product_effectiveness_trust,enum=doctor_support_call,enum=progress_success_story,enum=other,description=The primary topic of the post"`
 }
 
 func (r *ScoringResult) Validate() {
@@ -130,7 +173,7 @@ func (r *ScoringResult) Validate() {
 }
 
 func (r *ScoringResult) CalculateRankScore() float64 {
-	return r.SentimentTag.Weight() + float64(r.PositivityScore) + r.PrimaryTopic.Booster()
+	return r.SentimentTag.Weight() + float64(r.PositivityScore) + r.PrimaryTopic.Booster(r.SentimentTag)
 }
 
 type Scorer struct {
