@@ -67,6 +67,7 @@ export function Reply(props: Props) {
             author={reply.author}
             time={new Date(reply.createdAt)}
             updated={new Date(reply.updatedAt)}
+            absolute
           />
 
           {isEditing ? (

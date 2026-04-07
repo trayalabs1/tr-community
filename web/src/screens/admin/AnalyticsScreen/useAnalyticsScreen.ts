@@ -30,15 +30,14 @@ export function useAnalyticsScreen() {
   const [mode, setMode] = useState<FilterMode>("today");
   const [startHour, setStartHour] = useState(0);
   const [endHour, setEndHour] = useState(23);
-  const [customRange, setCustomRange] = useState<{ start: string; end: string }>(() => {
+  const [customStartHour, setCustomStartHour] = useState(0);
+  const [customEndHour, setCustomEndHour] = useState(23);
+  const [customDates, setCustomDates] = useState<{ start: Date; end: Date }>(() => {
     const tz = getLocalTimeZone();
     const t = todayVal.toDate(tz);
-    const s = new Date(t);
-    s.setHours(0, 0, 0, 0);
-    const e = new Date(t);
-    e.setHours(23, 59, 59, 999);
-    return { start: s.toISOString(), end: e.toISOString() };
+    return { start: new Date(t), end: new Date(t) };
   });
+  const [appliedCustomRange, setAppliedCustomRange] = useState<{ start: string; end: string } | null>(null);
 
   const handleDateChange = ({ value }: { value: DateValue[] }) => {
     const [start, end] = value;
@@ -46,21 +45,28 @@ export function useAnalyticsScreen() {
 
     const tz = getLocalTimeZone();
     const [earlier, later] = start.compare(end) <= 0 ? [start, end] : [end, start];
-    const startDate = earlier.toDate(tz);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = later.toDate(tz);
-    endDate.setHours(23, 59, 59, 999);
-
-    setCustomRange({ start: startDate.toISOString(), end: endDate.toISOString() });
+    setCustomDates({ start: earlier.toDate(tz), end: later.toDate(tz) });
   };
 
-  const start = mode === "today" ? todayAtHour(startHour) : customRange.start;
-  const end = mode === "today" ? todayAtHour(endHour) : customRange.end;
+  const handleApplyCustom = () => {
+    const s = new Date(customDates.start);
+    s.setHours(customStartHour, 0, 0, 0);
+    const e = new Date(customDates.end);
+    e.setHours(customEndHour, 59, 59, 999);
+    setAppliedCustomRange({ start: s.toISOString(), end: e.toISOString() });
+  };
+
+  const start = mode === "today" ? todayAtHour(startHour) : (appliedCustomRange?.start ?? "");
+  const end = mode === "today" ? todayAtHour(endHour) : (appliedCustomRange?.end ?? "");
 
   const debouncedStart = useDebounce(start, 600);
   const debouncedEnd = useDebounce(end, 600);
 
-  const { data, isLoading } = useAdminAnalyticsGet({ start: debouncedStart, end: debouncedEnd });
+  const hasValidRange = debouncedStart !== "" && debouncedEnd !== "";
+  const { data, isLoading } = useAdminAnalyticsGet(
+    { start: debouncedStart, end: debouncedEnd },
+    { swr: { enabled: hasValidRange } },
+  );
 
   return {
     todayVal,
@@ -70,7 +76,13 @@ export function useAnalyticsScreen() {
     setStartHour,
     endHour,
     setEndHour,
+    customStartHour,
+    setCustomStartHour,
+    customEndHour,
+    setCustomEndHour,
     handleDateChange,
+    handleApplyCustom,
+    appliedCustomRange,
     data,
     isLoading,
   };
