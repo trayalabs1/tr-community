@@ -2,6 +2,7 @@ package thread_querier
 
 import (
 	"context"
+	"fmt"
 	"math"
 
 	"entgo.io/ent/dialect/sql"
@@ -79,11 +80,29 @@ func (d *Querier) List(
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
+	rankExpr := `CASE
+		WHEN %s = 'positive' AND %s > datetime('now', '-24 hours') THEN 1
+		WHEN %s = 'positive' AND %s > datetime('now', '-48 hours') THEN 2
+		WHEN %s = 'neutral' AND %s > datetime('now', '-24 hours') THEN 3
+		WHEN %s = 'neutral' AND %s > datetime('now', '-48 hours') THEN 4
+		WHEN %s = 'positive' THEN 5
+		ELSE 6
+	END ASC`
+
 	if queryOptions.ignorePinned {
 		query.Modify(func(s *sql.Selector) {
 			t := sql.Table(ent_post_sentiment.Table)
 			s.LeftJoin(t).On(s.C(ent_post.FieldID), t.C(ent_post_sentiment.FieldPostID))
+			sentimentCol := t.C(ent_post_sentiment.FieldSentimentTag)
+			createdAtCol := s.C(ent_post.FieldCreatedAt)
 			s.OrderExpr(
+				sql.Expr(fmt.Sprintf(rankExpr,
+					sentimentCol, createdAtCol,
+					sentimentCol, createdAtCol,
+					sentimentCol, createdAtCol,
+					sentimentCol, createdAtCol,
+					sentimentCol,
+				)),
 				sql.Expr("COALESCE("+t.C(ent_post_sentiment.FieldRankScore)+", -1) DESC"),
 				sql.Expr(s.C(ent_post.FieldCreatedAt)+" DESC"),
 			)
@@ -92,8 +111,17 @@ func (d *Querier) List(
 		query.Modify(func(s *sql.Selector) {
 			t := sql.Table(ent_post_sentiment.Table)
 			s.LeftJoin(t).On(s.C(ent_post.FieldID), t.C(ent_post_sentiment.FieldPostID))
+			sentimentCol := t.C(ent_post_sentiment.FieldSentimentTag)
+			createdAtCol := s.C(ent_post.FieldCreatedAt)
 			s.OrderExpr(
 				sql.Expr(s.C(ent_post.FieldPinnedRank)+" DESC"),
+				sql.Expr(fmt.Sprintf(rankExpr,
+					sentimentCol, createdAtCol,
+					sentimentCol, createdAtCol,
+					sentimentCol, createdAtCol,
+					sentimentCol, createdAtCol,
+					sentimentCol,
+				)),
 				sql.Expr("COALESCE("+t.C(ent_post_sentiment.FieldRankScore)+", -1) DESC"),
 				sql.Expr(s.C(ent_post.FieldCreatedAt)+" DESC"),
 			)
