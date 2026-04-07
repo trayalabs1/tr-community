@@ -81,10 +81,10 @@ func (d *Querier) List(
 	}
 
 	rankExpr := `CASE
-		WHEN %s = 'positive' AND %s > datetime('now', '-24 hours') THEN 1
-		WHEN %s = 'positive' AND %s > datetime('now', '-48 hours') THEN 2
-		WHEN %s = 'neutral' AND %s > datetime('now', '-24 hours') THEN 3
-		WHEN %s = 'neutral' AND %s > datetime('now', '-48 hours') THEN 4
+		WHEN %s = 'positive' AND %s > NOW() - INTERVAL '24 hours' THEN 1
+		WHEN %s = 'positive' AND %s > NOW() - INTERVAL '48 hours' THEN 2
+		WHEN %s = 'neutral' AND %s > NOW() - INTERVAL '24 hours' THEN 3
+		WHEN %s = 'neutral' AND %s > NOW() - INTERVAL '48 hours' THEN 4
 		WHEN %s = 'positive' THEN 5
 		ELSE 6
 	END ASC`
