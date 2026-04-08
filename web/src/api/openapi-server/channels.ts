@@ -26,10 +26,13 @@ import type {
   ChannelMemberOKResponse,
   ChannelMemberRoleUpdate,
   ChannelMutableProps,
+  ChannelScoreUnscoredParams,
   ChannelThreadGetParams,
   ChannelThreadListParams,
+  RankingRecalculateOKResponse,
   ReplyCreateBody,
   ReplyCreateOKResponse,
+  ScoreUnscoredOKResponse,
   ThreadCreateBody,
   ThreadCreateOKResponse,
   ThreadGetResponse,
@@ -741,6 +744,79 @@ export const channelReplyCreate = async (
       method: "POST",
       headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(replyCreateBody),
+    },
+  );
+};
+
+/**
+ * Triggers a synchronous recalculation of rank_score for all posts in
+the channel that have been scored. Returns the number of posts updated
+and the duration of the operation.
+
+ * @summary Recalculate rank scores for all scored posts in a channel.
+ */
+export type channelRankingRecalculateResponse = {
+  data: RankingRecalculateOKResponse;
+  status: number;
+};
+
+export const getChannelRankingRecalculateUrl = (channelID: string) => {
+  return `/channels/${channelID}/ranking/recalculate`;
+};
+
+export const channelRankingRecalculate = async (
+  channelID: string,
+  options?: RequestInit,
+): Promise<channelRankingRecalculateResponse> => {
+  return fetcher<Promise<channelRankingRecalculateResponse>>(
+    getChannelRankingRecalculateUrl(channelID),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+/**
+ * Finds all published root posts in the channel that have not yet been
+scored and enqueues them for asynchronous sentiment scoring. Optionally
+includes posts that previously failed scoring. Supports date range
+filtering to target specific time windows.
+
+ * @summary Find and enqueue unscored posts in a channel for sentiment scoring.
+ */
+export type channelScoreUnscoredResponse = {
+  data: ScoreUnscoredOKResponse;
+  status: number;
+};
+
+export const getChannelScoreUnscoredUrl = (
+  channelID: string,
+  params?: ChannelScoreUnscoredParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/channels/${channelID}/scoring/score-unscored?${normalizedParams.toString()}`
+    : `/channels/${channelID}/scoring/score-unscored`;
+};
+
+export const channelScoreUnscored = async (
+  channelID: string,
+  params?: ChannelScoreUnscoredParams,
+  options?: RequestInit,
+): Promise<channelScoreUnscoredResponse> => {
+  return fetcher<Promise<channelScoreUnscoredResponse>>(
+    getChannelScoreUnscoredUrl(channelID, params),
+    {
+      ...options,
+      method: "POST",
     },
   );
 };

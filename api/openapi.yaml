@@ -1822,6 +1822,47 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "200": { $ref: "#/components/responses/RankingRecalculateOK" }
 
+  /channels/{channelID}/scoring/score-unscored:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    post:
+      operationId: ChannelScoreUnscored
+      summary: Find and enqueue unscored posts in a channel for sentiment scoring.
+      description: |
+        Finds all published root posts in the channel that have not yet been
+        scored and enqueues them for asynchronous sentiment scoring. Optionally
+        includes posts that previously failed scoring. Supports date range
+        filtering to target specific time windows.
+      tags: [channels, admin]
+      parameters:
+        - name: include_failed
+          description: Also re-enqueue posts whose scoring previously failed.
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: created_after
+          description: Only include posts created after this date/time.
+          required: false
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: created_before
+          description: Only include posts created before this date/time.
+          required: false
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ScoreUnscoredOK" }
+
   #
   #                   888                                      d8b
   #                   888                                      Y8P
@@ -4238,6 +4279,12 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/RankingRecalculateResult" }
+
+    ScoreUnscoredOK:
+      description: Posts have been enqueued for scoring.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ScoreUnscoredResult" }
 
     ThreadGet:
       description: The information about a thread and its posts.
@@ -6906,6 +6953,25 @@ components:
           type: integer
           format: int64
           description: Time taken to complete the recalculation in milliseconds.
+
+    ScoreUnscoredResult:
+      type: object
+      description: Result of enqueuing unscored posts for sentiment scoring.
+      required:
+        - success
+        - posts_enqueued
+        - duration_ms
+      properties:
+        success:
+          type: boolean
+          description: Whether the operation completed successfully.
+        posts_enqueued:
+          type: integer
+          description: Number of posts enqueued for scoring.
+        duration_ms:
+          type: integer
+          format: int64
+          description: Time taken to complete the operation in milliseconds.
 
     #
     # 8888888b.                   888

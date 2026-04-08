@@ -1094,3 +1094,31 @@ func (c Channels) ChannelRankingRecalculate(ctx context.Context, request openapi
 		},
 	}, nil
 }
+
+func (c Channels) ChannelScoreUnscored(ctx context.Context, request openapi.ChannelScoreUnscoredRequestObject) (openapi.ChannelScoreUnscoredResponseObject, error) {
+	if err := session.Authorise(ctx, nil, rbac.PermissionAdministrator); err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.PermissionDenied))
+	}
+
+	channelID := xid.ID(openapi.ParseID(request.ChannelID))
+
+	params := ranker.ScoreUnscoredParams{
+		ChannelID:     channelID,
+		IncludeFailed: request.Params.IncludeFailed != nil && *request.Params.IncludeFailed,
+		CreatedAfter:  request.Params.CreatedAfter,
+		CreatedBefore: request.Params.CreatedBefore,
+	}
+
+	result, err := c.ranker.ScoreUnscored(ctx, params)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return openapi.ChannelScoreUnscored200JSONResponse{
+		ScoreUnscoredOKJSONResponse: openapi.ScoreUnscoredOKJSONResponse{
+			Success:       true,
+			PostsEnqueued: result.PostsEnqueued,
+			DurationMs:    result.DurationMs,
+		},
+	}, nil
+}

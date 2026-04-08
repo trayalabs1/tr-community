@@ -8,18 +8,23 @@ import (
 	"github.com/Southclaws/fault/fctx"
 	"github.com/rs/xid"
 
+	"github.com/Southclaws/storyden/app/resources/message"
+	"github.com/Southclaws/storyden/app/resources/post"
 	"github.com/Southclaws/storyden/app/services/sentiment/scorer"
 	"github.com/Southclaws/storyden/internal/ent"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
 	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
+	"github.com/Southclaws/storyden/internal/ent/predicate"
+	"github.com/Southclaws/storyden/internal/infrastructure/pubsub"
 )
 
 type Ranker struct {
-	db *ent.Client
+	db  *ent.Client
+	bus *pubsub.Bus
 }
 
-func New(db *ent.Client) *Ranker {
-	return &Ranker{db: db}
+func New(db *ent.Client, bus *pubsub.Bus) *Ranker {
+	return &Ranker{db: db, bus: bus}
 }
 
 type RecalculateResult struct {
@@ -71,6 +76,67 @@ func (r *Ranker) RecalculateBulk(ctx context.Context, channelID xid.ID) (*Recalc
 	return &RecalculateResult{
 		PostsUpdated: updated,
 		DurationMs:   time.Since(start).Milliseconds(),
+	}, nil
+}
+
+type ScoreUnscoredParams struct {
+	ChannelID     xid.ID
+	IncludeFailed bool
+	CreatedAfter  *time.Time
+	CreatedBefore *time.Time
+}
+
+type ScoreUnscoredResult struct {
+	PostsEnqueued int   `json:"posts_enqueued"`
+	DurationMs    int64 `json:"duration_ms"`
+}
+
+func (r *Ranker) ScoreUnscored(ctx context.Context, params ScoreUnscoredParams) (*ScoreUnscoredResult, error) {
+	start := time.Now()
+
+	predicates := []predicate.Post{
+		ent_post.DeletedAtIsNil(),
+		ent_post.RootPostIDIsNil(),
+		ent_post.VisibilityEQ(ent_post.VisibilityPublished),
+		ent_post.ChannelIDEQ(params.ChannelID),
+	}
+
+	if params.CreatedAfter != nil {
+		predicates = append(predicates, ent_post.CreatedAtGTE(*params.CreatedAfter))
+	}
+	if params.CreatedBefore != nil {
+		predicates = append(predicates, ent_post.CreatedAtLTE(*params.CreatedBefore))
+	}
+
+	if params.IncludeFailed {
+		predicates = append(predicates, ent_post.Not(ent_post.HasSentimentWith(
+			ent_post_sentiment.ScoringStatusEQ(ent_post_sentiment.ScoringStatusScored),
+		)))
+	} else {
+		predicates = append(predicates, ent_post.Not(ent_post.HasSentiment()))
+	}
+
+	posts, err := r.db.Post.
+		Query().
+		Where(predicates...).
+		Select(ent_post.FieldID).
+		All(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	for _, p := range posts {
+		err := r.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
+			PostID: post.ID(p.ID),
+		})
+		if err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
+		}
+	}
+
+	return &ScoreUnscoredResult{
+		PostsEnqueued: len(posts),
+		DurationMs:    time.Since(start).Milliseconds(),
 	}, nil
 }
 
