@@ -423,6 +423,10 @@ func (m *Mapping) ChannelRankingRecalculate() (bool, *rbac.Permission) {
 	return true, &rbac.PermissionAdministrator
 }
 
+func (m *Mapping) ChannelScoreUnscored() (bool, *rbac.Permission) {
+	return true, &rbac.PermissionAdministrator
+}
+
 // Channel-scoped collection endpoints
 func (m *Mapping) ChannelCollectionCreate() (bool, *rbac.Permission) {
 	return true, nil // Checked in service layer - must be member

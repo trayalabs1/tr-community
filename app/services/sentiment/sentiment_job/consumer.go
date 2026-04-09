@@ -2,10 +2,12 @@ package sentiment_job
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
 	"github.com/rs/xid"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/Southclaws/storyden/app/resources/post"
 	"github.com/Southclaws/storyden/app/services/sentiment/scorer"
@@ -15,15 +17,18 @@ import (
 )
 
 type sentimentConsumer struct {
+	logger *slog.Logger
 	db     *ent.Client
 	scorer *scorer.Scorer
 }
 
 func newSentimentConsumer(
+	logger *slog.Logger,
 	db *ent.Client,
 	scorer *scorer.Scorer,
 ) *sentimentConsumer {
 	return &sentimentConsumer{
+		logger: logger,
 		db:     db,
 		scorer: scorer,
 	}
@@ -83,4 +88,23 @@ func (c *sentimentConsumer) markFailed(ctx context.Context, postID post.ID) erro
 		OnConflictColumns(ent_post_sentiment.FieldPostID).
 		UpdateScoringStatus().
 		Exec(ctx)
+}
+
+func (c *sentimentConsumer) scoreBatch(ctx context.Context, postIDs []post.ID) {
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(5)
+
+	for _, id := range postIDs {
+		g.Go(func() error {
+			if err := c.scorePost(ctx, id); err != nil {
+				c.logger.Error("failed to score post in batch",
+					slog.String("post_id", id.String()),
+					slog.String("error", err.Error()),
+				)
+			}
+			return nil
+		})
+	}
+
+	g.Wait()
 }

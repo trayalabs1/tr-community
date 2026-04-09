@@ -28,12 +28,15 @@ import type {
   AuditEventListOKResponse,
   AuditEventListParams,
   BadRequestResponse,
+  ChannelScoreUnscoredParams,
   ForbiddenResponse,
   Identifier,
   InternalServerErrorResponse,
   ModerationActionCreateBody,
   NoContentResponse,
   NotFoundResponse,
+  RankingRecalculateOKResponse,
+  ScoreUnscoredOKResponse,
   UnauthorisedResponse,
 } from "../openapi-schema";
 
@@ -701,6 +704,156 @@ export const useAdminAnalyticsGet = <TError = InternalServerErrorResponse>(
     swrFn,
     swrOptions,
   );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Triggers a synchronous recalculation of rank_score for all posts in
+the channel that have been scored. Returns the number of posts updated
+and the duration of the operation.
+
+ * @summary Recalculate rank scores for all scored posts in a channel.
+ */
+export const channelRankingRecalculate = (channelID: string) => {
+  return fetcher<RankingRecalculateOKResponse>({
+    url: `/channels/${channelID}/ranking/recalculate`,
+    method: "POST",
+  });
+};
+
+export const getChannelRankingRecalculateMutationFetcher = (
+  channelID: string,
+) => {
+  return (
+    _: Key,
+    __: { arg: Arguments },
+  ): Promise<RankingRecalculateOKResponse> => {
+    return channelRankingRecalculate(channelID);
+  };
+};
+export const getChannelRankingRecalculateMutationKey = (channelID: string) =>
+  [`/channels/${channelID}/ranking/recalculate`] as const;
+
+export type ChannelRankingRecalculateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof channelRankingRecalculate>>
+>;
+export type ChannelRankingRecalculateMutationError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+/**
+ * @summary Recalculate rank scores for all scored posts in a channel.
+ */
+export const useChannelRankingRecalculate = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof channelRankingRecalculate>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof channelRankingRecalculate>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getChannelRankingRecalculateMutationKey(channelID);
+  const swrFn = getChannelRankingRecalculateMutationFetcher(channelID);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Finds all published root posts in the channel that have not yet been
+scored and enqueues them for asynchronous sentiment scoring. Optionally
+includes posts that previously failed scoring. Supports date range
+filtering to target specific time windows.
+
+ * @summary Find and enqueue unscored posts in a channel for sentiment scoring.
+ */
+export const channelScoreUnscored = (
+  channelID: string,
+  params?: ChannelScoreUnscoredParams,
+) => {
+  return fetcher<ScoreUnscoredOKResponse>({
+    url: `/channels/${channelID}/scoring/score-unscored`,
+    method: "POST",
+    params,
+  });
+};
+
+export const getChannelScoreUnscoredMutationFetcher = (
+  channelID: string,
+  params?: ChannelScoreUnscoredParams,
+) => {
+  return (_: Key, __: { arg: Arguments }): Promise<ScoreUnscoredOKResponse> => {
+    return channelScoreUnscored(channelID, params);
+  };
+};
+export const getChannelScoreUnscoredMutationKey = (
+  channelID: string,
+  params?: ChannelScoreUnscoredParams,
+) =>
+  [
+    `/channels/${channelID}/scoring/score-unscored`,
+    ...(params ? [params] : []),
+  ] as const;
+
+export type ChannelScoreUnscoredMutationResult = NonNullable<
+  Awaited<ReturnType<typeof channelScoreUnscored>>
+>;
+export type ChannelScoreUnscoredMutationError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+/**
+ * @summary Find and enqueue unscored posts in a channel for sentiment scoring.
+ */
+export const useChannelScoreUnscored = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  params?: ChannelScoreUnscoredParams,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof channelScoreUnscored>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof channelScoreUnscored>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getChannelScoreUnscoredMutationKey(channelID, params);
+  const swrFn = getChannelScoreUnscoredMutationFetcher(channelID, params);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
   return {
     swrKey,
