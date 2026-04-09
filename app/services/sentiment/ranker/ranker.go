@@ -99,6 +99,7 @@ type ScoreUnscoredParams struct {
 	IncludeFailed bool
 	CreatedAfter  *time.Time
 	CreatedBefore *time.Time
+	Limit         *int
 }
 
 type ScoreUnscoredResult struct {
@@ -131,9 +132,15 @@ func (r *Ranker) ScoreUnscored(ctx context.Context, params ScoreUnscoredParams) 
 		predicates = append(predicates, ent_post.Not(ent_post.HasSentiment()))
 	}
 
-	posts, err := r.db.Post.
+	query := r.db.Post.
 		Query().
-		Where(predicates...).
+		Where(predicates...)
+
+	if params.Limit != nil {
+		query = query.Limit(*params.Limit)
+	}
+
+	posts, err := query.
 		Select(ent_post.FieldID).
 		All(ctx)
 	if err != nil {

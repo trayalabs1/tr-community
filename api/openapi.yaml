@@ -1856,6 +1856,15 @@ paths:
           schema:
             type: string
             format: date-time
+        - name: limit
+          description: Maximum number of posts to enqueue in this batch.
+          required: false
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
       responses:
         default: { $ref: "#/components/responses/InternalServerError" }
         "401": { $ref: "#/components/responses/Unauthorised" }

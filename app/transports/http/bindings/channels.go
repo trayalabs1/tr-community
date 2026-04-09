@@ -1107,6 +1107,7 @@ func (c Channels) ChannelScoreUnscored(ctx context.Context, request openapi.Chan
 		IncludeFailed: request.Params.IncludeFailed != nil && *request.Params.IncludeFailed,
 		CreatedAfter:  request.Params.CreatedAfter,
 		CreatedBefore: request.Params.CreatedBefore,
+		Limit:         request.Params.Limit,
 	}
 
 	result, err := c.ranker.ScoreUnscored(ctx, params)

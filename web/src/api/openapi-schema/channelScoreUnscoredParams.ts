@@ -21,4 +21,8 @@ export type ChannelScoreUnscoredParams = {
    * Only include posts created before this date/time.
    */
   created_before?: string;
+  /**
+   * Maximum number of posts to enqueue in this batch.
+   */
+  limit?: number;
 };
