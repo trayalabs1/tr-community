@@ -283,3 +283,11 @@ type EventActivityPublished struct {
 type EventSettingsUpdated struct {
 	Settings *settings.Settings
 }
+
+// -
+// Sentiment scoring commands
+// -
+
+type CommandScorePostSentiment struct {
+	PostID post.ID
+}

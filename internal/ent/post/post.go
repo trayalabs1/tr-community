@@ -88,6 +88,8 @@ const (
 	EdgePostReads = "post_reads"
 	// EdgePollVotes holds the string denoting the poll_votes edge name in mutations.
 	EdgePollVotes = "poll_votes"
+	// EdgeSentiment holds the string denoting the sentiment edge name in mutations.
+	EdgeSentiment = "sentiment"
 	// Table holds the table name of the post in the database.
 	Table = "posts"
 	// AuthorTable is the table that holds the author relation/edge.
@@ -196,6 +198,13 @@ const (
 	PollVotesInverseTable = "poll_votes"
 	// PollVotesColumn is the table column denoting the poll_votes relation/edge.
 	PollVotesColumn = "post_id"
+	// SentimentTable is the table that holds the sentiment relation/edge.
+	SentimentTable = "post_sentiments"
+	// SentimentInverseTable is the table name for the PostSentiment entity.
+	// It exists in this package in order to avoid circular dependency with the "postsentiment" package.
+	SentimentInverseTable = "post_sentiments"
+	// SentimentColumn is the table column denoting the sentiment relation/edge.
+	SentimentColumn = "post_id"
 )
 
 // Columns holds all SQL columns for post fields.
@@ -587,6 +596,13 @@ func ByPollVotes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newPollVotesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// BySentimentField orders the results by sentiment field.
+func BySentimentField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSentimentStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newAuthorStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -711,5 +727,12 @@ func newPollVotesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PollVotesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PollVotesTable, PollVotesColumn),
+	)
+}
+func newSentimentStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SentimentInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, SentimentTable, SentimentColumn),
 	)
 }

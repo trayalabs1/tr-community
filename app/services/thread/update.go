@@ -115,6 +115,10 @@ func (s *service) Update(ctx context.Context, threadID post.ID, partial Partial)
 			s.bus.Publish(ctx, &message.EventThreadPublished{
 				ID: thr.ID,
 			})
+
+			// s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
+			// 	PostID: thr.ID,
+			// })
 		} else if thr.Visibility == visibility.VisibilityReview {
 			s.bus.Publish(ctx, &message.EventThreadSubmittedForReview{
 				ID:    thr.ID,
@@ -126,6 +130,10 @@ func (s *service) Update(ctx context.Context, threadID post.ID, partial Partial)
 				ID: thr.ID,
 			})
 		}
+	} else if (contentChanged || titleChanged) && thr.Visibility == visibility.VisibilityPublished {
+		// s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
+		// 	PostID: thr.ID,
+		// })
 	}
 
 	return thr, nil

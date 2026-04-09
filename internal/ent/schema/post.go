@@ -141,5 +141,9 @@ func (Post) Edges() []ent.Edge {
 
 		edge.To("poll_votes", PollVote.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+
+		edge.To("sentiment", PostSentiment.Type).
+			Unique().
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

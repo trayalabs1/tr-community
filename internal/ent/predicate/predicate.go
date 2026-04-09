@@ -81,6 +81,9 @@ type Post func(*sql.Selector)
 // PostRead is the predicate function for postread builders.
 type PostRead func(*sql.Selector)
 
+// PostSentiment is the predicate function for postsentiment builders.
+type PostSentiment func(*sql.Selector)
+
 // Property is the predicate function for property builders.
 type Property func(*sql.Selector)
 

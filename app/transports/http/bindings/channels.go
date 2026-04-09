@@ -31,6 +31,7 @@ import (
 	membership_svc "github.com/Southclaws/storyden/app/services/channel_membership"
 	reply_svc "github.com/Southclaws/storyden/app/services/reply"
 	"github.com/Southclaws/storyden/app/services/reqinfo"
+	"github.com/Southclaws/storyden/app/services/sentiment/ranker"
 	thread_svc "github.com/Southclaws/storyden/app/services/thread"
 	"github.com/Southclaws/storyden/app/services/thread_mark"
 	"github.com/Southclaws/storyden/app/transports/http/openapi"
@@ -49,6 +50,7 @@ type Channels struct {
 	reply_svc       *reply_svc.Mutator
 	accountQuery    *account_querier.Querier
 	profileQuery    *profile_querier.Querier
+	ranker          *ranker.Ranker
 }
 
 func NewChannels(
@@ -63,6 +65,7 @@ func NewChannels(
 	reply_svc *reply_svc.Mutator,
 	accountQuery *account_querier.Querier,
 	profileQuery *profile_querier.Querier,
+	ranker *ranker.Ranker,
 ) Channels {
 	return Channels{
 		channel_svc:     channel_svc,
@@ -76,6 +79,7 @@ func NewChannels(
 		reply_svc:       reply_svc,
 		accountQuery:    accountQuery,
 		profileQuery:    profileQuery,
+		ranker:          ranker,
 	}
 }
 
@@ -1067,5 +1071,55 @@ func (c Channels) ChannelReplyCreate(ctx context.Context, request openapi.Channe
 
 	return openapi.ChannelReplyCreate200JSONResponse{
 		ReplyCreateOKJSONResponse: openapi.ReplyCreateOKJSONResponse(serialiseReplyPtr(post)),
+	}, nil
+}
+
+func (c Channels) ChannelRankingRecalculate(ctx context.Context, request openapi.ChannelRankingRecalculateRequestObject) (openapi.ChannelRankingRecalculateResponseObject, error) {
+	if err := session.Authorise(ctx, nil, rbac.PermissionAdministrator); err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.PermissionDenied))
+	}
+
+	channelID := xid.ID(openapi.ParseID(request.ChannelID))
+
+	result, err := c.ranker.RecalculateBulk(ctx, channelID)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return openapi.ChannelRankingRecalculate200JSONResponse{
+		RankingRecalculateOKJSONResponse: openapi.RankingRecalculateOKJSONResponse{
+			Success:      true,
+			PostsUpdated: result.PostsUpdated,
+			DurationMs:   result.DurationMs,
+		},
+	}, nil
+}
+
+func (c Channels) ChannelScoreUnscored(ctx context.Context, request openapi.ChannelScoreUnscoredRequestObject) (openapi.ChannelScoreUnscoredResponseObject, error) {
+	if err := session.Authorise(ctx, nil, rbac.PermissionAdministrator); err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.PermissionDenied))
+	}
+
+	channelID := xid.ID(openapi.ParseID(request.ChannelID))
+
+	params := ranker.ScoreUnscoredParams{
+		ChannelID:     channelID,
+		IncludeFailed: request.Params.IncludeFailed != nil && *request.Params.IncludeFailed,
+		CreatedAfter:  request.Params.CreatedAfter,
+		CreatedBefore: request.Params.CreatedBefore,
+		Limit:         request.Params.Limit,
+	}
+
+	result, err := c.ranker.ScoreUnscored(ctx, params)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return openapi.ChannelScoreUnscored200JSONResponse{
+		ScoreUnscoredOKJSONResponse: openapi.ScoreUnscoredOKJSONResponse{
+			Success:       true,
+			PostsEnqueued: result.PostsEnqueued,
+			DurationMs:    result.DurationMs,
+		},
 	}, nil
 }

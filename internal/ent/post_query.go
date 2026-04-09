@@ -24,6 +24,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
+	"github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/Southclaws/storyden/internal/ent/predicate"
 	"github.com/Southclaws/storyden/internal/ent/react"
 	"github.com/Southclaws/storyden/internal/ent/tag"
@@ -55,6 +56,7 @@ type PostQuery struct {
 	withEvent        *EventQuery
 	withPostReads    *PostReadQuery
 	withPollVotes    *PollVoteQuery
+	withSentiment    *PostSentimentQuery
 	modifiers        []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -488,6 +490,28 @@ func (_q *PostQuery) QueryPollVotes() *PollVoteQuery {
 	return query
 }
 
+// QuerySentiment chains the current query on the "sentiment" edge.
+func (_q *PostQuery) QuerySentiment() *PostSentimentQuery {
+	query := (&PostSentimentClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, selector),
+			sqlgraph.To(postsentiment.Table, postsentiment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, post.SentimentTable, post.SentimentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Post entity from the query.
 // Returns a *NotFoundError when no Post was found.
 func (_q *PostQuery) First(ctx context.Context) (*Post, error) {
@@ -698,6 +722,7 @@ func (_q *PostQuery) Clone() *PostQuery {
 		withEvent:        _q.withEvent.Clone(),
 		withPostReads:    _q.withPostReads.Clone(),
 		withPollVotes:    _q.withPollVotes.Clone(),
+		withSentiment:    _q.withSentiment.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -903,6 +928,17 @@ func (_q *PostQuery) WithPollVotes(opts ...func(*PollVoteQuery)) *PostQuery {
 	return _q
 }
 
+// WithSentiment tells the query-builder to eager-load the nodes that are connected to
+// the "sentiment" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *PostQuery) WithSentiment(opts ...func(*PostSentimentQuery)) *PostQuery {
+	query := (&PostSentimentClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSentiment = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -981,7 +1017,7 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 	var (
 		nodes       = []*Post{}
 		_spec       = _q.querySpec()
-		loadedTypes = [18]bool{
+		loadedTypes = [19]bool{
 			_q.withAuthor != nil,
 			_q.withCategory != nil,
 			_q.withChannel != nil,
@@ -1000,6 +1036,7 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 			_q.withEvent != nil,
 			_q.withPostReads != nil,
 			_q.withPollVotes != nil,
+			_q.withSentiment != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -1140,6 +1177,12 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 		if err := _q.loadPollVotes(ctx, query, nodes,
 			func(n *Post) { n.Edges.PollVotes = []*PollVote{} },
 			func(n *Post, e *PollVote) { n.Edges.PollVotes = append(n.Edges.PollVotes, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSentiment; query != nil {
+		if err := _q.loadSentiment(ctx, query, nodes, nil,
+			func(n *Post, e *PostSentiment) { n.Edges.Sentiment = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -1802,6 +1845,33 @@ func (_q *PostQuery) loadPollVotes(ctx context.Context, query *PollVoteQuery, no
 	}
 	query.Where(predicate.PollVote(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(post.PollVotesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.PostID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "post_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *PostQuery) loadSentiment(ctx context.Context, query *PostSentimentQuery, nodes []*Post, init func(*Post), assign func(*Post, *PostSentiment)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[xid.ID]*Post)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(postsentiment.FieldPostID)
+	}
+	query.Where(predicate.PostSentiment(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(post.SentimentColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

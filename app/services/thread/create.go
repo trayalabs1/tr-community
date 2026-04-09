@@ -101,6 +101,10 @@ func (s *service) Create(ctx context.Context,
 		s.bus.Publish(ctx, &message.EventThreadPublished{
 			ID: thr.ID,
 		})
+
+		// s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
+		// 	PostID: thr.ID,
+		// })
 	}
 
 	// TODO: Do this using event consumer.
