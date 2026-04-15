@@ -52,8 +52,9 @@ type CategoryFilter struct {
 }
 
 type threadListOptions struct {
-	q            *ent.PostQuery
-	ignorePinned bool
+	q                    *ent.PostQuery
+	ignorePinned         bool
+	useSentimentRanking  bool
 }
 
 type Query func(*threadListOptions)
@@ -83,6 +84,12 @@ func HasCreatedDateAfter(t time.Time) Query {
 func HasNoReplies() Query {
 	return func(q *threadListOptions) {
 		q.q.Where(ent_post.Not(ent_post.HasPosts()))
+	}
+}
+
+func UseSentimentRanking() Query {
+	return func(q *threadListOptions) {
+		q.useSentimentRanking = true
 	}
 }
 

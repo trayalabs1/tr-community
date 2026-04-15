@@ -27,8 +27,9 @@ type Params struct {
 	Tags          opt.Optional[[]xid.ID]
 	Categories    opt.Optional[thread_querier.CategoryFilter]
 	ChannelID     opt.Optional[xid.ID]
-	IgnorePinned  opt.Optional[bool]
-	NoReplies     opt.Optional[bool]
+	IgnorePinned         opt.Optional[bool]
+	NoReplies            opt.Optional[bool]
+	UseSentimentRanking  bool
 }
 
 func (s *service) List(ctx context.Context,
@@ -56,6 +57,9 @@ func (s *service) List(ctx context.Context,
 			q = append(q, thread_querier.HasNoReplies())
 		}
 	})
+	if opts.UseSentimentRanking {
+		q = append(q, thread_querier.UseSentimentRanking())
+	}
 
 	vq := func() thread_querier.Query {
 		v, ok := opts.Visibility.Get()

@@ -808,12 +808,13 @@ func (c Channels) ChannelThreadList(ctx context.Context, request openapi.Channel
 
 	page = max(0, page-1)
 	result, err := c.thread_svc.List(ctx, page, pageSize, thread_svc.Params{
-		Query:      query,
-		AccountID:  author,
-		Visibility: visibilities,
-		Tags:       tags,
-		Categories: cats,
-		ChannelID:  opt.New(xid.ID(channelID)),
+		Query:               query,
+		AccountID:           author,
+		Visibility:          visibilities,
+		Tags:                tags,
+		Categories:          cats,
+		ChannelID:           opt.New(xid.ID(channelID)),
+		UseSentimentRanking: true,
 	})
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
