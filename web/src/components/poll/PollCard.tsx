@@ -18,7 +18,7 @@ export function PollCard({ threadMark, optionDefs }: Props) {
 
   if (!hasVoted) {
     return (
-      <VStack gap={2} w="full" align="start">
+      <VStack gap="2" w="full" alignItems="start">
         {optionDefs.map((opt) => (
           <button
             key={opt.id}
@@ -26,16 +26,17 @@ export function PollCard({ threadMark, optionDefs }: Props) {
             onClick={() => vote(opt.id)}
             className={css({
               w: "full",
-              p: 3,
+              p: "3",
               borderRadius: "md",
-              border: "1px solid",
+              borderWidth: "thin",
+              borderStyle: "solid",
               borderColor: "border.default",
               textAlign: "left",
               cursor: "pointer",
               fontSize: "sm",
               color: "fg.default",
               bg: "bg.default",
-              _hover: { borderColor: "border.emphasized" },
+              _hover: { borderColor: "fg.muted" },
             })}
           >
             {opt.text}
@@ -48,7 +49,7 @@ export function PollCard({ threadMark, optionDefs }: Props) {
   const options = status!.options;
 
   return (
-    <VStack gap={2} w="full" align="start">
+    <VStack gap="2" w="full" alignItems="start">
       {options.map((opt) => {
         const pct = totalVotes > 0 ? (opt.votes / totalVotes) * 100 : 0;
         const isSelected = status!.user_vote === opt.id;
@@ -59,7 +60,8 @@ export function PollCard({ threadMark, optionDefs }: Props) {
             className={css({
               w: "full",
               borderRadius: "md",
-              border: "1px solid",
+              borderWidth: "thin",
+              borderStyle: "solid",
               borderColor: "border.default",
               overflow: "hidden",
               position: "relative",
@@ -85,10 +87,10 @@ export function PollCard({ threadMark, optionDefs }: Props) {
             />
             <HStack
               justify="space-between"
-              px={3}
-              py={2}
+              px="3"
+              py="2"
               position="relative"
-              zIndex={1}
+              style={{ zIndex: 1 }}
             >
               <span
                 className={css({ fontSize: "sm", color: "fg.default" })}
@@ -107,7 +109,7 @@ export function PollCard({ threadMark, optionDefs }: Props) {
       })}
 
       <p
-        className={css({ fontSize: "xs", color: "fg.muted", mt: 1 })}
+        className={css({ fontSize: "xs", color: "fg.muted", mt: "1" })}
       >
         {totalVotes} {totalVotes === 1 ? "vote" : "votes"}
       </p>
