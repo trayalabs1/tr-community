@@ -7,10 +7,7 @@ import { z } from "zod";
 
 import { PollOption } from "@/components/poll/PollComposer";
 
-import {
-  channelThreadCreate,
-  getChannelThreadListKey,
-} from "src/api/openapi-client/channels";
+import { channelThreadCreate } from "src/api/openapi-client/channels";
 import { threadCreate, threadUpdate } from "src/api/openapi-client/threads";
 import { Thread, ThreadInitialProps, Visibility, Permission } from "src/api/openapi-schema";
 
@@ -18,15 +15,23 @@ import { handle } from "@/api/client";
 import { hasPermission } from "@/utils/permissions";
 import { useSession } from "@/auth";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
+import { STREAK_IMAGES, DEFAULT_STREAK_IMAGE_KEY } from "@/lib/constants";
 
 export type Props = {
   editing?: string;
   initialDraft?: Thread;
   channelID?: string;
   categoryID?: string;
+  streakCount?: number;
+  rewardCoins?: number;
   onSuccess?: () => void;
   skipDraftNavigation?: boolean;
 };
+
+function generateStreakShareBody(streakCount: number, rewardCoins: number): string {
+  const imageUrl = STREAK_IMAGES[streakCount] ?? STREAK_IMAGES[DEFAULT_STREAK_IMAGE_KEY];
+  return `<p>${streakCount} days streak completed 🔥</p><img src="${imageUrl}" alt="${streakCount}-Day streak - Won ${rewardCoins} coins" />`;
+}
 
 export const FormShapeSchema = z.object({
   title: z.string().optional(),
@@ -42,6 +47,8 @@ export function useComposeForm({
   editing,
   channelID,
   categoryID,
+  streakCount,
+  rewardCoins,
   onSuccess,
   skipDraftNavigation,
 }: Props) {
@@ -71,7 +78,9 @@ export function useComposeForm({
         }
       : {
           title: "",
-          body: "",
+          body: streakCount && rewardCoins
+            ? generateStreakShareBody(streakCount, rewardCoins)
+            : "",
           category: categoryID,
         },
   });
@@ -140,8 +149,12 @@ export function useComposeForm({
     } else {
       if (channelID) {
         await channelThreadCreate(channelID, payload);
-        const threadListKey = getChannelThreadListKey(channelID, {});
-        await mutate(threadListKey);
+        await mutate(
+          (key: unknown) =>
+            Array.isArray(key) &&
+            typeof key[0] === "string" &&
+            key[0] === `/channels/${channelID}/threads`,
+        );
         if (onSuccess) {
           onSuccess();
         } else {
