@@ -10,6 +10,8 @@ export type ThreadCreateModalProps = {
   onOpenChange: (event: OpenChangeEvent) => void;
   channelID: string;
   initialChannelList?: ChannelListOKResponse;
+  streakCount?: number;
+  rewardCoins?: number;
 };
 
 export function ThreadCreateModal({
@@ -18,6 +20,8 @@ export function ThreadCreateModal({
   onOpenChange,
   channelID,
   initialChannelList,
+  streakCount,
+  rewardCoins,
 }: ThreadCreateModalProps) {
   return (
     <ModalDrawer
@@ -30,6 +34,8 @@ export function ThreadCreateModal({
         channelID={channelID}
         onSuccess={onClose}
         skipDraftNavigation={true}
+        streakCount={streakCount}
+        rewardCoins={rewardCoins}
       />
     </ModalDrawer>
   );

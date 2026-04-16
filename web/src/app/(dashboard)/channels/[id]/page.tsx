@@ -18,7 +18,7 @@ export default async function Page(props: Props) {
     const params = await props.params;
     const session = await getServerSession();
     const { data: channel } = await channelGet(params.id);
-    const { data: notifications } = await notificationList({ status: ["unread"] });
+    const { data: notifications } = await notificationList({ status: ["unread"], page: "1" });
     const { data: collections } = await collectionList({});
 
     const hasUnreadNotifications = (notifications?.notifications?.length ?? 0) > 0;

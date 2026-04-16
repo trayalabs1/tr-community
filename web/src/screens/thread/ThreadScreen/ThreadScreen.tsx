@@ -164,7 +164,7 @@ export function ThreadScreen(props: Props) {
                     transition: "opacity 0.2s",
                     flexShrink: 0,
                   }}
-                  _hover={{ opacity: 0.8 }}
+                  _hover={{ opacity: "8" }}
                 >
                   {thread.author.handle.charAt(0).toUpperCase()}
                 </styled.div>

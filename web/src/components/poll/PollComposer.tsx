@@ -29,14 +29,15 @@ export function PollComposer({
     onOptionsChange(options.map((o) => (o.id === id ? { ...o, text } : o)));
 
   return (
-    <VStack gap={3} w="full">
+    <VStack gap="3" w="full">
       <input
         className={css({
           w: "full",
-          p: 3,
+          p: "3",
           borderRadius: "md",
           bg: "bg.muted",
-          border: "1px solid",
+          borderWidth: "thin",
+          borderStyle: "solid",
           borderColor: "border.muted",
           _placeholder: { color: "fg.muted" },
           outline: "none",
@@ -47,7 +48,7 @@ export function PollComposer({
         onChange={(e) => onQuestionChange(e.target.value)}
       />
 
-      <VStack gap={2} w="full" align="start">
+      <VStack gap="2" w="full" alignItems="start">
         <p
           className={css({
             fontSize: "sm",
@@ -58,13 +59,14 @@ export function PollComposer({
           Options
         </p>
         {options.map((opt, i) => (
-          <HStack key={opt.id} w="full" gap={2}>
+          <HStack key={opt.id} w="full" gap="2">
             <input
               className={css({
-                flex: 1,
-                p: 3,
+                flex: "1",
+                p: "3",
                 borderRadius: "md",
-                border: "1px solid",
+                borderWidth: "thin",
+                borderStyle: "solid",
                 borderColor: "border.default",
                 outline: "none",
               })}
@@ -86,8 +88,8 @@ export function PollComposer({
                   color: "fg.muted",
                   cursor: "pointer",
                   fontSize: "lg",
-                  lineHeight: 1,
                 })}
+                style={{ lineHeight: 1 }}
               >
                 ×
               </button>
@@ -101,11 +103,12 @@ export function PollComposer({
         onClick={addOption}
         className={css({
           alignSelf: "start",
-          px: 3,
-          py: 1,
+          px: "3",
+          py: "1",
           borderRadius: "full",
           fontSize: "sm",
-          border: "1px solid",
+          borderWidth: "thin",
+          borderStyle: "solid",
           cursor: "pointer",
         })}
         style={{
