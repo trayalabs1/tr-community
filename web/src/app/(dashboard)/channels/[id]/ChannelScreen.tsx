@@ -30,6 +30,7 @@ export function ChannelScreen(props: Props) {
   const permissions = useChannelPermissions(props.channel.id);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
   const [selectedVisibility, setSelectedVisibility] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<{ createdAfter?: string; createdBefore?: string }>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [allThreads, setAllThreads] = useState<ThreadReference[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -51,6 +52,12 @@ export function ChannelScreen(props: Props) {
   if (selectedVisibility) {
     threadParams['visibility'] = [selectedVisibility];
   }
+  if (dateRange.createdAfter) {
+    threadParams['created_after'] = dateRange.createdAfter;
+  }
+  if (dateRange.createdBefore) {
+    threadParams['created_before'] = dateRange.createdBefore;
+  }
 
   const { data: threads, error, isValidating: isThreadsLoading } = useChannelThreadList(
     props.channel.id,
@@ -67,7 +74,7 @@ export function ChannelScreen(props: Props) {
     setCurrentPage(1);
     setAllThreads([]);
     setHasInitiallyLoaded(false);
-  }, [selectedCategorySlug, selectedVisibility]);
+  }, [selectedCategorySlug, selectedVisibility, dateRange]);
 
   useEffect(() => {
     const pageNum = threads?.current_page;
@@ -128,6 +135,7 @@ export function ChannelScreen(props: Props) {
         selectedVisibility={selectedVisibility}
         onCategoryChange={setSelectedCategorySlug}
         onVisibilityChange={setSelectedVisibility}
+        onDateRangeChange={setDateRange}
         hasUnreadNotifications={props.hasUnreadNotifications}
         bookmarkCount={props.bookmarkCount}
       />
@@ -162,6 +170,7 @@ export function ChannelScreen(props: Props) {
           selectedVisibility={selectedVisibility}
           onCategoryChange={setSelectedCategorySlug}
           onVisibilityChange={setSelectedVisibility}
+          onDateRangeChange={setDateRange}
         />
       </styled.div>
 

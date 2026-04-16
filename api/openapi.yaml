@@ -1739,6 +1739,20 @@ paths:
           in: query
           schema: { $ref: "#/components/schemas/TagListIDs" }
         - $ref: "#/components/parameters/CategorySlugListQuery"
+        - name: created_after
+          description: Show only threads created after this date/time.
+          required: false
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: created_before
+          description: Show only threads created before this date/time.
+          required: false
+          in: query
+          schema:
+            type: string
+            format: date-time
       responses:
         default: { $ref: "#/components/responses/InternalServerError" }
         "401": { $ref: "#/components/responses/Unauthorised" }
