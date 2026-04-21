@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback } from "react";
 import { useDisclosure } from "src/utils/useDisclosure";
 
 import { ButtonProps } from "@/components/ui/button";
@@ -17,31 +16,6 @@ type Props = Omit<ButtonProps, "onClick"> & {
 export function ThreadCreateTrigger({ channelID, ...props }: Props) {
   const useDisclosureProps = useDisclosure();
   const { trackEvent } = useEventTracking();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-  const autoOpenedRef = useRef(false);
-
-  const streakCountParam = searchParams?.get("streak_count");
-  const rewardCoinsParam = searchParams?.get("reward_coins");
-  const streakCount = streakCountParam ? parseInt(streakCountParam, 10) : undefined;
-  const rewardCoins = rewardCoinsParam ? parseInt(rewardCoinsParam, 10) : undefined;
-  const hasStreakParams = streakCount !== undefined && rewardCoins !== undefined;
-
-  useEffect(() => {
-    if (autoOpenedRef.current) return;
-    if (hasStreakParams) {
-      autoOpenedRef.current = true;
-      useDisclosureProps.onOpen();
-    }
-  }, [hasStreakParams, useDisclosureProps]);
-
-  const handleModalClose = useCallback(() => {
-    useDisclosureProps.onClose();
-    if (hasStreakParams && pathname) {
-      router.replace(pathname);
-    }
-  }, [useDisclosureProps, hasStreakParams, pathname, router]);
 
   const handleCreatePostClick = useCallback(() => {
     trackEvent("community_create_post_clicked", { channel_id: channelID });
@@ -97,10 +71,7 @@ export function ThreadCreateTrigger({ channelID, ...props }: Props) {
 
       <ThreadCreateModal
         {...useDisclosureProps}
-        onClose={handleModalClose}
         channelID={channelID}
-        streakCount={streakCount}
-        rewardCoins={rewardCoins}
       />
     </>
   );
