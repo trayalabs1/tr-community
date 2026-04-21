@@ -9,8 +9,6 @@ export type Props = {
   editing?: string;
   channelID?: string;
   categoryID?: string;
-  streakCount?: number;
-  rewardCoins?: number;
 };
 
 export function useComposeScreen({ editing }: Props) {

@@ -56,12 +56,17 @@ export function LandingScreen({ token, share, streakCount, rewardCoins }: Landin
       const monthChannel = channels.find((c) => c.name?.toLowerCase().includes("month"));
       const targetChannel = monthChannel ?? channels[0];
       if (targetChannel?.id) {
-        router.push(`/channels/${targetChannel.id}${shareQuery}`);
+        const hasShareParams = share && streakCount !== undefined && rewardCoins !== undefined;
+        if (hasShareParams) {
+          router.push(`/channels/${targetChannel.id}/share-post${shareQuery}`);
+        } else {
+          router.push(`/channels/${targetChannel.id}`);
+        }
       } else {
-        router.push(`/channels${shareQuery}`);
+        router.push(`/channels`);
       }
     } catch {
-      router.push(`/channels${shareQuery}`);
+      router.push(`/channels`);
     }
   };
 
