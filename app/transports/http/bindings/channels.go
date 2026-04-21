@@ -807,6 +807,9 @@ func (c Channels) ChannelThreadList(ctx context.Context, request openapi.Channel
 	cats := deserialiseCategorySlugQueryParam(request.Params.Categories)
 
 	page = max(0, page-1)
+	createdAfter := opt.NewPtr(request.Params.CreatedAfter)
+	createdBefore := opt.NewPtr(request.Params.CreatedBefore)
+
 	result, err := c.thread_svc.List(ctx, page, pageSize, thread_svc.Params{
 		Query:               query,
 		AccountID:           author,
@@ -814,6 +817,8 @@ func (c Channels) ChannelThreadList(ctx context.Context, request openapi.Channel
 		Tags:                tags,
 		Categories:          cats,
 		ChannelID:           opt.New(xid.ID(channelID)),
+		CreatedAfter:        createdAfter,
+		CreatedBefore:       createdBefore,
 		UseSentimentRanking: true,
 	})
 	if err != nil {

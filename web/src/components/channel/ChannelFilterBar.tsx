@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Filter, X } from "lucide-react";
+import { today, getLocalTimeZone, type DateValue } from "@internationalized/date";
+import { DateRangePicker } from "@/components/ui/date-picker";
 
 import { Category, Permission } from "@/api/openapi-schema";
 import { HStack, VStack, styled } from "@/styled-system/jsx";
@@ -17,6 +19,7 @@ interface ChannelFilterBarProps {
   selectedVisibility: string | null;
   onCategoryChange: (slug: string | null) => void;
   onVisibilityChange: (visibility: string | null) => void;
+  onDateRangeChange?: (range: { createdAfter?: string; createdBefore?: string }) => void;
 }
 
 export function ChannelFilterBar({
@@ -26,17 +29,46 @@ export function ChannelFilterBar({
   selectedVisibility,
   onCategoryChange,
   onVisibilityChange,
+  onDateRangeChange,
 }: ChannelFilterBarProps) {
   const [showFilters, setShowFilters] = useState(false);
+  const [hasDateFilter, setHasDateFilter] = useState(false);
   const session = useSession();
   const canManagePosts = hasPermission(session, Permission.MANAGE_POSTS);
+  const todayVal = today(getLocalTimeZone());
 
-  const hasActiveFilters = selectedCategorySlug || selectedVisibility;
-  const activeFilterCount = [selectedCategorySlug, selectedVisibility].filter(Boolean).length;
+  const hasActiveFilters = selectedCategorySlug || selectedVisibility || hasDateFilter;
+  const activeFilterCount = [selectedCategorySlug, selectedVisibility, hasDateFilter].filter(Boolean).length;
 
   const clearFilters = () => {
     onCategoryChange(null);
     onVisibilityChange(null);
+    onDateRangeChange?.({ createdAfter: undefined, createdBefore: undefined });
+    setHasDateFilter(false);
+  };
+
+  const handleDateChange = ({ value }: { value: DateValue[] }) => {
+    const [start, end] = value;
+
+    if (!start) {
+      onDateRangeChange?.({ createdAfter: undefined, createdBefore: undefined });
+      setHasDateFilter(false);
+      return;
+    }
+
+    if (!end) return;
+
+    const [earlier, later] = start.compare(end) <= 0 ? [start, end] : [end, start];
+
+    const startDate = earlier.toDate(getLocalTimeZone());
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(later.add({ days: 1 }).toDate(getLocalTimeZone()).getTime() - 1);
+
+    onDateRangeChange?.({
+      createdAfter: startDate.toISOString(),
+      createdBefore: endDate.toISOString(),
+    });
+    setHasDateFilter(true);
   };
 
   return (
@@ -247,6 +279,26 @@ export function ChannelFilterBar({
                   In Review
                 </styled.button>
               </HStack>
+            </VStack>
+          )}
+
+          {/* Date Range Section */}
+          {canManagePosts && (
+            <VStack alignItems="start" gap="2" width="full">
+              <styled.label
+                fontSize="xs"
+                fontWeight="semibold"
+                color="fg.muted"
+                textTransform="uppercase"
+                style={{ letterSpacing: "0.05em" }}
+              >
+                Date Range
+              </styled.label>
+              <DateRangePicker
+                hideInputs={true}
+                max={todayVal}
+                onValueChange={handleDateChange}
+              />
             </VStack>
           )}
         </VStack>
