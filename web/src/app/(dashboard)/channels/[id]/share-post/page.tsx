@@ -14,12 +14,14 @@ export default async function Page(props: Props) {
   const { id } = await props.params;
   const searchParams = await props.searchParams;
 
-  const streakCount = searchParams?.streak_count
+  const parsedStreak = searchParams?.streak_count
     ? parseInt(searchParams.streak_count, 10)
-    : undefined;
-  const rewardCoins = searchParams?.reward_coins
+    : NaN;
+  const parsedCoins = searchParams?.reward_coins
     ? parseInt(searchParams.reward_coins, 10)
-    : undefined;
+    : NaN;
+  const streakCount = Number.isFinite(parsedStreak) ? parsedStreak : undefined;
+  const rewardCoins = Number.isFinite(parsedCoins) ? parsedCoins : undefined;
 
   return (
     <SharePostScreen
