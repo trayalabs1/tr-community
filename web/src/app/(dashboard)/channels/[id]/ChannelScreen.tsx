@@ -84,10 +84,19 @@ export function ChannelScreen(props: Props) {
 
     // If page already loaded, sync updates (for optimistic updates like likes)
     if (loadedPagesRef.current.has(pageNum)) {
-      const updatedThreadsMap = new Map(threads.threads.map((t) => [t.id, t]));
-      setAllThreads((prev) =>
-        prev.map((t) => updatedThreadsMap.get(t.id) ?? t)
-      );
+      setAllThreads((prev) => {
+        const freshById = new Map(threads.threads.map((t) => [t.id, t]));
+        const updated = prev.map((t) => freshById.get(t.id) ?? t);
+        // For page 1 revalidation, also prepend any newly created threads
+        if (pageNum === 1) {
+          const existingIds = new Set(prev.map((t) => t.id));
+          const newThreads = threads.threads.filter((t) => !existingIds.has(t.id));
+          if (newThreads.length > 0) {
+            return [...newThreads, ...updated];
+          }
+        }
+        return updated;
+      });
       setIsLoadingMore(false);
       return;
     }

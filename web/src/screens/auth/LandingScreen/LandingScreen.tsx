@@ -20,7 +20,14 @@ import { useEventTracking } from "@/lib/moengage/useEventTracking";
 import { Spinner } from "@/components/ui/Spinner";
 import { generateRandomUsername } from "@/utils/generateUsername";
 
-export function LandingScreen({ token }: { token: string }) {
+type LandingScreenProps = {
+  token: string;
+  share?: boolean;
+  streakCount?: number;
+  rewardCoins?: number;
+};
+
+export function LandingScreen({ token, share, streakCount, rewardCoins }: LandingScreenProps) {
   const router = useRouter();
   const { trigger } = useAuthTrayaToken({ token });
   const { mutate: mutateAccount } = useAccountGet();
@@ -33,19 +40,33 @@ export function LandingScreen({ token }: { token: string }) {
   // const usernameModal = useDisclosure();
   const { trackOnboardingLanded, trackEnterClicked } = useEventTracking();
 
+  const buildShareQuery = () => {
+    const params = new URLSearchParams();
+    if (streakCount !== undefined) params.set("streak_count", String(streakCount));
+    if (rewardCoins !== undefined) params.set("reward_coins", String(rewardCoins));
+    const query = params.toString();
+    return query ? `?${query}` : "";
+  };
+
   const redirectToFirstChannel = async () => {
+    const shareQuery = share ? buildShareQuery() : "";
     try {
       const channelsResponse = await channelList();
       const channels = channelsResponse?.channels ?? [];
       const monthChannel = channels.find((c) => c.name?.toLowerCase().includes("month"));
       const targetChannel = monthChannel ?? channels[0];
       if (targetChannel?.id) {
-        router.push(`/channels/${targetChannel.id}`);
+        const hasShareParams = share && streakCount !== undefined && rewardCoins !== undefined;
+        if (hasShareParams) {
+          router.push(`/channels/${targetChannel.id}/share-post${shareQuery}`);
+        } else {
+          router.push(`/channels/${targetChannel.id}`);
+        }
       } else {
-        router.push("/channels");
+        router.push(`/channels`);
       }
     } catch {
-      router.push("/channels");
+      router.push(`/channels`);
     }
   };
 
@@ -85,7 +106,7 @@ export function LandingScreen({ token }: { token: string }) {
         },
       }
     );
-  }, [trigger, router, mutateAccount]);
+  }, [trigger, router, mutateAccount, share]);
 
   // Retry handler for error state
   const handleEnterCommunity = async () => {

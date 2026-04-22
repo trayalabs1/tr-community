@@ -24,7 +24,7 @@ export default async function ChannelsPage() {
   const session = await getServerSession();
   if (!session) redirect("/");
   const { data: channels } = await channelList({});
-  const { data: notifications } = await notificationList({ status: ["unread"] });
+  const { data: notifications } = await notificationList({ status: ["unread"], page: "1" });
   const { data: collections } = await collectionList({});
 
   const hasUnreadNotifications = (notifications?.notifications?.length ?? 0) > 0;
