@@ -61,6 +61,13 @@ func (s *service) List(ctx context.Context,
 		q = append(q, thread_querier.UseSentimentRanking())
 	}
 
+	if accountID.Ok() {
+		roles := session.GetRoles(ctx)
+		if roles.Permissions().HasAny(rbac.PermissionManagePosts, rbac.PermissionAdministrator) {
+			q = append(q, thread_querier.ExcludeBAHPosts())
+		}
+	}
+
 	vq := func() thread_querier.Query {
 		v, ok := opts.Visibility.Get()
 		if !ok {
