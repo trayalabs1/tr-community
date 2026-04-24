@@ -9,11 +9,8 @@ import (
 
 func NotBAHPost() predicate.Post {
 	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.Or(
-			sql.IsNull(s.C(ent_post.FieldMetadata)),
-			sql.P(func(b *sql.Builder) {
-				b.WriteString(s.C(ent_post.FieldMetadata) + "->>'post_category' != 'BAH'")
-			}),
-		))
+		s.Where(sql.P(func(b *sql.Builder) {
+			b.WriteString("COALESCE(" + s.C(ent_post.FieldMetadata) + "->>'post_category', '') != 'BAH'")
+		}))
 	})
 }
