@@ -8,6 +8,7 @@ import (
 
 	"github.com/Southclaws/storyden/app/resources/message"
 	"github.com/Southclaws/storyden/app/resources/post"
+	"github.com/Southclaws/storyden/app/services/sentiment/postfilter"
 	"github.com/Southclaws/storyden/internal/ent"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
 	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
@@ -34,6 +35,7 @@ func runRehydrator(
 				ent_post.Not(ent_post.HasSentimentWith(
 					ent_post_sentiment.ScoringStatusEQ(ent_post_sentiment.ScoringStatusScored),
 				)),
+				postfilter.NotBAHPost(),
 			).
 			Select(ent_post.FieldID).
 			All(ctx)

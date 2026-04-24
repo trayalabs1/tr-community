@@ -31,6 +31,7 @@ export function ChannelScreen(props: Props) {
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
   const [selectedVisibility, setSelectedVisibility] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<{ createdAfter?: string; createdBefore?: string }>({});
+  const [excludeBAH, setExcludeBAH] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [allThreads, setAllThreads] = useState<ThreadReference[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -58,6 +59,9 @@ export function ChannelScreen(props: Props) {
   if (dateRange.createdBefore) {
     threadParams['created_before'] = dateRange.createdBefore;
   }
+  if (excludeBAH) {
+    threadParams['exclude_bah'] = 'true';
+  }
 
   const { data: threads, error, isValidating: isThreadsLoading } = useChannelThreadList(
     props.channel.id,
@@ -74,7 +78,7 @@ export function ChannelScreen(props: Props) {
     setCurrentPage(1);
     setAllThreads([]);
     setHasInitiallyLoaded(false);
-  }, [selectedCategorySlug, selectedVisibility, dateRange]);
+  }, [selectedCategorySlug, selectedVisibility, dateRange, excludeBAH]);
 
   useEffect(() => {
     const pageNum = threads?.current_page;
@@ -145,6 +149,8 @@ export function ChannelScreen(props: Props) {
         onCategoryChange={setSelectedCategorySlug}
         onVisibilityChange={setSelectedVisibility}
         onDateRangeChange={setDateRange}
+        excludeBAH={excludeBAH}
+        onExcludeBAHChange={setExcludeBAH}
         hasUnreadNotifications={props.hasUnreadNotifications}
         bookmarkCount={props.bookmarkCount}
       />
@@ -180,6 +186,8 @@ export function ChannelScreen(props: Props) {
           onCategoryChange={setSelectedCategorySlug}
           onVisibilityChange={setSelectedVisibility}
           onDateRangeChange={setDateRange}
+          excludeBAH={excludeBAH}
+          onExcludeBAHChange={setExcludeBAH}
         />
       </styled.div>
 

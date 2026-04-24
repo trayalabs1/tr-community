@@ -20,6 +20,8 @@ interface ChannelFilterBarProps {
   onCategoryChange: (slug: string | null) => void;
   onVisibilityChange: (visibility: string | null) => void;
   onDateRangeChange?: (range: { createdAfter?: string; createdBefore?: string }) => void;
+  excludeBAH?: boolean;
+  onExcludeBAHChange?: (exclude: boolean) => void;
 }
 
 export function ChannelFilterBar({
@@ -30,6 +32,8 @@ export function ChannelFilterBar({
   onCategoryChange,
   onVisibilityChange,
   onDateRangeChange,
+  excludeBAH = false,
+  onExcludeBAHChange,
 }: ChannelFilterBarProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [hasDateFilter, setHasDateFilter] = useState(false);
@@ -37,14 +41,15 @@ export function ChannelFilterBar({
   const canManagePosts = hasPermission(session, Permission.MANAGE_POSTS);
   const todayVal = today(getLocalTimeZone());
 
-  const hasActiveFilters = selectedCategorySlug || selectedVisibility || hasDateFilter;
-  const activeFilterCount = [selectedCategorySlug, selectedVisibility, hasDateFilter].filter(Boolean).length;
+  const hasActiveFilters = selectedCategorySlug || selectedVisibility || hasDateFilter || excludeBAH;
+  const activeFilterCount = [selectedCategorySlug, selectedVisibility, hasDateFilter, excludeBAH].filter(Boolean).length;
 
   const clearFilters = () => {
     onCategoryChange(null);
     onVisibilityChange(null);
     onDateRangeChange?.({ createdAfter: undefined, createdBefore: undefined });
     setHasDateFilter(false);
+    onExcludeBAHChange?.(false);
   };
 
   const handleDateChange = ({ value }: { value: DateValue[] }) => {
@@ -299,6 +304,40 @@ export function ChannelFilterBar({
                 max={todayVal}
                 onValueChange={handleDateChange}
               />
+            </VStack>
+          )}
+
+          {/* Exclude Streak Posts Section */}
+          {canManagePosts && (
+            <VStack alignItems="start" gap="2" width="full">
+              <styled.label
+                fontSize="xs"
+                fontWeight="semibold"
+                color="fg.muted"
+                textTransform="uppercase"
+                style={{ letterSpacing: "0.05em" }}
+              >
+                Streak Posts
+              </styled.label>
+              <HStack gap="2" flexWrap="wrap">
+                <styled.button
+                  onClick={() => onExcludeBAHChange?.(!excludeBAH)}
+                  fontSize="sm"
+                  cursor="pointer"
+                  transition="all"
+                  style={{
+                    backgroundColor: excludeBAH ? TRAYA_COLORS.primary : TRAYA_COLORS.tertiary,
+                    color: excludeBAH ? "white" : TRAYA_COLORS.primary,
+                    border: "none",
+                    padding: "0.375rem 0.75rem",
+                    borderRadius: "9999px",
+                    fontWeight: "500",
+                    fontSize: "14px",
+                  }}
+                >
+                  Hide Streak Posts
+                </styled.button>
+              </HStack>
             </VStack>
           )}
         </VStack>
