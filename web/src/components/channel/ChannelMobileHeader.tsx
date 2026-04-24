@@ -23,6 +23,8 @@ type ChannelMobileHeaderProps = {
   onCategoryChange: (slug: string | null) => void;
   onVisibilityChange: (visibility: string | null) => void;
   onDateRangeChange?: (range: { createdAfter?: string; createdBefore?: string }) => void;
+  excludeBAH?: boolean;
+  onExcludeBAHChange?: (exclude: boolean) => void;
   hasUnreadNotifications?: boolean;
   bookmarkCount?: number;
 };
@@ -36,6 +38,8 @@ export function ChannelMobileHeader({
   onCategoryChange,
   onVisibilityChange,
   onDateRangeChange,
+  excludeBAH,
+  onExcludeBAHChange,
   hasUnreadNotifications = false,
   bookmarkCount = 0,
 }: ChannelMobileHeaderProps) {
@@ -168,6 +172,8 @@ export function ChannelMobileHeader({
           onCategoryChange={onCategoryChange}
           onVisibilityChange={onVisibilityChange}
           onDateRangeChange={onDateRangeChange}
+          excludeBAH={excludeBAH}
+          onExcludeBAHChange={onExcludeBAHChange}
         />
       </styled.div>
     </VStack>

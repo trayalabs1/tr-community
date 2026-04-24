@@ -30,6 +30,7 @@ type Params struct {
 	IgnorePinned         opt.Optional[bool]
 	NoReplies            opt.Optional[bool]
 	UseSentimentRanking  bool
+	ExcludeBAH           bool
 }
 
 func (s *service) List(ctx context.Context,
@@ -59,6 +60,9 @@ func (s *service) List(ctx context.Context,
 	})
 	if opts.UseSentimentRanking {
 		q = append(q, thread_querier.UseSentimentRanking())
+	}
+	if opts.ExcludeBAH {
+		q = append(q, thread_querier.ExcludeBAHPosts())
 	}
 
 	vq := func() thread_querier.Query {

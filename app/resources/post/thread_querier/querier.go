@@ -3,6 +3,7 @@ package thread_querier
 import (
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/Southclaws/dt"
 	"github.com/Southclaws/opt"
 	"github.com/jmoiron/sqlx"
@@ -15,6 +16,7 @@ import (
 	ent_account "github.com/Southclaws/storyden/internal/ent/account"
 	ent_category "github.com/Southclaws/storyden/internal/ent/category"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
+	"github.com/Southclaws/storyden/internal/ent/predicate"
 	ent_tag "github.com/Southclaws/storyden/internal/ent/tag"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/spanner"
 )
@@ -90,6 +92,16 @@ func HasNoReplies() Query {
 func UseSentimentRanking() Query {
 	return func(q *threadListOptions) {
 		q.useSentimentRanking = true
+	}
+}
+
+func ExcludeBAHPosts() Query {
+	return func(q *threadListOptions) {
+		q.q.Where(predicate.Post(func(s *sql.Selector) {
+			s.Where(sql.P(func(b *sql.Builder) {
+				b.WriteString("COALESCE(" + s.C(ent_post.FieldMetadata) + "->>'post_category', '') != 'BAH'")
+			}))
+		}))
 	}
 }
 

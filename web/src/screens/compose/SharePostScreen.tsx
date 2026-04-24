@@ -65,6 +65,10 @@ export function SharePostScreen({ channelID, streakCount, rewardCoins }: Props) 
         title: "",
         body,
         visibility: targetVisibility,
+        meta: {
+          post_category: "BAH",
+          type: streakCount,
+        },
       };
 
       await channelThreadCreate(channelID, payload);

@@ -1753,6 +1753,13 @@ paths:
           schema:
             type: string
             format: date-time
+        - name: exclude_bah
+          description: Exclude posts with post_category BAH from results.
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
       responses:
         default: { $ref: "#/components/responses/InternalServerError" }
         "401": { $ref: "#/components/responses/Unauthorised" }
@@ -2070,6 +2077,13 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: exclude_bah
+          description: Exclude posts with post_category BAH from results.
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
       responses:
         default: { $ref: "#/components/responses/InternalServerError" }
         "404": { $ref: "#/components/responses/NotFound" }

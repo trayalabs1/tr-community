@@ -11,6 +11,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/message"
 	"github.com/Southclaws/storyden/app/resources/post"
 	"github.com/Southclaws/storyden/app/services/sentiment/engagement"
+	"github.com/Southclaws/storyden/app/services/sentiment/postfilter"
 	"github.com/Southclaws/storyden/app/services/sentiment/scorer"
 	"github.com/Southclaws/storyden/internal/ent"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
@@ -115,6 +116,7 @@ func (r *Ranker) ScoreUnscored(ctx context.Context, params ScoreUnscoredParams) 
 		ent_post.RootPostIDIsNil(),
 		ent_post.VisibilityEQ(ent_post.VisibilityPublished),
 		ent_post.ChannelIDEQ(params.ChannelID),
+		postfilter.NotBAHPost(),
 	}
 
 	if params.CreatedAfter != nil {
@@ -175,3 +177,4 @@ func CalculateEngagementBooster(likes, replies int) float64 {
 	replyBoost := float64(min(replies, 10))
 	return likeBoost + replyBoost
 }
+
