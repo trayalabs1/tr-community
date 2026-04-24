@@ -236,6 +236,7 @@ func (i *Threads) ThreadList(ctx context.Context, request openapi.ThreadListRequ
 		CreatedAfter:  createdAfter,
 		CreatedBefore: createdBefore,
 		NoReplies:     noReplies,
+		ExcludeBAH:    request.Params.ExcludeBah != nil && *request.Params.ExcludeBah,
 	})
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))

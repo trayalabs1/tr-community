@@ -58,4 +58,8 @@ will be ignored, only the value containing "null" will be considered.
    * Show only threads created before this date/time.
    */
   created_before?: string;
+  /**
+   * Exclude posts with post_category BAH from results.
+   */
+  exclude_bah?: boolean;
 };
