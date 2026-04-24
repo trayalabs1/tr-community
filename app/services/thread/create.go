@@ -102,9 +102,11 @@ func (s *service) Create(ctx context.Context,
 			ID: thr.ID,
 		})
 
-		s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
-			PostID: thr.ID,
-		})
+		if meta["post_category"] != "BAH" {
+			s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
+				PostID: thr.ID,
+			})
+		}
 	}
 
 	// TODO: Do this using event consumer.
