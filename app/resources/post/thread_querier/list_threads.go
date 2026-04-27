@@ -82,8 +82,8 @@ func (d *Querier) List(
 
 	if queryOptions.useSentimentRanking {
 		bahCond := "%[2]s->>'post_category' = 'BAH' AND %[2]s->>'type' = '21'"
-		evenBAH := "(" + bahCond + " AND MOD(EXTRACT(EPOCH FROM %[3]s)::int, 2) = 0)"
-		oddBAH := "(" + bahCond + " AND MOD(EXTRACT(EPOCH FROM %[3]s)::int, 2) = 1)"
+		evenBAH := "(" + bahCond + " AND MOD(EXTRACT(EPOCH FROM %[3]s)::int, 5) = 0)"
+		oddBAH := "(" + bahCond + " AND MOD(EXTRACT(EPOCH FROM %[3]s)::int, 5) != 0)"
 
 		rankExpr := `CASE
 			WHEN (%[1]s = 'positive' OR ` + evenBAH + `) AND %[3]s > NOW() - INTERVAL '24 hours' THEN 1
