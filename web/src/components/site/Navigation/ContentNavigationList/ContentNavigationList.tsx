@@ -9,6 +9,7 @@ import {
 import { useChannelList, useChannelCategoryList } from "@/api/openapi-client/channels";
 import { useNodeList } from "@/api/openapi-client/nodes";
 import { ChannelList } from "@/components/channel/ChannelList/ChannelList";
+import { PINNED_CHANNEL_SLUGS } from "@/lib/channel/pinned";
 import { TopicsSection } from "./TopicsSection";
 import { LStack, HStack, styled } from "@/styled-system/jsx";
 import { LibraryIcon } from "@/components/ui/icons/Library";
@@ -90,6 +91,7 @@ export function ContentNavigationList(props: Props) {
           initialChannelList={props.initialChannelList}
           selectedChannelID={selectedChannelId}
           onChannelSelect={setSelectedChannelId}
+          pinnedSlugs={PINNED_CHANNEL_SLUGS}
         />
         {channelListData?.channels && channelListData.channels.length > 0 && (
           <div
