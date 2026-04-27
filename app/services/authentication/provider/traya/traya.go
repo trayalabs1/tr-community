@@ -102,8 +102,9 @@ type TrayaUserResponse struct {
 	} `json:"case"`
 	ChatURL                string `json:"chatUrl"`
 	TotalKitCount          int    `json:"totalKitCount"`
-	RunningMonthForHairKit *int   `json:"runningMonthForHairKit"`
+	RunningMonthForHairKit int    `json:"runningMonthForHairKit"`
 	FirstFilledFormDate    string `json:"firstFilledFormDate"`
+	CustomerType           string `json:"customerType"`
 	CustomerSlug           struct {
 		SlugName any `json:"slugName"`
 	} `json:"customerSlug"`
@@ -181,10 +182,7 @@ func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*ac
 		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.InvalidArgument))
 	}
 
-	orderCount := 0
-	if userData.RunningMonthForHairKit != nil {
-		orderCount = *userData.RunningMonthForHairKit
-	}
+	orderCount := userData.RunningMonthForHairKit
 
 	acc, err := p.getOrCreateAccount(ctx, userData.User.ID, *emailAddress, userData.User.FirstName, userData.User.LastName, userData.User.PhoneNumber)
 	if err != nil {
@@ -211,7 +209,7 @@ func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*ac
 		}
 	}
 
-	if err := p.ensureChannelMemberships(ctx, acc.ID, userData.User.Gender, orderCount, userData.Case.LatestOrderDate, userData.FirstFilledFormDate); err != nil {
+	if err := p.ensureChannelMemberships(ctx, acc.ID, userData.User.Gender, orderCount, userData.Case.LatestOrderDate, userData.FirstFilledFormDate, userData.CustomerType); err != nil {
 		p.logger.Warn("failed to ensure channel memberships",
 			slog.String("account_id", acc.ID.String()),
 			slog.Int("order_count", orderCount),
@@ -336,7 +334,7 @@ func generateHandle(firstName string, phoneNumber string) string {
 	return fmt.Sprintf("%s%s%s", namePrefix, phonePrefix, randomDigits)
 }
 
-func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string, firstFilledFormDate string) error {
+func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string, firstFilledFormDate string, customerType string) error {
 	normalizedGender := normalizeGender(gender)
 
 	isWithin60Days, err := isLastOrderWithin60Days(latestOrderDate)
@@ -372,7 +370,7 @@ func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID accou
 		}
 	}
 
-	if normalizedGender == "female" && orderCount == 0 {
+	if normalizedGender == "female" && customerType == "lead" {
 		older, err := isOlderThan30Days(firstFilledFormDate)
 		if err != nil {
 			p.logger.Warn("failed to parse firstFilledFormDate",
