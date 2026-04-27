@@ -102,7 +102,7 @@ type TrayaUserResponse struct {
 	} `json:"case"`
 	ChatURL                string `json:"chatUrl"`
 	TotalKitCount          int    `json:"totalKitCount"`
-	RunningMonthForHairKit int    `json:"runningMonthForHairKit"`
+	RunningMonthForHairKit *int   `json:"runningMonthForHairKit"`
 	FirstFilledFormDate    string `json:"firstFilledFormDate"`
 	CustomerSlug           struct {
 		SlugName any `json:"slugName"`
@@ -163,7 +163,6 @@ func getAllManagedChannelSlugs() map[string]bool {
 			slugs[slug] = true
 		}
 	}
-	slugs["traya-womens-community"] = true
 	return slugs
 }
 
@@ -182,7 +181,10 @@ func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*ac
 		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.InvalidArgument))
 	}
 
-	orderCount := userData.RunningMonthForHairKit
+	orderCount := 0
+	if userData.RunningMonthForHairKit != nil {
+		orderCount = *userData.RunningMonthForHairKit
+	}
 
 	acc, err := p.getOrCreateAccount(ctx, userData.User.ID, *emailAddress, userData.User.FirstName, userData.User.LastName, userData.User.PhoneNumber)
 	if err != nil {

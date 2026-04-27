@@ -271,7 +271,7 @@ func setupMockTrayaAPI() *httptest.Server {
 				},
 				ChatURL:                "https://wa.me/918828006272?text=Hi! I want to speak to a hair expert now!",
 				TotalKitCount:          5,
-				RunningMonthForHairKit: 5,
+				RunningMonthForHairKit: func() *int { v := 5; return &v }(),
 				CustomerSlug: struct {
 					SlugName any `json:"slugName"`
 				}{
@@ -317,7 +317,7 @@ func setupMockTrayaAPI() *httptest.Server {
 				},
 				ChatURL:                "https://wa.me/918828006272",
 				TotalKitCount:          8,
-				RunningMonthForHairKit: 8,
+				RunningMonthForHairKit: func() *int { v := 8; return &v }(),
 				CustomerSlug: struct {
 					SlugName any `json:"slugName"`
 				}{
@@ -364,7 +364,7 @@ func setupMockTrayaAPI() *httptest.Server {
 				},
 				ChatURL:                "https://wa.me/918828006272?text=Hi! I want to speak to a hair expert now!",
 				TotalKitCount:          8,
-				RunningMonthForHairKit: 8,
+				RunningMonthForHairKit: func() *int { v := 8; return &v }(),
 				CustomerSlug: struct {
 					SlugName any `json:"slugName"`
 				}{
