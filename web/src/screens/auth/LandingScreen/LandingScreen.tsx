@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
 import { Spinner } from "@/components/ui/Spinner";
 import { generateRandomUsername } from "@/utils/generateUsername";
+import { PINNED_CHANNEL_SLUGS } from "@/lib/channel/pinned";
 
 type LandingScreenProps = {
   token: string;
@@ -53,7 +54,7 @@ export function LandingScreen({ token, share, streakCount, rewardCoins }: Landin
     try {
       const channelsResponse = await channelList();
       const channels = channelsResponse?.channels ?? [];
-      const monthChannel = channels.find((c) => c.name?.toLowerCase().includes("month"));
+      const monthChannel = channels.find((c) => PINNED_CHANNEL_SLUGS.includes(c.slug)) || channels.find((c) => c.name?.toLowerCase().includes("month"));
       const targetChannel = monthChannel ?? channels[0];
       if (targetChannel?.id) {
         const hasShareParams = share && streakCount !== undefined && rewardCoins !== undefined;

@@ -16,6 +16,7 @@ import { useSession } from "@/auth";
 import { useChannelList } from "@/api/openapi-client/channels";
 import { useAccountGet } from "@/api/openapi-client/accounts";
 import { hasPermission } from "@/utils/permissions";
+import { PINNED_CHANNEL_SLUGS } from "@/lib/channel/pinned";
 
 declare global {
   interface Window {
@@ -39,7 +40,7 @@ export function MobileCommandBar() {
 
   const isAdmin = hasPermission(session, "ADMINISTRATOR");
   const channels = channelsData?.channels ?? [];
-  const monthChannel = channels.find((c) => c.name?.toLowerCase().includes("month"));
+  const monthChannel = channels.find((c) => PINNED_CHANNEL_SLUGS.includes(c.slug)) || channels.find((c) => c.name?.toLowerCase().includes("month"));
   const targetChannelId = monthChannel?.id ?? channels[0]?.id;
   const communityHref = isAdmin || !targetChannelId ? "/channels" : `/channels/${targetChannelId}`;
 
