@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { Fragment, useState, useEffect, useCallback, useRef } from "react";
 
 import { Unready } from "src/components/site/Unready";
 import { LoadingBanner } from "@/components/site/Loading";
@@ -14,6 +14,7 @@ import { Account, Channel, ThreadReference } from "@/api/openapi-schema";
 import { ChannelMobileHeader } from "@/components/channel/ChannelMobileHeader";
 import { ChannelFilterBar } from "@/components/channel/ChannelFilterBar";
 import { ThreadReferenceCard } from "@/components/post/ThreadCard";
+import { ShareExperiencePrompt } from "@/components/thread/ThreadCreate/ShareExperiencePrompt";
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { HStack, LStack, VStack, styled } from "@/styled-system/jsx";
@@ -206,12 +207,16 @@ export function ChannelScreen(props: Props) {
         ) : allThreads.length > 0 ? (
           <>
             <VStack alignItems="start" gap="4" width="full">
-              {allThreads.map((thread) => (
-                <ThreadReferenceCard
-                  key={thread.id}
-                  thread={thread}
-                  channelID={props.channel.id}
-                />
+              {allThreads.map((thread, index) => (
+                <Fragment key={thread.id}>
+                  <ThreadReferenceCard
+                    thread={thread}
+                    channelID={props.channel.id}
+                  />
+                  {index === 4 && (
+                    <ShareExperiencePrompt channelID={props.channel.id} />
+                  )}
+                </Fragment>
               ))}
             </VStack>
 
