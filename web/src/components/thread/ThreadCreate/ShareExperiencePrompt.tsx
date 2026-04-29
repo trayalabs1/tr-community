@@ -17,7 +17,7 @@ type Props = {
 export function ShareExperiencePrompt({
   channelID,
   title = "Want to share something?",
-  body = "Share what you're noticing at month 3 — coaches reply within a day.",
+  body = "Tell us what you’re noticing in your journey so far — coaches usually reply within a few minutes.",
   ctaLabel = "Share my experience",
 }: Props) {
   const useDisclosureProps = useDisclosure();
@@ -66,7 +66,7 @@ export function ShareExperiencePrompt({
           fontWeight="semibold"
           style={{ color: TRAYA_COLORS.primary }}
         >
-          <styled.span aria-hidden="true">✨</styled.span>
+          <styled.span aria-hidden="true">💭</styled.span>
           <styled.span>{title}</styled.span>
         </styled.div>
 

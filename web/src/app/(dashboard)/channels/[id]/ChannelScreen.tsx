@@ -213,7 +213,7 @@ export function ChannelScreen(props: Props) {
                     thread={thread}
                     channelID={props.channel.id}
                   />
-                  {index === 4 && (
+                  {index === 6 && (
                     <ShareExperiencePrompt channelID={props.channel.id} />
                   )}
                 </Fragment>
