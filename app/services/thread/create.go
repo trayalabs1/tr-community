@@ -2,6 +2,7 @@ package thread
 
 import (
 	"context"
+	"time"
 
 	"github.com/Southclaws/dt"
 	"github.com/Southclaws/fault"
@@ -21,6 +22,8 @@ import (
 	"github.com/Southclaws/storyden/app/services/link/fetcher"
 	"github.com/Southclaws/storyden/app/services/moderation/checker"
 )
+
+const bahCooldownWindow = 12 * time.Hour
 
 func (s *service) Create(ctx context.Context,
 	title string,
@@ -69,6 +72,31 @@ func (s *service) Create(ctx context.Context,
 	)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx), fmsg.With("failed to create thread"))
+	}
+
+	if meta["post_category"] == "BAH" && thr.Visibility == visibility.VisibilityPublished {
+		recent, err := s.threadQuerier.HasRecentChannelBAH(
+			ctx,
+			thr.ChannelID,
+			time.Now().Add(-bahCooldownWindow),
+			xid.ID(thr.ID),
+		)
+		if err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
+		}
+
+		if recent {
+			thr, err = s.threadWriter.Update(ctx, thr.ID, thread_writer.WithVisibility(visibility.VisibilityReview))
+			if err != nil {
+				return nil, fault.Wrap(err, fctx.With(ctx))
+			}
+
+			s.bus.Publish(ctx, &message.EventThreadSubmittedForReview{
+				ID:    thr.ID,
+				Title: thr.Title,
+				Body:  thr.Content.Plaintext(),
+			})
+		}
 	}
 
 	if content, ok := partial.Content.Get(); ok {
