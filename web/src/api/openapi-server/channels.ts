@@ -26,6 +26,7 @@ import type {
   ChannelMemberOKResponse,
   ChannelMemberRoleUpdate,
   ChannelMutableProps,
+  ChannelPersonalizedFeedOKResponse,
   ChannelScoreUnscoredParams,
   ChannelThreadGetParams,
   ChannelThreadListParams,
@@ -606,6 +607,36 @@ export const channelThreadList = async (
 ): Promise<channelThreadListResponse> => {
   return fetcher<Promise<channelThreadListResponse>>(
     getChannelThreadListUrl(channelID, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Personalised top-of-feed for a channel. Returns the requester's own
+threads from the last 24 hours (across all visibilities) plus, for each
+of those threads, up to two recent published threads from other users
+that share the same primary topic and sentiment tag. Both arrays are
+empty when the requester has no recent threads.
+
+ */
+export type channelThreadListPersonalizedResponse = {
+  data: ChannelPersonalizedFeedOKResponse;
+  status: number;
+};
+
+export const getChannelThreadListPersonalizedUrl = (channelID: string) => {
+  return `/channels/${channelID}/threads/personalized`;
+};
+
+export const channelThreadListPersonalized = async (
+  channelID: string,
+  options?: RequestInit,
+): Promise<channelThreadListPersonalizedResponse> => {
+  return fetcher<Promise<channelThreadListPersonalizedResponse>>(
+    getChannelThreadListPersonalizedUrl(channelID),
     {
       ...options,
       method: "GET",
