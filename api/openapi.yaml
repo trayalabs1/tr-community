@@ -1767,6 +1767,25 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "200": { $ref: "#/components/responses/ThreadListOK" }
 
+  /channels/{channelID}/threads/personalized:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    get:
+      operationId: ChannelThreadListPersonalized
+      description: |
+        Personalised top-of-feed for a channel. Returns the requester's own
+        threads from the last 24 hours (across all visibilities) plus, for each
+        of those threads, up to two recent published threads from other users
+        that share the same primary topic and sentiment tag. Both arrays are
+        empty when the requester has no recent threads.
+      tags: [channels, threads]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelPersonalizedFeedOK" }
+
   /channels/{channelID}/threads/{thread_mark}:
     parameters:
       - $ref: "#/components/parameters/ChannelID"
@@ -4310,6 +4329,12 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/ThreadListResult" }
+
+    ChannelPersonalizedFeedOK:
+      description: Personalised top-of-feed payload for a channel.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ChannelPersonalizedFeed" }
 
     RankingRecalculateOK:
       description: Ranking recalculation completed successfully.
@@ -6971,6 +6996,32 @@ components:
           required: [threads]
           properties:
             threads: { $ref: "#/components/schemas/ThreadList" }
+
+    ChannelPersonalizedSimilarGroup:
+      type: object
+      required: [for_thread_id, threads]
+      properties:
+        for_thread_id:
+          $ref: "#/components/schemas/Identifier"
+        threads:
+          $ref: "#/components/schemas/ThreadList"
+
+    ChannelPersonalizedFeed:
+      type: object
+      required: [self_recent, similar]
+      description: |
+        Personalised top-of-feed payload for a channel. self_recent contains
+        threads created by the requester within the last 24 hours regardless of
+        visibility. similar contains, for each entry in self_recent, up to two
+        recent published threads from other users that share the same primary
+        topic and sentiment tag.
+      properties:
+        self_recent:
+          $ref: "#/components/schemas/ThreadList"
+        similar:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChannelPersonalizedSimilarGroup"
 
     RankingRecalculateResult:
       type: object

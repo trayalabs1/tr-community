@@ -15,6 +15,7 @@ import type { SWRMutationConfiguration } from "swr/mutation";
 import { fetcher } from "../client";
 import type {
   BadRequestResponse,
+  ChannelPersonalizedFeedOKResponse,
   ChannelThreadGetParams,
   ChannelThreadListParams,
   ForbiddenResponse,
@@ -156,6 +157,67 @@ export const useChannelThreadList = <
     swrOptions?.swrKey ??
     (() => (isEnabled ? getChannelThreadListKey(channelID, params) : null));
   const swrFn = () => channelThreadList(channelID, params);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Personalised top-of-feed for a channel. Returns the requester's own
+threads from the last 24 hours (across all visibilities) plus, for each
+of those threads, up to two recent published threads from other users
+that share the same primary topic and sentiment tag. Both arrays are
+empty when the requester has no recent threads.
+
+ */
+export const channelThreadListPersonalized = (channelID: string) => {
+  return fetcher<ChannelPersonalizedFeedOKResponse>({
+    url: `/channels/${channelID}/threads/personalized`,
+    method: "GET",
+  });
+};
+
+export const getChannelThreadListPersonalizedKey = (channelID: string) =>
+  [`/channels/${channelID}/threads/personalized`] as const;
+
+export type ChannelThreadListPersonalizedQueryResult = NonNullable<
+  Awaited<ReturnType<typeof channelThreadListPersonalized>>
+>;
+export type ChannelThreadListPersonalizedQueryError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelThreadListPersonalized = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof channelThreadListPersonalized>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false && !!channelID;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getChannelThreadListPersonalizedKey(channelID) : null));
+  const swrFn = () => channelThreadListPersonalized(channelID);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,

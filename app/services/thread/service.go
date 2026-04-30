@@ -57,6 +57,10 @@ type Service interface {
 		threadID post.ID,
 		pageParams pagination.Parameters,
 	) (*thread.Thread, error)
+
+	// Personalized returns the requester's recent threads in a channel and
+	// similar published threads from other users.
+	Personalized(ctx context.Context, channelID xid.ID) (*PersonalizedFeed, error)
 }
 
 type Partial struct {
