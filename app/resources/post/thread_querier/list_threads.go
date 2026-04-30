@@ -81,19 +81,23 @@ func (d *Querier) List(
 	}
 
 	if queryOptions.useSentimentRanking {
+		bahCond := "(%[2]s->>'post_category' = 'BAH' AND %[2]s->>'type' = '21')"
+		neutralOrBAH := "(%[1]s = 'neutral' OR " + bahCond + ")"
+
 		rankExpr := `CASE
-			WHEN %[1]s = 'positive' AND %[2]s > NOW() - INTERVAL '24 hours' THEN 1
-			WHEN %[1]s = 'neutral' AND %[2]s > NOW() - INTERVAL '24 hours' THEN 2
-			WHEN %[1]s = 'positive' AND %[2]s > NOW() - INTERVAL '48 hours' THEN 3
-			WHEN %[1]s = 'neutral' AND %[2]s > NOW() - INTERVAL '48 hours' THEN 4
-			WHEN %[1]s = 'positive' AND %[2]s > NOW() - INTERVAL '72 hours' THEN 5
-			WHEN %[1]s = 'neutral' AND %[2]s > NOW() - INTERVAL '72 hours' THEN 6
-			WHEN %[1]s = 'positive' AND %[2]s > NOW() - INTERVAL '96 hours' THEN 7
-			WHEN %[1]s = 'neutral' AND %[2]s > NOW() - INTERVAL '96 hours' THEN 8
+			WHEN %[1]s = 'positive' AND %[3]s > NOW() - INTERVAL '24 hours' THEN 1
+			WHEN ` + neutralOrBAH + ` AND %[3]s > NOW() - INTERVAL '24 hours' THEN 2
+			WHEN %[1]s = 'positive' AND %[3]s > NOW() - INTERVAL '48 hours' THEN 3
+			WHEN ` + neutralOrBAH + ` AND %[3]s > NOW() - INTERVAL '48 hours' THEN 4
+			WHEN %[1]s = 'positive' AND %[3]s > NOW() - INTERVAL '72 hours' THEN 5
+			WHEN ` + neutralOrBAH + ` AND %[3]s > NOW() - INTERVAL '72 hours' THEN 6
+			WHEN %[1]s = 'positive' AND %[3]s > NOW() - INTERVAL '96 hours' THEN 7
+			WHEN ` + neutralOrBAH + ` AND %[3]s > NOW() - INTERVAL '96 hours' THEN 8
 			WHEN %[1]s = 'positive' THEN 9
 			WHEN %[1]s = 'neutral' THEN 10
-			WHEN %[1]s = 'negative' THEN 11
-			ELSE 12
+			WHEN ` + bahCond + ` THEN 11
+			WHEN %[1]s = 'negative' THEN 12
+			ELSE 13
 		END ASC`
 
 		if queryOptions.ignorePinned {
@@ -101,9 +105,10 @@ func (d *Querier) List(
 				t := sql.Table(ent_post_sentiment.Table)
 				s.LeftJoin(t).On(s.C(ent_post.FieldID), t.C(ent_post_sentiment.FieldPostID))
 				sentimentCol := t.C(ent_post_sentiment.FieldSentimentTag)
+				metadataCol := s.C(ent_post.FieldMetadata)
 				createdAtCol := s.C(ent_post.FieldCreatedAt)
 				s.OrderExpr(
-					sql.Expr(fmt.Sprintf(rankExpr, sentimentCol, createdAtCol)),
+					sql.Expr(fmt.Sprintf(rankExpr, sentimentCol, metadataCol, createdAtCol)),
 					sql.Expr("COALESCE("+t.C(ent_post_sentiment.FieldRankScore)+", -1) DESC"),
 					sql.Expr(s.C(ent_post.FieldCreatedAt)+" DESC"),
 				)
@@ -113,10 +118,11 @@ func (d *Querier) List(
 				t := sql.Table(ent_post_sentiment.Table)
 				s.LeftJoin(t).On(s.C(ent_post.FieldID), t.C(ent_post_sentiment.FieldPostID))
 				sentimentCol := t.C(ent_post_sentiment.FieldSentimentTag)
+				metadataCol := s.C(ent_post.FieldMetadata)
 				createdAtCol := s.C(ent_post.FieldCreatedAt)
 				s.OrderExpr(
 					sql.Expr(s.C(ent_post.FieldPinnedRank)+" DESC"),
-					sql.Expr(fmt.Sprintf(rankExpr, sentimentCol, createdAtCol)),
+					sql.Expr(fmt.Sprintf(rankExpr, sentimentCol, metadataCol, createdAtCol)),
 					sql.Expr("COALESCE("+t.C(ent_post_sentiment.FieldRankScore)+", -1) DESC"),
 					sql.Expr(s.C(ent_post.FieldCreatedAt)+" DESC"),
 				)
