@@ -303,17 +303,19 @@ export function ThreadScreen(props: Props) {
 
               {match(thread.visibility)
                 .with(Visibility.published, () => null)
-                .with(Visibility.review, () => (
-                  <PostReviewBadge
-                    isModerator={isModerator}
-                    postId={thread.id}
-                    onAccept={handlers.handleAcceptThread}
-                    onEditAndAccept={handlers.handleEditAndAccept}
-                    onDelete={handlers.handleConfirmDelete}
-                    isConfirmingDelete={isConfirmingDelete}
-                    onCancelDelete={handlers.handleCancelDelete}
-                  />
-                ))
+                .with(Visibility.review, () =>
+                  isAdmin ? (
+                    <PostReviewBadge
+                      isModerator={isModerator}
+                      postId={thread.id}
+                      onAccept={handlers.handleAcceptThread}
+                      onEditAndAccept={handlers.handleEditAndAccept}
+                      onDelete={handlers.handleConfirmDelete}
+                      isConfirmingDelete={isConfirmingDelete}
+                      onCancelDelete={handlers.handleCancelDelete}
+                    />
+                  ) : null,
+                )
                 .otherwise(() => (
                   <VisibilityBadge visibility={thread.visibility} />
                 ))}
