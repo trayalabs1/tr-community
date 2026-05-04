@@ -40,7 +40,7 @@ export function MobileCommandBar() {
 
   const isAdmin = hasPermission(session, "ADMINISTRATOR");
   const channels = channelsData?.channels ?? [];
-  const monthChannel = channels.find((c) => PINNED_CHANNEL_SLUGS.includes(c.slug)) || channels.find((c) => c.name?.toLowerCase().includes("month"));
+  const monthChannel = channels.find((c) => c.name?.toLowerCase().includes("month")) || channels.find((c) => PINNED_CHANNEL_SLUGS.includes(c.slug));
   const targetChannelId = monthChannel?.id ?? channels[0]?.id;
   const communityHref = isAdmin || !targetChannelId ? "/channels" : `/channels/${targetChannelId}`;
 
