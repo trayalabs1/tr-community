@@ -103,6 +103,8 @@ type TrayaUserResponse struct {
 	ChatURL                string `json:"chatUrl"`
 	TotalKitCount          int    `json:"totalKitCount"`
 	RunningMonthForHairKit int    `json:"runningMonthForHairKit"`
+	FirstFilledFormDate    string `json:"firstFilledFormDate"`
+	CustomerType           string `json:"customerType"`
 	CustomerSlug           struct {
 		SlugName any `json:"slugName"`
 	} `json:"customerSlug"`
@@ -207,7 +209,7 @@ func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*ac
 		}
 	}
 
-	if err := p.ensureChannelMemberships(ctx, acc.ID, userData.User.Gender, orderCount, userData.Case.LatestOrderDate); err != nil {
+	if err := p.ensureChannelMemberships(ctx, acc.ID, userData.User.Gender, orderCount, userData.Case.LatestOrderDate, userData.FirstFilledFormDate, userData.CustomerType); err != nil {
 		p.logger.Warn("failed to ensure channel memberships",
 			slog.String("account_id", acc.ID.String()),
 			slog.Int("order_count", orderCount),
@@ -332,7 +334,7 @@ func generateHandle(firstName string, phoneNumber string) string {
 	return fmt.Sprintf("%s%s%s", namePrefix, phonePrefix, randomDigits)
 }
 
-func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string) error {
+func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string, firstFilledFormDate string, customerType string) error {
 	normalizedGender := normalizeGender(gender)
 
 	isWithin60Days, err := isLastOrderWithin60Days(latestOrderDate)
@@ -365,6 +367,17 @@ func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID accou
 	if topicChannels, ok := topicChannelsByGender[normalizedGender]; ok {
 		for _, channelSlug := range topicChannels {
 			targetChannels[channelSlug] = true
+		}
+	}
+
+	if normalizedGender == "female" && customerType == "lead" {
+		older, err := isOlderThan30Days(firstFilledFormDate)
+		if err != nil {
+			p.logger.Warn("failed to parse firstFilledFormDate",
+				slog.String("date", firstFilledFormDate),
+				slog.String("error", err.Error()))
+		} else if older {
+			targetChannels["traya-womens-community"] = true
 		}
 	}
 
@@ -462,6 +475,22 @@ func normalizeGender(gender string) string {
 	default:
 		return strings.ToLower(gender)
 	}
+}
+
+func isOlderThan30Days(dateStr string) (bool, error) {
+	if dateStr == "" {
+		return false, nil
+	}
+
+	t, err := time.Parse(time.RFC3339, dateStr)
+	if err != nil {
+		t, err = time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return time.Since(t).Hours()/24 >= 30, nil
 }
 
 func isLastOrderWithin60Days(latestOrderDate string) (bool, error) {

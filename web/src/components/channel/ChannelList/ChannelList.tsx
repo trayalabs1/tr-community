@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useChannelList } from "@/api/openapi-client/channels";
 import { ChannelListOKResponse } from "@/api/openapi-schema";
@@ -14,12 +14,14 @@ export type Props = {
   initialChannelList?: ChannelListOKResponse;
   selectedChannelID?: string;
   onChannelSelect?: (channelId: string) => void;
+  pinnedSlugs?: string[];
 };
 
 export function ChannelList({
   initialChannelList,
   selectedChannelID,
   onChannelSelect,
+  pinnedSlugs,
 }: Props) {
   const [isExpanded, setIsExpanded] = useState(true);
   const { data, error } = useChannelList({
@@ -27,6 +29,14 @@ export function ChannelList({
       fallbackData: initialChannelList,
     },
   });
+
+  const channels = useMemo(() => {
+    if (!data?.channels) return [];
+    if (!pinnedSlugs?.length) return data.channels;
+    const pinned = data.channels.filter((c) => pinnedSlugs.includes(c.slug));
+    const rest = data.channels.filter((c) => !pinnedSlugs.includes(c.slug));
+    return [...pinned, ...rest];
+  }, [data?.channels, pinnedSlugs]);
 
   if (!data) {
     const isUnauthorized = error && "status" in error && error.status === 401;
@@ -79,7 +89,7 @@ export function ChannelList({
 
       {isExpanded && data.channels.length > 0 ? (
         <LStack gap="1">
-          {data.channels.map((channel) => (
+          {channels.map((channel) => (
             <Link
               key={channel.id}
               href={`/channels/${channel.id}`}
