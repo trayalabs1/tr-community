@@ -2,6 +2,8 @@ package thread
 
 import (
 	"context"
+	"math/rand/v2"
+	"time"
 
 	"github.com/Southclaws/dt"
 	"github.com/Southclaws/fault"
@@ -12,6 +14,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/message"
+	"github.com/Southclaws/storyden/app/resources/post"
 	"github.com/Southclaws/storyden/app/resources/post/thread"
 	"github.com/Southclaws/storyden/app/resources/post/thread_writer"
 	"github.com/Southclaws/storyden/app/resources/rbac"
@@ -20,6 +23,15 @@ import (
 	"github.com/Southclaws/storyden/app/services/authentication/session"
 	"github.com/Southclaws/storyden/app/services/link/fetcher"
 	"github.com/Southclaws/storyden/app/services/moderation/checker"
+	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
+)
+
+const bahCooldownWindow = 12 * time.Hour
+
+const (
+	bahSentimentTag      = "neutral"
+	bahRankScoreMin      = 95
+	bahRankScoreRangeLen = 11 // 95..105 inclusive => 11 values
 )
 
 func (s *service) Create(ctx context.Context,
@@ -71,6 +83,37 @@ func (s *service) Create(ctx context.Context,
 		return nil, fault.Wrap(err, fctx.With(ctx), fmsg.With("failed to create thread"))
 	}
 
+	if meta["post_category"] == "BAH" {
+		if err := s.assignBAHSentiment(ctx, thr.ID); err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
+		}
+	}
+
+	if meta["post_category"] == "BAH" && thr.Visibility == visibility.VisibilityPublished {
+		recent, err := s.threadQuerier.HasRecentChannelBAH(
+			ctx,
+			thr.ChannelID,
+			time.Now().Add(-bahCooldownWindow),
+			xid.ID(thr.ID),
+		)
+		if err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
+		}
+
+		if recent {
+			thr, err = s.threadWriter.Update(ctx, thr.ID, thread_writer.WithVisibility(visibility.VisibilityReview))
+			if err != nil {
+				return nil, fault.Wrap(err, fctx.With(ctx))
+			}
+
+			s.bus.Publish(ctx, &message.EventThreadSubmittedForReview{
+				ID:    thr.ID,
+				Title: thr.Title,
+				Body:  thr.Content.Plaintext(),
+			})
+		}
+	}
+
 	if content, ok := partial.Content.Get(); ok {
 		result, err := s.cpm.CheckContent(ctx, xid.ID(thr.ID), datagraph.KindThread, title, content)
 		if err != nil {
@@ -113,6 +156,25 @@ func (s *service) Create(ctx context.Context,
 	s.mentioner.Send(ctx, authorID, *datagraph.NewRef(thr), thr.Content.References()...)
 
 	return thr, nil
+}
+
+func (s *service) assignBAHSentiment(ctx context.Context, postID post.ID) error {
+	rankScore := float64(rand.IntN(bahRankScoreRangeLen) + bahRankScoreMin)
+
+	err := s.db.PostSentiment.
+		Create().
+		SetPostID(xid.ID(postID)).
+		SetSentimentTag(bahSentimentTag).
+		SetScoringStatus(ent_post_sentiment.ScoringStatusScored).
+		SetRankScore(rankScore).
+		OnConflictColumns(ent_post_sentiment.FieldPostID).
+		UpdateNewValues().
+		Exec(ctx)
+	if err != nil {
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return nil
 }
 
 func authoriseMutation(ctx context.Context, partial Partial) error {

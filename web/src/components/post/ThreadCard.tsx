@@ -64,6 +64,7 @@ export const ThreadReferenceCard = memo(
 
     const isInReview = thread.visibility === Visibility.review;
     const isAdmin = hasPermission(session, Permission.ADMINISTRATOR);
+    const showReviewState = isInReview && isAdmin;
 
     const getFirstImageFromBody = (body: string | undefined): string | null => {
       if (!body) return null;
@@ -259,12 +260,12 @@ export const ThreadReferenceCard = memo(
             </>
           )}
 
-          {(!hideCategoryBadge && thread.category) || isInReview ? (
+          {(!hideCategoryBadge && thread.category) || showReviewState ? (
             <styled.div display="flex" gap="2.5" flexWrap="wrap">
               {!hideCategoryBadge && thread.category && (
                 <CategoryBadge category={thread.category} />
               )}
-              {isInReview && (
+              {showReviewState && (
                 <PostReviewBadge
                   isModerator={isModerator}
                   postId={thread.id}
@@ -279,7 +280,7 @@ export const ThreadReferenceCard = memo(
           ) : null}
         </styled.div>
 
-        {!isInReview && session && (
+        {!showReviewState && session && (
           <styled.div
             display="flex"
             alignItems="center"

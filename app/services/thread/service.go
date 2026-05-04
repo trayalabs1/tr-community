@@ -27,6 +27,7 @@ import (
 	"github.com/Southclaws/storyden/app/services/moderation"
 	"github.com/Southclaws/storyden/app/services/report/system_report"
 	"github.com/Southclaws/storyden/app/services/semdex"
+	"github.com/Southclaws/storyden/internal/ent"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/spanner"
 	"github.com/Southclaws/storyden/internal/infrastructure/pubsub"
 )
@@ -57,6 +58,10 @@ type Service interface {
 		threadID post.ID,
 		pageParams pagination.Parameters,
 	) (*thread.Thread, error)
+
+	// Personalized returns the requester's recent threads in a channel and
+	// similar published threads from other users.
+	Personalized(ctx context.Context, channelID xid.ID) (*PersonalizedFeed, error)
 }
 
 type Partial struct {
@@ -91,6 +96,7 @@ func Build() fx.Option {
 type service struct {
 	ins spanner.Instrumentation
 
+	db             *ent.Client
 	accountQuery   *account_querier.Querier
 	threadQuerier  *thread_querier.Querier
 	threadWriter   *thread_writer.Writer
@@ -107,6 +113,7 @@ type service struct {
 func New(
 	ins spanner.Builder,
 
+	db *ent.Client,
 	accountQuery *account_querier.Querier,
 	threadQuerier *thread_querier.Querier,
 	threadWriter *thread_writer.Writer,
@@ -122,6 +129,7 @@ func New(
 	return &service{
 		ins: ins.Build(),
 
+		db:             db,
 		accountQuery:   accountQuery,
 		threadQuerier:  threadQuerier,
 		threadWriter:   threadWriter,

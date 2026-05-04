@@ -70,6 +70,16 @@ export function useFeedMutations(
     return pathMatch && paramsMatch;
   }
 
+  function threadDetailKeyFilterFn(key: Arguments) {
+    if (!Array.isArray(key)) return false;
+    const path = key[0];
+    return typeof path === "string" && /^\/threads\/[^/]+$/.test(path);
+  }
+
+  function threadCacheKeyFilterFn(key: Arguments) {
+    return threadListKeyFilterFn(key) || threadDetailKeyFilterFn(key);
+  }
+
   async function revalidate() {
     await mutate(threadListKeyFilterFn);
     // Invalidate Next.js router cache for server components
@@ -222,30 +232,47 @@ export function useFeedMutations(
     }
   }
 
-  async function likePost(id: Identifier) {
-    const mutator: MutatorCallback<ThreadListOKResponse> = (data) => {
-      if (!data) return;
+  function buildLikeMutator(id: Identifier, delta: number, nowLiked: boolean) {
+    return (data: unknown) => {
+      if (!data || typeof data !== "object") return data as never;
 
-      const newThreads = data.threads.map((thread) => {
-        if (thread.id === id) {
-          return {
-            ...thread,
-            likes: {
-              likes: thread.likes.likes + 1,
-              liked: true,
-            },
-          };
-        }
-        return thread;
-      });
+      // List response shape: { threads: ThreadReference[], ... }
+      if (Array.isArray((data as { threads?: unknown }).threads)) {
+        const list = data as ThreadListOKResponse;
+        return {
+          ...list,
+          threads: list.threads.map((thread) =>
+            thread.id === id
+              ? {
+                  ...thread,
+                  likes: {
+                    likes: thread.likes.likes + delta,
+                    liked: nowLiked,
+                  },
+                }
+              : thread,
+          ),
+        };
+      }
 
-      return {
-        ...data,
-        threads: newThreads,
-      };
+      // Detail response shape: ThreadGetResponse with likes on root.
+      const detail = data as { id?: string; likes?: { likes: number; liked: boolean } };
+      if (detail.id === id && detail.likes) {
+        return {
+          ...detail,
+          likes: {
+            likes: detail.likes.likes + delta,
+            liked: nowLiked,
+          },
+        };
+      }
+
+      return data as never;
     };
+  }
 
-    await mutate(threadListKeyFilterFn, mutator, {
+  async function likePost(id: Identifier) {
+    await mutate(threadCacheKeyFilterFn, buildLikeMutator(id, 1, true), {
       revalidate: false,
     });
 
@@ -253,29 +280,7 @@ export function useFeedMutations(
   }
 
   async function unlikePost(id: Identifier) {
-    const mutator: MutatorCallback<ThreadListOKResponse> = (data) => {
-      if (!data) return;
-
-      const newThreads = data.threads.map((thread) => {
-        if (thread.id === id) {
-          return {
-            ...thread,
-            likes: {
-              likes: thread.likes.likes - 1,
-              liked: false,
-            },
-          };
-        }
-        return thread;
-      });
-
-      return {
-        ...data,
-        threads: newThreads,
-      };
-    };
-
-    await mutate(threadListKeyFilterFn, mutator, {
+    await mutate(threadCacheKeyFilterFn, buildLikeMutator(id, -1, false), {
       revalidate: false,
     });
 
