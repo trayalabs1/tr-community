@@ -9,6 +9,7 @@ import { LoadingBanner } from "@/components/site/Loading";
 import {
   useChannelCategoryList,
   useChannelThreadList,
+  useChannelThreadListPersonalized,
 } from "@/api/openapi-client/channels";
 import { Account, Channel, ThreadReference } from "@/api/openapi-schema";
 import { ChannelMobileHeader } from "@/components/channel/ChannelMobileHeader";
@@ -72,6 +73,23 @@ export function ChannelScreen(props: Props) {
         revalidateOnFocus: false,
       },
     }
+  );
+
+  const hasActiveFilters =
+    !!selectedCategorySlug ||
+    !!selectedVisibility ||
+    !!dateRange.createdAfter ||
+    !!dateRange.createdBefore ||
+    excludeBAH;
+
+  const { data: personalized } = useChannelThreadListPersonalized(
+    props.channel.id,
+    {
+      swr: {
+        revalidateOnFocus: false,
+        enabled: !!props.session && !hasActiveFilters,
+      },
+    },
   );
 
   useEffect(() => {
@@ -205,9 +223,49 @@ export function ChannelScreen(props: Props) {
             Loading threads...
           </styled.div>
         ) : allThreads.length > 0 ? (
+          (() => {
+            const showPersonalized =
+              currentPage === 1 && !hasActiveFilters && !!personalized;
+            const personalizedIDs = new Set<string>();
+            if (showPersonalized) {
+              personalized!.self_recent.forEach((t) => personalizedIDs.add(t.id));
+              personalized!.similar.forEach((g) =>
+                g.threads.forEach((t) => personalizedIDs.add(t.id)),
+              );
+            }
+            const filteredThreads = showPersonalized
+              ? allThreads.filter((t) => !personalizedIDs.has(t.id))
+              : allThreads;
+
+            return (
           <>
+            {showPersonalized && (
+              <VStack alignItems="start" gap="4" width="full">
+                {personalized!.self_recent.map((selfThread) => {
+                  const group = personalized!.similar.find(
+                    (g) => g.for_thread_id === selfThread.id,
+                  );
+                  return (
+                    <Fragment key={`personalized-${selfThread.id}`}>
+                      <ThreadReferenceCard
+                        thread={selfThread}
+                        channelID={props.channel.id}
+                      />
+                      {group?.threads.map((similar) => (
+                        <ThreadReferenceCard
+                          key={`similar-${selfThread.id}-${similar.id}`}
+                          thread={similar}
+                          channelID={props.channel.id}
+                        />
+                      ))}
+                    </Fragment>
+                  );
+                })}
+              </VStack>
+            )}
+
             <VStack alignItems="start" gap="4" width="full">
-              {allThreads.map((thread, index) => (
+              {filteredThreads.map((thread, index) => (
                 <Fragment key={thread.id}>
                   <ThreadReferenceCard
                     thread={thread}
@@ -233,6 +291,8 @@ export function ChannelScreen(props: Props) {
               </styled.div>
             )}
           </>
+            );
+          })()
         ) : (
           <styled.div
             p="8"
