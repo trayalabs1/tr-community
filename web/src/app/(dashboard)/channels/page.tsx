@@ -14,10 +14,16 @@ import { HStack, LStack, VStack, styled } from "@/styled-system/jsx";
 import { canCreateChannels } from "@/lib/channel/server-permissions";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { getAvatarColor } from "@/utils/avatar-colors";
+import { PINNED_CHANNEL_SLUGS } from "@/lib/channel/pinned";
 
 const isJourneyChannel = (channelName: string): boolean => {
   const lowerName = channelName.toLowerCase();
   return /\bmonths?\b/.test(lowerName);
+};
+
+const isPinnedChannel = (channelName: string): boolean => {
+  const lowerName = channelName.toLowerCase();
+  return PINNED_CHANNEL_SLUGS.includes(lowerName);
 };
 
 export default async function ChannelsPage() {
@@ -32,7 +38,7 @@ export default async function ChannelsPage() {
   const userCanCreateChannels = canCreateChannels(session);
 
   const journeyChannels = channels.channels.filter(
-    (channel) => channel.slug === "general" || isJourneyChannel(channel.name)
+    (channel) => channel.slug === "general" || isPinnedChannel(channel.slug) || isJourneyChannel(channel.name)
   );
   const topicChannels = channels.channels.filter(
     (channel) => channel.slug !== "general" && !isJourneyChannel(channel.name)
