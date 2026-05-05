@@ -15,7 +15,7 @@ import (
 )
 
 const personalizedFeedWindow = 24 * time.Hour
-const personalizedSimilarLimit = 2
+const personalizedSimilarLimit = 1
 
 type PersonalizedSimilarGroup struct {
 	ForThreadID post.ID
@@ -72,7 +72,6 @@ func (s *service) Personalized(ctx context.Context, channelID xid.ID) (*Personal
 				accountID,
 				entry.SentimentTag,
 				entry.PrimaryTopic,
-				since,
 				personalizedSimilarLimit,
 				accountIDOpt,
 			)

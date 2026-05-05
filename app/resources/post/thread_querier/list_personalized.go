@@ -92,11 +92,10 @@ func (d *Querier) ListSimilarFor(
 	excludeAccountID account.AccountID,
 	sentimentTag string,
 	primaryTopic string,
-	since time.Time,
 	limit int,
 	requesterAccountID opt.Optional[account.AccountID],
 ) ([]*thread.Thread, error) {
-	if sentimentTag == "" || primaryTopic == "" {
+	if sentimentTag == "" || primaryTopic == "" || sentimentTag == "negative" {
 		return []*thread.Thread{}, nil
 	}
 	if limit <= 0 {
@@ -110,7 +109,6 @@ func (d *Querier) ListSimilarFor(
 			ent_post.ChannelID(channelID),
 			ent_post.IDNEQ(xid.ID(excludeThreadID)),
 			ent_post.AccountPostsNEQ(xid.ID(excludeAccountID)),
-			ent_post.CreatedAtGTE(since),
 			ent_post.VisibilityEQ(ent_post.VisibilityPublished),
 			ent_post.HasSentimentWith(
 				ent_post_sentiment.SentimentTagEQ(sentimentTag),
