@@ -14,8 +14,11 @@ import (
 	"github.com/Southclaws/storyden/app/resources/post"
 	"github.com/Southclaws/storyden/app/resources/post/thread_writer"
 	"github.com/Southclaws/storyden/app/resources/visibility"
+	"github.com/Southclaws/storyden/internal/ent"
+	ent_post "github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/infrastructure/ai"
 	"github.com/Southclaws/storyden/internal/infrastructure/pubsub"
+	"github.com/rs/xid"
 )
 
 const (
@@ -65,6 +68,7 @@ func Build() fx.Option {
 
 type aiReviewer struct {
 	logger       *slog.Logger
+	db           *ent.Client
 	prompter     ai.Prompter
 	threadWriter *thread_writer.Writer
 	bus          *pubsub.Bus
@@ -74,12 +78,14 @@ func runAIReviewConsumer(
 	ctx context.Context,
 	lc fx.Lifecycle,
 	logger *slog.Logger,
+	db *ent.Client,
 	prompter ai.Prompter,
 	threadWriter *thread_writer.Writer,
 	bus *pubsub.Bus,
 ) {
 	r := &aiReviewer{
 		logger:       logger,
+		db:           db,
 		prompter:     prompter,
 		threadWriter: threadWriter,
 		bus:          bus,
@@ -92,6 +98,20 @@ func runAIReviewConsumer(
 }
 
 func (r *aiReviewer) handleThreadSubmittedForReview(ctx context.Context, evt *message.EventThreadSubmittedForReview) error {
+	p, err := r.db.Post.Query().
+		Where(ent_post.IDEQ(xid.ID(evt.ID))).
+		Select(ent_post.FieldMetadata).
+		Only(ctx)
+	if err != nil {
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+	if cat, _ := p.Metadata["post_category"].(string); cat == "BAH" {
+		r.logger.Info("ai review skipped for BAH post",
+			slog.String("thread_id", evt.ID.String()),
+		)
+		return nil
+	}
+
 	reviewCtx, cancel := context.WithTimeout(ctx, reviewTimeout)
 	defer cancel()
 
