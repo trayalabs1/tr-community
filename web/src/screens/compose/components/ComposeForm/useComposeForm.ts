@@ -141,7 +141,7 @@ export function useComposeForm({
           (key: unknown) =>
             Array.isArray(key) &&
             typeof key[0] === "string" &&
-            key[0] === `/channels/${channelID}/threads`,
+            key[0].startsWith(`/channels/${channelID}/threads`),
         );
         if (onSuccess) {
           onSuccess();
