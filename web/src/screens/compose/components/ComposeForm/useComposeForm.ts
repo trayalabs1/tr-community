@@ -191,12 +191,8 @@ export function useComposeForm({
         },
         {
           promiseToast: {
-            loading: session && hasPermission(session, Permission.ADMINISTRATOR)
-              ? "Publishing post..."
-              : "Submitting for review...",
-            success: session && hasPermission(session, Permission.ADMINISTRATOR)
-              ? "Post published!"
-              : "Submitted for review! Your post will be visible once approved by a moderator.",
+            loading: "Publishing post...",
+            success: "Post published!",
           },
           cleanup: async () => {
             setIsPublishing(false);

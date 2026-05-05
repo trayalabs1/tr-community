@@ -846,6 +846,43 @@ func (c Channels) ChannelThreadList(ctx context.Context, request openapi.Channel
 	}, nil
 }
 
+func (c Channels) ChannelThreadListPersonalized(ctx context.Context, request openapi.ChannelThreadListPersonalizedRequestObject) (openapi.ChannelThreadListPersonalizedResponseObject, error) {
+	accountID, err := session.GetAccountID(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	channelID := channel.ChannelID(openapi.ParseID(request.ChannelID))
+
+	hasAccess, err := c.channel_svc.CheckAccess(ctx, channelID, accountID)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+	if !hasAccess {
+		return nil, fault.Wrap(fault.New("access denied"), fctx.With(ctx))
+	}
+
+	feed, err := c.thread_svc.Personalized(ctx, xid.ID(channelID))
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	similar := make([]openapi.ChannelPersonalizedSimilarGroup, 0, len(feed.Similar))
+	for _, group := range feed.Similar {
+		similar = append(similar, openapi.ChannelPersonalizedSimilarGroup{
+			ForThreadId: openapi.Identifier(group.ForThreadID.String()),
+			Threads:     dt.Map(group.Threads, serialiseThreadReference),
+		})
+	}
+
+	return openapi.ChannelThreadListPersonalized200JSONResponse{
+		ChannelPersonalizedFeedOKJSONResponse: openapi.ChannelPersonalizedFeedOKJSONResponse{
+			SelfRecent: dt.Map(feed.SelfRecent, serialiseThreadReference),
+			Similar:    similar,
+		},
+	}, nil
+}
+
 func (c Channels) ChannelThreadGet(ctx context.Context, request openapi.ChannelThreadGetRequestObject) (openapi.ChannelThreadGetResponseObject, error) {
 	accountID, err := session.GetAccountID(ctx)
 	if err != nil {
