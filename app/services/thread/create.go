@@ -155,32 +155,17 @@ func (s *service) Create(ctx context.Context,
 		s.bus.Publish(ctx, &message.EventThreadPublished{
 			ID: thr.ID,
 		})
+	}
 
-		if postCategory != "BAH" {
-			s.logger.Info("ai scoring: dispatching CommandScorePostSentiment from thread create",
+	if postCategory != "BAH" {
+		if err := s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
+			PostID: thr.ID,
+		}); err != nil {
+			s.logger.Error("failed to dispatch CommandScorePostSentiment from thread create",
 				slog.String("post_id", thr.ID.String()),
-				slog.String("post_category", postCategory),
-				slog.String("visibility", thr.Visibility.String()),
-			)
-			if err := s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
-				PostID: thr.ID,
-			}); err != nil {
-				s.logger.Error("ai scoring: failed to dispatch CommandScorePostSentiment from thread create",
-					slog.String("post_id", thr.ID.String()),
-					slog.String("error", err.Error()),
-				)
-			}
-		} else {
-			s.logger.Info("ai scoring: skipped for BAH post on create",
-				slog.String("post_id", thr.ID.String()),
+				slog.String("error", err.Error()),
 			)
 		}
-	} else {
-		s.logger.Info("ai scoring: skipped, thread not published on create",
-			slog.String("post_id", thr.ID.String()),
-			slog.String("visibility", thr.Visibility.String()),
-			slog.String("post_category", postCategory),
-		)
 	}
 
 	// TODO: Do this using event consumer.
