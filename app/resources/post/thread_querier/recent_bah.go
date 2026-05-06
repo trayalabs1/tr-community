@@ -27,10 +27,7 @@ func (d *Querier) HasRecentChannelBAH(
 			ent_post.ChannelID(channelID),
 			ent_post.CreatedAtGTE(since),
 			ent_post.IDNEQ(excludeThreadID),
-			ent_post.VisibilityIn(
-				ent_post.VisibilityPublished,
-				ent_post.VisibilityReview,
-			),
+			ent_post.VisibilityEQ(ent_post.VisibilityPublished),
 			predicate.Post(func(s *sql.Selector) {
 				s.Where(sql.P(func(b *sql.Builder) {
 					b.WriteString(s.C(ent_post.FieldMetadata) + "->>'post_category' = 'BAH'")
