@@ -2,6 +2,7 @@ package thread
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/Southclaws/dt"
 	"github.com/Southclaws/fault"
@@ -116,9 +117,19 @@ func (s *service) Update(ctx context.Context, threadID post.ID, partial Partial)
 				ID: thr.ID,
 			})
 
-			s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
+			s.logger.Info("ai scoring: dispatching CommandScorePostSentiment from thread update (visibility transition)",
+				slog.String("post_id", thr.ID.String()),
+				slog.String("old_visibility", oldVisibility.String()),
+				slog.String("new_visibility", thr.Visibility.String()),
+			)
+			if err := s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
 				PostID: thr.ID,
-			})
+			}); err != nil {
+				s.logger.Error("ai scoring: failed to dispatch CommandScorePostSentiment from thread update",
+					slog.String("post_id", thr.ID.String()),
+					slog.String("error", err.Error()),
+				)
+			}
 		} else if thr.Visibility == visibility.VisibilityReview {
 			s.bus.Publish(ctx, &message.EventThreadSubmittedForReview{
 				ID:    thr.ID,
@@ -131,9 +142,19 @@ func (s *service) Update(ctx context.Context, threadID post.ID, partial Partial)
 			})
 		}
 	} else if (contentChanged || titleChanged) && thr.Visibility == visibility.VisibilityPublished {
-		s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
+		s.logger.Info("ai scoring: dispatching CommandScorePostSentiment from thread update (content/title change)",
+			slog.String("post_id", thr.ID.String()),
+			slog.Bool("content_changed", contentChanged),
+			slog.Bool("title_changed", titleChanged),
+		)
+		if err := s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
 			PostID: thr.ID,
-		})
+		}); err != nil {
+			s.logger.Error("ai scoring: failed to dispatch CommandScorePostSentiment from thread update",
+				slog.String("post_id", thr.ID.String()),
+				slog.String("error", err.Error()),
+			)
+		}
 	}
 
 	return thr, nil
