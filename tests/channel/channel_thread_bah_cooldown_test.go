@@ -3,14 +3,18 @@ package channel_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/Southclaws/opt"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/fx"
 
 	"github.com/Southclaws/storyden/app/resources/account/account_writer"
+	"github.com/Southclaws/storyden/app/resources/message"
 	"github.com/Southclaws/storyden/app/resources/seed"
+	"github.com/Southclaws/storyden/app/resources/settings"
 	"github.com/Southclaws/storyden/app/transports/http/openapi"
+	"github.com/Southclaws/storyden/internal/infrastructure/pubsub"
 	"github.com/Southclaws/storyden/internal/integration"
 	"github.com/Southclaws/storyden/internal/integration/e2e"
 	"github.com/Southclaws/storyden/tests"
@@ -25,6 +29,8 @@ func TestChannelThreadBAHCooldown(t *testing.T) {
 		cl *openapi.ClientWithResponses,
 		sh *e2e.SessionHelper,
 		aw *account_writer.Writer,
+		settingsRepo *settings.SettingsRepository,
+		bus *pubsub.Bus,
 	) {
 		lc.Append(fx.StartHook(func() {
 			r := require.New(t)
@@ -53,7 +59,15 @@ func TestChannelThreadBAHCooldown(t *testing.T) {
 			tests.Ok(t, err, channelB)
 			channelBID := channelB.JSON200.Id
 
-			for _, ch := range []openapi.Identifier{channelAID, channelBID} {
+			channelC, err := cl.ChannelCreateWithResponse(root, openapi.ChannelInitialProps{
+				Name:        "BAH Channel C",
+				Slug:        "bah-channel-c",
+				Description: "channel C",
+			}, ownerSession)
+			tests.Ok(t, err, channelC)
+			channelCID := channelC.JSON200.Id
+
+			for _, ch := range []openapi.Identifier{channelAID, channelBID, channelCID} {
 				addMember, err := cl.ChannelMemberAddWithResponse(root, ch, openapi.ChannelMemberAdd{
 					AccountId: openapi.Identifier(member.ID.String()),
 					Role:      openapi.ChannelMemberAddRoleMember,
@@ -82,6 +96,14 @@ func TestChannelThreadBAHCooldown(t *testing.T) {
 			}, ownerSession)
 			tests.Ok(t, err, catB)
 			catBID := catB.JSON200.Id
+
+			catC, err := cl.ChannelCategoryCreateWithResponse(root, channelCID, openapi.CategoryInitialProps{
+				Name:        "General C",
+				Description: "general",
+				Colour:      "#abcdef",
+			}, ownerSession)
+			tests.Ok(t, err, catC)
+			catCID := catC.JSON200.Id
 
 			bahMeta := openapi.Metadata{"post_category": "BAH"}
 			plainMeta := openapi.Metadata{"post_category": "OTHER"}
@@ -156,6 +178,54 @@ func TestChannelThreadBAHCooldown(t *testing.T) {
 				}, memberSession)
 				tests.Ok(t, err, resp)
 				r.Equal(openapi.Published, resp.JSON200.Visibility, "non-BAH must not be gated by BAH cooldown")
+			})
+
+			t.Run("review-state BAH does not cascade subsequent BAHs into review", func(t *testing.T) {
+				updated, err := settingsRepo.Set(root, settings.Settings{
+					Services: opt.New(settings.ServiceSettings{
+						Moderation: opt.New(settings.ModerationServiceSettings{
+							WordBlockList:  opt.New([]string{}),
+							WordReportList: opt.New([]string{"flaggedterm"}),
+						}),
+					}),
+				})
+				r.NoError(err)
+				bus.Publish(root, &message.EventSettingsUpdated{Settings: updated})
+				time.Sleep(100 * time.Millisecond)
+
+				flagged, err := cl.ChannelThreadCreateWithResponse(root, channelCID, openapi.ThreadInitialProps{
+					Title:      "Flagged BAH",
+					Body:       opt.New("<p>this contains flaggedterm content</p>").Ptr(),
+					Category:   opt.New(catCID).Ptr(),
+					Visibility: opt.New(openapi.Published).Ptr(),
+					Meta:       &bahMeta,
+				}, memberSession)
+				tests.Ok(t, err, flagged)
+				r.Equal(openapi.Review, flagged.JSON200.Visibility,
+					"flagged BAH should land in review (no prior BAH so cooldown is irrelevant)")
+
+				cleared, err := settingsRepo.Set(root, settings.Settings{
+					Services: opt.New(settings.ServiceSettings{
+						Moderation: opt.New(settings.ModerationServiceSettings{
+							WordBlockList:  opt.New([]string{}),
+							WordReportList: opt.New([]string{}),
+						}),
+					}),
+				})
+				r.NoError(err)
+				bus.Publish(root, &message.EventSettingsUpdated{Settings: cleared})
+				time.Sleep(100 * time.Millisecond)
+
+				next, err := cl.ChannelThreadCreateWithResponse(root, channelCID, openapi.ThreadInitialProps{
+					Title:      "Next BAH after review",
+					Body:       opt.New("<p>clean content</p>").Ptr(),
+					Category:   opt.New(catCID).Ptr(),
+					Visibility: opt.New(openapi.Published).Ptr(),
+					Meta:       &bahMeta,
+				}, memberSession)
+				tests.Ok(t, err, next)
+				r.Equal(openapi.Published, next.JSON200.Visibility,
+					"a BAH whose only prior BAH in window is in review must stay published")
 			})
 		}))
 	}))
