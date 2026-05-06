@@ -2,6 +2,7 @@ package sentiment_job
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"go.uber.org/fx"
@@ -19,6 +20,7 @@ const (
 func runSentimentConsumer(
 	ctx context.Context,
 	lc fx.Lifecycle,
+	logger *slog.Logger,
 	bus *pubsub.Bus,
 	sc *sentimentConsumer,
 ) {
@@ -26,20 +28,28 @@ func runSentimentConsumer(
 
 	lc.Append(fx.StartHook(func(hctx context.Context) error {
 		_, err := pubsub.SubscribeCommand(ctx, bus, "sentiment_job.score_post", func(ctx context.Context, cmd *message.CommandScorePostSentiment) error {
-			batchCh <- cmd.PostID
+			select {
+			case batchCh <- cmd.PostID:
+			default:
+				logger.Warn("sentiment scoring batch channel full, blocking enqueue",
+					slog.String("post_id", cmd.PostID.String()),
+					slog.Int("capacity", cap(batchCh)),
+				)
+				batchCh <- cmd.PostID
+			}
 			return nil
 		})
 		if err != nil {
 			return err
 		}
 
-		go runBatchProcessor(ctx, sc, batchCh)
+		go runBatchProcessor(ctx, logger, sc, batchCh)
 
 		return nil
 	}))
 }
 
-func runBatchProcessor(ctx context.Context, sc *sentimentConsumer, batchCh <-chan post.ID) {
+func runBatchProcessor(ctx context.Context, logger *slog.Logger, sc *sentimentConsumer, batchCh <-chan post.ID) {
 	var batch []post.ID
 	var timer *time.Timer
 

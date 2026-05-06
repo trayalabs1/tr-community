@@ -2,6 +2,7 @@ package thread
 
 import (
 	"context"
+	"log/slog"
 	"math/rand/v2"
 	"time"
 
@@ -89,7 +90,8 @@ func (s *service) Create(ctx context.Context,
 		}
 	}
 
-	if meta["post_category"] == "BAH" && thr.Visibility == visibility.VisibilityPublished {
+	if meta["post_category"] == "BAH" &&
+		(thr.Visibility == visibility.VisibilityPublished || thr.Visibility == visibility.VisibilityReview) {
 		recent, err := s.threadQuerier.HasRecentChannelBAH(
 			ctx,
 			thr.ChannelID,
@@ -100,7 +102,8 @@ func (s *service) Create(ctx context.Context,
 			return nil, fault.Wrap(err, fctx.With(ctx))
 		}
 
-		if recent {
+		switch {
+		case thr.Visibility == visibility.VisibilityPublished && recent:
 			thr, err = s.threadWriter.Update(ctx, thr.ID, thread_writer.WithVisibility(visibility.VisibilityReview))
 			if err != nil {
 				return nil, fault.Wrap(err, fctx.With(ctx))
@@ -111,6 +114,12 @@ func (s *service) Create(ctx context.Context,
 				Title: thr.Title,
 				Body:  thr.Content.Plaintext(),
 			})
+
+		case thr.Visibility == visibility.VisibilityReview && !recent:
+			thr, err = s.threadWriter.Update(ctx, thr.ID, thread_writer.WithVisibility(visibility.VisibilityPublished))
+			if err != nil {
+				return nil, fault.Wrap(err, fctx.With(ctx))
+			}
 		}
 	}
 
@@ -140,15 +149,22 @@ func (s *service) Create(ctx context.Context,
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
+	postCategory, _ := meta["post_category"].(string)
+
 	if thr.Visibility == visibility.VisibilityPublished {
 		s.bus.Publish(ctx, &message.EventThreadPublished{
 			ID: thr.ID,
 		})
+	}
 
-		if meta["post_category"] != "BAH" {
-			s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
-				PostID: thr.ID,
-			})
+	if postCategory != "BAH" {
+		if err := s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
+			PostID: thr.ID,
+		}); err != nil {
+			s.logger.Error("failed to dispatch CommandScorePostSentiment from thread create",
+				slog.String("post_id", thr.ID.String()),
+				slog.String("error", err.Error()),
+			)
 		}
 	}
 

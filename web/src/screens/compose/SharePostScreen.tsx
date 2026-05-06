@@ -73,11 +73,11 @@ export function SharePostScreen({ channelID, streakCount, rewardCoins }: Props) 
 
       await channelThreadCreate(channelID, payload);
 
-      mutate(
+      await mutate(
         (key: unknown) =>
           Array.isArray(key) &&
           typeof key[0] === "string" &&
-          key[0] === `/channels/${channelID}/threads`,
+          key[0].startsWith(`/channels/${channelID}/threads`),
       );
 
       router.replace(`/channels/${channelID}`);
