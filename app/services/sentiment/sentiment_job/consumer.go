@@ -35,12 +35,20 @@ func newSentimentConsumer(
 }
 
 func (c *sentimentConsumer) scorePost(ctx context.Context, postID post.ID) error {
+	c.logger.Info("ai scoring: scorePost started",
+		slog.String("post_id", postID.String()),
+	)
+
 	p, err := c.db.Post.
 		Query().
 		Where(ent_post.IDEQ(xid.ID(postID))).
 		Select(ent_post.FieldTitle, ent_post.FieldBody).
 		Only(ctx)
 	if err != nil {
+		c.logger.Error("ai scoring: failed to load post for scoring",
+			slog.String("post_id", postID.String()),
+			slog.String("error", err.Error()),
+		)
 		return fault.Wrap(err, fctx.With(ctx))
 	}
 
@@ -74,8 +82,19 @@ func (c *sentimentConsumer) scorePost(ctx context.Context, postID post.ID) error
 		UpdateNewValues().
 		Exec(ctx)
 	if err != nil {
+		c.logger.Error("ai scoring: failed to persist sentiment",
+			slog.String("post_id", postID.String()),
+			slog.String("error", err.Error()),
+		)
 		return fault.Wrap(err, fctx.With(ctx))
 	}
+
+	c.logger.Info("ai scoring: sentiment persisted",
+		slog.String("post_id", postID.String()),
+		slog.String("sentiment_tag", string(result.SentimentTag)),
+		slog.Int("positivity_score", result.PositivityScore),
+		slog.Float64("rank_score", rankScore),
+	)
 
 	return nil
 }
