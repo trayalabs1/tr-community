@@ -41,6 +41,11 @@ func (s *service) Create(ctx context.Context,
 	meta map[string]any,
 	partial Partial,
 ) (*thread.Thread, error) {
+	s.logger.Info("ai scoring: thread.Create entered",
+		slog.String("author_id", authorID.String()),
+		slog.String("title", title),
+	)
+
 	if err := authoriseMutation(ctx, partial); err != nil {
 		return nil, err
 	}
