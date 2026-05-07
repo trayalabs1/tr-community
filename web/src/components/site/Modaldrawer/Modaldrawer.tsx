@@ -1,4 +1,4 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect } from "react";
 import { Drawer } from "vaul";
 
 import { UseDisclosureProps } from "src/utils/useDisclosure";
@@ -26,14 +26,46 @@ export function ModalDrawer({ children, ...props }: PropsWithChildren<Props>) {
     }
   };
 
+  useEffect(() => {
+    if (!props.isOpen || typeof window === "undefined" || !window.visualViewport)
+      return;
+
+    const vv = window.visualViewport;
+
+    const update = () => {
+      const kbOffset = Math.max(
+        0,
+        window.innerHeight - vv!.height - vv!.offsetTop,
+      );
+      const isKbOpen = kbOffset > 100;
+      const maxH = isKbOpen ? vv!.height : vv!.height * 0.9;
+      document.documentElement.style.setProperty("--modal-vh", `${maxH}px`);
+      document.documentElement.style.setProperty(
+        "--modal-kb-offset",
+        `${kbOffset}px`,
+      );
+    };
+
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    update();
+
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+      document.documentElement.style.removeProperty("--modal-vh");
+      document.documentElement.style.removeProperty("--modal-kb-offset");
+    };
+  }, [props.isOpen]);
+
   return (
     <>
       <Drawer.Root
         open={props.isOpen}
         onOpenChange={handleOpenChange}
-        // TODO: Scale background only on mobile.
         shouldScaleBackground={false}
         dismissible={props.dismissable}
+        repositionInputs={false}
       >
         <Drawer.Portal>
           <Drawer.Overlay className="modaldrawer__overlay" />
@@ -48,7 +80,7 @@ export function ModalDrawer({ children, ...props }: PropsWithChildren<Props>) {
               p={{ base: "3", md: "4" }}
               style={{
                 backgroundColor: "#ffffff",
-                maxHeight: "90vh",
+                maxHeight: "var(--modal-vh, 90dvh)",
               }}
             >
               <WStack alignItems="start">
@@ -94,12 +126,12 @@ export function ModalDrawer({ children, ...props }: PropsWithChildren<Props>) {
           .modaldrawer__content {
             height: auto;
             width: 100%;
-            bottom: 0;
+            bottom: var(--modal-kb-offset, 0px);
             top: auto;
             display: flex;
             flex-direction: column;
             position: fixed;
-            max-height: 90vh;
+            max-height: var(--modal-vh, 90dvh);
             z-index: 51;
             border-radius: 1rem 1rem 0 0;
             overflow-y: hidden;
