@@ -10,6 +10,7 @@ import { HStack, VStack, styled } from "@/styled-system/jsx";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { hasPermission } from "@/utils/permissions";
 import { useSession } from "@/auth";
+import { UsersPostedToday } from "@/components/feed/QuickShare/UsersPostedToday";
 import { ThreadCreateTrigger } from "@/components/thread/ThreadCreate/ThreadCreateTrigger";
 
 interface ChannelFilterBarProps {
@@ -165,8 +166,19 @@ export function ChannelFilterBar({
         />
       )}
 
-      {/* Create Post CTA */}
-      <ThreadCreateTrigger channelID={channelID} />
+      {/* Sticky: users posted today + Create Post CTA */}
+      <styled.div
+        position="sticky"
+        top="0"
+        // zIndex="sticky"
+        bg="white"
+        width="full"
+      >
+        <VStack alignItems="start" gap="1" width="full">
+          <UsersPostedToday signedIn={Boolean(session)} channelID={channelID} />
+          <ThreadCreateTrigger channelID={channelID} />
+        </VStack>
+      </styled.div>
 
       {/* Expanded Filter View */}
       {showFilters && (
