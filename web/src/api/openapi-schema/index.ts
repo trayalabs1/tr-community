@@ -594,6 +594,8 @@ export * from "./threadMark";
 export * from "./threadMutableProps";
 export * from "./threadReference";
 export * from "./threadReferenceProps";
+export * from "./threadStatsDailyUsersOKResponse";
+export * from "./threadStatsDailyUsersResult";
 export * from "./threadTitle";
 export * from "./threadUpdateBody";
 export * from "./threadUpdateOKResponse";

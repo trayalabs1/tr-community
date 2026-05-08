@@ -14,6 +14,7 @@ import {
 import { Account, Channel, ThreadReference } from "@/api/openapi-schema";
 import { ChannelMobileHeader } from "@/components/channel/ChannelMobileHeader";
 import { ChannelFilterBar } from "@/components/channel/ChannelFilterBar";
+import { UsersPostedToday } from "@/components/feed/QuickShare/UsersPostedToday";
 import { ThreadReferenceCard } from "@/components/post/ThreadCard";
 import { ShareExperiencePrompt } from "@/components/thread/ThreadCreate/ShareExperiencePrompt";
 import { Button } from "@/components/ui/button";
@@ -194,6 +195,11 @@ export function ChannelScreen(props: Props) {
           <styled.p color="fg.muted">{props.channel.description}</styled.p>
         )}
       </VStack>
+
+      <UsersPostedToday
+        signedIn={Boolean(props.session)}
+        channelID={props.channel.id}
+      />
 
       {/* Filter Bar - Desktop Only */}
       <styled.div display={{ base: "none", md: "block" }} width="full">

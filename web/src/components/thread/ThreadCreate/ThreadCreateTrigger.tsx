@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useDisclosure } from "src/utils/useDisclosure";
 
+import { useSession } from "@/auth";
 import { ButtonProps } from "@/components/ui/button";
 import { EditIcon } from "@/components/ui/icons/Edit";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
@@ -16,6 +17,11 @@ type Props = Omit<ButtonProps, "onClick"> & {
 export function ThreadCreateTrigger({ channelID, ...props }: Props) {
   const useDisclosureProps = useDisclosure();
   const { trackEvent } = useEventTracking();
+  const session = useSession();
+  const firstName = session?.name?.split(" ")[0];
+  const placeholder = firstName
+    ? `Type your questions ${firstName}`
+    : "Type your questions & doubts here...";
 
   const handleCreatePostClick = useCallback(() => {
     trackEvent("community_create_post_clicked", { channel_id: channelID });
@@ -65,7 +71,7 @@ export function ThreadCreateTrigger({ channelID, ...props }: Props) {
           fontSize="sm"
           style={{ color: TRAYA_COLORS.neutral.textMuted }}
         >
-          Type your questions & doubts here...
+          {placeholder}
         </styled.span>
       </styled.button>
 

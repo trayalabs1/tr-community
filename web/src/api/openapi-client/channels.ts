@@ -49,6 +49,7 @@ import type {
   ThreadCreateOKResponse,
   ThreadGetResponse,
   ThreadListOKResponse,
+  ThreadStatsDailyUsersOKResponse,
   ThreadUpdateBody,
   ThreadUpdateOKResponse,
   UnauthorisedResponse,
@@ -1293,6 +1294,65 @@ export const useChannelThreadList = <
     swrOptions?.swrKey ??
     (() => (isEnabled ? getChannelThreadListKey(channelID, params) : null));
   const swrFn = () => channelThreadList(channelID, params);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Get the count of unique authors who created threads in this channel
+today (IST). Used to render social-proof UI such as "N users posted
+today" above the post creation box. Requires an authenticated session.
+
+ */
+export const channelThreadStatsDailyUsers = (channelID: string) => {
+  return fetcher<ThreadStatsDailyUsersOKResponse>({
+    url: `/channels/${channelID}/threads/stats/daily-users`,
+    method: "GET",
+  });
+};
+
+export const getChannelThreadStatsDailyUsersKey = (channelID: string) =>
+  [`/channels/${channelID}/threads/stats/daily-users`] as const;
+
+export type ChannelThreadStatsDailyUsersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof channelThreadStatsDailyUsers>>
+>;
+export type ChannelThreadStatsDailyUsersQueryError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelThreadStatsDailyUsers = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof channelThreadStatsDailyUsers>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false && !!channelID;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getChannelThreadStatsDailyUsersKey(channelID) : null));
+  const swrFn = () => channelThreadStatsDailyUsers(channelID);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
