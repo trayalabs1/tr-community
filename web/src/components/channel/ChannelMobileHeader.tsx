@@ -163,7 +163,7 @@ export function ChannelMobileHeader({
       )}
 
       {/* Filter Bar and Create Post - Mobile */}
-      <styled.div display={{ base: "block", md: "none" }} width="full" px="4" pt="3" pb="0">
+      <styled.div display={{ base: "block", md: "none" }} width="full" px="4" pt="1" pb="0">
         <ChannelFilterBar
           channelID={channel.id}
           categories={categories}
