@@ -21,6 +21,7 @@ import type {
   ThreadGetResponse,
   ThreadListOKResponse,
   ThreadListParams,
+  ThreadStatsDailyUsersOKResponse,
   ThreadUpdateBody,
   ThreadUpdateOKResponse,
   ThreadVotePollOKResponse,
@@ -96,6 +97,34 @@ export const channelThreadList = async (
 ): Promise<channelThreadListResponse> => {
   return fetcher<Promise<channelThreadListResponse>>(
     getChannelThreadListUrl(channelID, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Get the count of unique authors who created threads in this channel
+today (IST). Used to render social-proof UI such as "N users posted
+today" above the post creation box. Requires an authenticated session.
+
+ */
+export type channelThreadStatsDailyUsersResponse = {
+  data: ThreadStatsDailyUsersOKResponse;
+  status: number;
+};
+
+export const getChannelThreadStatsDailyUsersUrl = (channelID: string) => {
+  return `/channels/${channelID}/threads/stats/daily-users`;
+};
+
+export const channelThreadStatsDailyUsers = async (
+  channelID: string,
+  options?: RequestInit,
+): Promise<channelThreadStatsDailyUsersResponse> => {
+  return fetcher<Promise<channelThreadStatsDailyUsersResponse>>(
+    getChannelThreadStatsDailyUsersUrl(channelID),
     {
       ...options,
       method: "GET",

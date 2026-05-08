@@ -104,6 +104,7 @@ type OperationPermissions interface {
 	ChannelCategoryUpdatePosition() (bool, *rbac.Permission)
 	ChannelThreadCreate() (bool, *rbac.Permission)
 	ChannelThreadList() (bool, *rbac.Permission)
+	ChannelThreadStatsDailyUsers() (bool, *rbac.Permission)
 	ChannelThreadListPersonalized() (bool, *rbac.Permission)
 	ChannelThreadGet() (bool, *rbac.Permission)
 	ChannelThreadUpdate() (bool, *rbac.Permission)
@@ -384,6 +385,8 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.ChannelThreadCreate()
 	case "ChannelThreadList":
 		return optable.ChannelThreadList()
+	case "ChannelThreadStatsDailyUsers":
+		return optable.ChannelThreadStatsDailyUsers()
 	case "ChannelThreadListPersonalized":
 		return optable.ChannelThreadListPersonalized()
 	case "ChannelThreadGet":

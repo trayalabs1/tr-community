@@ -403,6 +403,10 @@ func (m *Mapping) ChannelThreadListPersonalized() (bool, *rbac.Permission) {
 	return true, nil // Checked in service layer - must be member
 }
 
+func (m *Mapping) ChannelThreadStatsDailyUsers() (bool, *rbac.Permission) {
+	return true, nil // Checked in service layer - must be member
+}
+
 func (m *Mapping) ChannelThreadGet() (bool, *rbac.Permission) {
 	return true, nil // Checked in service layer - must be member
 }
