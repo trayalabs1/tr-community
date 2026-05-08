@@ -883,6 +883,34 @@ func (c Channels) ChannelThreadListPersonalized(ctx context.Context, request ope
 	}, nil
 }
 
+func (c Channels) ChannelThreadStatsDailyUsers(ctx context.Context, request openapi.ChannelThreadStatsDailyUsersRequestObject) (openapi.ChannelThreadStatsDailyUsersResponseObject, error) {
+	accountID, err := session.GetAccountID(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	channelID := channel.ChannelID(openapi.ParseID(request.ChannelID))
+
+	hasAccess, err := c.channel_svc.CheckAccess(ctx, channelID, accountID)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+	if !hasAccess {
+		return nil, fault.Wrap(fault.New("access denied"), fctx.With(ctx))
+	}
+
+	count, err := c.thread_svc.DailyUsersCount(ctx, xid.ID(channelID))
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return openapi.ChannelThreadStatsDailyUsers200JSONResponse{
+		ThreadStatsDailyUsersOKJSONResponse: openapi.ThreadStatsDailyUsersOKJSONResponse{
+			Count: count,
+		},
+	}, nil
+}
+
 func (c Channels) ChannelThreadGet(ctx context.Context, request openapi.ChannelThreadGetRequestObject) (openapi.ChannelThreadGetResponseObject, error) {
 	accountID, err := session.GetAccountID(ctx)
 	if err != nil {

@@ -1767,6 +1767,23 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "200": { $ref: "#/components/responses/ThreadListOK" }
 
+  /channels/{channelID}/threads/stats/daily-users:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    get:
+      operationId: ChannelThreadStatsDailyUsers
+      description: |
+        Get the count of unique authors who created threads in this channel
+        today (IST). Used to render social-proof UI such as "N users posted
+        today" above the post creation box. Requires an authenticated session.
+      tags: [channels, threads]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadStatsDailyUsersOK" }
+
   /channels/{channelID}/threads/personalized:
     parameters:
       - $ref: "#/components/parameters/ChannelID"
@@ -4329,6 +4346,12 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/ThreadListResult" }
+
+    ThreadStatsDailyUsersOK:
+      description: Count of unique authors who posted threads today (IST).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ThreadStatsDailyUsersResult" }
 
     ChannelPersonalizedFeedOK:
       description: Personalised top-of-feed payload for a channel.
@@ -6996,6 +7019,15 @@ components:
           required: [threads]
           properties:
             threads: { $ref: "#/components/schemas/ThreadList" }
+
+    ThreadStatsDailyUsersResult:
+      type: object
+      description: Count of unique authors who created threads today (IST).
+      required: [count]
+      properties:
+        count:
+          description: Number of distinct accounts that created at least one thread today.
+          type: integer
 
     ChannelPersonalizedSimilarGroup:
       type: object
