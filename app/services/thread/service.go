@@ -63,6 +63,11 @@ type Service interface {
 	// Personalized returns the requester's recent threads in a channel and
 	// similar published threads from other users.
 	Personalized(ctx context.Context, channelID xid.ID) (*PersonalizedFeed, error)
+
+	// DailyUsersCount returns the number of unique authors who posted threads
+	// in the given channel today (IST), cached in-memory for 5 minutes per
+	// channel.
+	DailyUsersCount(ctx context.Context, channelID xid.ID) (int, error)
 }
 
 type Partial struct {
