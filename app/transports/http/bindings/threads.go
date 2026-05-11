@@ -133,11 +133,14 @@ func (i *Threads) ThreadUpdate(ctx context.Context, request openapi.ThreadUpdate
 	}
 
 	if isPoll, _ := existing.Meta["is_poll"].(bool); isPoll {
-		return nil, fault.Wrap(
-			fault.New("poll posts cannot be edited"),
-			fctx.With(ctx),
-			ftag.With(ftag.InvalidArgument),
-		)
+		b := request.Body
+		if b.Title != nil || b.Body != nil || b.Tags != nil || b.Category != nil || b.Visibility != nil || b.Url != nil || b.Meta != nil {
+			return nil, fault.Wrap(
+				fault.New("poll posts can only be pinned or unpinned"),
+				fctx.With(ctx),
+				ftag.With(ftag.InvalidArgument),
+			)
+		}
 	}
 
 	tags := opt.Map(opt.NewPtr(request.Body.Tags), func(tags []string) tag_ref.Names {

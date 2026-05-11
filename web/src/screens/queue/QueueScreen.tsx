@@ -20,16 +20,90 @@ import { Heading } from "@/components/ui/heading";
 import { VStack, LStack, HStack, styled } from "@/styled-system/jsx";
 import { getAssetURL } from "@/utils/asset";
 import { MembersIcon } from "@/components/ui/icons/Members";
+import { useSession } from "@/auth";
 
 type ContentType = "threads" | "nodes" | "all";
 type QueueTab = "pending_review" | "pending_reply" | "pending_reply_to_reply";
 
+const SELECTED_CHANNELS_STORAGE_PREFIX = "queue.selectedChannelIds:";
+
+function storageKey(accountId: string) {
+  return `${SELECTED_CHANNELS_STORAGE_PREFIX}${accountId}`;
+}
+
+function readPersistedChannelIds(accountId: string): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(storageKey(accountId));
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((v): v is string => typeof v === "string"));
+  } catch {
+    return new Set();
+  }
+}
+
+function pruneOtherAccountEntries(currentAccountId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const keep = storageKey(currentAccountId);
+    const toRemove: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (!key) continue;
+      if (key.startsWith(SELECTED_CHANNELS_STORAGE_PREFIX) && key !== keep) {
+        toRemove.push(key);
+      }
+    }
+    toRemove.forEach((k) => window.localStorage.removeItem(k));
+  } catch {}
+}
+
 export function QueueScreen() {
+  const session = useSession();
+  const accountId = session?.id;
+
   const [activeTab, setActiveTab] = useState<QueueTab>("pending_review");
-  const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
+  const [selectedChannelIds, setSelectedChannelIds] = useState<Set<string>>(() => new Set());
+  const [loadedForAccount, setLoadedForAccount] = useState<string | null>(null);
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("all");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [excludeBAH, setExcludeBAH] = useState(true);
+
+  useEffect(() => {
+    if (!accountId) {
+      setSelectedChannelIds(new Set());
+      setLoadedForAccount(null);
+      return;
+    }
+    if (loadedForAccount === accountId) return;
+    pruneOtherAccountEntries(accountId);
+    setSelectedChannelIds(readPersistedChannelIds(accountId));
+    setLoadedForAccount(accountId);
+  }, [accountId, loadedForAccount]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !accountId) return;
+    if (loadedForAccount !== accountId) return;
+    try {
+      window.localStorage.setItem(
+        storageKey(accountId),
+        JSON.stringify(Array.from(selectedChannelIds)),
+      );
+    } catch {}
+  }, [accountId, loadedForAccount, selectedChannelIds]);
+
+  const toggleChannel = useCallback((id: string) => {
+    setSelectedChannelIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const clearChannels = useCallback(() => setSelectedChannelIds(new Set()), []);
 
   const todayVal = useMemo(() => today(getLocalTimeZone()), []);
 
@@ -214,8 +288,8 @@ export function QueueScreen() {
       threads,
     }));
 
-  const filteredChannels = selectedChannelId
-    ? sortedChannels.filter(({ channel }) => channel?.id === selectedChannelId)
+  const filteredChannels = selectedChannelIds.size > 0
+    ? sortedChannels.filter(({ channel }) => channel?.id && selectedChannelIds.has(channel.id))
     : sortedChannels;
 
   const shouldShowThreads = selectedContentType === "threads" || selectedContentType === "all";
@@ -224,18 +298,12 @@ export function QueueScreen() {
   const pendingReplyThreads = allPendingReplyThreads;
   const replyQueueEntries = allReplyQueueEntries;
 
-  const allChannelIds = new Set([
-    ...Array.from(threadsByChannel.keys()),
-    ...pendingReplyThreads.map((t) => t.channel_id).filter((id): id is string => !!id),
-    ...replyQueueEntries.map((e) => e.channel_id).filter((id): id is string => !!id),
-  ]);
-  const allChannelOptions = Array.from(allChannelIds)
-    .map((id) => channelMap.get(id))
-    .filter((ch): ch is NonNullable<typeof ch> => ch != null)
-    .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  const allChannelOptions = [...channels].sort((a, b) =>
+    (a.name || "").localeCompare(b.name || ""),
+  );
 
-  const filteredPendingReplyThreads = selectedChannelId
-    ? pendingReplyThreads.filter((t) => t.channel_id === selectedChannelId)
+  const filteredPendingReplyThreads = selectedChannelIds.size > 0
+    ? pendingReplyThreads.filter((t) => t.channel_id && selectedChannelIds.has(t.channel_id))
     : pendingReplyThreads;
 
   return (
@@ -341,9 +409,9 @@ export function QueueScreen() {
                 <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
                   Channel
                 </styled.label>
-                {selectedChannelId && (
+                {selectedChannelIds.size > 0 && (
                   <styled.button
-                    onClick={() => setSelectedChannelId(null)}
+                    onClick={clearChannels}
                     fontSize="xs"
                     color="fg.muted"
                     cursor="pointer"
@@ -359,34 +427,33 @@ export function QueueScreen() {
                 )}
               </HStack>
               <HStack gap="2" flexWrap="wrap">
-                {allChannelOptions.map((channel) => (
-                  <styled.button
-                    key={channel.id}
-                    onClick={() =>
-                      setSelectedChannelId(selectedChannelId === channel.id ? null : channel.id)
-                    }
-                    fontSize="xs"
-                    cursor="pointer"
-                    px="3"
-                    py="1.5"
-                    rounded="full"
-                    transition="all"
-                    style={{
-                      backgroundColor:
-                        selectedChannelId === channel.id
+                {allChannelOptions.map((channel) => {
+                  const isSelected = selectedChannelIds.has(channel.id);
+                  return (
+                    <styled.button
+                      key={channel.id}
+                      onClick={() => toggleChannel(channel.id)}
+                      fontSize="xs"
+                      cursor="pointer"
+                      px="3"
+                      py="1.5"
+                      rounded="full"
+                      transition="all"
+                      style={{
+                        backgroundColor: isSelected
                           ? "var(--colors-bg-default)"
                           : "var(--colors-bg-subtle)",
-                      color:
-                        selectedChannelId === channel.id
+                        color: isSelected
                           ? "var(--colors-fg-default)"
                           : "var(--colors-fg-muted)",
-                      border: "1px solid var(--colors-border-default)",
-                      fontWeight: selectedChannelId === channel.id ? "600" : "400",
-                    }}
-                  >
-                    {channel.name || "Unknown"}
-                  </styled.button>
-                ))}
+                        border: "1px solid var(--colors-border-default)",
+                        fontWeight: isSelected ? "600" : "400",
+                      }}
+                    >
+                      {channel.name || "Unknown"}
+                    </styled.button>
+                  );
+                })}
               </HStack>
             </VStack>
           )}
@@ -496,8 +563,8 @@ export function QueueScreen() {
             </styled.span>
           </HStack>
           <ReplyAdminQueueList
-            entries={selectedChannelId
-              ? replyQueueEntries.filter((e) => e.channel_id === selectedChannelId)
+            entries={selectedChannelIds.size > 0
+              ? replyQueueEntries.filter((e) => e.channel_id && selectedChannelIds.has(e.channel_id))
               : replyQueueEntries}
             channelMap={channelMap}
             onDismiss={async (id) => {
