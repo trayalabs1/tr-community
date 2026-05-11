@@ -1,5 +1,4 @@
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 import { handle } from "@/api/client";
 import { ThreadReference } from "@/api/openapi-schema";
@@ -12,7 +11,6 @@ export function useThreadCardModeration(thread: ThreadReference) {
   const router = useRouter();
   const { updateThread, deleteThread, revalidate } = useFeedMutations(undefined, undefined, undefined, router);
   const { trackAdminApproved } = useEventTracking();
-  const [isDismissing, setIsDismissing] = useState(false);
 
   const {
     isConfirming: isConfirmingDelete,
@@ -57,39 +55,13 @@ export function useThreadCardModeration(thread: ThreadReference) {
     });
   }
 
-  async function handleDismissThread() {
-    if (isDismissing) return;
-    setIsDismissing(true);
-    try {
-      await handle(async () => {
-        await updateThread(thread.id, { visibility: "archived" });
-        await revalidate();
-
-        await withUndo({
-          message: "Thread dismissed",
-          duration: 5000,
-          toastId: `thread-${thread.id}`,
-          action: async () => {},
-          onUndo: async () => {
-            await updateThread(thread.id, { visibility: "review" });
-            await revalidate();
-          },
-        });
-      });
-    } finally {
-      setIsDismissing(false);
-    }
-  }
-
   return {
     isConfirmingDelete,
-    isDismissing,
     handlers: {
       handleAcceptThread,
       handleEditAndAccept,
       handleConfirmDelete,
       handleCancelDelete,
-      handleDismissThread,
     },
   };
 }

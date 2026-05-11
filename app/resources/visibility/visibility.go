@@ -15,7 +15,6 @@ const (
 	visibilityUnlisted  visibilityEnum = "unlisted"
 	visibilityReview    visibilityEnum = "review"
 	visibilityPublished visibilityEnum = "published"
-	visibilityArchived  visibilityEnum = "archived"
 )
 
 func NewVisibilityFromEnt[T post.Visibility | node.Visibility | collection.Visibility](in T) Visibility {

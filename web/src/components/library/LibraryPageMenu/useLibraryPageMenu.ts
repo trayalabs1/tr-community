@@ -91,7 +91,6 @@ export function useLibraryPageMenu(props: Props) {
             .with(Visibility.draft, () => "Set to draft")
             .with(Visibility.review, () => "Submitted for review")
             .with(Visibility.unlisted, () => "Set to unlisted")
-            .with(Visibility.archived, () => "Archived")
             .exhaustive(),
         },
         cleanup: () => revalidate(),
@@ -122,9 +121,6 @@ export function useLibraryPageMenu(props: Props) {
 
       case Visibility.published:
         return handleVisibilityChange(Visibility.published);
-
-      case Visibility.archived:
-        return handleVisibilityChange(Visibility.archived);
     }
   }
 
@@ -206,5 +202,4 @@ const visibilityStateChanges: Record<
       condition: (account) => hasPermission(account, Permission.MANAGE_LIBRARY),
     },
   ],
-  [Visibility.archived]: [],
 };

@@ -8,14 +8,6 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
  * OpenAPI spec version: v1.25.13-canary
  */
 
-/**
- * - draft: Items only accessible by the owner.
-- unlisted: Items not publicly listed but reachable via direct link or collection.
-- review: Items only accessible by the owner and admins (the moderation queue).
-- published: Items published globally and searchable.
-- archived: Items dismissed by an admin from the review queue. Hidden from every channel feed; visible only to the original owner.
-
- */
 export type Visibility = (typeof Visibility)[keyof typeof Visibility];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
@@ -24,5 +16,4 @@ export const Visibility = {
   unlisted: "unlisted",
   review: "review",
   published: "published",
-  archived: "archived",
 } as const;
