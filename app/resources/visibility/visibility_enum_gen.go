@@ -16,6 +16,7 @@ var (
 	VisibilityUnlisted  = Visibility{visibilityUnlisted}
 	VisibilityReview    = Visibility{visibilityReview}
 	VisibilityPublished = Visibility{visibilityPublished}
+	VisibilityArchived  = Visibility{visibilityArchived}
 )
 
 func (r Visibility) Format(f fmt.State, verb rune) {
@@ -63,6 +64,8 @@ func NewVisibility(__iNpUt__ string) (Visibility, error) {
 		return VisibilityReview, nil
 	case string(visibilityPublished):
 		return VisibilityPublished, nil
+	case string(visibilityArchived):
+		return VisibilityArchived, nil
 	default:
 		return Visibility{}, fmt.Errorf("invalid value for type 'Visibility': '%s'", __iNpUt__)
 	}

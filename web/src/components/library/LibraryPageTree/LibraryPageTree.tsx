@@ -46,6 +46,7 @@ const visibilitySortKey: Record<Visibility, number> = {
   [Visibility.review]: 1,
   [Visibility.draft]: 2,
   [Visibility.unlisted]: 3,
+  [Visibility.archived]: 4,
 };
 
 const visibilityLabels: Record<Visibility, string> = {
@@ -53,6 +54,7 @@ const visibilityLabels: Record<Visibility, string> = {
   [Visibility.review]: "In review",
   [Visibility.draft]: "Drafts",
   [Visibility.unlisted]: "Unlisted",
+  [Visibility.archived]: "Archived",
 };
 
 const visibilityIcons: Record<Visibility, JSX.Element> = {
@@ -60,6 +62,7 @@ const visibilityIcons: Record<Visibility, JSX.Element> = {
   [Visibility.review]: <ReviewIcon />,
   [Visibility.draft]: <DraftIcon />,
   [Visibility.unlisted]: <UnlistedIcon />,
+  [Visibility.archived]: <DraftIcon />,
 };
 
 export type PositionInList = "top" | "in" | "bottom" | "only";

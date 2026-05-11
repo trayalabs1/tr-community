@@ -156,6 +156,7 @@ const (
 	VisibilityUnlisted  Visibility = "unlisted"
 	VisibilityReview    Visibility = "review"
 	VisibilityPublished Visibility = "published"
+	VisibilityArchived  Visibility = "archived"
 )
 
 func (v Visibility) String() string {
@@ -165,7 +166,7 @@ func (v Visibility) String() string {
 // VisibilityValidator is a validator for the "visibility" field enum values. It is called by the builders before save.
 func VisibilityValidator(v Visibility) error {
 	switch v {
-	case VisibilityDraft, VisibilityUnlisted, VisibilityReview, VisibilityPublished:
+	case VisibilityDraft, VisibilityUnlisted, VisibilityReview, VisibilityPublished, VisibilityArchived:
 		return nil
 	default:
 		return fmt.Errorf("event: invalid enum value for visibility field: %q", v)
