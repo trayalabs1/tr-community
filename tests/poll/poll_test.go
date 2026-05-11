@@ -212,7 +212,7 @@ func TestPoll(t *testing.T) {
 					a.Equal(2, optB.Votes)
 				})
 
-				t.Run("admin_cannot_edit_poll", func(t *testing.T) {
+				t.Run("admin_cannot_edit_poll_non_pin_fields", func(t *testing.T) {
 					title := "Updated title"
 					tests.AssertRequest(
 						cl.ThreadUpdateWithResponse(root, slug, openapi.ThreadMutableProps{
@@ -221,14 +221,59 @@ func TestPoll(t *testing.T) {
 					)(t, http.StatusBadRequest)
 				})
 
-				t.Run("admin_cannot_edit_poll_via_channel", func(t *testing.T) {
-					t.Parallel()
+				t.Run("admin_cannot_edit_poll_non_pin_fields_via_channel", func(t *testing.T) {
 					title := "Updated title via channel"
 					tests.AssertRequest(
 						cl.ChannelThreadUpdateWithResponse(root, channelID, slug, openapi.ThreadMutableProps{
 							Title: &title,
 						}, adminSession),
 					)(t, http.StatusBadRequest)
+				})
+
+				t.Run("admin_can_pin_and_unpin_poll", func(t *testing.T) {
+					r := require.New(t)
+					a := assert.New(t)
+
+					pin := openapi.PinnedRank(1)
+					pinResp := tests.AssertRequest(
+						cl.ThreadUpdateWithResponse(root, slug, openapi.ThreadMutableProps{
+							Pinned: &pin,
+						}, adminSession),
+					)(t, http.StatusOK)
+					r.NotNil(pinResp.JSON200)
+					a.Equal(1, pinResp.JSON200.Pinned)
+
+					unpin := openapi.PinnedRank(0)
+					unpinResp := tests.AssertRequest(
+						cl.ThreadUpdateWithResponse(root, slug, openapi.ThreadMutableProps{
+							Pinned: &unpin,
+						}, adminSession),
+					)(t, http.StatusOK)
+					r.NotNil(unpinResp.JSON200)
+					a.Equal(0, unpinResp.JSON200.Pinned)
+				})
+
+				t.Run("admin_can_pin_and_unpin_poll_via_channel", func(t *testing.T) {
+					r := require.New(t)
+					a := assert.New(t)
+
+					pin := openapi.PinnedRank(1)
+					pinResp := tests.AssertRequest(
+						cl.ChannelThreadUpdateWithResponse(root, channelID, slug, openapi.ThreadMutableProps{
+							Pinned: &pin,
+						}, adminSession),
+					)(t, http.StatusOK)
+					r.NotNil(pinResp.JSON200)
+					a.Equal(1, pinResp.JSON200.Pinned)
+
+					unpin := openapi.PinnedRank(0)
+					unpinResp := tests.AssertRequest(
+						cl.ChannelThreadUpdateWithResponse(root, channelID, slug, openapi.ThreadMutableProps{
+							Pinned: &unpin,
+						}, adminSession),
+					)(t, http.StatusOK)
+					r.NotNil(unpinResp.JSON200)
+					a.Equal(0, unpinResp.JSON200.Pinned)
 				})
 			})
 
