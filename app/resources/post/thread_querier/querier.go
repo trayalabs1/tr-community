@@ -154,6 +154,7 @@ func HasPublishedOrOwnInReview(accountID opt.Optional[account.AccountID], isMode
 	return func(q *threadListOptions) {
 		publishedStatus := ent_post.Visibility(visibility.VisibilityPublished.String())
 		reviewStatus := ent_post.Visibility(visibility.VisibilityReview.String())
+		archivedStatus := ent_post.Visibility(visibility.VisibilityArchived.String())
 
 		authorID, hasAuthor := accountID.Get()
 		if !hasAuthor {
@@ -169,11 +170,16 @@ func HasPublishedOrOwnInReview(accountID opt.Optional[account.AccountID], isMode
 			return
 		}
 
+		ownPredicate := ent_post.HasAuthorWith(ent_account.ID(xid.ID(authorID)))
 		q.q.Where(ent_post.Or(
 			ent_post.VisibilityEQ(publishedStatus),
 			ent_post.And(
 				ent_post.VisibilityEQ(reviewStatus),
-				ent_post.HasAuthorWith(ent_account.ID(xid.ID(authorID))),
+				ownPredicate,
+			),
+			ent_post.And(
+				ent_post.VisibilityEQ(archivedStatus),
+				ownPredicate,
 			),
 		))
 	}

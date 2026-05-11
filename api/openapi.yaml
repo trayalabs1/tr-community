@@ -4804,11 +4804,18 @@ components:
 
     Visibility:
       type: string
+      description: |
+        - draft: Items only accessible by the owner.
+        - unlisted: Items not publicly listed but reachable via direct link or collection.
+        - review: Items only accessible by the owner and admins (the moderation queue).
+        - published: Items published globally and searchable.
+        - archived: Items dismissed by an admin from the review queue. Hidden from every channel feed; visible only to the original owner.
       enum:
         - draft
         - unlisted
         - review
         - published
+        - archived
 
     VisibilityMutationProps:
       type: object
