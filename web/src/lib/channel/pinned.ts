@@ -1,1 +1,1 @@
-export const PINNED_CHANNEL_SLUGS = ["traya-womens-community"];
+export const PINNED_CHANNEL_SLUGS = ["traya-womens-community", "traya-explorers"];

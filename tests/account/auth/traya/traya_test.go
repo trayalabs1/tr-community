@@ -150,6 +150,56 @@ func TestTrayaAuth(t *testing.T) {
 				a.Contains(channelSlugs, "dandruff-hair-health")
 			})
 
+			t.Run("male_lead_d15_explorer_channel", func(t *testing.T) {
+				r := require.New(t)
+				a := assert.New(t)
+
+				auth, err := cl.AuthTrayaTokenWithResponse(root, &openapi.AuthTrayaTokenParams{
+					Token: "valid-token-male-lead-explorer",
+				})
+				tests.Ok(t, err, auth)
+
+				accountID := account.AccountID(openapi.GetAccountID(auth.JSON200.Id))
+
+				memberships, err := membershipRepo.ListByAccount(root, accountID)
+				r.NoError(err)
+
+				channelSlugs := make([]string, len(memberships))
+				for i, m := range memberships {
+					ch, err := channelRepo.Get(root, channel.ChannelID(m.ChannelID))
+					r.NoError(err)
+					channelSlugs[i] = ch.Slug
+				}
+
+				a.Contains(channelSlugs, "traya-explorers")
+				a.Contains(channelSlugs, "general")
+				a.NotContains(channelSlugs, "month-1-warriors")
+			})
+
+			t.Run("male_lead_d15_case_id_mismatch_excluded", func(t *testing.T) {
+				r := require.New(t)
+				a := assert.New(t)
+
+				auth, err := cl.AuthTrayaTokenWithResponse(root, &openapi.AuthTrayaTokenParams{
+					Token: "valid-token-male-lead-non-explorer",
+				})
+				tests.Ok(t, err, auth)
+
+				accountID := account.AccountID(openapi.GetAccountID(auth.JSON200.Id))
+
+				memberships, err := membershipRepo.ListByAccount(root, accountID)
+				r.NoError(err)
+
+				channelSlugs := make([]string, len(memberships))
+				for i, m := range memberships {
+					ch, err := channelRepo.Get(root, channel.ChannelID(m.ChannelID))
+					r.NoError(err)
+					channelSlugs[i] = ch.Slug
+				}
+
+				a.NotContains(channelSlugs, "traya-explorers")
+			})
+
 			t.Run("channel_transition_on_kit_count_change", func(t *testing.T) {
 				r := require.New(t)
 				a := assert.New(t)
@@ -324,6 +374,84 @@ func setupMockTrayaAPI() *httptest.Server {
 					SlugName: "o8_o_to_d",
 				},
 			}
+		case "valid-token-male-lead-explorer":
+			response = traya.TrayaUserResponse{
+				User: struct {
+					ID          string  `json:"id"`
+					Email       string  `json:"email"`
+					PhoneNumber string  `json:"phone_number"`
+					FirstName   string  `json:"first_name"`
+					LastName    *string `json:"last_name"`
+					Gender      string  `json:"gender"`
+					CreatedAt   string  `json:"createdAt"`
+				}{
+					ID:          "male-lead-explorer-id",
+					Email:       "explorer@storyden.org",
+					PhoneNumber: "+910000000001",
+					FirstName:   "Male",
+					LastName:    stringPtr("Explorer"),
+					Gender:      "M",
+					CreatedAt:   "2025-01-01T00:00:00.000Z",
+				},
+				Case: struct {
+					ID                      string  `json:"id"`
+					LatestOrderCount        int     `json:"latest_order_count"`
+					LatestOrderDate         string  `json:"latest_order_date"`
+					LatestOrderDisplayID    string  `json:"latest_order_display_id"`
+					LatestOrderID           string  `json:"latest_order_id"`
+					LatestOrderStatus       string  `json:"latest_order_status"`
+					LatestOrderDeliveryDate *string `json:"latest_order_delivery_date"`
+					FormStatus              string  `json:"form_status"`
+				}{
+					ID:               "1ab2f7b4-5628-41dd-bf56-4c963023d058",
+					LatestOrderCount: 0,
+					FormStatus:       "completed",
+				},
+				ChatURL:                "https://wa.me/918828006272",
+				TotalKitCount:          0,
+				RunningMonthForHairKit: 0,
+				FirstFilledFormDate:    "2025-01-01T00:00:00.000Z",
+				CustomerType:           "lead",
+			}
+		case "valid-token-male-lead-non-explorer":
+			response = traya.TrayaUserResponse{
+				User: struct {
+					ID          string  `json:"id"`
+					Email       string  `json:"email"`
+					PhoneNumber string  `json:"phone_number"`
+					FirstName   string  `json:"first_name"`
+					LastName    *string `json:"last_name"`
+					Gender      string  `json:"gender"`
+					CreatedAt   string  `json:"createdAt"`
+				}{
+					ID:          "male-lead-non-explorer-id",
+					Email:       "nonexplorer@storyden.org",
+					PhoneNumber: "+910000000002",
+					FirstName:   "Male",
+					LastName:    stringPtr("NonExplorer"),
+					Gender:      "M",
+					CreatedAt:   "2025-01-01T00:00:00.000Z",
+				},
+				Case: struct {
+					ID                      string  `json:"id"`
+					LatestOrderCount        int     `json:"latest_order_count"`
+					LatestOrderDate         string  `json:"latest_order_date"`
+					LatestOrderDisplayID    string  `json:"latest_order_display_id"`
+					LatestOrderID           string  `json:"latest_order_id"`
+					LatestOrderStatus       string  `json:"latest_order_status"`
+					LatestOrderDeliveryDate *string `json:"latest_order_delivery_date"`
+					FormStatus              string  `json:"form_status"`
+				}{
+					ID:               "9ab2f7b4-5628-41dd-bf56-4c963023d058",
+					LatestOrderCount: 0,
+					FormStatus:       "completed",
+				},
+				ChatURL:                "https://wa.me/918828006272",
+				TotalKitCount:          0,
+				RunningMonthForHairKit: 0,
+				FirstFilledFormDate:    "2025-01-01T00:00:00.000Z",
+				CustomerType:           "lead",
+			}
 		case "valid-token-1-updated":
 			// Same user as valid-token-1, but with updated kit count (simulating user progression)
 			response = traya.TrayaUserResponse{
@@ -415,6 +543,9 @@ func createTestChannels(t *testing.T, ctx context.Context, repo *channel.Reposit
 		{"Stress Sleep Nutrition Female", "stress-sleep-nutrition-female"},
 		{"Digestion Metabolism Gut Female", "digestion-metabolism-gut-female"},
 		{"Dandruff Hair Health Female", "dandruff-hair-health-female"},
+
+		{"Traya Women's Community", "traya-womens-community"},
+		{"Traya Explorers", "traya-explorers"},
 	}
 
 	for _, ch := range channels {
