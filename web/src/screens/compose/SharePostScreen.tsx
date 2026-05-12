@@ -135,7 +135,7 @@ export function SharePostScreen({ channelID, streakCount, rewardCoins }: Props) 
           }}
         >
           <styled.p fontSize="lg" fontWeight="semibold" textAlign="center">
-            {streakCount} days streak completed 🔥
+          I just won 2000 coins by completing my 21 day streak  🙌 
           </styled.p>
 
           <styled.img
