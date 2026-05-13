@@ -148,6 +148,7 @@ func (d *Querier) Get(ctx context.Context, threadID post.ID, pageParams paginati
 				ent_post.ID(xid.ID(threadID)),
 			).
 			WithCategory().
+			WithSentiment().
 			WithLink(func(lq *ent.LinkQuery) {
 				lq.WithFaviconImage().WithPrimaryImage()
 			}).
