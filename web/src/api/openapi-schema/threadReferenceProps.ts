@@ -11,6 +11,7 @@ import type { CategoryReference } from "./categoryReference";
 import type { Identifier } from "./identifier";
 import type { LinkReference } from "./linkReference";
 import type { PinnedRank } from "./pinnedRank";
+import type { QuickReplyChips } from "./quickReplyChips";
 import type { ReadStatus } from "./readStatus";
 import type { ReplyStatus } from "./replyStatus";
 import type { TagReferenceList } from "./tagReferenceList";
@@ -22,6 +23,7 @@ export interface ThreadReferenceProps {
   last_reply_at?: string;
   link?: LinkReference;
   pinned: PinnedRank;
+  quick_reply_chips?: QuickReplyChips;
   read_status?: ReadStatus;
   reply_status: ReplyStatus;
   tags: TagReferenceList;
