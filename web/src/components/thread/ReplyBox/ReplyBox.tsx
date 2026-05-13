@@ -16,6 +16,8 @@ import { CardBox } from "@/styled-system/patterns";
 import { timestamp } from "@/utils/date";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 
+import { ReplyChips } from "../ReplyChips/ReplyChips";
+import { usePostReplyChip } from "../ReplyChips/usePostReplyChip";
 import { useReplyContext } from "../ReplyContext";
 
 import { Form, Props, useReplyBox } from "./useReplyBox";
@@ -31,6 +33,8 @@ export function ReplyBox(props: Props) {
     postedReply,
     handlers,
   } = useReplyBox(props);
+  const chipCandidates = props.thread.quick_reply_chips?.candidates ?? [];
+  const { postChip, isPosting: isPostingChip, posted: chipPosted } = usePostReplyChip(props.thread);
 
   if (!isLoggedIn) {
     return <LoginToReply />;
@@ -118,6 +122,15 @@ export function ReplyBox(props: Props) {
             Post
           </Button>
         </HStack>
+
+        {chipCandidates.length > 0 && (
+          <ReplyChips
+            candidates={chipCandidates}
+            onPick={postChip}
+            isPosting={isPostingChip}
+            posted={chipPosted}
+          />
+        )}
 
         <ReplyBodyInput
           name="body"

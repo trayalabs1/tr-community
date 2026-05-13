@@ -39,6 +39,9 @@ type Thread struct {
 	Category    opt.Optional[category.Category]
 	Tags        tag_ref.Tags
 	Related     datagraph.ItemList
+
+	SentimentTag opt.Optional[string]
+	PrimaryTopic opt.Optional[string]
 }
 
 type ThreadRef struct {
@@ -74,6 +77,16 @@ func (t *Thread) GetTags() []string {
 	return tags
 }
 
+func mapSentiment(m *ent.Post) (opt.Optional[string], opt.Optional[string]) {
+	s := m.Edges.Sentiment
+	if s == nil || s.ScoringStatus != "scored" {
+		return opt.NewEmpty[string](), opt.NewEmpty[string]()
+	}
+	tag := opt.NewPtr(s.SentimentTag)
+	topic := opt.NewPtr(s.PrimaryTopic)
+	return tag, topic
+}
+
 func Map(m *ent.Post) (*Thread, error) {
 	category := opt.Map(opt.NewPtr(m.Edges.Category), func(in ent.Category) category.Category {
 		return *category.FromModel(&in)
@@ -102,6 +115,8 @@ func Map(m *ent.Post) (*Thread, error) {
 		return post.ID(*m.RootPostID)
 	}()
 
+	sentimentTag, primaryTopic := mapSentiment(m)
+
 	return &Thread{
 		Post: post.Post{
 			ID:        post.ID(m.ID),
@@ -126,8 +141,10 @@ func Map(m *ent.Post) (*Thread, error) {
 		Pinned:      m.PinnedRank,
 		LastReplyAt: opt.New(m.LastReplyAt),
 
-		Category: category,
-		Tags:     tags,
+		Category:     category,
+		Tags:         tags,
+		SentimentTag: sentimentTag,
+		PrimaryTopic: primaryTopic,
 	}, nil
 }
 
@@ -176,6 +193,8 @@ func Mapper(
 			return post.ID(*m.RootPostID)
 		}()
 
+		sentimentTag, primaryTopic := mapSentiment(m)
+
 		return &Thread{
 			Post: post.Post{
 				ID:        post.ID(m.ID),
@@ -203,9 +222,11 @@ func Mapper(
 			// Only populate the last-reply-at if there are replies.
 			LastReplyAt: opt.NewSafe(m.LastReplyAt, rs.Status(m.ID).Count > 0),
 
-			ReadStatus:  rr.Status(m.ID),
-			ReplyStatus: rs.Status(m.ID),
-			Category:    category,
+			ReadStatus:   rr.Status(m.ID),
+			ReplyStatus:  rs.Status(m.ID),
+			Category:     category,
+			SentimentTag: sentimentTag,
+			PrimaryTopic: primaryTopic,
 		}, nil
 	}
 }

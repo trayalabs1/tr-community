@@ -4,8 +4,9 @@ import { PostReviewBadge } from "@/components/thread/PostReviewBadge";
 import { ThreadMenu } from "@/components/thread/ThreadMenu/ThreadMenu";
 import { CategoryBadge } from "@/components/category/CategoryBadge";
 import { Timestamp } from "@/components/site/Timestamp";
+import { Button } from "@/components/ui/button";
 import { Card, CardRows } from "@/components/ui/rich-card";
-import { HStack, WStack, VStack, styled } from "@/styled-system/jsx";
+import { HStack, WStack, VStack } from "@/styled-system/jsx";
 import { useSession } from "@/auth";
 import { hasPermission } from "@/utils/permissions";
 import { Permission } from "@/api/openapi-schema";
@@ -41,7 +42,7 @@ export function QueueThreadListItem({
     Permission.ADMINISTRATOR,
   );
 
-  const { isConfirmingDelete, handlers } = useThreadCardModeration(thread);
+  const { isConfirmingDelete, isDismissing, handlers } = useThreadCardModeration(thread);
 
   const url = thread.channel_id
     ? `/channels/${thread.channel_id}/threads/${thread.slug}`
@@ -80,7 +81,20 @@ export function QueueThreadListItem({
             </HStack>
           </VStack>
 
-          <ThreadMenu thread={thread} editingEnabled movingEnabled />
+          <HStack gap="2">
+            {isModerator && (
+              <Button
+                variant="outline"
+                size="xs"
+                loading={isDismissing}
+                loadingText={isDismissing ? "Dismissing..." : undefined}
+                onClick={handlers.handleDismissThread}
+              >
+                Dismiss
+              </Button>
+            )}
+            <ThreadMenu thread={thread} editingEnabled movingEnabled />
+          </HStack>
         </WStack>
       }
     />
