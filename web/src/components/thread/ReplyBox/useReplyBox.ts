@@ -63,10 +63,10 @@ export function useReplyBox({ initialSession, thread }: Props) {
   const handleSubmit = form.handleSubmit(async (data: Form) => {
     const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
 
-    trackCardReply(thread.id, data.body.length, undefined);
+    trackCardReply(thread.id, data.body.length, undefined, "reply_box");
 
     if (isAdmin) {
-      trackAdminReplied(thread.id, data.body.length, thread.author.id, undefined);
+      trackAdminReplied(thread.id, data.body.length, thread.author.id, undefined, "reply_box");
     }
 
     await handle(
