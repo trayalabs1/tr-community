@@ -135,14 +135,13 @@ export function SharePostScreen({ channelID, streakCount, rewardCoins }: Props) 
           }}
         >
           <styled.p fontSize="lg" fontWeight="semibold" textAlign="center">
-            {streakCount} days streak completed 🔥
+          I just won {rewardCoins} coins by completing my {streakCount} day streak  🙌 
           </styled.p>
 
           <styled.img
             src={imageUrl}
             alt={`${streakCount}-Day streak - Won ${rewardCoins} coins`}
             w="full"
-            style={{ borderRadius: "12px" }}
           />
         </VStack>
 

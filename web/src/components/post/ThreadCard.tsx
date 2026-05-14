@@ -24,6 +24,8 @@ import {
 } from "../ui/icons/Discussion";
 
 import { PollCard } from "../poll/PollCard";
+import { ReplyChips } from "../thread/ReplyChips/ReplyChips";
+import { usePostReplyChip } from "../thread/ReplyChips/usePostReplyChip";
 import { LikeButton } from "./LikeButton/LikeButton";
 import { useThreadCardModeration } from "./useThreadCardModeration";
 import { ProfileHoverTooltip } from "./ProfileHoverTooltip";
@@ -50,6 +52,8 @@ export const ThreadReferenceCard = memo(
     );
 
     const { isConfirmingDelete, handlers } = useThreadCardModeration(thread);
+    const chipCandidates = thread.quick_reply_chips?.candidates ?? [];
+    const { postChip, isPosting, posted } = usePostReplyChip(thread);
 
     const title = thread.title || thread.link?.title || "Untitled post";
 
@@ -353,6 +357,17 @@ export const ThreadReferenceCard = memo(
             >
               <CollectionMenu account={session} thread={thread} />
             </styled.div>
+          </styled.div>
+        )}
+
+        {!showReviewState && session && chipCandidates.length > 0 && (
+          <styled.div px="4" pb="3">
+            <ReplyChips
+              candidates={chipCandidates}
+              onPick={postChip}
+              isPosting={isPosting}
+              posted={posted}
+            />
           </styled.div>
         )}
       </styled.div>
