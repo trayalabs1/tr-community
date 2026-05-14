@@ -119,11 +119,12 @@ export function useEventTracking() {
   );
 
   const trackCardReply = useCallback(
-    (postId?: string, replyLength?: number, channelId?: string) => {
+    (postId?: string, replyLength?: number, channelId?: string, source?: string) => {
       trackEvent("community_card_reply", {
         post_id: postId,
         reply_length: replyLength,
         channel_id: channelId,
+        source,
       });
     },
     [trackEvent]
@@ -181,12 +182,13 @@ export function useEventTracking() {
   );
 
   const trackAdminReplied = useCallback(
-    (postId?: string, replyLength?: number, postOwnerId?: string, channelId?: string) => {
+    (postId?: string, replyLength?: number, postOwnerId?: string, channelId?: string, source?: string) => {
       trackEvent("community_admin_replied", {
         post_id: postId,
         reply_length: replyLength,
         post_owner_id: postOwnerId,
         channel_id: channelId,
+        source,
       });
     },
     [trackEvent]
