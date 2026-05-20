@@ -139,19 +139,23 @@ var cohortChannelRules = []cohortChannelRule{
 }
 
 var topicChannelsByGender = map[string][]string{
-	"male": {
-		"general",
-		"stress-sleep-nutrition",
-		"digestion-metabolism-gut-health",
-		"dandruff-hair-health",
-	},
-	"female": {
-		"general",
-		"hormones-pcos",
-		"stress-sleep-nutrition-female",
-		"digestion-metabolism-gut-female",
-		"dandruff-hair-health-female",
-	},
+	"male":   {"general"},
+	"female": {"general"},
+}
+
+var lostCustomerChannelsByGender = map[string]string{
+	"male":   "traya-warriors",
+	"female": "traya-heroines",
+}
+
+var deprecatedManagedChannels = []string{
+	"hormones-pcos",
+	"stress-sleep-nutrition-female",
+	"digestion-metabolism-gut-female",
+	"dandruff-hair-health-female",
+	"stress-sleep-nutrition",
+	"digestion-metabolism-gut-health",
+	"dandruff-hair-health",
 }
 
 func getAllManagedChannelSlugs() map[string]bool {
@@ -163,6 +167,12 @@ func getAllManagedChannelSlugs() map[string]bool {
 		for _, slug := range channels {
 			slugs[slug] = true
 		}
+	}
+	for _, slug := range lostCustomerChannelsByGender {
+		slugs[slug] = true
+	}
+	for _, slug := range deprecatedManagedChannels {
+		slugs[slug] = true
 	}
 	return slugs
 }
@@ -334,18 +344,7 @@ func generateHandle(firstName string, phoneNumber string) string {
 	return fmt.Sprintf("%s%s%s", namePrefix, phonePrefix, randomDigits)
 }
 
-func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string, firstFilledFormDate string, customerType string) error {
-	normalizedGender := normalizeGender(gender)
-
-	isWithin60Days, err := isLastOrderWithin60Days(latestOrderDate)
-	if err != nil {
-		p.logger.Warn("failed to parse latest order date",
-			slog.String("date", latestOrderDate),
-			slog.String("error", err.Error()))
-		isWithin60Days = false
-	}
-
-	// Step 1: Build target channels set based on current gender/orderCount
+func computeTargetChannels(normalizedGender string, orderCount int, isWithin60Days bool, latestOrderDate string, customerType string, leadOlderThan30Days bool) map[string]bool {
 	targetChannels := make(map[string]bool)
 
 	if isWithin60Days {
@@ -364,22 +363,49 @@ func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID accou
 		}
 	}
 
+	if !isWithin60Days && latestOrderDate != "" {
+		if slug, ok := lostCustomerChannelsByGender[normalizedGender]; ok {
+			targetChannels[slug] = true
+		}
+	}
+
 	if topicChannels, ok := topicChannelsByGender[normalizedGender]; ok {
 		for _, channelSlug := range topicChannels {
 			targetChannels[channelSlug] = true
 		}
 	}
 
+	if normalizedGender == "female" && customerType == "lead" && leadOlderThan30Days {
+		targetChannels["traya-womens-community"] = true
+	}
+
+	return targetChannels
+}
+
+func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string, firstFilledFormDate string, customerType string) error {
+	normalizedGender := normalizeGender(gender)
+
+	isWithin60Days, err := isLastOrderWithin60Days(latestOrderDate)
+	if err != nil {
+		p.logger.Warn("failed to parse latest order date",
+			slog.String("date", latestOrderDate),
+			slog.String("error", err.Error()))
+		isWithin60Days = false
+	}
+
+	leadOlderThan30Days := false
 	if normalizedGender == "female" && customerType == "lead" {
 		older, err := isOlderThan30Days(firstFilledFormDate)
 		if err != nil {
 			p.logger.Warn("failed to parse firstFilledFormDate",
 				slog.String("date", firstFilledFormDate),
 				slog.String("error", err.Error()))
-		} else if older {
-			targetChannels["traya-womens-community"] = true
+		} else {
+			leadOlderThan30Days = older
 		}
 	}
+
+	targetChannels := computeTargetChannels(normalizedGender, orderCount, isWithin60Days, latestOrderDate, customerType, leadOlderThan30Days)
 
 	// Step 2: Get all managed channel slugs
 	managedChannelSlugs := getAllManagedChannelSlugs()
