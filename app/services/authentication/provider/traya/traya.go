@@ -141,8 +141,8 @@ var cohortChannelRules = []cohortChannelRule{
 }
 
 var topicChannelsByGender = map[string][]string{
-	"male":   {"general"},
-	"female": {"general"},
+	"male":   {},
+	"female": {},
 }
 
 var lostCustomerChannelsByGender = map[string]string{
@@ -151,6 +151,7 @@ var lostCustomerChannelsByGender = map[string]string{
 }
 
 var deprecatedManagedChannels = []string{
+	"general",
 	"hormones-pcos",
 	"stress-sleep-nutrition-female",
 	"digestion-metabolism-gut-female",
