@@ -81,6 +81,19 @@ export default async function RootLayout({ children }: PropsWithChildren) {
           }}
         />
 
+        {/* Microsoft Clarity */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+              })(window, document, "clarity", "script", "wu09ntd0sf");
+            `,
+          }}
+        />
+
         {/*
             NOTE: This stylesheet is fully server-side rendered but it's not
             static because it uses data from the API to be generated. But we
