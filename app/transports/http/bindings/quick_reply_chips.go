@@ -6,15 +6,20 @@ import (
 )
 
 var progressSuccessStoryChips = []string{
-	"Amazing progress 🙌",
-	"So happy for you",
+	"Amazing progress ✨",
+	"So happy for you 💚",
 	"Keep going 💪",
+	"Mera bhi din aayega 😄",
+	"Agla number mera 😭🔥",
+	"Dilli ab door nahi 🛣️✨",
 }
 
 var buildAHabitChips = []string{
 	"Great consistency 🔥",
-	"Keep the streak going",
+	"Keep the streak going 🔁",
 	"You're doing great 💪",
+	"Chalte raho 💪",
+	"Manzil paas hai 🔥✨",
 }
 
 func quickReplyChipsFor(t *thread.Thread) *openapi.QuickReplyChips {
