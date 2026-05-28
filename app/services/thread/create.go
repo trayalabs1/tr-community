@@ -28,12 +28,25 @@ import (
 )
 
 const bahCooldownWindow = 12 * time.Hour
+const feedbackCooldownWindow = 12 * time.Hour
 
 const (
-	bahSentimentTag      = "neutral"
-	bahRankScoreMin      = 95
-	bahRankScoreRangeLen = 11 // 95..105 inclusive => 11 values
+	prescoredSentimentTag      = "neutral"
+	prescoredRankScoreMin      = 95
+	prescoredRankScoreRangeLen = 11 // 95..105 inclusive => 11 values
 )
+
+// isPrescoredCategory reports whether a post category bypasses AI sentiment
+// scoring and instead receives a fixed neutral tag + 95–105 rank score at
+// creation. New prescored categories should be added here and to the
+// rehydrator/ranker/AI-reviewer filters.
+func isPrescoredCategory(category string) bool {
+	switch category {
+	case "BAH", "feedback":
+		return true
+	}
+	return false
+}
 
 func (s *service) Create(ctx context.Context,
 	title string,
@@ -84,13 +97,15 @@ func (s *service) Create(ctx context.Context,
 		return nil, fault.Wrap(err, fctx.With(ctx), fmsg.With("failed to create thread"))
 	}
 
-	if meta["post_category"] == "BAH" {
-		if err := s.assignBAHSentiment(ctx, thr.ID); err != nil {
+	postCategoryAtCreate, _ := meta["post_category"].(string)
+
+	if isPrescoredCategory(postCategoryAtCreate) {
+		if err := s.assignPrescoredSentiment(ctx, thr.ID); err != nil {
 			return nil, fault.Wrap(err, fctx.With(ctx))
 		}
 	}
 
-	if meta["post_category"] == "BAH" &&
+	if postCategoryAtCreate == "BAH" &&
 		(thr.Visibility == visibility.VisibilityPublished || thr.Visibility == visibility.VisibilityReview) {
 		recent, err := s.threadQuerier.HasRecentChannelBAH(
 			ctx,
@@ -123,6 +138,50 @@ func (s *service) Create(ctx context.Context,
 		}
 	}
 
+	if postCategoryAtCreate == "feedback" &&
+		(thr.Visibility == visibility.VisibilityPublished || thr.Visibility == visibility.VisibilityReview) {
+		postType, _ := meta["type"].(string)
+		recent, err := s.threadQuerier.HasRecentChannelPrescored(
+			ctx,
+			thr.ChannelID,
+			time.Now().Add(-feedbackCooldownWindow),
+			xid.ID(thr.ID),
+			"feedback",
+			postType,
+		)
+		if err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
+		}
+		s.logger.Info("feedback cooldown check",
+			slog.String("thread_id", thr.ID.String()),
+			slog.String("channel_id", thr.ChannelID.String()),
+			slog.String("post_type", postType),
+			slog.String("visibility_before", thr.Visibility.String()),
+			slog.Bool("recent", recent),
+		)
+
+		switch {
+		case thr.Visibility == visibility.VisibilityPublished && recent:
+			// Demote to review when another feedback/<type> is within window.
+			// Skip EventThreadSubmittedForReview — feedback is prescored at
+			// creation and must not be pushed to the AI reviewer.
+			thr, err = s.threadWriter.Update(ctx, thr.ID, thread_writer.WithVisibility(visibility.VisibilityReview))
+			if err != nil {
+				return nil, fault.Wrap(err, fctx.With(ctx))
+			}
+
+		case thr.Visibility == visibility.VisibilityReview && !recent:
+			// First feedback/<type> in window — auto-promote to published.
+			thr, err = s.threadWriter.Update(ctx, thr.ID, thread_writer.WithVisibility(visibility.VisibilityPublished))
+			if err != nil {
+				return nil, fault.Wrap(err, fctx.With(ctx))
+			}
+
+		case thr.Visibility == visibility.VisibilityReview && recent:
+			// Within window — leave in review. No event, no promotion.
+		}
+	}
+
 	if content, ok := partial.Content.Get(); ok {
 		result, err := s.cpm.CheckContent(ctx, xid.ID(thr.ID), datagraph.KindThread, title, content)
 		if err != nil {
@@ -136,7 +195,7 @@ func (s *service) Create(ctx context.Context,
 			}
 		}
 
-		if thr.Visibility == visibility.VisibilityReview {
+		if thr.Visibility == visibility.VisibilityReview && !isPrescoredCategory(postCategoryAtCreate) {
 			s.bus.Publish(ctx, &message.EventThreadSubmittedForReview{
 				ID:    thr.ID,
 				Title: thr.Title,
@@ -149,15 +208,13 @@ func (s *service) Create(ctx context.Context,
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
-	postCategory, _ := meta["post_category"].(string)
-
 	if thr.Visibility == visibility.VisibilityPublished {
 		s.bus.Publish(ctx, &message.EventThreadPublished{
 			ID: thr.ID,
 		})
 	}
 
-	if postCategory != "BAH" {
+	if !isPrescoredCategory(postCategoryAtCreate) {
 		if err := s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
 			PostID: thr.ID,
 		}); err != nil {
@@ -174,13 +231,13 @@ func (s *service) Create(ctx context.Context,
 	return thr, nil
 }
 
-func (s *service) assignBAHSentiment(ctx context.Context, postID post.ID) error {
-	rankScore := float64(rand.IntN(bahRankScoreRangeLen) + bahRankScoreMin)
+func (s *service) assignPrescoredSentiment(ctx context.Context, postID post.ID) error {
+	rankScore := float64(rand.IntN(prescoredRankScoreRangeLen) + prescoredRankScoreMin)
 
 	err := s.db.PostSentiment.
 		Create().
 		SetPostID(xid.ID(postID)).
-		SetSentimentTag(bahSentimentTag).
+		SetSentimentTag(prescoredSentimentTag).
 		SetScoringStatus(ent_post_sentiment.ScoringStatusScored).
 		SetRankScore(rankScore).
 		OnConflictColumns(ent_post_sentiment.FieldPostID).

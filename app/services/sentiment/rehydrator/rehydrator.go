@@ -35,7 +35,7 @@ func runRehydrator(
 				ent_post.Not(ent_post.HasSentimentWith(
 					ent_post_sentiment.ScoringStatusEQ(ent_post_sentiment.ScoringStatusScored),
 				)),
-				postfilter.NotBAHPost(),
+				postfilter.NotPrescoredPost(),
 			).
 			Select(ent_post.FieldID).
 			All(ctx)
