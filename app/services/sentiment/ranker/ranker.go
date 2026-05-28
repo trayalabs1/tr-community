@@ -116,7 +116,7 @@ func (r *Ranker) ScoreUnscored(ctx context.Context, params ScoreUnscoredParams) 
 		ent_post.RootPostIDIsNil(),
 		ent_post.VisibilityEQ(ent_post.VisibilityPublished),
 		ent_post.ChannelIDEQ(params.ChannelID),
-		postfilter.NotBAHPost(),
+		postfilter.NotPrescoredPost(),
 	}
 
 	if params.CreatedAfter != nil {

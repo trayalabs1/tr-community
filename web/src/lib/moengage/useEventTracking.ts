@@ -214,6 +214,16 @@ export function useEventTracking() {
     [trackEvent]
   );
 
+  const trackSharePostCommunity = useCallback(
+    (postType?: string, channelId?: string) => {
+      trackEvent("share_post_community", {
+        post_type: postType,
+        channel_id: channelId,
+      });
+    },
+    [trackEvent]
+  );
+
   return {
     trackEvent,
     trackOnboardingLanded,
@@ -239,5 +249,6 @@ export function useEventTracking() {
     trackAdminReplied,
     trackViewPostClicked,
     trackDismissClicked,
+    trackSharePostCommunity,
   };
 }

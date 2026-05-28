@@ -9,6 +9,8 @@ type Props = {
     share?: string;
     streak_count?: string;
     reward_coins?: string;
+    category?: string;
+    type?: string;
   }>;
 };
 
@@ -35,6 +37,8 @@ export default async function Page(props: Props) {
       share={searchParams?.share === "true"}
       streakCount={searchParams?.streak_count ? parseInt(searchParams.streak_count, 10) : undefined}
       rewardCoins={searchParams?.reward_coins ? parseInt(searchParams.reward_coins, 10) : undefined}
+      category={searchParams?.category}
+      type={searchParams?.type}
     />
   );
 }

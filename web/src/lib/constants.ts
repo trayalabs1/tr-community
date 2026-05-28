@@ -11,3 +11,6 @@ export const STREAK_IMAGES: Record<number, string> = {
 };
 
 export const DEFAULT_STREAK_IMAGE_KEY = 3;
+
+export const FEEDBACK_PROGRESS_IMAGE =
+  "https://cdn.shopify.com/s/files/1/0100/1622/7394/files/progress_feedback_1.jpg?v=1779960980";

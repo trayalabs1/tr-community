@@ -26,9 +26,11 @@ type LandingScreenProps = {
   share?: boolean;
   streakCount?: number;
   rewardCoins?: number;
+  category?: string;
+  type?: string;
 };
 
-export function LandingScreen({ token, share, streakCount, rewardCoins }: LandingScreenProps) {
+export function LandingScreen({ token, share, streakCount, rewardCoins, category, type }: LandingScreenProps) {
   const router = useRouter();
   const { trigger } = useAuthTrayaToken({ token });
   const { mutate: mutateAccount } = useAccountGet();
@@ -45,6 +47,8 @@ export function LandingScreen({ token, share, streakCount, rewardCoins }: Landin
     const params = new URLSearchParams();
     if (streakCount !== undefined) params.set("streak_count", String(streakCount));
     if (rewardCoins !== undefined) params.set("reward_coins", String(rewardCoins));
+    if (category) params.set("category", category);
+    if (type) params.set("type", type);
     const query = params.toString();
     return query ? `?${query}` : "";
   };
@@ -57,8 +61,9 @@ export function LandingScreen({ token, share, streakCount, rewardCoins }: Landin
       const monthChannel = channels.find((c) => c.name?.toLowerCase().includes("month")) || channels.find((c) => PINNED_CHANNEL_SLUGS.includes(c.slug));
       const targetChannel = monthChannel ?? channels[0];
       if (targetChannel?.id) {
-        const hasShareParams = share && streakCount !== undefined && rewardCoins !== undefined;
-        if (hasShareParams) {
+        const hasBahShareParams = share && streakCount !== undefined && rewardCoins !== undefined;
+        const hasFeedbackShareParams = share && category === "feedback" && type === "progress";
+        if (hasBahShareParams || hasFeedbackShareParams) {
           router.push(`/channels/${targetChannel.id}/share-post${shareQuery}`);
         } else {
           router.push(`/channels/${targetChannel.id}`);
