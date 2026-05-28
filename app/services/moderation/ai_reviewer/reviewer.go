@@ -105,9 +105,10 @@ func (r *aiReviewer) handleThreadSubmittedForReview(ctx context.Context, evt *me
 	if err != nil {
 		return fault.Wrap(err, fctx.With(ctx))
 	}
-	if cat, _ := p.Metadata["post_category"].(string); cat == "BAH" {
-		r.logger.Info("ai review skipped for BAH post",
+	if cat, _ := p.Metadata["post_category"].(string); cat == "BAH" || cat == "feedback" {
+		r.logger.Info("ai review skipped for prescored post",
 			slog.String("thread_id", evt.ID.String()),
+			slog.String("post_category", cat),
 		)
 		return nil
 	}
