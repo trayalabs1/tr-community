@@ -1,6 +1,7 @@
 package traya
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -185,6 +186,57 @@ func TestGetAllManagedChannelSlugs_IncludesNewAndDeprecated(t *testing.T) {
 		if !managed[slug] {
 			t.Errorf("expected managed channel set to include %q", slug)
 		}
+	}
+}
+
+func TestGenerateHandle(t *testing.T) {
+	tests := []struct {
+		name        string
+		firstName   string
+		phoneNumber string
+		wantPrefix  string
+		wantLen     int // name[:4] + phone[:2] + 4 random digits
+	}{
+		{
+			name:        "typical name and indian number",
+			firstName:   "Chinmayee",
+			phoneNumber: "+919876543210",
+			wantPrefix:  "chin91",
+			wantLen:     10,
+		},
+		{
+			name:        "short name",
+			firstName:   "Jo",
+			phoneNumber: "+447911123456",
+			wantPrefix:  "jo44",
+			wantLen:     8,
+		},
+		{
+			name:        "no phone",
+			firstName:   "Chithra",
+			phoneNumber: "",
+			wantPrefix:  "chit",
+			wantLen:     8,
+		},
+		{
+			name:        "empty name",
+			firstName:   "",
+			phoneNumber: "+919876543210",
+			wantPrefix:  "91",
+			wantLen:     6,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := generateHandle(tt.firstName, tt.phoneNumber)
+			if !strings.HasPrefix(got, tt.wantPrefix) {
+				t.Errorf("generateHandle(%q, %q) = %q, want prefix %q", tt.firstName, tt.phoneNumber, got, tt.wantPrefix)
+			}
+			if len(got) != tt.wantLen {
+				t.Errorf("generateHandle(%q, %q) = %q, want length %d, got %d", tt.firstName, tt.phoneNumber, got, tt.wantLen, len(got))
+			}
+		})
 	}
 }
 
