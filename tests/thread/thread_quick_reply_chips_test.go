@@ -88,16 +88,19 @@ func TestThreadQuickReplyChips(t *testing.T) {
 
 			bahMeta := openapi.Metadata{"post_category": "BAH"}
 
-			t.Run("positive_progress_success_story_returns_3_candidates", func(t *testing.T) {
+			t.Run("positive_progress_success_story_returns_candidates", func(t *testing.T) {
 				id := createThread("Progress thread", nil)
 				mustSetSentiment(t, db, root, id, "positive", "progress_success_story")
 
 				th := getThread(getThreadSlug(id))
 				r.NotNil(th.QuickReplyChips, "quick_reply_chips should be present")
-				r.Len(th.QuickReplyChips.Candidates, 3)
-				a.Contains(th.QuickReplyChips.Candidates, "Amazing progress 🙌")
-				a.Contains(th.QuickReplyChips.Candidates, "So happy for you")
+				r.Len(th.QuickReplyChips.Candidates, 6)
+				a.Contains(th.QuickReplyChips.Candidates, "Amazing progress ✨")
+				a.Contains(th.QuickReplyChips.Candidates, "So happy for you 💚")
 				a.Contains(th.QuickReplyChips.Candidates, "Keep going 💪")
+				a.Contains(th.QuickReplyChips.Candidates, "Mera bhi din aayega 😄")
+				a.Contains(th.QuickReplyChips.Candidates, "Agla number mera 😭🔥")
+				a.Contains(th.QuickReplyChips.Candidates, "Dilli ab door nahi 🛣️✨")
 			})
 
 			t.Run("bah_meta_returns_habit_candidates_without_sentiment", func(t *testing.T) {
@@ -106,10 +109,12 @@ func TestThreadQuickReplyChips(t *testing.T) {
 
 				th := getThread(getThreadSlug(id))
 				r.NotNil(th.QuickReplyChips, "BAH meta should surface chips regardless of sentiment")
-				r.Len(th.QuickReplyChips.Candidates, 3)
+				r.Len(th.QuickReplyChips.Candidates, 5)
 				a.Contains(th.QuickReplyChips.Candidates, "Great consistency 🔥")
-				a.Contains(th.QuickReplyChips.Candidates, "Keep the streak going")
+				a.Contains(th.QuickReplyChips.Candidates, "Keep the streak going 🔁")
 				a.Contains(th.QuickReplyChips.Candidates, "You're doing great 💪")
+				a.Contains(th.QuickReplyChips.Candidates, "Chalte raho 💪")
+				a.Contains(th.QuickReplyChips.Candidates, "Manzil paas hai 🔥✨")
 			})
 
 			t.Run("bah_meta_wins_even_when_sentiment_is_negative", func(t *testing.T) {

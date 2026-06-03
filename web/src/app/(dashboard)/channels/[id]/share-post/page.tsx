@@ -7,6 +7,8 @@ type Props = {
   searchParams: Promise<{
     streak_count?: string;
     reward_coins?: string;
+    category?: string;
+    type?: string;
   }>;
 };
 
@@ -28,6 +30,8 @@ export default async function Page(props: Props) {
       channelID={id}
       streakCount={streakCount}
       rewardCoins={rewardCoins}
+      category={searchParams?.category}
+      type={searchParams?.type}
     />
   );
 }

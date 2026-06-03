@@ -34,6 +34,9 @@ export const EVENTS = {
   community_dismiss_clicked: {
     optional: ["reply_id", "channel_id"],
   },
+  share_post_community: {
+    optional: ["post_type", "channel_id"],
+  },
 } as const;
 
 export type EventName = keyof typeof EVENTS;
