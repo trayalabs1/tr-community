@@ -363,8 +363,8 @@ func generateHandle(firstName string, phoneNumber string) string {
 	phoneDigits = strings.ReplaceAll(phoneDigits, "-", "")
 
 	phonePrefix := ""
-	if len(phoneDigits) >= 2 {
-		phonePrefix = phoneDigits[:2]
+	if len(phoneDigits) >= 6 {
+		phonePrefix = phoneDigits[4:6]
 	}
 
 	randomDigits := fmt.Sprintf("%04d", rand.Intn(10000))
