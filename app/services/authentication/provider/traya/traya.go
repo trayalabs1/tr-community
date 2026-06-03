@@ -316,9 +316,7 @@ func (p *Provider) getOrCreateAccount(
 		name = fmt.Sprintf("%s %s", firstName, *lastName)
 	}
 
-	// Use temporary handle that user will replace during onboarding
-	// Generate short unique handle: temp_ (5 chars) + xid (20 chars) = 25 chars (under 30 limit)
-	handle := fmt.Sprintf("temp_%s", xid.New().String())
+	handle := p.generateUniqueHandle(ctx, firstName, phoneNumber)
 
 	newAccount, err := p.register.GetOrCreateViaEmail(ctx, service, email.Address, trayaUserID, trayaUserID, handle, name, email, true)
 	if err != nil {
@@ -326,6 +324,31 @@ func (p *Provider) getOrCreateAccount(
 	}
 
 	return newAccount, nil
+}
+
+const handleGenerationAttempts = 5
+
+func (p *Provider) generateUniqueHandle(ctx context.Context, firstName, phoneNumber string) string {
+	for i := 0; i < handleGenerationAttempts; i++ {
+		candidate := generateHandle(firstName, phoneNumber)
+
+		_, exists, err := p.accountQuery.LookupByHandle(ctx, candidate)
+		if err != nil {
+			p.logger.Warn("handle availability lookup failed during generation",
+				slog.String("candidate", candidate),
+				slog.String("error", err.Error()))
+			continue
+		}
+
+		if !exists {
+			return candidate
+		}
+	}
+
+	fallback := fmt.Sprintf("user_%s", xid.New().String())
+	p.logger.Warn("handle generation exhausted attempts, using xid fallback",
+		slog.String("handle", fallback))
+	return fallback
 }
 
 func generateHandle(firstName string, phoneNumber string) string {
@@ -340,8 +363,8 @@ func generateHandle(firstName string, phoneNumber string) string {
 	phoneDigits = strings.ReplaceAll(phoneDigits, "-", "")
 
 	phonePrefix := ""
-	if len(phoneDigits) >= 2 {
-		phonePrefix = phoneDigits[:2]
+	if len(phoneDigits) >= 6 {
+		phonePrefix = phoneDigits[4:6]
 	}
 
 	randomDigits := fmt.Sprintf("%04d", rand.Intn(10000))
