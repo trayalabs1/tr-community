@@ -9,8 +9,6 @@ var progressSuccessStoryChips = []string{
 	"Amazing progress ✨",
 	"So happy for you 💚",
 	"Keep going 💪",
-	"Mera bhi din aayega 😄",
-	"Agla number mera 😭🔥",
 	"Dilli ab door nahi 🛣️✨",
 }
 
