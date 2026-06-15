@@ -184,34 +184,32 @@ func TestIsLastOrderWithinActiveWindow(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name          string
-		daysAgo       int
-		kitExpireDays int
-		want          bool
+		name           string
+		expiryDaysFrom int
+		want           bool
 	}{
-		{"within kit window", 10, 30, true},
-		{"within grace period after kit expiry", 80, 30, true},
-		{"just inside boundary", 89, 30, true},
-		{"past kit plus grace", 100, 30, false},
-		{"zero kit days still has 60 day grace", 50, 0, true},
-		{"zero kit days past grace", 70, 0, false},
+		{"expires in future", 30, true},
+		{"expired today", 0, true},
+		{"within grace period after expiry", -50, true},
+		{"just inside grace boundary", -59, true},
+		{"past grace period", -70, false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			orderDate := now.AddDate(0, 0, -tt.daysAgo).Format(time.RFC3339)
-			got, err := isLastOrderWithinActiveWindow(orderDate, tt.kitExpireDays)
+			expiryDate := now.AddDate(0, 0, tt.expiryDaysFrom).Format(time.RFC3339)
+			got, err := isLastOrderWithinActiveWindow(expiryDate)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
 			if got != tt.want {
-				t.Errorf("isLastOrderWithinActiveWindow(%d days ago, kitExpireDays=%d) = %v, want %v", tt.daysAgo, tt.kitExpireDays, got, tt.want)
+				t.Errorf("isLastOrderWithinActiveWindow(expiry %d days from now) = %v, want %v", tt.expiryDaysFrom, got, tt.want)
 			}
 		})
 	}
 
 	t.Run("empty date returns false", func(t *testing.T) {
-		got, err := isLastOrderWithinActiveWindow("", 30)
+		got, err := isLastOrderWithinActiveWindow("")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
