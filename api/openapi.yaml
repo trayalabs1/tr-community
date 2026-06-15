@@ -6533,6 +6533,8 @@ components:
           type: string
           description: Asset ID for icon. Set to null to remove.
           nullable: true
+        meta:
+          $ref: "#/components/schemas/Metadata"
 
     ChannelMember:
       type: object
