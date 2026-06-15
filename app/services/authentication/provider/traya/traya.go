@@ -439,7 +439,7 @@ func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID accou
 	}
 
 	leadOlderThan15Days := false
-	if normalizedGender == "male" && customerType == "lead" && hasCaseIDPrefix(caseID, "1", "2") {
+	if normalizedGender == "male" && customerType == "lead" && hasCaseIDPrefix(caseID, "0", "1", "2", "3") {
 		older, err := isOlderThanNDays(firstFilledFormDate, 15)
 		if err != nil {
 			p.logger.Warn("failed to parse firstFilledFormDate",
