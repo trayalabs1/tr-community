@@ -14,6 +14,7 @@ import {
 import { Account, Channel, ThreadReference } from "@/api/openapi-schema";
 import { ChannelMobileHeader } from "@/components/channel/ChannelMobileHeader";
 import { ChannelFilterBar } from "@/components/channel/ChannelFilterBar";
+import { parsePromptNudges } from "@/components/feed/PromptNudge/prompts";
 import { ThreadReferenceCard } from "@/components/post/ThreadCard";
 import { ShareExperiencePrompt } from "@/components/thread/ThreadCreate/ShareExperiencePrompt";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ type Props = {
 
 export function ChannelScreen(props: Props) {
   const permissions = useChannelPermissions(props.channel.id);
+  const promptNudges = parsePromptNudges(props.channel.meta);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
   const [selectedVisibility, setSelectedVisibility] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<{ createdAfter?: string; createdBefore?: string }>({});
@@ -199,6 +201,7 @@ export function ChannelScreen(props: Props) {
       <styled.div display={{ base: "none", md: "block" }} width="full">
         <ChannelFilterBar
           channelID={props.channel.id}
+          channelName={props.channel.name}
           categories={categories?.categories || []}
           selectedCategorySlug={selectedCategorySlug}
           selectedVisibility={selectedVisibility}
@@ -207,6 +210,7 @@ export function ChannelScreen(props: Props) {
           onDateRangeChange={setDateRange}
           excludeBAH={excludeBAH}
           onExcludeBAHChange={setExcludeBAH}
+          promptNudges={promptNudges}
         />
       </styled.div>
 

@@ -8,6 +8,7 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
  * OpenAPI spec version: v1.25.13-canary
  */
 import type { ChannelMutablePropsVisibility } from "./channelMutablePropsVisibility";
+import type { Metadata } from "./metadata";
 
 export interface ChannelMutableProps {
   /**
@@ -25,6 +26,7 @@ export interface ChannelMutableProps {
    * @nullable
    */
   icon?: string | null;
+  meta?: Metadata;
   /**
    * The display name of the channel
    * @minLength 1
