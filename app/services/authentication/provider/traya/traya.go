@@ -557,15 +557,23 @@ func isOlderThanNDays(dateStr string, days int) (bool, error) {
 		return false, nil
 	}
 
-	t, err := time.Parse(time.RFC3339, dateStr)
+	var t time.Time
+	var err error
+
+	// RFC3339 dates (same instant handling as JS ISO strings)
+	t, err = time.Parse(time.RFC3339, dateStr)
 	if err != nil {
+		// Date-only strings: parse as UTC midnight,
+		// matching JavaScript's new Date("YYYY-MM-DD")
 		t, err = time.Parse("2006-01-02", dateStr)
 		if err != nil {
 			return false, err
 		}
 	}
 
-	return time.Since(t).Hours()/24 >= float64(days), nil
+	daysSince := int(time.Since(t) / (24 * time.Hour))
+
+	return daysSince >= days, nil
 }
 
 func hasCaseIDPrefix(caseID string, prefixes ...string) bool {
