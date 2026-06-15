@@ -272,6 +272,94 @@ func TestGenerateHandle(t *testing.T) {
 	}
 }
 
+func TestIsOlderThanNDays(t *testing.T) {
+	now := time.Now().UTC()
+	dateOnly := "2006-01-02"
+	rfc3339 := time.RFC3339
+
+	tests := []struct {
+		name    string
+		dateStr string
+		days    int
+		want    bool
+		wantErr bool
+	}{
+		{
+			name:    "empty string returns false",
+			dateStr: "",
+			days:    30,
+			want:    false,
+		},
+		{
+			name:    "date 31 days ago is older than 30",
+			dateStr: now.AddDate(0, 0, -31).Format(dateOnly),
+			days:    30,
+			want:    true,
+		},
+		{
+			name:    "date exactly 30 days ago is older than or equal to 30",
+			dateStr: now.AddDate(0, 0, -30).Format(dateOnly),
+			days:    30,
+			want:    true,
+		},
+		{
+			name:    "date 29 days ago is not older than 30",
+			dateStr: now.AddDate(0, 0, -29).Format(dateOnly),
+			days:    30,
+			want:    false,
+		},
+		{
+			name:    "future date is not older than 30",
+			dateStr: now.AddDate(0, 0, 1).Format(dateOnly),
+			days:    30,
+			want:    false,
+		},
+		{
+			name:    "today is not older than 1 day",
+			dateStr: now.Format(dateOnly),
+			days:    1,
+			want:    false,
+		},
+		{
+			name:    "RFC3339 timestamp older than N days",
+			dateStr: now.AddDate(0, 0, -16).Format(rfc3339),
+			days:    15,
+			want:    true,
+		},
+		{
+			name:    "RFC3339 timestamp not older than N days",
+			dateStr: now.AddDate(0, 0, -14).Format(rfc3339),
+			days:    15,
+			want:    false,
+		},
+		{
+			name:    "invalid date string returns error",
+			dateStr: "not-a-date",
+			days:    30,
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name:    "zero days: any past date qualifies",
+			dateStr: now.AddDate(0, 0, -1).Format(dateOnly),
+			days:    0,
+			want:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := isOlderThanNDays(tt.dateStr, tt.days)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("isOlderThanNDays(%q, %d) error = %v, wantErr %v", tt.dateStr, tt.days, err, tt.wantErr)
+			}
+			if got != tt.want {
+				t.Errorf("isOlderThanNDays(%q, %d) = %v, want %v", tt.dateStr, tt.days, got, tt.want)
+			}
+		})
+	}
+}
+
 func keys(m map[string]bool) []string {
 	out := make([]string, 0, len(m))
 	for k := range m {
