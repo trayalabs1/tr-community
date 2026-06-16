@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/Southclaws/dt"
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
@@ -16,6 +17,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/account/account_querier"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/internal/ent"
+	account_ent "github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/schema"
 )
 
@@ -147,6 +149,52 @@ func (d *Writer) Create(ctx context.Context, handle string, opts ...Option) (*ac
 	}
 
 	return d.accountQuerier.GetByID(ctx, account.AccountID(a.ID))
+}
+
+// BulkUpdateHandles sets new handles for many accounts in a single UPDATE using
+// a CASE expression keyed by id. It returns ErrHandleConflict (tagged
+// AlreadyExists) if any new handle collides with an existing one, in which case
+// no rows are changed. Intended for large backfills where one round-trip per
+// batch matters.
+func (d *Writer) BulkUpdateHandles(ctx context.Context, handles map[account.AccountID]string) error {
+	if len(handles) == 0 {
+		return nil
+	}
+
+	type pair struct{ id, handle string }
+	pairs := make([]pair, 0, len(handles))
+	ids := make([]any, 0, len(handles))
+	for id, handle := range handles {
+		idStr := xid.ID(id).String()
+		pairs = append(pairs, pair{idStr, handle})
+		ids = append(ids, idStr)
+	}
+
+	// CASE "id" WHEN <arg> THEN <arg> ... END — built via ExprFunc so each value
+	// is emitted as a dialect-correct, correctly-ordered placeholder.
+	caseExpr := sql.ExprFunc(func(b *sql.Builder) {
+		b.WriteString("CASE ").Ident(account_ent.FieldID)
+		for _, p := range pairs {
+			b.WriteString(" WHEN ").Arg(p.id).WriteString(" THEN ").Arg(p.handle)
+		}
+		b.WriteString(" END")
+	})
+
+	err := d.db.Account.Update().Modify(func(u *sql.UpdateBuilder) {
+		u.Set(account_ent.FieldHandle, caseExpr).
+			Where(sql.In(account_ent.FieldID, ids...))
+	}).Exec(ctx)
+	if err != nil {
+		if ent.IsConstraintError(err) {
+			return fault.Wrap(err,
+				fctx.With(ctx),
+				ftag.With(ftag.AlreadyExists),
+				fmsg.WithDesc("unique constraint violation", "One or more handles are already in use."))
+		}
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return nil
 }
 
 func (d *Writer) Update(ctx context.Context, id account.AccountID, opts ...Mutation) (*account.AccountWithEdges, error) {

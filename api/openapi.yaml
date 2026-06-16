@@ -325,6 +325,42 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorised" }
         "201": { $ref: "#/components/responses/AuditEventCreatedOK" }
 
+  /admin/temp-handles/regenerate:
+    post:
+      operationId: AdminRegenerateTempHandles
+      description: |
+        Regenerate handles for accounts that still carry a temporary handle
+        (those with a `temp_` prefix assigned during signup) using the current
+        handle generation logic. Requires ADMINISTRATOR permission.
+
+        Processes a single bounded batch using keyset pagination so the operation
+        can be run safely over very large tables without long-running requests or
+        heavy load. Start with no cursor, then repeat the call passing the
+        returned `next_cursor` until it is absent. The operation is idempotent and
+        resumable: each successfully updated row stops matching the temporary
+        prefix, so the set of remaining rows shrinks monotonically.
+      tags: [admin]
+      parameters:
+        - in: query
+          name: limit
+          description: Maximum number of accounts to process in this batch.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5000
+            default: 500
+        - in: query
+          name: after
+          description: Keyset cursor; pass the `next_cursor` from the previous batch.
+          schema:
+            type: string
+            format: xid
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "200": { $ref: "#/components/responses/AdminRegenerateTempHandlesOK" }
+
   /admin/bans/{account_handle}:
     post:
       operationId: AdminAccountBanCreate
@@ -4119,6 +4155,13 @@ components:
           schema:
             $ref: "#/components/schemas/Account"
 
+    AdminRegenerateTempHandlesOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AdminRegenerateTempHandlesResult"
+
     AccountEmailUpdateOK:
       description: OK
       content:
@@ -4702,6 +4745,29 @@ components:
     # Y88b  d88P Y88..88P 888  888  888 888  888  888 Y88..88P 888  888
     #  "Y8888P"   "Y88P"  888  888  888 888  888  888  "Y88P"  888  888
     #
+
+    AdminRegenerateTempHandlesResult:
+      type: object
+      required: [processed, updated, skipped, failed]
+      properties:
+        processed:
+          type: integer
+          description: Number of temporary-handle accounts examined in this batch.
+        updated:
+          type: integer
+          description: Number of handles successfully regenerated in this batch.
+        skipped:
+          type: integer
+          description: Number of accounts skipped (no usable name to derive a handle).
+        failed:
+          type: integer
+          description: Number of accounts that failed to update in this batch.
+        next_cursor:
+          type: string
+          format: xid
+          description: |
+            Cursor to pass as `after` for the next batch. Absent when the table
+            has been fully drained and no further batches remain.
 
     Identifier:
       type: string

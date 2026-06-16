@@ -17,6 +17,7 @@ type OperationPermissions interface {
 	AuditEventList() (bool, *rbac.Permission)
 	AuditEventGet() (bool, *rbac.Permission)
 	ModerationActionCreate() (bool, *rbac.Permission)
+	AdminRegenerateTempHandles() (bool, *rbac.Permission)
 	AdminAccountBanCreate() (bool, *rbac.Permission)
 	AdminAccountBanRemove() (bool, *rbac.Permission)
 	AdminAccessKeyList() (bool, *rbac.Permission)
@@ -211,6 +212,8 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.AuditEventGet()
 	case "ModerationActionCreate":
 		return optable.ModerationActionCreate()
+	case "AdminRegenerateTempHandles":
+		return optable.AdminRegenerateTempHandles()
 	case "AdminAccountBanCreate":
 		return optable.AdminAccountBanCreate()
 	case "AdminAccountBanRemove":
