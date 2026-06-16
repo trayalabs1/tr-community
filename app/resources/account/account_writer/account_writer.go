@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/Southclaws/dt"
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
@@ -16,6 +17,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/account/account_querier"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/internal/ent"
+	account_ent "github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/schema"
 )
 
@@ -147,6 +149,44 @@ func (d *Writer) Create(ctx context.Context, handle string, opts ...Option) (*ac
 	}
 
 	return d.accountQuerier.GetByID(ctx, account.AccountID(a.ID))
+}
+
+// BulkUpdateHandles sets new handles for many accounts in a single UPDATE using
+// a CASE expression keyed by id. It returns ErrHandleConflict (tagged
+// AlreadyExists) if any new handle collides with an existing one, in which case
+// no rows are changed. Intended for large backfills where one round-trip per
+// batch matters.
+func (d *Writer) BulkUpdateHandles(ctx context.Context, handles map[account.AccountID]string) error {
+	if len(handles) == 0 {
+		return nil
+	}
+
+	ids := make([]any, 0, len(handles))
+	caseSQL := "CASE " + account_ent.FieldID
+	caseArgs := make([]any, 0, len(handles)*2)
+	for id, handle := range handles {
+		idStr := xid.ID(id).String()
+		ids = append(ids, idStr)
+		caseSQL += " WHEN ? THEN ?"
+		caseArgs = append(caseArgs, idStr, handle)
+	}
+	caseSQL += " END"
+
+	err := d.db.Account.Update().Modify(func(u *sql.UpdateBuilder) {
+		u.Set(account_ent.FieldHandle, sql.Expr(caseSQL, caseArgs...)).
+			Where(sql.In(account_ent.FieldID, ids...))
+	}).Exec(ctx)
+	if err != nil {
+		if ent.IsConstraintError(err) {
+			return fault.Wrap(err,
+				fctx.With(ctx),
+				ftag.With(ftag.AlreadyExists),
+				fmsg.WithDesc("unique constraint violation", "One or more handles are already in use."))
+		}
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return nil
 }
 
 func (d *Writer) Update(ctx context.Context, id account.AccountID, opts ...Mutation) (*account.AccountWithEdges, error) {

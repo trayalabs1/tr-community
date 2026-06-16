@@ -164,6 +164,69 @@ func (d *Querier) GetAllHandles(ctx context.Context) ([]string, error) {
 	return handles, nil
 }
 
+// TempAccount is a minimal projection of an account carrying a temporary handle,
+// used by bulk handle regeneration.
+type TempAccount struct {
+	ID     xid.ID
+	Handle string
+	Name   string
+}
+
+// ListTempAccounts returns up to limit accounts whose handle still carries the
+// temporary "temp_" prefix, ordered by ID, starting after the given cursor.
+// Passing a zero cursor starts from the beginning. Keyset pagination keeps each
+// page cheap regardless of table size.
+func (d *Querier) ListTempAccounts(ctx context.Context, after xid.ID, limit int) ([]TempAccount, error) {
+	q := d.db.Account.
+		Query().
+		Where(
+			account_ent.HandleHasPrefix("temp_"),
+			account_ent.DeletedAtIsNil(),
+		)
+
+	if !after.IsNil() {
+		q = q.Where(account_ent.IDGT(after))
+	}
+
+	var rows []TempAccount
+	err := q.
+		Order(account_ent.ByID()).
+		Limit(limit).
+		Select(account_ent.FieldID, account_ent.FieldHandle, account_ent.FieldName).
+		Scan(ctx, &rows)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return rows, nil
+}
+
+// ExistingHandles returns the subset of the given candidate handles that are
+// already taken by some account. Used to filter generated handles in bulk
+// instead of one lookup per candidate.
+func (d *Querier) ExistingHandles(ctx context.Context, candidates []string) (map[string]bool, error) {
+	taken := make(map[string]bool, len(candidates))
+	if len(candidates) == 0 {
+		return taken, nil
+	}
+
+	var handles []string
+	err := d.db.Account.
+		Query().
+		Where(account_ent.HandleIn(candidates...)).
+		Select(account_ent.FieldHandle).
+		Scan(ctx, &handles)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	for _, h := range handles {
+		taken[h] = true
+	}
+
+	return taken, nil
+}
+
 // CountNonTempAccounts returns count of accounts with permanent handles
 // Used to determine if Redis username cache needs reseeding
 func (d *Querier) CountNonTempAccounts(ctx context.Context) (int, error) {

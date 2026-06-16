@@ -18,6 +18,8 @@ import type {
   AdminAccessKeyListOKResponse,
   AdminAnalyticsGetOKResponse,
   AdminAnalyticsGetParams,
+  AdminRegenerateTempHandlesOKResponse,
+  AdminRegenerateTempHandlesParams,
   AdminReplyQueueListOKResponse,
   AdminReplyQueueListParams,
   AdminSettingsGetOKResponse,
@@ -308,6 +310,81 @@ export const useModerationActionCreate = <
 
   const swrKey = swrOptions?.swrKey ?? getModerationActionCreateMutationKey();
   const swrFn = getModerationActionCreateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Regenerate handles for accounts that still carry a temporary handle
+(those with a `temp_` prefix assigned during signup) using the current
+handle generation logic. Requires ADMINISTRATOR permission.
+
+Processes a single bounded batch using keyset pagination so the operation
+can be run safely over very large tables without long-running requests or
+heavy load. Start with no cursor, then repeat the call passing the
+returned `next_cursor` until it is absent. The operation is idempotent and
+resumable: each successfully updated row stops matching the temporary
+prefix, so the set of remaining rows shrinks monotonically.
+
+ */
+export const adminRegenerateTempHandles = (
+  params?: AdminRegenerateTempHandlesParams,
+) => {
+  return fetcher<AdminRegenerateTempHandlesOKResponse>({
+    url: `/admin/temp-handles/regenerate`,
+    method: "POST",
+    params,
+  });
+};
+
+export const getAdminRegenerateTempHandlesMutationFetcher = (
+  params?: AdminRegenerateTempHandlesParams,
+) => {
+  return (
+    _: Key,
+    __: { arg: Arguments },
+  ): Promise<AdminRegenerateTempHandlesOKResponse> => {
+    return adminRegenerateTempHandles(params);
+  };
+};
+export const getAdminRegenerateTempHandlesMutationKey = (
+  params?: AdminRegenerateTempHandlesParams,
+) => [`/admin/temp-handles/regenerate`, ...(params ? [params] : [])] as const;
+
+export type AdminRegenerateTempHandlesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRegenerateTempHandles>>
+>;
+export type AdminRegenerateTempHandlesMutationError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | InternalServerErrorResponse;
+
+export const useAdminRegenerateTempHandles = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | InternalServerErrorResponse,
+>(
+  params?: AdminRegenerateTempHandlesParams,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof adminRegenerateTempHandles>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof adminRegenerateTempHandles>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getAdminRegenerateTempHandlesMutationKey(params);
+  const swrFn = getAdminRegenerateTempHandlesMutationFetcher(params);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
