@@ -55,6 +55,21 @@ func TestAdminRegenerateTempHandles(t *testing.T) {
 				account_writer.SetName("Priyanka"))
 			r.NoError(err)
 
+			// Create several more temp accounts so a single batch exercises the
+			// multi-row CASE bulk update path.
+			extraNames := []string{"Rahul", "Anjali", "Vikram", "Sneha", "Arjun"}
+			extraIDs := make([]account.AccountID, 0, len(extraNames))
+			for _, name := range extraNames {
+				s, err := cl.AuthPasswordSignupWithResponse(root, nil, openapi.AuthPair{Identifier: "tmp-" + xid.New().String(), Token: "password"})
+				r.NoError(err)
+				id := account.AccountID(utils.Must(xid.FromString(s.JSON200.Id)))
+				_, err = accountWrite.Update(root, id,
+					account_writer.SetHandle("temp_"+xid.New().String()),
+					account_writer.SetName(name))
+				r.NoError(err)
+				extraIDs = append(extraIDs, id)
+			}
+
 			// Non-admin cannot trigger the regeneration.
 
 			randomSignup, err := cl.AuthPasswordSignupWithResponse(root, nil, openapi.AuthPair{Identifier: "rando-" + xid.New().String(), Token: "password"})
@@ -85,7 +100,7 @@ func TestAdminRegenerateTempHandles(t *testing.T) {
 				}
 				cursor = res.JSON200.NextCursor
 			}
-			r.GreaterOrEqual(totalUpdated, 1)
+			r.GreaterOrEqual(totalUpdated, 1+len(extraNames))
 
 			// The temp account now has a regenerated handle derived from its name.
 
@@ -93,6 +108,19 @@ func TestAdminRegenerateTempHandles(t *testing.T) {
 			r.NoError(err)
 			r.False(strings.HasPrefix(acc.Handle, "temp_"), "handle should no longer be temporary, got %q", acc.Handle)
 			r.True(strings.HasPrefix(acc.Handle, "priy"), "handle should derive from name, got %q", acc.Handle)
+
+			// Every extra temp account was regenerated via the bulk update, with a
+			// handle derived from its name and unique across the set.
+			seen := map[string]bool{acc.Handle: true}
+			for i, id := range extraIDs {
+				ea, err := accountQuery.GetByID(root, id)
+				r.NoError(err)
+				r.False(strings.HasPrefix(ea.Handle, "temp_"), "extra handle still temporary: %q", ea.Handle)
+				r.True(strings.HasPrefix(ea.Handle, strings.ToLower(extraNames[i])[:4]),
+					"extra handle %q should derive from name %q", ea.Handle, extraNames[i])
+				r.False(seen[ea.Handle], "duplicate handle generated: %q", ea.Handle)
+				seen[ea.Handle] = true
+			}
 
 			// An invalid cursor is rejected.
 

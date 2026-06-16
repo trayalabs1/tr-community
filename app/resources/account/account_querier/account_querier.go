@@ -201,6 +201,32 @@ func (d *Querier) ListTempAccounts(ctx context.Context, after xid.ID, limit int)
 	return rows, nil
 }
 
+// ExistingHandles returns the subset of the given candidate handles that are
+// already taken by some account. Used to filter generated handles in bulk
+// instead of one lookup per candidate.
+func (d *Querier) ExistingHandles(ctx context.Context, candidates []string) (map[string]bool, error) {
+	taken := make(map[string]bool, len(candidates))
+	if len(candidates) == 0 {
+		return taken, nil
+	}
+
+	var handles []string
+	err := d.db.Account.
+		Query().
+		Where(account_ent.HandleIn(candidates...)).
+		Select(account_ent.FieldHandle).
+		Scan(ctx, &handles)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	for _, h := range handles {
+		taken[h] = true
+	}
+
+	return taken, nil
+}
+
 // CountNonTempAccounts returns count of accounts with permanent handles
 // Used to determine if Redis username cache needs reseeding
 func (d *Querier) CountNonTempAccounts(ctx context.Context) (int, error) {
