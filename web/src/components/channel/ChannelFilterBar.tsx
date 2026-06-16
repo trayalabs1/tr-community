@@ -11,10 +11,12 @@ import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { hasPermission } from "@/utils/permissions";
 import { useSession } from "@/auth";
 import { UsersPostedToday } from "@/components/feed/QuickShare/UsersPostedToday";
+import { PromptItem } from "@/components/feed/PromptNudge/prompts";
 import { ThreadCreateTrigger } from "@/components/thread/ThreadCreate/ThreadCreateTrigger";
 
 interface ChannelFilterBarProps {
   channelID: string;
+  channelName?: string;
   categories: Category[] | undefined;
   selectedCategorySlug: string | null;
   selectedVisibility: string | null;
@@ -23,10 +25,12 @@ interface ChannelFilterBarProps {
   onDateRangeChange?: (range: { createdAfter?: string; createdBefore?: string }) => void;
   excludeBAH?: boolean;
   onExcludeBAHChange?: (exclude: boolean) => void;
+  promptNudges?: PromptItem[];
 }
 
 export function ChannelFilterBar({
   channelID,
+  channelName,
   categories,
   selectedCategorySlug,
   selectedVisibility,
@@ -35,6 +39,7 @@ export function ChannelFilterBar({
   onDateRangeChange,
   excludeBAH = false,
   onExcludeBAHChange,
+  promptNudges,
 }: ChannelFilterBarProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [hasDateFilter, setHasDateFilter] = useState(false);
@@ -176,7 +181,11 @@ export function ChannelFilterBar({
       >
         <VStack alignItems="start" gap="1" width="full">
           <UsersPostedToday signedIn={Boolean(session)} channelID={channelID} />
-          <ThreadCreateTrigger channelID={channelID} />
+          <ThreadCreateTrigger
+            channelID={channelID}
+            channelName={channelName}
+            promptNudges={promptNudges}
+          />
         </VStack>
       </styled.div>
 

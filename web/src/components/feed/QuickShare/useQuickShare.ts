@@ -12,12 +12,17 @@ import { NO_CATEGORY_VALUE } from "@/components/category/CategorySelect/useCateg
 import { useFeedMutations } from "@/lib/feed/mutation";
 import { useClickAway } from "@/utils/useClickAway";
 
+import { PromptItem } from "@/components/feed/PromptNudge/prompts";
+
 export type Props = {
   initialSession?: Account;
   initialCategory?: Category | null;
   showCategorySelect: boolean;
   channelID?: string;
+  promptNudges?: PromptItem[];
 };
+
+export const DEFAULT_PLACEHOLDER = "Share a thought, a link, something cool...";
 
 export const FormSchema = z.object({
   body: z.string(),
@@ -35,6 +40,7 @@ export function useQuickShare({ initialCategory, channelID }: Props) {
   >(null);
   const formRef = useClickAway<HTMLFormElement>(() => setEditing(false));
   const [resetKey, setResetKey] = useState("");
+  const [placeholder, setPlaceholder] = useState(DEFAULT_PLACEHOLDER);
 
   const form = useForm<Form>({
     resolver: zodResolver(FormSchema),
@@ -142,6 +148,12 @@ export function useQuickShare({ initialCategory, channelID }: Props) {
     setEditing(true);
   }
 
+  function applyPrompt(text: string) {
+    setPlaceholder(text);
+    setEditing(true);
+    formRef.current?.querySelector<HTMLElement>("[contenteditable]")?.focus();
+  }
+
   return {
     form,
     state: {
@@ -149,10 +161,12 @@ export function useQuickShare({ initialCategory, channelID }: Props) {
       editing,
       hydratedLink,
       resetKey,
+      placeholder,
     },
     handlers: {
       handleFocus,
       handlePost,
+      applyPrompt,
     },
   };
 }

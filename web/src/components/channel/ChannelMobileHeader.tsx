@@ -8,6 +8,7 @@ import { HeaderWithBackArrow } from "@/components/site/Header";
 import { HStack, VStack, styled } from "@/styled-system/jsx";
 import { getAssetURL } from "@/utils/asset";
 import { ChannelFilterBar } from "@/components/channel/ChannelFilterBar";
+import { parsePromptNudges } from "@/components/feed/PromptNudge/prompts";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { getAvatarColor } from "@/utils/avatar-colors";
 import { BookmarkButton } from "@/components/channel/BookmarkButton";
@@ -166,6 +167,7 @@ export function ChannelMobileHeader({
       <styled.div display={{ base: "block", md: "none" }} width="full" px="4" pt="1" pb="0">
         <ChannelFilterBar
           channelID={channel.id}
+          channelName={channel.name}
           categories={categories}
           selectedCategorySlug={selectedCategorySlug}
           selectedVisibility={selectedVisibility}
@@ -174,6 +176,7 @@ export function ChannelMobileHeader({
           onDateRangeChange={onDateRangeChange}
           excludeBAH={excludeBAH}
           onExcludeBAHChange={onExcludeBAHChange}
+          promptNudges={parsePromptNudges(channel.meta)}
         />
       </styled.div>
     </VStack>
