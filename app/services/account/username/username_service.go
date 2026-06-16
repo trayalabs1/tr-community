@@ -209,29 +209,21 @@ func (s *Service) RegenerateTempHandles(ctx context.Context, cursor string, batc
 
 	result := &RegenerateResult{Processed: len(accounts)}
 
+	// Only accounts whose name yields a usable handle prefix are candidates for
+	// regeneration; the rest are skipped up front.
+	pending := make([]account_querier.TempAccount, 0, len(accounts))
 	for _, acc := range accounts {
-		handle, ok := s.generateUniqueHandle(ctx, acc.Name)
-		if !ok {
+		if handlePrefixFromName(acc.Name) == "" {
 			result.Skipped++
 			continue
 		}
+		pending = append(pending, acc)
+	}
 
-		err := s.accountWriter.UpdateHandle(ctx, account.AccountID(acc.ID), handle)
-		if err != nil {
-			s.logger.Warn("failed to regenerate temporary handle",
-				slog.String("account_id", acc.ID.String()),
-				slog.String("old_handle", acc.Handle),
-				slog.String("new_handle", handle),
-				slog.String("error", err.Error()))
-			result.Failed++
-			continue
+	if len(pending) > 0 {
+		if err := s.assignHandles(ctx, pending, result); err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
 		}
-
-		if s.redis != nil {
-			_ = s.addToRedisSet(ctx, handle)
-		}
-
-		result.Updated++
 	}
 
 	// A full batch means there may be more rows; advance the cursor. A short
@@ -243,6 +235,91 @@ func (s *Service) RegenerateTempHandles(ctx context.Context, cursor string, batc
 	return result, nil
 }
 
+// assignHandles generates unique handles for the pending accounts and writes
+// them in one CASE update. Candidates are checked against existing handles in a
+// single query and de-duplicated within the batch. On a unique-constraint
+// collision from a concurrent write, the whole assignment is retried with fresh
+// candidates for the rows that have not yet been committed.
+func (s *Service) assignHandles(ctx context.Context, pending []account_querier.TempAccount, result *RegenerateResult) error {
+	remaining := pending
+
+	for attempt := 0; attempt < handleGenerationAttempts && len(remaining) > 0; attempt++ {
+		candidates := make([]string, 0, len(remaining))
+		for _, acc := range remaining {
+			candidates = append(candidates, generateHandle(acc.Name))
+		}
+
+		taken, err := s.accountQuery.ExistingHandles(ctx, candidates)
+		if err != nil {
+			return fault.Wrap(err, fctx.With(ctx))
+		}
+
+		assigned := make(map[account.AccountID]string, len(remaining))
+		seen := make(map[string]bool, len(remaining))
+		var retry []account_querier.TempAccount
+
+		for i, acc := range remaining {
+			h := candidates[i]
+			if taken[h] || seen[h] {
+				retry = append(retry, acc) // collides with DB or another row in this batch
+				continue
+			}
+			seen[h] = true
+			assigned[account.AccountID(acc.ID)] = h
+		}
+
+		if len(assigned) > 0 {
+			err := s.accountWriter.BulkUpdateHandles(ctx, assigned)
+			if err != nil {
+				if ftag.Get(err) == ftag.AlreadyExists {
+					// A concurrent write claimed one of these handles after our
+					// existence check. The CASE update is atomic so nothing was
+					// committed; retry every still-pending row next round.
+					s.logger.Warn("bulk handle update hit a conflict, retrying",
+						slog.Int("count", len(assigned)),
+						slog.String("error", err.Error()))
+					remaining = dedupeAccounts(append(remaining, retry...))
+					continue
+				}
+				return fault.Wrap(err, fctx.With(ctx))
+			}
+
+			result.Updated += len(assigned)
+			if s.redis != nil {
+				for _, h := range assigned {
+					_ = s.addToRedisSet(ctx, h)
+				}
+			}
+		}
+
+		remaining = retry
+	}
+
+	// Anything still unresolved after all attempts could not be given a unique
+	// handle and is reported as failed.
+	result.Failed += len(remaining)
+	for _, acc := range remaining {
+		s.logger.Warn("could not assign unique handle after retries",
+			slog.String("account_id", acc.ID.String()),
+			slog.String("old_handle", acc.Handle))
+	}
+
+	return nil
+}
+
+func dedupeAccounts(in []account_querier.TempAccount) []account_querier.TempAccount {
+	seen := make(map[xid.ID]bool, len(in))
+	out := in[:0]
+	for _, acc := range in {
+		if seen[acc.ID] {
+			continue
+		}
+		seen[acc.ID] = true
+		out = append(out, acc)
+	}
+	return out
+}
+
 func parseCursor(cursor string) (xid.ID, error) {
 	if cursor == "" {
 		return xid.NilID(), nil
@@ -250,31 +327,11 @@ func parseCursor(cursor string) (xid.ID, error) {
 	return xid.FromString(cursor)
 }
 
-// generateUniqueHandle derives a unique handle from a display name. The second
-// return value is false when the name yields no usable handle prefix.
-func (s *Service) generateUniqueHandle(ctx context.Context, name string) (string, bool) {
-	prefix := handlePrefixFromName(name)
-	if prefix == "" {
-		return "", false
-	}
-
-	for i := 0; i < handleGenerationAttempts; i++ {
-		candidate := fmt.Sprintf("%s%04d", prefix, rand.Intn(10000))
-
-		_, exists, err := s.accountQuery.LookupByHandle(ctx, candidate)
-		if err != nil {
-			s.logger.Warn("handle availability lookup failed during regeneration",
-				slog.String("candidate", candidate),
-				slog.String("error", err.Error()))
-			continue
-		}
-
-		if !exists {
-			return candidate, true
-		}
-	}
-
-	return "", false
+// generateHandle derives a handle candidate from a display name: a lowercase
+// alphanumeric prefix (max 4 chars) plus four random digits. Callers must check
+// uniqueness; the caller has already ensured the prefix is non-empty.
+func generateHandle(name string) string {
+	return fmt.Sprintf("%s%04d", handlePrefixFromName(name), rand.Intn(10000))
 }
 
 var nonAlphanumeric = regexp.MustCompile(`[^a-z0-9]`)
