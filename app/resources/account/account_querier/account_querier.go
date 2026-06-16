@@ -164,6 +164,43 @@ func (d *Querier) GetAllHandles(ctx context.Context) ([]string, error) {
 	return handles, nil
 }
 
+// TempAccount is a minimal projection of an account carrying a temporary handle,
+// used by bulk handle regeneration.
+type TempAccount struct {
+	ID     xid.ID
+	Handle string
+	Name   string
+}
+
+// ListTempAccounts returns up to limit accounts whose handle still carries the
+// temporary "temp_" prefix, ordered by ID, starting after the given cursor.
+// Passing a zero cursor starts from the beginning. Keyset pagination keeps each
+// page cheap regardless of table size.
+func (d *Querier) ListTempAccounts(ctx context.Context, after xid.ID, limit int) ([]TempAccount, error) {
+	q := d.db.Account.
+		Query().
+		Where(
+			account_ent.HandleHasPrefix("temp_"),
+			account_ent.DeletedAtIsNil(),
+		)
+
+	if !after.IsNil() {
+		q = q.Where(account_ent.IDGT(after))
+	}
+
+	var rows []TempAccount
+	err := q.
+		Order(account_ent.ByID()).
+		Limit(limit).
+		Select(account_ent.FieldID, account_ent.FieldHandle, account_ent.FieldName).
+		Scan(ctx, &rows)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return rows, nil
+}
+
 // CountNonTempAccounts returns count of accounts with permanent handles
 // Used to determine if Redis username cache needs reseeding
 func (d *Querier) CountNonTempAccounts(ctx context.Context) (int, error) {
