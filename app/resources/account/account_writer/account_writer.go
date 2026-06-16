@@ -161,19 +161,27 @@ func (d *Writer) BulkUpdateHandles(ctx context.Context, handles map[account.Acco
 		return nil
 	}
 
+	type pair struct{ id, handle string }
+	pairs := make([]pair, 0, len(handles))
 	ids := make([]any, 0, len(handles))
-	caseSQL := "CASE " + account_ent.FieldID
-	caseArgs := make([]any, 0, len(handles)*2)
 	for id, handle := range handles {
 		idStr := xid.ID(id).String()
+		pairs = append(pairs, pair{idStr, handle})
 		ids = append(ids, idStr)
-		caseSQL += " WHEN ? THEN ?"
-		caseArgs = append(caseArgs, idStr, handle)
 	}
-	caseSQL += " END"
+
+	// CASE "id" WHEN <arg> THEN <arg> ... END — built via ExprFunc so each value
+	// is emitted as a dialect-correct, correctly-ordered placeholder.
+	caseExpr := sql.ExprFunc(func(b *sql.Builder) {
+		b.WriteString("CASE ").Ident(account_ent.FieldID)
+		for _, p := range pairs {
+			b.WriteString(" WHEN ").Arg(p.id).WriteString(" THEN ").Arg(p.handle)
+		}
+		b.WriteString(" END")
+	})
 
 	err := d.db.Account.Update().Modify(func(u *sql.UpdateBuilder) {
-		u.Set(account_ent.FieldHandle, sql.Expr(caseSQL, caseArgs...)).
+		u.Set(account_ent.FieldHandle, caseExpr).
 			Where(sql.In(account_ent.FieldID, ids...))
 	}).Exec(ctx)
 	if err != nil {
