@@ -2,6 +2,9 @@ package username
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
+	"math/rand"
 	"regexp"
 	"strings"
 	"time"
@@ -11,6 +14,7 @@ import (
 	"github.com/Southclaws/fault/fmsg"
 	"github.com/Southclaws/fault/ftag"
 	"github.com/redis/rueidis"
+	"github.com/rs/xid"
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/account/account_querier"
@@ -31,17 +35,20 @@ var (
 )
 
 type Service struct {
+	logger        *slog.Logger
 	redis         rueidis.Client
 	accountWriter *account_writer.Writer
 	accountQuery  *account_querier.Querier
 }
 
 func New(
+	logger *slog.Logger,
 	redis rueidis.Client,
 	accountWriter *account_writer.Writer,
 	accountQuery *account_querier.Querier,
 ) *Service {
 	return &Service{
+		logger:        logger,
 		redis:         redis,
 		accountWriter: accountWriter,
 		accountQuery:  accountQuery,
@@ -152,6 +159,132 @@ func (s *Service) SetUsername(ctx context.Context, accountID account.AccountID, 
 	}
 
 	return &updated.Account, nil
+}
+
+// RegenerateResult summarises one batch of a temporary-handle regeneration run.
+type RegenerateResult struct {
+	// Processed is the number of temp accounts examined in this batch.
+	Processed int
+	Updated   int
+	Skipped   int
+	Failed    int
+	// NextCursor is the ID to pass as the cursor for the next batch. It is empty
+	// when fewer rows than the requested batch size were returned, signalling
+	// that the table has been fully drained.
+	NextCursor string
+}
+
+const (
+	handleGenerationAttempts = 5
+	defaultBatchSize         = 500
+	maxBatchSize             = 5000
+)
+
+// RegenerateTempHandles processes a single bounded batch of accounts that still
+// carry a temporary "temp_" handle, replacing each with a freshly generated
+// unique handle derived from the account's display name.
+//
+// It uses keyset pagination: pass an empty cursor to start, then feed the
+// returned NextCursor back in for each subsequent batch until NextCursor is
+// empty. Because every successfully updated row stops matching the "temp_"
+// prefix, the unprocessed set shrinks monotonically and the run is idempotent
+// and safely resumable.
+func (s *Service) RegenerateTempHandles(ctx context.Context, cursor string, batchSize int) (*RegenerateResult, error) {
+	if batchSize <= 0 {
+		batchSize = defaultBatchSize
+	}
+	if batchSize > maxBatchSize {
+		batchSize = maxBatchSize
+	}
+
+	after, err := parseCursor(cursor)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.InvalidArgument))
+	}
+
+	accounts, err := s.accountQuery.ListTempAccounts(ctx, after, batchSize)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	result := &RegenerateResult{Processed: len(accounts)}
+
+	for _, acc := range accounts {
+		handle, ok := s.generateUniqueHandle(ctx, acc.Name)
+		if !ok {
+			result.Skipped++
+			continue
+		}
+
+		err := s.accountWriter.UpdateHandle(ctx, account.AccountID(acc.ID), handle)
+		if err != nil {
+			s.logger.Warn("failed to regenerate temporary handle",
+				slog.String("account_id", acc.ID.String()),
+				slog.String("old_handle", acc.Handle),
+				slog.String("new_handle", handle),
+				slog.String("error", err.Error()))
+			result.Failed++
+			continue
+		}
+
+		if s.redis != nil {
+			_ = s.addToRedisSet(ctx, handle)
+		}
+
+		result.Updated++
+	}
+
+	// A full batch means there may be more rows; advance the cursor. A short
+	// batch means we have reached the end.
+	if len(accounts) == batchSize {
+		result.NextCursor = accounts[len(accounts)-1].ID.String()
+	}
+
+	return result, nil
+}
+
+func parseCursor(cursor string) (xid.ID, error) {
+	if cursor == "" {
+		return xid.NilID(), nil
+	}
+	return xid.FromString(cursor)
+}
+
+// generateUniqueHandle derives a unique handle from a display name. The second
+// return value is false when the name yields no usable handle prefix.
+func (s *Service) generateUniqueHandle(ctx context.Context, name string) (string, bool) {
+	prefix := handlePrefixFromName(name)
+	if prefix == "" {
+		return "", false
+	}
+
+	for i := 0; i < handleGenerationAttempts; i++ {
+		candidate := fmt.Sprintf("%s%04d", prefix, rand.Intn(10000))
+
+		_, exists, err := s.accountQuery.LookupByHandle(ctx, candidate)
+		if err != nil {
+			s.logger.Warn("handle availability lookup failed during regeneration",
+				slog.String("candidate", candidate),
+				slog.String("error", err.Error()))
+			continue
+		}
+
+		if !exists {
+			return candidate, true
+		}
+	}
+
+	return "", false
+}
+
+var nonAlphanumeric = regexp.MustCompile(`[^a-z0-9]`)
+
+func handlePrefixFromName(name string) string {
+	prefix := nonAlphanumeric.ReplaceAllString(strings.ToLower(name), "")
+	if len(prefix) > 4 {
+		prefix = prefix[:4]
+	}
+	return prefix
 }
 
 // Redis operations

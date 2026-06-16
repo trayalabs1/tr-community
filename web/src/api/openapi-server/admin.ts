@@ -12,6 +12,8 @@ import type {
   AdminAccessKeyListOKResponse,
   AdminAnalyticsGetOKResponse,
   AdminAnalyticsGetParams,
+  AdminRegenerateTempHandlesOKResponse,
+  AdminRegenerateTempHandlesParams,
   AdminReplyQueueListOKResponse,
   AdminReplyQueueListParams,
   AdminSettingsGetOKResponse,
@@ -178,6 +180,53 @@ export const moderationActionCreate = async (
       method: "POST",
       headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(moderationActionCreateBody),
+    },
+  );
+};
+
+/**
+ * Regenerate handles for accounts that still carry a temporary handle
+(those with a `temp_` prefix assigned during signup) using the current
+handle generation logic. Requires ADMINISTRATOR permission.
+
+Processes a single bounded batch using keyset pagination so the operation
+can be run safely over very large tables without long-running requests or
+heavy load. Start with no cursor, then repeat the call passing the
+returned `next_cursor` until it is absent. The operation is idempotent and
+resumable: each successfully updated row stops matching the temporary
+prefix, so the set of remaining rows shrinks monotonically.
+
+ */
+export type adminRegenerateTempHandlesResponse = {
+  data: AdminRegenerateTempHandlesOKResponse;
+  status: number;
+};
+
+export const getAdminRegenerateTempHandlesUrl = (
+  params?: AdminRegenerateTempHandlesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/admin/temp-handles/regenerate?${normalizedParams.toString()}`
+    : `/admin/temp-handles/regenerate`;
+};
+
+export const adminRegenerateTempHandles = async (
+  params?: AdminRegenerateTempHandlesParams,
+  options?: RequestInit,
+): Promise<adminRegenerateTempHandlesResponse> => {
+  return fetcher<Promise<adminRegenerateTempHandlesResponse>>(
+    getAdminRegenerateTempHandlesUrl(params),
+    {
+      ...options,
+      method: "POST",
     },
   );
 };

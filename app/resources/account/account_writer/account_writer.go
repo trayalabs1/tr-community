@@ -149,6 +149,23 @@ func (d *Writer) Create(ctx context.Context, handle string, opts ...Option) (*ac
 	return d.accountQuerier.GetByID(ctx, account.AccountID(a.ID))
 }
 
+// UpdateHandle sets only the handle for an account without re-fetching the full
+// account graph. Intended for bulk operations where the returned account is not
+// needed.
+func (d *Writer) UpdateHandle(ctx context.Context, id account.AccountID, handle string) error {
+	err := d.db.Account.UpdateOneID(xid.ID(id)).SetHandle(handle).Exec(ctx)
+	if err != nil {
+		if ent.IsConstraintError(err) {
+			return fault.Wrap(err,
+				fctx.With(ctx),
+				ftag.With(ftag.AlreadyExists),
+				fmsg.WithDesc("unique constraint violation", "The specified handle has already been used."))
+		}
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+	return nil
+}
+
 func (d *Writer) Update(ctx context.Context, id account.AccountID, opts ...Mutation) (*account.AccountWithEdges, error) {
 	update := d.db.Account.UpdateOneID(xid.ID(id))
 

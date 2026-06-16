@@ -66,6 +66,10 @@ func (m *Mapping) AdminAccountBanCreate() (bool, *rbac.Permission) {
 	return true, &rbac.PermissionManageSuspensions
 }
 
+func (m *Mapping) AdminRegenerateTempHandles() (bool, *rbac.Permission) {
+	return true, &rbac.PermissionAdministrator
+}
+
 func (m *Mapping) AdminAccessKeyList() (bool, *rbac.Permission) {
 	return true, &rbac.PermissionAdministrator
 }
