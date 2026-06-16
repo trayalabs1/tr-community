@@ -38,13 +38,19 @@ export function ThreadCreateTrigger({
   >(undefined);
 
   const handleCreatePostClick = useCallback(() => {
-    trackEvent("community_create_post_clicked", { channel_id: channelID });
+    trackEvent("community_create_post_clicked", {
+      channel_id: channelID,
+      source: "post_nudge_start",
+    });
     useDisclosureProps.onOpen();
   }, [trackEvent, channelID, useDisclosureProps]);
 
   const handlePromptPick = useCallback(
     (prompt: PromptItem, index: number) => {
-      trackEvent("community_create_post_clicked", { channel_id: channelID });
+      trackEvent("community_create_post_clicked", {
+        channel_id: channelID,
+        source: "post_nudge_select",
+      });
       setPicked({ prompt, index });
       promptSheet.onOpen();
     },
