@@ -249,7 +249,7 @@ func (s *Service) assignHandles(ctx context.Context, pending []account_querier.T
 			candidates = append(candidates, generateHandle(acc.Name))
 		}
 
-		taken, err := s.accountQuery.ExistingHandles(ctx, candidates)
+		taken, err := s.takenHandles(ctx, candidates)
 		if err != nil {
 			return fault.Wrap(err, fctx.With(ctx))
 		}
@@ -286,9 +286,11 @@ func (s *Service) assignHandles(ctx context.Context, pending []account_querier.T
 
 			result.Updated += len(assigned)
 			if s.redis != nil {
+				members := make([]string, 0, len(assigned))
 				for _, h := range assigned {
-					_ = s.addToRedisSet(ctx, h)
+					members = append(members, h)
 				}
+				_ = s.addManyToRedisSet(ctx, members)
 			}
 		}
 
@@ -305,6 +307,47 @@ func (s *Service) assignHandles(ctx context.Context, pending []account_querier.T
 	}
 
 	return nil
+}
+
+// takenHandles returns the set of candidate handles already in use. It uses the
+// same trust model as CheckAvailability: a handle present in the Redis set is
+// definitely taken (cheap positive), and any candidate Redis does not flag is
+// confirmed against the database, which is authoritative for misses and remains
+// correct when Redis is stale or unavailable.
+func (s *Service) takenHandles(ctx context.Context, candidates []string) (map[string]bool, error) {
+	taken := make(map[string]bool, len(candidates))
+
+	toCheck := candidates
+	if s.redis != nil {
+		flags, err := s.membersInRedisSet(ctx, candidates)
+		if err != nil {
+			s.logger.Warn("redis membership check failed, falling back to db",
+				slog.String("error", err.Error()))
+		} else {
+			toCheck = toCheck[:0]
+			for i, c := range candidates {
+				if flags[i] {
+					taken[c] = true
+				} else {
+					toCheck = append(toCheck, c)
+				}
+			}
+		}
+	}
+
+	if len(toCheck) == 0 {
+		return taken, nil
+	}
+
+	dbTaken, err := s.accountQuery.ExistingHandles(ctx, toCheck)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+	for h := range dbTaken {
+		taken[h] = true
+	}
+
+	return taken, nil
 }
 
 func dedupeAccounts(in []account_querier.TempAccount) []account_querier.TempAccount {
@@ -355,6 +398,22 @@ func (s *Service) checkRedisSet(ctx context.Context, username string) (bool, err
 func (s *Service) addToRedisSet(ctx context.Context, username string) error {
 	cmd := s.redis.B().Sadd().Key(usernameSetKey).Member(username).Build()
 	return s.redis.Do(ctx, cmd).Error()
+}
+
+func (s *Service) addManyToRedisSet(ctx context.Context, usernames []string) error {
+	if len(usernames) == 0 {
+		return nil
+	}
+	cmd := s.redis.B().Sadd().Key(usernameSetKey).Member(usernames...).Build()
+	return s.redis.Do(ctx, cmd).Error()
+}
+
+// membersInRedisSet reports, for each candidate, whether it is already a member
+// of the username set. A nil result means the check could not be performed (e.g.
+// Redis unavailable) and the caller should fall back to the database.
+func (s *Service) membersInRedisSet(ctx context.Context, candidates []string) ([]bool, error) {
+	cmd := s.redis.B().Smismember().Key(usernameSetKey).Member(candidates...).Build()
+	return s.redis.Do(ctx, cmd).AsBoolSlice()
 }
 
 func (s *Service) acquireLock(ctx context.Context, key string, ttl time.Duration) (bool, error) {
