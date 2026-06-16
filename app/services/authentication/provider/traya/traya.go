@@ -548,7 +548,7 @@ func normalizeGender(gender string) string {
 }
 
 func isOlderThan30Days(dateStr string) (bool, error) {
-	return isOlderThanNDays(dateStr, 30)
+	return isOlderThanNDays(dateStr, 7)
 }
 
 func isOlderThanNDays(dateStr string, days int) (bool, error) {
