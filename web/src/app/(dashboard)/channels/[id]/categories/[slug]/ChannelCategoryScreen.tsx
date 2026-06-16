@@ -6,6 +6,7 @@ import { Account, Category, Channel } from "@/api/openapi-schema";
 import { useSession } from "@/auth";
 import { CategoryMenu } from "@/components/category/CategoryMenu/CategoryMenu";
 import { QuickShare } from "@/components/feed/QuickShare/QuickShare";
+import { parsePromptNudges } from "@/components/feed/PromptNudge/prompts";
 import { ThreadReferenceCard } from "@/components/post/ThreadCard";
 import { Unready } from "@/components/site/Unready";
 import { LoadingBanner } from "@/components/site/Loading";
@@ -110,6 +111,7 @@ export function ChannelCategoryScreen(props: Props) {
         initialCategory={props.category}
         showCategorySelect={false}
         channelID={props.channel.id}
+        promptNudges={parsePromptNudges(props.channel.meta)}
       />
 
       {/* Thread List */}

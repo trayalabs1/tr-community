@@ -240,6 +240,10 @@ func (c Channels) ChannelUpdate(ctx context.Context, request openapi.ChannelUpda
 		return &id
 	})
 
+	if request.Body.Meta != nil {
+		partial.Metadata = opt.New(map[string]any(*request.Body.Meta))
+	}
+
 	ch, err := c.channel_svc.Update(ctx, channelID, partial)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
