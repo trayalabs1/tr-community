@@ -27,6 +27,15 @@ import {
 import { handle } from "@/api/client";
 import { useChannelPermissions } from "@/lib/channel/permissions";
 import { AssetUploadEditor } from "@/components/asset/AssetUploadEditor/AssetUploadEditor";
+import { IconButton } from "@/components/ui/icon-button";
+import { AddIcon } from "@/components/ui/icons/Add";
+import { DeleteIcon } from "@/components/ui/icons/Delete";
+import {
+  DEFAULT_PROMPT_ICON,
+  PROMPT_ICON_KEYS,
+  parsePromptNudges,
+  type PromptItem,
+} from "@/components/feed/PromptNudge/prompts";
 
 import { revalidateChannels } from "@/app/(dashboard)/channels/actions";
 import { MembersSection } from "./MembersSection";
@@ -60,6 +69,13 @@ export function ChannelSettingsScreen(props: Props) {
   const hostname = new URL(WEB_ADDRESS).host;
   const permissions = useChannelPermissions(props.channel.id);
   const [selectedIcon, setSelectedIcon] = useState<Asset | undefined>(props.channel.icon);
+  const [prompts, setPrompts] = useState<PromptItem[]>(() =>
+    parsePromptNudges(props.channel.meta),
+  );
+
+  useEffect(() => {
+    setPrompts(parsePromptNudges(props.channel.meta));
+  }, [props.channel.id]);
 
   useEffect(() => {
     if (permissions.role !== null && !permissions.canManageChannel) {
@@ -88,11 +104,40 @@ export function ChannelSettingsScreen(props: Props) {
     ],
   });
 
+  function addPrompt() {
+    setPrompts((prev) => [...prev, { icon: DEFAULT_PROMPT_ICON, text: "" }]);
+  }
+
+  function updatePrompt(index: number, patch: Partial<PromptItem>) {
+    setPrompts((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, ...patch } : p)),
+    );
+  }
+
+  function removePrompt(index: number) {
+    setPrompts((prev) => prev.filter((_, i) => i !== index));
+  }
+
   const onSubmit = handleSubmit(async (data) => {
     await handle(async () => {
+      const promptNudges = prompts
+        .map((p) => {
+          const tag = p.tag?.trim();
+          return {
+            icon: p.icon,
+            text: p.text.trim(),
+            ...(tag ? { tag } : {}),
+          };
+        })
+        .filter((p) => p.text !== "");
+
       const updateData = {
         ...data,
         icon: selectedIcon?.id || null,
+        meta: {
+          ...(props.channel.meta ?? {}),
+          prompt_nudges: promptNudges,
+        },
       };
 
       await channelUpdate(props.channel.id, updateData);
@@ -201,6 +246,64 @@ export function ChannelSettingsScreen(props: Props) {
             value={selectedIcon}
           />
           <FormHelperText>Upload a custom icon for your channel</FormHelperText>
+        </FormControl>
+
+        <FormControl>
+          <FormLabel>Posting prompts</FormLabel>
+          <LStack gap="2">
+            {prompts.map((prompt, index) => (
+              <HStack key={index} gap="2" width="full" alignItems="center">
+                <styled.select
+                  value={prompt.icon}
+                  onChange={(e) => updatePrompt(index, { icon: e.target.value })}
+                  rounded="sm"
+                  px="2"
+                  py="1.5"
+                  fontSize="sm"
+                  bg="bg.default"
+                  style={{ border: "1px solid var(--colors-border-default)" }}
+                >
+                  {PROMPT_ICON_KEYS.map((key) => (
+                    <option key={key} value={key}>
+                      {key}
+                    </option>
+                  ))}
+                </styled.select>
+                <Input
+                  flex="1"
+                  type="text"
+                  value={prompt.text}
+                  placeholder="Prompt text shown to members"
+                  onChange={(e) => updatePrompt(index, { text: e.target.value })}
+                />
+                <Input
+                  width="32"
+                  type="text"
+                  value={prompt.tag ?? ""}
+                  placeholder="Tag (optional)"
+                  onChange={(e) => updatePrompt(index, { tag: e.target.value })}
+                />
+                <IconButton
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Remove prompt"
+                  onClick={() => removePrompt(index)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </HStack>
+            ))}
+            <Button type="button" variant="outline" size="sm" onClick={addPrompt}>
+              <AddIcon />
+              Add prompt
+            </Button>
+          </LStack>
+          <FormHelperText>
+            Suggestions shown in the “Not sure what to post?” pill. Tapping one
+            opens the composer with the text as a placeholder; the optional tag
+            appears as a chip (e.g. “Just Started”).
+          </FormHelperText>
         </FormControl>
 
         <WStack>
