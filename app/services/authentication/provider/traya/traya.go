@@ -107,7 +107,7 @@ type TrayaUserResponse struct {
 	RunningMonthForHairKit int    `json:"runningMonthForHairKit"`
 	FirstFilledFormDate    string `json:"firstFilledFormDate"`
 	CustomerType           string `json:"customerType"`
-	KitExpiryDate          string `json:"kitExpiryDate"`
+	KitExpireDays          int    `json:"kitExpireDays"`
 	CustomerSlug           struct {
 		SlugName any `json:"slugName"`
 	} `json:"customerSlug"`
@@ -225,7 +225,7 @@ func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*ac
 		}
 	}
 
-	if err := p.ensureChannelMemberships(ctx, acc.ID, userData.User.Gender, orderCount, userData.Case.LatestOrderDate, userData.FirstFilledFormDate, userData.CustomerType, userData.Case.ID, userData.KitExpiryDate); err != nil {
+	if err := p.ensureChannelMemberships(ctx, acc.ID, userData.User.Gender, orderCount, userData.Case.LatestOrderDate, userData.FirstFilledFormDate, userData.CustomerType, userData.Case.ID, userData.KitExpireDays); err != nil {
 		p.logger.Warn("failed to ensure channel memberships",
 			slog.String("account_id", acc.ID.String()),
 			slog.Int("order_count", orderCount),
@@ -415,13 +415,13 @@ func computeTargetChannels(normalizedGender string, orderCount int, isWithinActi
 	return targetChannels
 }
 
-func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string, firstFilledFormDate string, customerType string, caseID string, kitExpiryDate string) error {
+func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string, firstFilledFormDate string, customerType string, caseID string, kitExpireDays int) error {
 	normalizedGender := normalizeGender(gender)
 
-	isWithinActiveWindow, err := isLastOrderWithinActiveWindow(kitExpiryDate)
+	isWithinActiveWindow, err := isLastOrderWithinActiveWindow(latestOrderDate, kitExpireDays)
 	if err != nil {
-		p.logger.Warn("failed to parse kit expiry date",
-			slog.String("date", kitExpiryDate),
+		p.logger.Warn("failed to parse latest order date",
+			slog.String("date", latestOrderDate),
 			slog.String("error", err.Error()))
 		isWithinActiveWindow = false
 	}
@@ -580,22 +580,21 @@ func hasCaseIDPrefix(caseID string, prefixes ...string) bool {
 	return false
 }
 
-func isLastOrderWithinActiveWindow(kitExpiryDate string) (bool, error) {
-	if kitExpiryDate == "" {
+func isLastOrderWithinActiveWindow(latestOrderDate string, kitExpireDays int) (bool, error) {
+	if latestOrderDate == "" {
 		return false, nil
 	}
 
-	expiryDate, err := time.Parse(time.RFC3339, kitExpiryDate)
+	orderDate, err := time.Parse(time.RFC3339, latestOrderDate)
 	if err != nil {
-		expiryDate, err = time.Parse("2006-01-02", kitExpiryDate)
+		orderDate, err = time.Parse("2006-01-02", latestOrderDate)
 		if err != nil {
 			return false, err
 		}
 	}
 
-	daysUntilExpiry := time.Until(expiryDate).Hours() / 24
-	isWithinActiveWindow := daysUntilExpiry >= -30
-	return isWithinActiveWindow, nil
+	daysSinceOrder := time.Since(orderDate).Hours() / 24
+	return daysSinceOrder <= float64(kitExpireDays+60), nil
 }
 
 func (p *Provider) Enabled(ctx context.Context) (bool, error) {
