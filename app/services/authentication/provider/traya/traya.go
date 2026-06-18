@@ -105,9 +105,9 @@ type TrayaUserResponse struct {
 	ChatURL                string `json:"chatUrl"`
 	TotalKitCount          int    `json:"totalKitCount"`
 	RunningMonthForHairKit int    `json:"runningMonthForHairKit"`
+	RunningKitStartDate    string `json:"runningKitStartDate"`
 	FirstFilledFormDate    string `json:"firstFilledFormDate"`
 	CustomerType           string `json:"customerType"`
-	KitExpiryDate          string `json:"kitExpiryDate"`
 	CustomerSlug           struct {
 		SlugName any `json:"slugName"`
 	} `json:"customerSlug"`
@@ -225,7 +225,7 @@ func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*ac
 		}
 	}
 
-	if err := p.ensureChannelMemberships(ctx, acc.ID, userData.User.Gender, orderCount, userData.Case.LatestOrderDate, userData.FirstFilledFormDate, userData.CustomerType, userData.Case.ID, userData.KitExpiryDate); err != nil {
+	if err := p.ensureChannelMemberships(ctx, acc.ID, userData.User.Gender, orderCount, userData.Case.LatestOrderDate, userData.RunningKitStartDate, userData.FirstFilledFormDate, userData.CustomerType, userData.Case.ID); err != nil {
 		p.logger.Warn("failed to ensure channel memberships",
 			slog.String("account_id", acc.ID.String()),
 			slog.Int("order_count", orderCount),
@@ -373,10 +373,10 @@ func generateHandle(firstName string, phoneNumber string) string {
 	return fmt.Sprintf("%s%s%s", namePrefix, phonePrefix, randomDigits)
 }
 
-func computeTargetChannels(normalizedGender string, orderCount int, isWithinActiveWindow bool, customerType string, caseID string, leadOlderThan30Days bool, leadOlderThan15Days bool) map[string]bool {
+func computeTargetChannels(normalizedGender string, orderCount int, isWithin60Days bool, latestOrderDate string, customerType string, caseID string, leadOlderThan30Days bool, leadOlderThan15Days bool) map[string]bool {
 	targetChannels := make(map[string]bool)
 
-	if isWithinActiveWindow {
+	if isWithin60Days {
 		for _, rule := range cohortChannelRules {
 			if rule.gender == normalizedGender && rule.orderCount == orderCount {
 				targetChannels[rule.channelSlug] = true
@@ -392,7 +392,7 @@ func computeTargetChannels(normalizedGender string, orderCount int, isWithinActi
 		}
 	}
 
-	if !isWithinActiveWindow {
+	if !isWithin60Days && latestOrderDate != "" {
 		if slug, ok := lostCustomerChannelsByGender[normalizedGender]; ok {
 			targetChannels[slug] = true
 		}
@@ -415,15 +415,16 @@ func computeTargetChannels(normalizedGender string, orderCount int, isWithinActi
 	return targetChannels
 }
 
-func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string, firstFilledFormDate string, customerType string, caseID string, kitExpiryDate string) error {
+func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string, runningKitStartDate string, firstFilledFormDate string, customerType string, caseID string) error {
 	normalizedGender := normalizeGender(gender)
 
-	isWithinActiveWindow, err := isLastOrderWithinActiveWindow(kitExpiryDate)
+	isWithin60Days, err := isRunningKitEligible(runningKitStartDate, latestOrderDate)
 	if err != nil {
-		p.logger.Warn("failed to parse kit expiry date",
-			slog.String("date", kitExpiryDate),
+		p.logger.Warn("failed to determine running kit eligibility",
+			slog.String("running_kit_start_date", runningKitStartDate),
+			slog.String("latest_order_date", latestOrderDate),
 			slog.String("error", err.Error()))
-		isWithinActiveWindow = false
+		isWithin60Days = false
 	}
 
 	leadOlderThan30Days := false
@@ -450,7 +451,7 @@ func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID accou
 		}
 	}
 
-	targetChannels := computeTargetChannels(normalizedGender, orderCount, isWithinActiveWindow, customerType, caseID, leadOlderThan30Days, leadOlderThan15Days)
+	targetChannels := computeTargetChannels(normalizedGender, orderCount, isWithin60Days, latestOrderDate, customerType, caseID, leadOlderThan30Days, leadOlderThan15Days)
 
 	// Step 2: Get all managed channel slugs
 	managedChannelSlugs := getAllManagedChannelSlugs()
@@ -588,22 +589,45 @@ func hasCaseIDPrefix(caseID string, prefixes ...string) bool {
 	return false
 }
 
-func isLastOrderWithinActiveWindow(kitExpiryDate string) (bool, error) {
-	if kitExpiryDate == "" {
-		return false, nil
-	}
-
-	expiryDate, err := time.Parse(time.RFC3339, kitExpiryDate)
-	if err != nil {
-		expiryDate, err = time.Parse("2006-01-02", kitExpiryDate)
+func isRunningKitEligible(runningKitStartDate string, latestOrderDate string) (bool, error) {
+	if runningKitStartDate != "" {
+		startDate, err := parseTrayaDate(runningKitStartDate)
 		if err != nil {
 			return false, err
 		}
+
+		daysFromStart := time.Since(startDate).Hours() / 24
+		if daysFromStart+30 < 60 {
+			return true, nil
+		}
 	}
 
-	daysUntilExpiry := time.Until(expiryDate).Hours() / 24
-	isWithinActiveWindow := daysUntilExpiry >= -30
-	return isWithinActiveWindow, nil
+	return isLastOrderWithin60Days(latestOrderDate)
+}
+
+func isLastOrderWithin60Days(latestOrderDate string) (bool, error) {
+	if latestOrderDate == "" {
+		return false, nil
+	}
+
+	orderDate, err := parseTrayaDate(latestOrderDate)
+	if err != nil {
+		return false, err
+	}
+
+	daysSinceOrder := time.Since(orderDate).Hours() / 24
+	return daysSinceOrder <= 60, nil
+}
+
+func parseTrayaDate(dateStr string) (time.Time, error) {
+	t, err := time.Parse(time.RFC3339, dateStr)
+	if err != nil {
+		t, err = time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			return time.Time{}, err
+		}
+	}
+	return t, nil
 }
 
 func (p *Provider) Enabled(ctx context.Context) (bool, error) {
