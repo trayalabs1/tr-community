@@ -418,10 +418,11 @@ func computeTargetChannels(normalizedGender string, orderCount int, isWithin60Da
 func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string, runningKitStartDate string, firstFilledFormDate string, customerType string, caseID string) error {
 	normalizedGender := normalizeGender(gender)
 
-	isWithin60Days, err := isRunningKitEligible(runningKitStartDate)
+	isWithin60Days, err := isRunningKitEligible(runningKitStartDate, latestOrderDate)
 	if err != nil {
-		p.logger.Warn("failed to parse running kit start date",
-			slog.String("date", runningKitStartDate),
+		p.logger.Warn("failed to determine running kit eligibility",
+			slog.String("running_kit_start_date", runningKitStartDate),
+			slog.String("latest_order_date", latestOrderDate),
 			slog.String("error", err.Error()))
 		isWithin60Days = false
 	}
@@ -580,21 +581,45 @@ func hasCaseIDPrefix(caseID string, prefixes ...string) bool {
 	return false
 }
 
-func isRunningKitEligible(runningKitStartDate string) (bool, error) {
-	if runningKitStartDate == "" {
-		return false, nil
-	}
-
-	startDate, err := time.Parse(time.RFC3339, runningKitStartDate)
-	if err != nil {
-		startDate, err = time.Parse("2006-01-02", runningKitStartDate)
+func isRunningKitEligible(runningKitStartDate string, latestOrderDate string) (bool, error) {
+	if runningKitStartDate != "" {
+		startDate, err := parseTrayaDate(runningKitStartDate)
 		if err != nil {
 			return false, err
 		}
+
+		daysFromStart := time.Since(startDate).Hours() / 24
+		if daysFromStart+30 < 60 {
+			return true, nil
+		}
 	}
 
-	daysFromStart := time.Since(startDate).Hours() / 24
-	return daysFromStart < 60, nil
+	return isLastOrderWithin60Days(latestOrderDate)
+}
+
+func isLastOrderWithin60Days(latestOrderDate string) (bool, error) {
+	if latestOrderDate == "" {
+		return false, nil
+	}
+
+	orderDate, err := parseTrayaDate(latestOrderDate)
+	if err != nil {
+		return false, err
+	}
+
+	daysSinceOrder := time.Since(orderDate).Hours() / 24
+	return daysSinceOrder <= 60, nil
+}
+
+func parseTrayaDate(dateStr string) (time.Time, error) {
+	t, err := time.Parse(time.RFC3339, dateStr)
+	if err != nil {
+		t, err = time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			return time.Time{}, err
+		}
+	}
+	return t, nil
 }
 
 func (p *Provider) Enabled(ctx context.Context) (bool, error) {

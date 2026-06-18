@@ -10,49 +10,65 @@ func TestIsRunningKitEligible(t *testing.T) {
 	tests := []struct {
 		name                string
 		runningKitStartDate string
+		latestOrderDate     string
 		want                bool
 	}{
 		{
-			name:                "empty date is not eligible",
+			name:                "no dates is not eligible",
 			runningKitStartDate: "",
+			latestOrderDate:     "",
 			want:                false,
 		},
 		{
-			name:                "started today is eligible",
+			name:                "kit started today is eligible",
 			runningKitStartDate: time.Now().Format("2006-01-02"),
 			want:                true,
 		},
 		{
-			name:                "started 20 days ago is eligible",
+			name:                "kit started 20 days ago is eligible",
 			runningKitStartDate: time.Now().AddDate(0, 0, -20).Format(time.RFC3339),
 			want:                true,
 		},
 		{
-			name:                "started 30 days ago is not eligible",
+			name:                "kit started 30 days ago falls back to order date",
 			runningKitStartDate: time.Now().AddDate(0, 0, -31).Format(time.RFC3339),
+			latestOrderDate:     "",
 			want:                false,
 		},
 		{
-			name:                "started 90 days ago is not eligible",
+			name:                "kit ineligible but order within 60 days is eligible",
 			runningKitStartDate: time.Now().AddDate(0, 0, -90).Format(time.RFC3339),
+			latestOrderDate:     time.Now().AddDate(0, 0, -30).Format(time.RFC3339),
+			want:                true,
+		},
+		{
+			name:                "kit ineligible and order older than 60 days is not eligible",
+			runningKitStartDate: time.Now().AddDate(0, 0, -90).Format(time.RFC3339),
+			latestOrderDate:     time.Now().AddDate(0, 0, -90).Format(time.RFC3339),
 			want:                false,
+		},
+		{
+			name:                "no kit date falls back to order within 60 days",
+			runningKitStartDate: "",
+			latestOrderDate:     time.Now().AddDate(0, 0, -10).Format(time.RFC3339),
+			want:                true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := isRunningKitEligible(tt.runningKitStartDate)
+			got, err := isRunningKitEligible(tt.runningKitStartDate, tt.latestOrderDate)
 			if err != nil {
-				t.Fatalf("isRunningKitEligible(%q) returned error: %v", tt.runningKitStartDate, err)
+				t.Fatalf("isRunningKitEligible(%q, %q) returned error: %v", tt.runningKitStartDate, tt.latestOrderDate, err)
 			}
 			if got != tt.want {
-				t.Errorf("isRunningKitEligible(%q) = %v, want %v", tt.runningKitStartDate, got, tt.want)
+				t.Errorf("isRunningKitEligible(%q, %q) = %v, want %v", tt.runningKitStartDate, tt.latestOrderDate, got, tt.want)
 			}
 		})
 	}
 
-	if _, err := isRunningKitEligible("not-a-date"); err == nil {
-		t.Errorf("expected error for invalid date, got nil")
+	if _, err := isRunningKitEligible("not-a-date", ""); err == nil {
+		t.Errorf("expected error for invalid kit date, got nil")
 	}
 }
 
