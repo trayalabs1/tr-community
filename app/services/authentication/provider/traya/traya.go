@@ -105,6 +105,7 @@ type TrayaUserResponse struct {
 	ChatURL                string `json:"chatUrl"`
 	TotalKitCount          int    `json:"totalKitCount"`
 	RunningMonthForHairKit int    `json:"runningMonthForHairKit"`
+	RunningKitStartDate    string `json:"runningKitStartDate"`
 	FirstFilledFormDate    string `json:"firstFilledFormDate"`
 	CustomerType           string `json:"customerType"`
 	CustomerSlug           struct {
@@ -224,7 +225,7 @@ func (p *Provider) AuthenticateWithToken(ctx context.Context, token string) (*ac
 		}
 	}
 
-	if err := p.ensureChannelMemberships(ctx, acc.ID, userData.User.Gender, orderCount, userData.Case.LatestOrderDate, userData.FirstFilledFormDate, userData.CustomerType, userData.Case.ID); err != nil {
+	if err := p.ensureChannelMemberships(ctx, acc.ID, userData.User.Gender, orderCount, userData.Case.LatestOrderDate, userData.RunningKitStartDate, userData.FirstFilledFormDate, userData.CustomerType, userData.Case.ID); err != nil {
 		p.logger.Warn("failed to ensure channel memberships",
 			slog.String("account_id", acc.ID.String()),
 			slog.Int("order_count", orderCount),
@@ -414,13 +415,14 @@ func computeTargetChannels(normalizedGender string, orderCount int, isWithin60Da
 	return targetChannels
 }
 
-func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string, firstFilledFormDate string, customerType string, caseID string) error {
+func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID account.AccountID, gender string, orderCount int, latestOrderDate string, runningKitStartDate string, firstFilledFormDate string, customerType string, caseID string) error {
 	normalizedGender := normalizeGender(gender)
 
-	isWithin60Days, err := isLastOrderWithin60Days(latestOrderDate)
+	isWithin60Days, err := isRunningKitEligible(runningKitStartDate, latestOrderDate)
 	if err != nil {
-		p.logger.Warn("failed to parse latest order date",
-			slog.String("date", latestOrderDate),
+		p.logger.Warn("failed to determine running kit eligibility",
+			slog.String("running_kit_start_date", runningKitStartDate),
+			slog.String("latest_order_date", latestOrderDate),
 			slog.String("error", err.Error()))
 		isWithin60Days = false
 	}
@@ -587,21 +589,45 @@ func hasCaseIDPrefix(caseID string, prefixes ...string) bool {
 	return false
 }
 
+func isRunningKitEligible(runningKitStartDate string, latestOrderDate string) (bool, error) {
+	if runningKitStartDate != "" {
+		startDate, err := parseTrayaDate(runningKitStartDate)
+		if err != nil {
+			return false, err
+		}
+
+		daysFromStart := time.Since(startDate).Hours() / 24
+		if daysFromStart+30 < 60 {
+			return true, nil
+		}
+	}
+
+	return isLastOrderWithin60Days(latestOrderDate)
+}
+
 func isLastOrderWithin60Days(latestOrderDate string) (bool, error) {
 	if latestOrderDate == "" {
 		return false, nil
 	}
 
-	orderDate, err := time.Parse(time.RFC3339, latestOrderDate)
+	orderDate, err := parseTrayaDate(latestOrderDate)
 	if err != nil {
-		orderDate, err = time.Parse("2006-01-02", latestOrderDate)
-		if err != nil {
-			return false, err
-		}
+		return false, err
 	}
 
 	daysSinceOrder := time.Since(orderDate).Hours() / 24
 	return daysSinceOrder <= 60, nil
+}
+
+func parseTrayaDate(dateStr string) (time.Time, error) {
+	t, err := time.Parse(time.RFC3339, dateStr)
+	if err != nil {
+		t, err = time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			return time.Time{}, err
+		}
+	}
+	return t, nil
 }
 
 func (p *Provider) Enabled(ctx context.Context) (bool, error) {
