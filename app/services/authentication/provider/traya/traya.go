@@ -589,7 +589,7 @@ func isRunningKitEligible(runningKitStartDate string, latestOrderDate string) (b
 		}
 
 		daysFromStart := time.Since(startDate).Hours() / 24
-		if daysFromStart+30 < 60 {
+		if daysFromStart < 60 {
 			return true, nil
 		}
 	}
