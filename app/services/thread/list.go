@@ -29,8 +29,12 @@ type Params struct {
 	ChannelID     opt.Optional[xid.ID]
 	IgnorePinned         opt.Optional[bool]
 	NoReplies            opt.Optional[bool]
+	NoLikes              opt.Optional[bool]
 	UseSentimentRanking  bool
 	ExcludeBAH           bool
+	BAHOnly              bool
+	PostCategories       []string
+	Sentiments           []string
 }
 
 func (s *service) List(ctx context.Context,
@@ -58,11 +62,24 @@ func (s *service) List(ctx context.Context,
 			q = append(q, thread_querier.HasNoReplies())
 		}
 	})
+	opts.NoLikes.Call(func(value bool) {
+		if value {
+			q = append(q, thread_querier.HasNoLikes())
+		}
+	})
 	if opts.UseSentimentRanking {
 		q = append(q, thread_querier.UseSentimentRanking())
 	}
-	if opts.ExcludeBAH {
+	if opts.BAHOnly {
+		q = append(q, thread_querier.OnlyBAHPosts())
+	} else if opts.ExcludeBAH {
 		q = append(q, thread_querier.ExcludeBAHPosts())
+	}
+	if len(opts.PostCategories) > 0 {
+		q = append(q, thread_querier.HasPostCategories(opts.PostCategories))
+	}
+	if len(opts.Sentiments) > 0 {
+		q = append(q, thread_querier.HasSentiments(opts.Sentiments))
 	}
 
 	vq := func() thread_querier.Query {

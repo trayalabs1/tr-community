@@ -164,6 +164,135 @@ func (d *Writer) Create(
 	return d.querier.Get(ctx, post.ID(p.ID))
 }
 
+type BulkItem struct {
+	ParentID post.ID
+	Opts     []Option
+}
+
+// CreateBulk inserts many replies in a single multi-row INSERT inside one
+// transaction, then updates each affected thread's LastReplyAt. Parents that
+// don't exist or aren't threads are skipped. Returns the created reply IDs
+// paired with their parent thread IDs.
+func (d *Writer) CreateBulk(
+	ctx context.Context,
+	authorID account.AccountID,
+	items []BulkItem,
+) ([]CreatedReply, error) {
+	if len(items) == 0 {
+		return nil, nil
+	}
+
+	tx, err := d.db.Tx(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fmsg.With("failed to start transaction"), fctx.With(ctx))
+	}
+	defer tx.Rollback()
+
+	parentIDs := make([]xid.ID, 0, len(items))
+	seen := map[xid.ID]struct{}{}
+	for _, item := range items {
+		pid := xid.ID(item.ParentID)
+		if _, ok := seen[pid]; ok {
+			continue
+		}
+		seen[pid] = struct{}{}
+		parentIDs = append(parentIDs, pid)
+	}
+
+	parents, err := tx.Post.Query().
+		Where(ent_post.IDIn(parentIDs...), ent_post.RootPostIDIsNil()).
+		All(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fmsg.With("failed to load parent threads"), fctx.With(ctx))
+	}
+
+	channelByParent := make(map[xid.ID]xid.ID, len(parents))
+	authorByParent := make(map[xid.ID]xid.ID, len(parents))
+	for _, p := range parents {
+		channelByParent[p.ID] = p.ChannelID
+		authorByParent[p.ID] = p.AccountPosts
+	}
+
+	now := time.Now()
+	builders := make([]*ent.PostCreate, 0, len(items))
+	parentForBuilder := make([]xid.ID, 0, len(items))
+	for _, item := range items {
+		pid := xid.ID(item.ParentID)
+		channelID, ok := channelByParent[pid]
+		if !ok {
+			// Parent missing or not a thread — skip it.
+			continue
+		}
+
+		b := tx.Post.Create().
+			SetUpdatedAt(now).
+			SetLastReplyAt(now).
+			SetRootID(pid).
+			SetAuthorID(xid.ID(authorID)).
+			SetChannelID(channelID)
+
+		for _, fn := range item.Opts {
+			fn(b.Mutation())
+		}
+
+		builders = append(builders, b)
+		parentForBuilder = append(parentForBuilder, pid)
+	}
+
+	if len(builders) == 0 {
+		if err := tx.Commit(); err != nil {
+			return nil, fault.Wrap(err, fmsg.With("failed to commit transaction"), fctx.With(ctx))
+		}
+		return nil, nil
+	}
+
+	saved, err := tx.Post.CreateBulk(builders...).Save(ctx)
+	if err != nil {
+		if ent.IsConstraintError(err) {
+			err = fault.Wrap(err, ftag.With(ftag.InvalidArgument), fmsg.WithDesc("invalid reply", "Failed to create replies."))
+		}
+		return nil, fault.Wrap(err, fmsg.With("failed to create replies"), fctx.With(ctx))
+	}
+
+	// Bump LastReplyAt for every parent that received a reply, in one UPDATE.
+	bumpedParents := make([]xid.ID, 0, len(parentForBuilder))
+	bumped := map[xid.ID]struct{}{}
+	for _, pid := range parentForBuilder {
+		if _, ok := bumped[pid]; ok {
+			continue
+		}
+		bumped[pid] = struct{}{}
+		bumpedParents = append(bumpedParents, pid)
+	}
+	if err := tx.Post.Update().
+		Where(ent_post.IDIn(bumpedParents...)).
+		SetLastReplyAt(now).
+		Exec(ctx); err != nil {
+		return nil, fault.Wrap(err, fmsg.With("failed to update parent thread timestamps"), fctx.With(ctx))
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fault.Wrap(err, fmsg.With("failed to commit transaction"), fctx.With(ctx))
+	}
+
+	created := make([]CreatedReply, len(saved))
+	for i, p := range saved {
+		parentID := parentForBuilder[i]
+		created[i] = CreatedReply{
+			ReplyID:        post.ID(p.ID),
+			ParentID:       post.ID(parentID),
+			ThreadAuthorID: account.AccountID(authorByParent[parentID]),
+		}
+	}
+	return created, nil
+}
+
+type CreatedReply struct {
+	ReplyID        post.ID
+	ParentID       post.ID
+	ThreadAuthorID account.AccountID
+}
+
 func (d *Writer) Update(ctx context.Context, id post.ID, opts ...Option) (*reply.Reply, error) {
 	update := d.db.Post.UpdateOneID(xid.ID(id))
 	mutate := update.Mutation()

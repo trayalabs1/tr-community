@@ -49,6 +49,36 @@ func (l *LikeWriter) AddPostLike(ctx context.Context, accountID account.AccountI
 	return nil
 }
 
+func (l *LikeWriter) AddPostLikes(ctx context.Context, accountID account.AccountID, postIDs []post.ID) error {
+	if len(postIDs) == 0 {
+		return nil
+	}
+
+	builders := make([]*ent.LikePostCreate, len(postIDs))
+	for i, postID := range postIDs {
+		builders[i] = l.db.LikePost.Create().
+			SetPostID(xid.ID(postID)).
+			SetAccountID(xid.ID(accountID))
+	}
+
+	err := l.db.LikePost.CreateBulk(builders...).
+		OnConflict(ent_sql.DoNothing()).
+		Exec(ctx)
+	if err != nil {
+		// A no-op conflict (all rows already existed) surfaces as ErrNoRows.
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		if ent.IsNotFound(err) {
+			err = fault.Wrap(err, ftag.With(ftag.NotFound),
+				fmsg.WithDesc("post not found", "A liked post was not found."))
+		}
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return nil
+}
+
 func (l *LikeWriter) RemovePostLike(ctx context.Context, accountID account.AccountID, postID post.ID) error {
 	_, err := l.db.LikePost.
 		Delete().

@@ -3,6 +3,7 @@ package post_querier
 import (
 	"context"
 
+	"github.com/Southclaws/dt"
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
 	"github.com/rs/xid"
@@ -31,6 +32,26 @@ func (q *Querier) Probe(ctx context.Context, id post.ID) (*post.PostRef, error) 
 	}
 
 	return post.MapRef(p), nil
+}
+
+// ProbeMany resolves many posts to their refs in a single query. Posts that
+// don't exist are simply absent from the result.
+func (q *Querier) ProbeMany(ctx context.Context, ids []post.ID) ([]*post.PostRef, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	xids := dt.Map(ids, func(id post.ID) xid.ID { return xid.ID(id) })
+
+	ps, err := q.db.Post.
+		Query().
+		Where(ent_post.IDIn(xids...)).
+		All(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return dt.Map(ps, post.MapRef), nil
 }
 
 func (q *Querier) AuthorAndChannelID(ctx context.Context, id post.ID) (account.AccountID, xid.ID, error) {

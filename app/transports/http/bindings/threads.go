@@ -227,6 +227,7 @@ func (i *Threads) ThreadList(ctx context.Context, request openapi.ThreadListRequ
 	createdAfter := opt.NewPtr(request.Params.CreatedAfter)
 	createdBefore := opt.NewPtr(request.Params.CreatedBefore)
 	noReplies := opt.NewPtr(request.Params.NoReplies)
+	noLikes := opt.NewPtr(request.Params.NoLikes)
 
 	page = max(0, page-1)
 	result, err := i.thread_svc.List(ctx, page, pageSize, thread_service.Params{
@@ -239,7 +240,11 @@ func (i *Threads) ThreadList(ctx context.Context, request openapi.ThreadListRequ
 		CreatedAfter:  createdAfter,
 		CreatedBefore: createdBefore,
 		NoReplies:     noReplies,
+		NoLikes:       noLikes,
 		ExcludeBAH:    request.Params.ExcludeBah != nil && *request.Params.ExcludeBah,
+		BAHOnly:       request.Params.BahOnly != nil && *request.Params.BahOnly,
+		PostCategories: opt.NewPtr(request.Params.PostCategories).Or(nil),
+		Sentiments:     opt.NewPtr(request.Params.Sentiments).Or(nil),
 	})
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))

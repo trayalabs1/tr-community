@@ -18,6 +18,8 @@ import type {
   InternalServerErrorResponse,
   NotFoundResponse,
   ReplyCreateBody,
+  ReplyCreateManyBody,
+  ReplyCreateManyOKResponse,
   ReplyCreateOKResponse,
   UnauthorisedResponse,
 } from "../openapi-schema";
@@ -153,6 +155,63 @@ export const useReplyCreate = <
 
   const swrKey = swrOptions?.swrKey ?? getReplyCreateMutationKey(threadMark);
   const swrFn = getReplyCreateMutationFetcher(threadMark);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Create replies on many threads in a single request. Each item targets a
+thread by its mark and carries its own body, so different threads may
+receive different replies. Items that fail are skipped and reported in
+the response count.
+
+ */
+export const replyCreateMany = (replyCreateManyBody: ReplyCreateManyBody) => {
+  return fetcher<ReplyCreateManyOKResponse>({
+    url: `/threads/replies/bulk`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: replyCreateManyBody,
+  });
+};
+
+export const getReplyCreateManyMutationFetcher = () => {
+  return (
+    _: Key,
+    { arg }: { arg: ReplyCreateManyBody },
+  ): Promise<ReplyCreateManyOKResponse> => {
+    return replyCreateMany(arg);
+  };
+};
+export const getReplyCreateManyMutationKey = () =>
+  [`/threads/replies/bulk`] as const;
+
+export type ReplyCreateManyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof replyCreateMany>>
+>;
+export type ReplyCreateManyMutationError =
+  | UnauthorisedResponse
+  | InternalServerErrorResponse;
+
+export const useReplyCreateMany = <
+  TError = UnauthorisedResponse | InternalServerErrorResponse,
+>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof replyCreateMany>>,
+    TError,
+    Key,
+    ReplyCreateManyBody,
+    Awaited<ReturnType<typeof replyCreateMany>>
+  > & { swrKey?: string };
+}) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getReplyCreateManyMutationKey();
+  const swrFn = getReplyCreateManyMutationFetcher();
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
