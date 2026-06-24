@@ -66,3 +66,47 @@ func (p *Replies) ReplyCreate(ctx context.Context, request openapi.ReplyCreateRe
 		ReplyCreateOKJSONResponse: openapi.ReplyCreateOKJSONResponse(serialiseReplyPtr(post)),
 	}, nil
 }
+
+func (p *Replies) ReplyCreateMany(ctx context.Context, request openapi.ReplyCreateManyRequestObject) (openapi.ReplyCreateManyResponseObject, error) {
+	accountID, err := session.GetAccountID(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	if request.Body == nil {
+		return openapi.ReplyCreateMany200JSONResponse{
+			ReplyCreateManyOKJSONResponse: openapi.ReplyCreateManyOKJSONResponse{Requested: 0, Created: 0},
+		}, nil
+	}
+
+	requested := len(request.Body.Items)
+	items := make([]reply_service.BulkItem, 0, requested)
+	for _, item := range request.Body.Items {
+		postID, err := p.thread_mark_svc.Lookup(ctx, string(item.ThreadMark))
+		if err != nil {
+			continue
+		}
+
+		richContent, err := datagraph.NewRichText(item.Body)
+		if err != nil {
+			continue
+		}
+
+		items = append(items, reply_service.BulkItem{
+			ParentID: postID,
+			Partial:  reply_service.Partial{Content: opt.New(richContent)},
+		})
+	}
+
+	created, err := p.replyMutator.CreateMany(ctx, accountID, items)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return openapi.ReplyCreateMany200JSONResponse{
+		ReplyCreateManyOKJSONResponse: openapi.ReplyCreateManyOKJSONResponse{
+			Requested: requested,
+			Created:   created,
+		},
+	}, nil
+}

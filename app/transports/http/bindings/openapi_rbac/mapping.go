@@ -516,6 +516,10 @@ func (m *Mapping) ReplyCreate() (bool, *rbac.Permission) {
 	return true, &rbac.PermissionCreatePost
 }
 
+func (m *Mapping) ReplyCreateMany() (bool, *rbac.Permission) {
+	return true, &rbac.PermissionCreatePost
+}
+
 func (m *Mapping) PostUpdate() (bool, *rbac.Permission) {
 	return true, nil // See NOTE.
 }
@@ -553,6 +557,10 @@ func (m *Mapping) LikePostGet() (bool, *rbac.Permission) {
 }
 
 func (m *Mapping) LikePostAdd() (bool, *rbac.Permission) {
+	return true, nil
+}
+
+func (m *Mapping) LikePostAddMany() (bool, *rbac.Permission) {
 	return true, nil
 }
 

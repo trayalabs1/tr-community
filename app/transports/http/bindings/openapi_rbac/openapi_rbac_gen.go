@@ -127,6 +127,7 @@ type OperationPermissions interface {
 	ThreadUpdate() (bool, *rbac.Permission)
 	ThreadDelete() (bool, *rbac.Permission)
 	ReplyCreate() (bool, *rbac.Permission)
+	ReplyCreateMany() (bool, *rbac.Permission)
 	ThreadGetPoll() (bool, *rbac.Permission)
 	ThreadVotePoll() (bool, *rbac.Permission)
 	PostUpdate() (bool, *rbac.Permission)
@@ -139,6 +140,7 @@ type OperationPermissions interface {
 	LikePostGet() (bool, *rbac.Permission)
 	LikePostAdd() (bool, *rbac.Permission)
 	LikePostRemove() (bool, *rbac.Permission)
+	LikePostAddMany() (bool, *rbac.Permission)
 	LikeProfileGet() (bool, *rbac.Permission)
 	CollectionCreate() (bool, *rbac.Permission)
 	CollectionList() (bool, *rbac.Permission)
@@ -432,6 +434,8 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.ThreadDelete()
 	case "ReplyCreate":
 		return optable.ReplyCreate()
+	case "ReplyCreateMany":
+		return optable.ReplyCreateMany()
 	case "ThreadGetPoll":
 		return optable.ThreadGetPoll()
 	case "ThreadVotePoll":
@@ -456,6 +460,8 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.LikePostAdd()
 	case "LikePostRemove":
 		return optable.LikePostRemove()
+	case "LikePostAddMany":
+		return optable.LikePostAddMany()
 	case "LikeProfileGet":
 		return optable.LikeProfileGet()
 	case "CollectionCreate":
