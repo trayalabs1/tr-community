@@ -66,6 +66,38 @@ func (h *Likes) LikePostAdd(ctx context.Context, request openapi.LikePostAddRequ
 	return openapi.LikePostAdd200Response{}, nil
 }
 
+func (h *Likes) LikePostAddMany(ctx context.Context, request openapi.LikePostAddManyRequestObject) (openapi.LikePostAddManyResponseObject, error) {
+	accountID, err := session.GetAccountID(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	if request.Body == nil {
+		return openapi.LikePostAddMany200JSONResponse{
+			LikePostAddManyOKJSONResponse: openapi.LikePostAddManyOKJSONResponse{
+				Requested: 0,
+				Liked:     0,
+			},
+		}, nil
+	}
+
+	postIDs := dt.Map(request.Body.PostIds, func(id openapi.Identifier) post.ID {
+		return deserialisePostID(id)
+	})
+
+	liked, err := h.postLiker.AddPostLikes(ctx, accountID, postIDs)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return openapi.LikePostAddMany200JSONResponse{
+		LikePostAddManyOKJSONResponse: openapi.LikePostAddManyOKJSONResponse{
+			Requested: len(postIDs),
+			Liked:     liked,
+		},
+	}, nil
+}
+
 func (h *Likes) LikePostRemove(ctx context.Context, request openapi.LikePostRemoveRequestObject) (openapi.LikePostRemoveResponseObject, error) {
 	accountID, err := session.GetAccountID(ctx)
 	if err != nil {

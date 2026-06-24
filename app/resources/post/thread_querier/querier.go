@@ -16,6 +16,7 @@ import (
 	ent_account "github.com/Southclaws/storyden/internal/ent/account"
 	ent_category "github.com/Southclaws/storyden/internal/ent/category"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
+	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/Southclaws/storyden/internal/ent/predicate"
 	ent_tag "github.com/Southclaws/storyden/internal/ent/tag"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/spanner"
@@ -89,6 +90,12 @@ func HasNoReplies() Query {
 	}
 }
 
+func HasNoLikes() Query {
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.Not(ent_post.HasLikes()))
+	}
+}
+
 func UseSentimentRanking() Query {
 	return func(q *threadListOptions) {
 		q.useSentimentRanking = true
@@ -102,6 +109,43 @@ func ExcludeBAHPosts() Query {
 				b.WriteString("COALESCE(" + s.C(ent_post.FieldMetadata) + "->>'post_category', '') != 'BAH'")
 			}))
 		}))
+	}
+}
+
+func OnlyBAHPosts() Query {
+	return func(q *threadListOptions) {
+		q.q.Where(predicate.Post(func(s *sql.Selector) {
+			s.Where(sql.P(func(b *sql.Builder) {
+				b.WriteString(s.C(ent_post.FieldMetadata) + "->>'post_category' = 'BAH'")
+			}))
+		}))
+	}
+}
+
+func HasPostCategories(categories []string) Query {
+	return func(q *threadListOptions) {
+		if len(categories) == 0 {
+			return
+		}
+		args := dt.Map(categories, func(c string) any { return c })
+		q.q.Where(predicate.Post(func(s *sql.Selector) {
+			s.Where(sql.P(func(b *sql.Builder) {
+				b.WriteString(s.C(ent_post.FieldMetadata) + "->>'post_category' IN (")
+				b.Args(args...)
+				b.WriteString(")")
+			}))
+		}))
+	}
+}
+
+func HasSentiments(sentiments []string) Query {
+	return func(q *threadListOptions) {
+		if len(sentiments) == 0 {
+			return
+		}
+		q.q.Where(ent_post.HasSentimentWith(
+			ent_post_sentiment.SentimentTagIn(sentiments...),
+		))
 	}
 }
 

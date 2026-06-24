@@ -72,7 +72,27 @@ will be ignored, only the value containing "null" will be considered.
    */
   no_replies?: boolean;
   /**
+   * Show only threads that have no likes.
+   */
+  no_likes?: boolean;
+  /**
    * Exclude posts with post_category BAH from results.
    */
   exclude_bah?: boolean;
+  /**
+   * Show only posts with post_category BAH.
+   */
+  bah_only?: boolean;
+  /**
+ * Show only posts whose meta.post_category matches one of these values
+(e.g. BAH, feedback). Multiple instances filter by any of the values.
+
+ */
+  post_categories?: string[];
+  /**
+ * Show only posts whose AI sentiment tag matches one of these values
+(positive, neutral, negative). Multiple instances filter by any.
+
+ */
+  sentiments?: string[];
 };

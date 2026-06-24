@@ -2149,6 +2149,12 @@ paths:
           in: query
           schema:
             type: boolean
+        - name: no_likes
+          description: Show only threads that have no likes.
+          required: false
+          in: query
+          schema:
+            type: boolean
         - name: exclude_bah
           description: Exclude posts with post_category BAH from results.
           required: false
@@ -2156,6 +2162,33 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: bah_only
+          description: Show only posts with post_category BAH.
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: post_categories
+          description: |
+            Show only posts whose meta.post_category matches one of these values
+            (e.g. BAH, feedback). Multiple instances filter by any of the values.
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - name: sentiments
+          description: |
+            Show only posts whose AI sentiment tag matches one of these values
+            (positive, neutral, negative). Multiple instances filter by any.
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         default: { $ref: "#/components/responses/InternalServerError" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -2227,6 +2260,36 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "401": { $ref: "#/components/responses/Unauthorised" }
         "200": { $ref: "#/components/responses/ReplyCreateOK" }
+
+  /threads/replies/bulk:
+    post:
+      operationId: ReplyCreateMany
+      description: |
+        Create replies on many threads in a single request. Each item targets a
+        thread by its mark and carries its own body, so different threads may
+        receive different replies. Items that fail are skipped and reported in
+        the response count.
+      tags: [replies]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [thread_mark, body]
+                    properties:
+                      thread_mark: { $ref: "#/components/schemas/ThreadMark" }
+                      body: { $ref: "#/components/schemas/PostContent" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/ReplyCreateManyOK" }
 
   /threads/{thread_mark}/poll:
     get:
@@ -2439,6 +2502,30 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "401": { $ref: "#/components/responses/Unauthorised" }
         "200": { description: OK }
+
+  /likes/posts:
+    put:
+      operationId: LikePostAddMany
+      description: |
+        Add a like/vote to many posts in a single request on behalf of the
+        authenticated account. Idempotent per post. Posts that fail to be liked
+        are skipped and reported in the response count.
+      tags: [likes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [post_ids]
+              properties:
+                post_ids:
+                  type: array
+                  items: { $ref: "#/components/schemas/Identifier" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/LikePostAddManyOK" }
 
   /likes/profiles/{account_handle}:
     get:
@@ -4428,6 +4515,21 @@ components:
           schema:
             $ref: "#/components/schemas/Reply"
 
+    ReplyCreateManyOK:
+      description: Result of a bulk reply operation.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [requested, created]
+            properties:
+              requested:
+                type: integer
+                description: Number of reply items in the request.
+              created:
+                type: integer
+                description: Number of replies successfully created.
+
     ThreadGetPollOK:
       description: Poll status for a thread.
       content:
@@ -4488,6 +4590,21 @@ components:
             required: [likes]
             properties:
               likes: { $ref: "#/components/schemas/ItemLikeList" }
+
+    LikePostAddManyOK:
+      description: Result of a bulk like operation.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [requested, liked]
+            properties:
+              requested:
+                type: integer
+                description: Number of post IDs in the request.
+              liked:
+                type: integer
+                description: Number of posts successfully liked.
 
     LikeProfileGetOK:
       description: Likes that an account has given.
