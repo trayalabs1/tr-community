@@ -201,6 +201,7 @@ func (d *Writer) CreateBulk(
 
 	parents, err := tx.Post.Query().
 		Where(ent_post.IDIn(parentIDs...), ent_post.RootPostIDIsNil()).
+		Select(ent_post.FieldID, ent_post.FieldChannelID, ent_post.FieldAccountPosts).
 		All(ctx)
 	if err != nil {
 		return nil, fault.Wrap(err, fmsg.With("failed to load parent threads"), fctx.With(ctx))
