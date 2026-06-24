@@ -45,11 +45,13 @@ function ChipFilter({
   options,
   isActive,
   onSelect,
+  disabled = false,
 }: {
   label: string;
   options: { value: string; label: string }[];
   isActive: (value: string) => boolean;
   onSelect: (value: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <VStack alignItems="start" gap="2" width="full">
@@ -61,13 +63,14 @@ function ChipFilter({
           <styled.button
             key={opt.value}
             onClick={() => onSelect(opt.value)}
+            disabled={disabled}
             fontSize="xs"
-            cursor="pointer"
+            cursor={disabled ? "not-allowed" : "pointer"}
             px="3"
             py="1.5"
             rounded="full"
             transition="all"
-            style={chipStyle(isActive(opt.value))}
+            style={{ ...chipStyle(isActive(opt.value)), opacity: disabled ? 0.5 : 1 }}
           >
             {opt.label}
           </styled.button>
@@ -118,7 +121,7 @@ async function fetchAllMatchingThreads(filters: Filters): Promise<ThreadReferenc
       created_before: filters.createdBefore,
       no_replies: true,
       ...(filters.noLikes && { no_likes: true }),
-      post_categories: filters.categories,
+      ...(filters.categories.length > 0 && { post_categories: filters.categories }),
       ...(filters.sentiments.length > 0 && { sentiments: filters.sentiments }),
       page: String(page),
     });
@@ -176,30 +179,51 @@ export function BulkActionsPanel() {
     Date.parse(range.createdBefore),
   );
 
+  // Two mutually-exclusive modes:
+  // - Category mode: a category is selected; sentiment + engagement are ignored
+  //   (and their controls disabled). Fetch is scoped to that category.
+  // - Engagement mode: no category; "No likes" + a sentiment scope the set
+  //   across ALL categories.
   const hasCategory = selectedCategory !== "";
-  // The "No likes" filter forces a sentiment selection so the admin scopes the
-  // unliked set before acting on it.
-  const sentimentRequired = noLikesOnly && selectedSentiments.size === 0;
+  const engagementMode = !hasCategory && noLikesOnly;
+  // In engagement mode a sentiment is required so the admin scopes the unliked
+  // set before acting on it.
+  const sentimentRequired = engagementMode && selectedSentiments.size === 0;
+  // A mode is fully specified (threads can load) when a category is chosen, or
+  // when engagement mode has a sentiment to scope it.
+  const ready = hasCategory || (engagementMode && selectedSentiments.size > 0);
 
   const buildFilters = useCallback(
-    (r: { createdAfter: string; createdBefore: string }): Filters => ({
-      createdAfter: r.createdAfter,
-      createdBefore: r.createdBefore,
-      categories: selectedCategory ? [selectedCategory] : [],
-      sentiments: Array.from(selectedSentiments),
-      noLikes: noLikesOnly,
-    }),
+    (r: { createdAfter: string; createdBefore: string }): Filters => {
+      if (selectedCategory) {
+        // Category mode — category only.
+        return {
+          createdAfter: r.createdAfter,
+          createdBefore: r.createdBefore,
+          categories: [selectedCategory],
+          sentiments: [],
+          noLikes: false,
+        };
+      }
+      // Engagement mode — no category, scoped by no_likes + sentiment.
+      return {
+        createdAfter: r.createdAfter,
+        createdBefore: r.createdBefore,
+        categories: [],
+        sentiments: Array.from(selectedSentiments),
+        noLikes: noLikesOnly,
+      };
+    },
     [selectedCategory, selectedSentiments, noLikesOnly],
   );
 
   const loadThreads = useCallback(
     async (filters: Filters) => {
-      if (filters.categories.length === 0) {
-        setThreads([]);
-        return;
-      }
-      // No-likes requires a sentiment; don't load an unscoped set.
-      if (filters.noLikes && filters.sentiments.length === 0) {
+      // Load only when a mode is fully specified: a category, OR no-likes with
+      // at least one sentiment.
+      const categoryMode = filters.categories.length > 0;
+      const engagement = filters.noLikes && filters.sentiments.length > 0;
+      if (!categoryMode && !engagement) {
         setThreads([]);
         return;
       }
@@ -257,7 +281,10 @@ export function BulkActionsPanel() {
       if (!start || !end) {
         nextRange = initialRange;
       } else {
-        const [earlier, later] = start.compare(end) <= 0 ? [start, end] : [end, start];
+        const [earlier, rawLater] = start.compare(end) <= 0 ? [start, end] : [end, start];
+        // Cap the selected span to a 14-day inclusive window.
+        const maxLater = earlier.add({ days: 13 });
+        const later = rawLater.compare(maxLater) > 0 ? maxLater : rawLater;
         const startDate = earlier.toDate(tz);
         startDate.setHours(0, 0, 0, 0);
         const endOfDay = new Date(later.add({ days: 1 }).toDate(tz).getTime() - 1);
@@ -328,7 +355,7 @@ export function BulkActionsPanel() {
         <Heading as="h2" size="lg">
           Bulk Actions
         </Heading>
-        {hasCategory && (
+        {ready && (
           <styled.span fontSize="xs" color="fg.muted" fontWeight="semibold">
             {isLoading ? "Loading…" : `${threads.length} matching`}
           </styled.span>
@@ -353,7 +380,6 @@ export function BulkActionsPanel() {
           <HStack gap="3" alignItems="center" flexWrap="wrap">
             <DateRangePicker
               hideInputs={true}
-              min={todayVal.subtract({ days: 30 })}
               max={todayVal}
               onValueChange={handleDateChange}
             />
@@ -375,6 +401,7 @@ export function BulkActionsPanel() {
           options={SENTIMENT_OPTIONS}
           isActive={(value) => selectedSentiments.has(value)}
           onSelect={toggleSentiment}
+          disabled={hasCategory}
         />
 
         <VStack alignItems="start" gap="2" width="full">
@@ -384,20 +411,27 @@ export function BulkActionsPanel() {
           <HStack gap="2" flexWrap="wrap" alignItems="center">
             <styled.button
               onClick={toggleNoLikes}
+              disabled={hasCategory}
               fontSize="xs"
-              cursor="pointer"
+              cursor={hasCategory ? "not-allowed" : "pointer"}
               px="3"
               py="1.5"
               rounded="full"
               transition="all"
-              style={chipStyle(noLikesOnly)}
+              style={{ ...chipStyle(noLikesOnly), opacity: hasCategory ? 0.5 : 1 }}
             >
               No likes
             </styled.button>
-            {sentimentRequired && (
-              <styled.span fontSize="xs" color="fg.error">
-                Select a sentiment to use the No likes filter.
+            {hasCategory ? (
+              <styled.span fontSize="xs" color="fg.muted">
+                Clear the category to filter by sentiment or engagement.
               </styled.span>
+            ) : (
+              sentimentRequired && (
+                <styled.span fontSize="xs" color="fg.error">
+                  Select a sentiment to use the No likes filter.
+                </styled.span>
+              )
             )}
           </HStack>
         </VStack>
@@ -442,7 +476,7 @@ export function BulkActionsPanel() {
         </VStack>
       </VStack>
 
-      {!hasCategory || sentimentRequired ? (
+      {!ready ? (
         <VStack
           gap="2"
           width="full"
@@ -457,9 +491,9 @@ export function BulkActionsPanel() {
           }}
         >
           <styled.p fontSize="sm" color="fg.muted">
-            {!hasCategory
-              ? "Select a category to load threads for bulk actions."
-              : "Select a sentiment to use the No likes filter."}
+            {sentimentRequired
+              ? "Select a sentiment to use the No likes filter."
+              : "Select a category, or No likes with a sentiment, to load threads."}
           </styled.p>
         </VStack>
       ) : (
@@ -513,7 +547,7 @@ export function BulkActionsPanel() {
                   isLoading ||
                   threads.length === 0 ||
                   selectedReplies.size === 0 ||
-                  noLikesOnly
+                  engagementMode
                 }
               >
                 Bulk Reply
