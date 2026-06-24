@@ -10,6 +10,7 @@ import { useChannelList } from "@/api/openapi-client/channels";
 import { useNodeList } from "@/api/openapi-client/nodes";
 import { useThreadList } from "@/api/openapi-client/threads";
 import { Visibility, ThreadReference, ReplyQueueEntry } from "@/api/openapi-schema";
+import { BulkActionsPanel } from "@/components/queue/BulkActionsPanel";
 import { PendingReplyThreadList } from "@/components/queue/PendingReplyThreadList";
 import { QueueNodeList } from "@/components/queue/QueueNodeList";
 import { QueueThreadList } from "@/components/queue/QueueThreadList";
@@ -23,7 +24,7 @@ import { MembersIcon } from "@/components/ui/icons/Members";
 import { useSession } from "@/auth";
 
 type ContentType = "threads" | "nodes" | "all";
-type QueueTab = "pending_review" | "pending_reply" | "pending_reply_to_reply";
+type QueueTab = "pending_review" | "pending_reply" | "pending_reply_to_reply" | "bulk_actions";
 
 const SELECTED_CHANNELS_STORAGE_PREFIX = "queue.selectedChannelIds:";
 
@@ -256,7 +257,8 @@ export function QueueScreen() {
   const isInitialLoading =
     activeTab === "pending_review" ? isThreadsLoading && isNodesLoading :
     activeTab === "pending_reply" ? isPendingReplyLoading && allPendingReplyThreads.length === 0 :
-    isReplyQueueLoading && allReplyQueueEntries.length === 0;
+    activeTab === "pending_reply_to_reply" ? isReplyQueueLoading && allReplyQueueEntries.length === 0 :
+    false;
 
   if (isInitialLoading) {
     return <LoadingBanner />;
@@ -314,32 +316,34 @@ export function QueueScreen() {
           <Heading as="h1" size="2xl">
             Submission Queue
           </Heading>
-          <styled.button
-            onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-            display="flex"
-            alignItems="center"
-            gap="2"
-            fontSize="sm"
-            fontWeight="semibold"
-            cursor="pointer"
-            px="3"
-            py="2"
-            rounded="md"
-            style={{
-              backgroundColor: isFiltersOpen ? "var(--colors-bg-muted)" : "transparent",
-              color: "var(--colors-fg-default)",
-              border: "1px solid var(--colors-border-default)",
-              transition: "all 0.2s ease-in-out",
-            }}
-          >
-            <Filter size={18} strokeWidth={2} />
-            <styled.span>Filters</styled.span>
-          </styled.button>
+          {activeTab !== "bulk_actions" && (
+            <styled.button
+              onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+              display="flex"
+              alignItems="center"
+              gap="2"
+              fontSize="sm"
+              fontWeight="semibold"
+              cursor="pointer"
+              px="3"
+              py="2"
+              rounded="md"
+              style={{
+                backgroundColor: isFiltersOpen ? "var(--colors-bg-muted)" : "transparent",
+                color: "var(--colors-fg-default)",
+                border: "1px solid var(--colors-border-default)",
+                transition: "all 0.2s ease-in-out",
+              }}
+            >
+              <Filter size={18} strokeWidth={2} />
+              <styled.span>Filters</styled.span>
+            </styled.button>
+          )}
         </HStack>
 
         {/* Tabs */}
         <HStack gap="0" width="full" style={{ borderBottom: "1px solid var(--colors-border-default)" }}>
-          {(["pending_review", "pending_reply", "pending_reply_to_reply"] as const).map((tab) => (
+          {(["pending_review", "pending_reply", "pending_reply_to_reply", "bulk_actions"] as const).map((tab) => (
             <styled.button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -356,7 +360,7 @@ export function QueueScreen() {
                 color: activeTab === tab ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
               }}
             >
-              {tab === "pending_review" ? "Pending Review" : tab === "pending_reply" ? "Pending Reply" : "Pending Reply to Reply"}
+              {tab === "pending_review" ? "Pending Review" : tab === "pending_reply" ? "Pending Reply" : tab === "pending_reply_to_reply" ? "Pending Reply to Reply" : "Bulk Actions"}
             </styled.button>
           ))}
         </HStack>
@@ -587,6 +591,9 @@ export function QueueScreen() {
           )}
         </VStack>
       )}
+
+      {/* Bulk Actions Tab */}
+      {activeTab === "bulk_actions" && <BulkActionsPanel />}
 
       {/* Pending Review Tab */}
       {activeTab === "pending_review" && <VStack gap="8" width="full">
