@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 
 import { getServerSession } from "@/auth/server-session";
 import UserGeneratedTipsClient from "@/screens/user-generated-tips/UserGeneratedTipsClient";
-import { nunitoSans } from "@/screens/user-generated-tips/font";
 import type { Gender } from "@/screens/user-generated-tips/tipsData";
 
 export const metadata: Metadata = {
@@ -38,7 +37,6 @@ export default async function Page(props: Props) {
         caseId={caseId}
         gender={gender}
         firstName={firstName}
-        fontClassName={nunitoSans.variable}
       />
     </Suspense>
   );

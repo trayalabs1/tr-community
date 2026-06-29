@@ -30,7 +30,7 @@ export interface SubpageTopBarAction {
   badge?: number | string;
 }
 
-const BADGE_FONT = "var(--font-nunito-sans), 'Nunito Sans', sans-serif";
+const BADGE_FONT = "'Nunito Sans', sans-serif";
 
 function badgeText(badge: number | string): string {
   if (typeof badge === 'number') return badge > 99 ? '99+' : String(badge);
@@ -141,7 +141,7 @@ export default function SubpageTopBar({ title, onBack, onClose, hideBack = false
             lineHeight: '24px',
             letterSpacing: '-0.1px',
             color: '#404040',
-            fontFamily: "var(--font-nunito-sans), 'Nunito Sans', sans-serif",
+            fontFamily: "'Nunito Sans', sans-serif",
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
