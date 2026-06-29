@@ -140,7 +140,7 @@ export default function SubpageTopBar({ title, onBack, onClose, hideBack = false
             fontWeight: 600,
             lineHeight: '24px',
             letterSpacing: '-0.1px',
-            color: 'var(--color-grey-700)',
+            color: '#404040',
             fontFamily: "var(--font-nunito-sans), 'Nunito Sans', sans-serif",
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -187,7 +187,7 @@ export default function SubpageTopBar({ title, onBack, onClose, hideBack = false
                       minWidth: 18,
                       height: 18,
                       borderRadius: 9,
-                      backgroundColor: 'var(--color-signal-warning-300)',
+                      backgroundColor: '#c72928',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -197,7 +197,7 @@ export default function SubpageTopBar({ title, onBack, onClose, hideBack = false
                       fontWeight: 600,
                       fontSize: 10,
                       lineHeight: '12px',
-                      color: 'var(--color-grey-0)',
+                      color: '#ffffff',
                     }}
                   >
                     {badgeText(action.badge)}

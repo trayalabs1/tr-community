@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { Images, Send } from 'lucide-react';
-import { FONT, INK, type TipTopic, type TipsTheme } from './tipsData';
+import { FONT, GREY, INK, type TipTopic, type TipsTheme } from './tipsData';
 
 
 export default function WriteTip({
@@ -63,7 +63,7 @@ export default function WriteTip({
           fontSize: 20,
           lineHeight: '26px',
           letterSpacing: '-0.1px',
-          color: 'var(--color-grey-800)',
+          color: GREY[800],
         }}
       >
         {topic.title}
@@ -75,7 +75,7 @@ export default function WriteTip({
           fontWeight: 400,
           fontSize: 15,
           lineHeight: '21px',
-          color: 'var(--color-grey-600)',
+          color: GREY[600],
         }}
       >
         {topic.prompt}
@@ -90,8 +90,8 @@ export default function WriteTip({
           padding: 16,
           paddingBottom: 64,
           borderRadius: 16,
-          backgroundColor: 'var(--color-grey-0)',
-          border: '1px solid var(--color-grey-200)',
+          backgroundColor: GREY[0],
+          border: `1px solid ${GREY[200]}`,
           boxShadow: '0px 6px 16px rgba(0,0,0,0.06)',
         }}
       >
@@ -110,7 +110,7 @@ export default function WriteTip({
             fontWeight: 400,
             fontSize: 16,
             lineHeight: '22px',
-            color: 'var(--color-grey-800)',
+            color: GREY[800],
             boxSizing: 'border-box',
           }}
         />
@@ -214,9 +214,7 @@ export default function WriteTip({
               borderRadius: 10,
               border: 'none',
               cursor: canSend ? 'pointer' : 'default',
-              backgroundColor: canSend
-                ? 'var(--color-grey-800)'
-                : 'var(--color-grey-300)',
+              backgroundColor: canSend ? GREY[800] : GREY[300],
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -261,13 +259,9 @@ export default function WriteTip({
                 fontWeight: 500,
                 fontSize: 14,
                 lineHeight: '18px',
-                color: 'var(--color-grey-700)',
-                backgroundColor: active
-                  ? 'var(--color-grey-100)'
-                  : 'var(--color-grey-0)',
-                border: `1px solid ${
-                  active ? 'var(--color-grey-400)' : 'var(--color-grey-300)'
-                }`,
+                color: GREY[700],
+                backgroundColor: active ? GREY[100] : GREY[0],
+                border: `1px solid ${active ? GREY[400] : GREY[300]}`,
                 transition: 'background-color 150ms ease, border-color 150ms ease',
               }}
             >

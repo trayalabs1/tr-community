@@ -3,6 +3,7 @@
 import {
   CARD_BORDER,
   FONT,
+  GREY,
   INK,
   TOPICS,
   type TipTopic,
@@ -51,7 +52,7 @@ export default function TopicSelection({
           fontWeight: 500,
           fontSize: 16,
           lineHeight: '20px',
-          color: 'var(--color-grey-650)',
+          color: GREY[650],
         }}
       >
         Select topic
@@ -115,7 +116,7 @@ function TopicCard({
         borderRadius: 12,
         cursor: 'pointer',
         textAlign: 'left',
-        backgroundColor: selected ? theme.selectedFill : 'var(--color-grey-0)',
+        backgroundColor: selected ? theme.selectedFill : GREY[0],
         border: `1px solid ${selected ? theme.selectedBorder : CARD_BORDER}`,
         transition: 'background-color 150ms ease, border-color 150ms ease',
         fontFamily: FONT,
@@ -162,7 +163,7 @@ function Radio({ selected, color }: { selected: boolean; color: string }) {
         height: 24,
         borderRadius: '50%',
         boxSizing: 'border-box',
-        border: `2px solid ${selected ? color : 'var(--color-grey-200)'}`,
+        border: `2px solid ${selected ? color : GREY[200]}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
