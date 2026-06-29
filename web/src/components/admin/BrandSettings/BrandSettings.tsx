@@ -119,7 +119,7 @@ export function BrandSettingsForm(props: Props) {
             <Box>
               <ColourField
                 defaultValue={props.settings.accent_colour}
-                control={control}
+                control={control as any}
                 onUpdate={onColourChangePreview}
                 {...register("accentColour")}
               />
