@@ -6,7 +6,7 @@ import { moengageTrackEvent } from './analytics';
 import TopicSelection from './TopicSelection';
 import WriteTip from './WriteTip';
 import TipSubmitted from './TipSubmitted';
-import { getTheme, getTopic, type Gender } from './tipsData';
+import { getTheme, getTopic, GREY, type Gender } from './tipsData';
 import { submitTip } from './tipsApi';
 import './tokens.css';
 
@@ -55,8 +55,9 @@ export default function UserGeneratedTipsClient({
 
   const handleSelectTopic = (id: string) => {
     setSelectedId(id);
-    // User selects a topic.
-    moengageTrackEvent('web_component_item_viewed', {
+    // User selects a topic. Distinct from the page-view event above so it does
+    // not double-count the "viewed" funnel step (was web_component_item_viewed).
+    moengageTrackEvent('web_component_item_clicked', {
       component: COMPONENT,
       topic: getTopic(id)?.title ?? id,
       case_id: caseId,
@@ -113,7 +114,7 @@ export default function UserGeneratedTipsClient({
         maxWidth: '28rem',
         flexDirection: 'column',
         minHeight: '100vh',
-        backgroundColor: 'var(--color-grey-0)',
+        backgroundColor: GREY[0],
         background: theme.pageGradient,
         backgroundRepeat: 'no-repeat',
       }}
