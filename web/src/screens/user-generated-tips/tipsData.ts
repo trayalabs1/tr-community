@@ -145,7 +145,7 @@ export const INK = "#2C2C2A";
 
 export const CARD_BORDER = "#F0F0F0";
 
-export const FONT = "var(--font-nunito-sans), 'Nunito Sans', sans-serif";
+export const FONT = "'Nunito Sans', sans-serif";
 
 // Traya grey scale used across the tip flow. Kept here as plain values rather
 // than a parallel CSS-variable token layer.

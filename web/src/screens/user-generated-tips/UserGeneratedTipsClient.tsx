@@ -27,12 +27,10 @@ export default function UserGeneratedTipsClient({
   caseId,
   gender,
   firstName,
-  fontClassName,
 }: {
   caseId: string;
   gender: Gender;
   firstName?: string | null;
-  fontClassName?: string;
 }) {
   const [step, setStep] = useState<Step>('topic');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -105,7 +103,7 @@ export default function UserGeneratedTipsClient({
 
   return (
     <main
-      className={`ugt-scope ${fontClassName ?? ''}`}
+      className="ugt-scope"
       style={{
         marginLeft: 'auto',
         marginRight: 'auto',
