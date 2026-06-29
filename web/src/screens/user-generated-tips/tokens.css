@@ -1,0 +1,32 @@
+.ugt-scope {
+  --color-grey-0: #ffffff;
+  --color-grey-50: #f7f7f7;
+  --color-grey-100: #f0f0f0;
+  --color-grey-200: #dedede;
+  --color-grey-300: #c9c9c9;
+  --color-grey-400: #b5b5b5;
+  --color-grey-500: #999999;
+  --color-grey-600: #787878;
+  --color-grey-650: #5c5c5c;
+  --color-grey-700: #404040;
+  --color-grey-800: #303030;
+  --color-grey-900: #262626;
+  --color-lime-200: #e6f0bd;
+  --color-lime-500: #b7d340;
+  --color-blue-100: #ecf5f8;
+  --color-blue-200: #daebf1;
+  --color-blue-400: #add2e0;
+  --color-blue-900: #2b5f73;
+  --color-signal-warning-300: #c72928;
+}
+
+.ugt-scope textarea::placeholder {
+  color: var(--color-grey-500);
+  opacity: 1;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
