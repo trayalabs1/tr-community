@@ -110,6 +110,14 @@ type Filters = {
   noLikes: boolean;
 };
 
+// Likes and replies are independent. A thread is eligible for Bulk Like while it
+// has zero likes, and for Bulk Reply while it has zero replies — the two are not
+// coupled, so a thread that's already been replied to can still be liked.
+const hasNoReplies = (t: ThreadReference) => (t.reply_status?.replies ?? 0) === 0;
+const hasNoLikes = (t: ThreadReference) => (t.likes?.likes ?? 0) === 0;
+// Keep a thread in the matched set if at least one action can still apply to it.
+const isActionable = (t: ThreadReference) => hasNoReplies(t) || hasNoLikes(t);
+
 async function fetchAllMatchingThreads(filters: Filters): Promise<ThreadReference[]> {
   const all: ThreadReference[] = [];
   let page = 1;
@@ -119,8 +127,6 @@ async function fetchAllMatchingThreads(filters: Filters): Promise<ThreadReferenc
       visibility: [Visibility.published, Visibility.review],
       created_after: filters.createdAfter,
       created_before: filters.createdBefore,
-      no_replies: true,
-      ...(filters.noLikes && { no_likes: true }),
       ...(filters.categories.length > 0 && { post_categories: filters.categories }),
       ...(filters.sentiments.length > 0 && { sentiments: filters.sentiments }),
       page: String(page),
@@ -131,7 +137,9 @@ async function fetchAllMatchingThreads(filters: Filters): Promise<ThreadReferenc
     if (!result.next_page || result.next_page === page) break;
     page = result.next_page;
   }
-  return all;
+  // Union of "actionable" threads: zero replies OR zero likes. Per-action gating
+  // narrows this to each button's eligible subset.
+  return all.filter(isActionable);
 }
 
 function formatRangeLabel(startMs: number, endMs: number): string {
@@ -179,6 +187,10 @@ export function BulkActionsPanel() {
     Date.parse(range.createdBefore),
   );
 
+  // Per-action eligible subsets, derived independently from each thread's state.
+  const likeable = useMemo(() => threads.filter(hasNoLikes), [threads]);
+  const replyable = useMemo(() => threads.filter(hasNoReplies), [threads]);
+
   // Two mutually-exclusive modes:
   // - Category mode: a category is selected; sentiment + engagement are ignored
   //   (and their controls disabled). Fetch is scoped to that category.
@@ -219,8 +231,8 @@ export function BulkActionsPanel() {
 
   const loadThreads = useCallback(
     async (filters: Filters) => {
-      // Load only when a mode is fully specified: a category, OR no-likes with
-      // at least one sentiment.
+      // Load only when a mode is fully specified: a category, OR engagement mode
+      // (no category) scoped by at least one sentiment.
       const categoryMode = filters.categories.length > 0;
       const engagement = filters.noLikes && filters.sentiments.length > 0;
       if (!categoryMode && !engagement) {
@@ -300,7 +312,10 @@ export function BulkActionsPanel() {
   );
 
   const runBulkAction = useCallback(async () => {
-    if (!pendingAction || threads.length === 0) {
+    // Each action targets only its own eligible subset: likes go to unliked
+    // threads, replies go to unreplied threads.
+    const targets = pendingAction === "like" ? likeable : replyable;
+    if (!pendingAction || targets.length === 0) {
       setPendingAction(null);
       return;
     }
@@ -312,22 +327,25 @@ export function BulkActionsPanel() {
       // Single request — the server likes every post in one call.
       let liked = 0;
       try {
-        const result = await likePostAddMany({ post_ids: threads.map((t) => t.id) });
+        const result = await likePostAddMany({ post_ids: targets.map((t) => t.id) });
         liked = result.liked;
       } catch {
         liked = 0;
       }
       setIsRunning(false);
       setPendingAction(null);
-      setResultMessage(`Liked ${liked} of ${threads.length} threads.`);
+      setResultMessage(`Liked ${liked} of ${targets.length} threads.`);
+
+      // Liked threads no longer have zero likes — refresh the matched set.
+      void loadThreads(buildFilters(range));
       return;
     }
 
     // Reply: a single request carrying per-thread bodies, with the selected
     // replies split evenly across the set.
     const replyPool = BULK_REPLY_RESPONSES.filter((_, i) => selectedReplies.has(i));
-    const assignments = assignRepliesEvenly(threads.length, replyPool);
-    const items = threads
+    const assignments = assignRepliesEvenly(targets.length, replyPool);
+    const items = targets
       .map((thread, i) => ({ thread_mark: thread.slug, body: assignments[i] }))
       .filter((item): item is { thread_mark: string; body: string } =>
         Boolean(item.thread_mark && item.body),
@@ -343,11 +361,11 @@ export function BulkActionsPanel() {
 
     setIsRunning(false);
     setPendingAction(null);
-    setResultMessage(`Replied to ${created} of ${threads.length} threads.`);
+    setResultMessage(`Replied to ${created} of ${targets.length} threads.`);
 
     // Replied threads no longer have zero replies — refresh the matched set.
     void loadThreads(buildFilters(range));
-  }, [pendingAction, threads, selectedReplies, loadThreads, buildFilters, range]);
+  }, [pendingAction, likeable, replyable, selectedReplies, loadThreads, buildFilters, range]);
 
   return (
     <VStack gap="4" width="full" alignItems="start">
@@ -357,7 +375,9 @@ export function BulkActionsPanel() {
         </Heading>
         {ready && (
           <styled.span fontSize="xs" color="fg.muted" fontWeight="semibold">
-            {isLoading ? "Loading…" : `${threads.length} matching`}
+            {isLoading
+              ? "Loading…"
+              : `${threads.length} matching · ${likeable.length} likeable · ${replyable.length} repliable`}
           </styled.span>
         )}
       </HStack>
@@ -513,8 +533,8 @@ export function BulkActionsPanel() {
             >
               <styled.span fontSize="sm" fontWeight="semibold">
                 {pendingAction === "like"
-                  ? `Like ${threads.length} thread${threads.length === 1 ? "" : "s"}?`
-                  : `Reply to ${threads.length} thread${threads.length === 1 ? "" : "s"} using ${selectedReplies.size} repl${selectedReplies.size === 1 ? "y" : "ies"}, split evenly?`}
+                  ? `Like ${likeable.length} unliked thread${likeable.length === 1 ? "" : "s"}?`
+                  : `Reply to ${replyable.length} unreplied thread${replyable.length === 1 ? "" : "s"} using ${selectedReplies.size} repl${selectedReplies.size === 1 ? "y" : "ies"}, split evenly?`}
               </styled.span>
               <HStack gap="2">
                 <Button
@@ -536,21 +556,18 @@ export function BulkActionsPanel() {
                 variant="outline"
                 size="md"
                 onClick={() => setPendingAction("like")}
-                disabled={isLoading || threads.length === 0}
+                disabled={isLoading || likeable.length === 0}
               >
-                Bulk Like
+                {`Bulk Like${likeable.length > 0 ? ` (${likeable.length})` : ""}`}
               </Button>
               <Button
                 size="md"
                 onClick={() => setPendingAction("reply")}
                 disabled={
-                  isLoading ||
-                  threads.length === 0 ||
-                  selectedReplies.size === 0 ||
-                  engagementMode
+                  isLoading || replyable.length === 0 || selectedReplies.size === 0
                 }
               >
-                Bulk Reply
+                {`Bulk Reply${replyable.length > 0 ? ` (${replyable.length})` : ""}`}
               </Button>
               {resultMessage && (
                 <styled.span fontSize="sm" color="fg.muted">

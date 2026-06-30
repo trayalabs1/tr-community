@@ -82,4 +82,49 @@ test.describe("Bulk Actions queue tab", () => {
 
     await adminCtx.close();
   });
+
+  test("likes and replies gate independently", async ({ browser }) => {
+    const timestamp = Date.now();
+    const adminHandle = `bulk_indep_admin_${timestamp}`;
+
+    const adminCtx = await browser.newContext();
+    await createAccountWithRole(adminCtx, adminHandle, PASSWORD, "admin");
+
+    const adminPage = await adminCtx.newPage();
+    await login(adminPage, adminHandle, PASSWORD);
+    await adminPage.goto("/queue");
+
+    await adminPage
+      .getByRole("button", { name: "Bulk Actions", exact: true })
+      .click();
+    await adminPage.getByRole("button", { name: "Streak Posts" }).click();
+
+    const bulkLike = adminPage.getByRole("button", { name: "Bulk Like" });
+    const bulkReply = adminPage.getByRole("button", { name: "Bulk Reply" });
+    await expect(bulkLike).toBeVisible({ timeout: 10000 });
+    await expect(bulkReply).toBeVisible();
+
+    // Each action gates on its own eligible subset, so they can differ. When
+    // either is enabled, its confirmation must scope to that action alone:
+    // likes target "unliked" threads, replies target "unreplied" threads.
+    if (!(await bulkLike.isDisabled())) {
+      await bulkLike.click();
+      await expect(
+        adminPage.getByText(/Like \d+ unliked thread/),
+      ).toBeVisible();
+      await adminPage.getByRole("button", { name: "Cancel" }).click();
+    }
+
+    if (!(await bulkReply.isDisabled())) {
+      await bulkReply.click();
+      await expect(
+        adminPage.getByText(/Reply to \d+ unreplied thread/),
+      ).toBeVisible();
+      await adminPage.getByRole("button", { name: "Cancel" }).click();
+    }
+
+    await expect(adminPage).toHaveURL(/\/queue$/);
+
+    await adminCtx.close();
+  });
 });
