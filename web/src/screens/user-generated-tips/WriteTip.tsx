@@ -9,11 +9,13 @@ export default function WriteTip({
   theme,
   topic,
   submitting,
+  error,
   onSubmit,
 }: {
   theme: TipsTheme;
   topic: TipTopic;
   submitting: boolean;
+  error?: boolean;
   onSubmit: (text: string, hasImage: boolean) => void;
 }) {
   const [text, setText] = useState('');
@@ -234,6 +236,22 @@ export default function WriteTip({
           style={{ display: 'none' }}
         />
       </div>
+
+      {error && (
+        <p
+          role="alert"
+          style={{
+            margin: '12px 0 0',
+            fontFamily: FONT,
+            fontWeight: 500,
+            fontSize: 14,
+            lineHeight: '18px',
+            color: '#D92D20',
+          }}
+        >
+          Couldn’t share your tip. Please try again.
+        </p>
+      )}
 
       {/* Suggestion chips */}
       <div
