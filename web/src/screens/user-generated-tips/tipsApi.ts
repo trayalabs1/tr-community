@@ -1,24 +1,37 @@
-import { threadCreate } from "@/api/openapi-client/threads";
+import { channelList, channelThreadCreate } from "@/api/openapi-client/channels";
 import { Visibility } from "@/api/openapi-schema";
+import type { Gender } from "./tipsData";
 
 export interface SubmitTipArgs {
   caseId: string;
+  gender: Gender;
   topicId: string;
   topicTitle: string;
   text: string;
   hasImage?: boolean;
 }
 
-// A tip is a community post tagged via `meta` so it can be filtered/surfaced as
-// a tip — mirrors the BAH/feedback post creation in SharePostScreen. Created at
-// `review` visibility so it lands in the moderation queue before going live.
+const COMMUNITY_CHANNEL_SLUG: Record<Gender, string> = {
+  F: "traya-womens-community",
+  M: "traya-explorers",
+};
+
 export async function submitTip({
+  gender,
   topicId,
   topicTitle,
   text,
 }: SubmitTipArgs): Promise<{ hasError: boolean }> {
+  const slug = COMMUNITY_CHANNEL_SLUG[gender];
   try {
-    await threadCreate({
+    const { channels } = await channelList();
+    const channel = channels.find((c) => c.slug === slug);
+    if (!channel) {
+      console.error("submitTip: community channel not found", slug);
+      return { hasError: true };
+    }
+
+    await channelThreadCreate(channel.id, {
       title: topicTitle,
       body: text.trim(),
       visibility: Visibility.review,

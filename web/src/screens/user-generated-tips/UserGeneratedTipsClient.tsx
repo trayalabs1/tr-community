@@ -35,6 +35,7 @@ export default function UserGeneratedTipsClient({
   const [step, setStep] = useState<Step>('topic');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitFailed, setSubmitFailed] = useState(false);
 
   const theme = useMemo(() => getTheme(gender), [gender]);
   const topic = getTopic(selectedId);
@@ -75,16 +76,20 @@ export default function UserGeneratedTipsClient({
       case_id: caseId,
     });
     setSubmitting(true);
-    // Advance to the confirmation regardless of network outcome — the tips
-    // endpoint isn't live yet (see tipsApi.ts). Errors are logged there.
-    await submitTip({
+    setSubmitFailed(false);
+    const { hasError } = await submitTip({
       caseId,
+      gender,
       topicId: topic.id,
       topicTitle: topic.title,
       text,
       hasImage,
     });
     setSubmitting(false);
+    if (hasError) {
+      setSubmitFailed(true);
+      return;
+    }
     setStep('submitted');
   };
 
@@ -98,6 +103,7 @@ export default function UserGeneratedTipsClient({
   const handleBackToTopics = () => {
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     setSelectedId(null);
+    setSubmitFailed(false);
     setStep('topic');
   };
 
@@ -145,6 +151,7 @@ export default function UserGeneratedTipsClient({
           theme={theme}
           topic={topic}
           submitting={submitting}
+          error={submitFailed}
           onSubmit={handleSubmit}
         />
       )}
