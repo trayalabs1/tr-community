@@ -11,6 +11,8 @@ type Props = {
     reward_coins?: string;
     category?: string;
     type?: string;
+    tips?: string;
+    case_id?: string;
   }>;
 };
 
@@ -39,6 +41,8 @@ export default async function Page(props: Props) {
       rewardCoins={searchParams?.reward_coins ? parseInt(searchParams.reward_coins, 10) : undefined}
       category={searchParams?.category}
       type={searchParams?.type}
+      tips={searchParams?.tips === "true"}
+      caseId={searchParams?.case_id}
     />
   );
 }
