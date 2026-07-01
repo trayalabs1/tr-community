@@ -408,7 +408,7 @@ func computeTargetChannels(normalizedGender string, orderCount int, isWithin60Da
 		targetChannels["traya-womens-community"] = true
 	}
 
-	if normalizedGender == "male" && customerType == "lead" && hasCaseIDPrefix(caseID, "0", "1", "2", "3") && leadOlderThan15Days {
+	if normalizedGender == "male" && customerType == "lead" && hasCaseIDPrefix(caseID, "0", "1", "2", "3", "4", "5") && leadOlderThan15Days {
 		targetChannels[trayaExplorersChannelSlug] = true
 	}
 
@@ -440,7 +440,7 @@ func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID accou
 	}
 
 	leadOlderThan15Days := false
-	if normalizedGender == "male" && customerType == "lead" && hasCaseIDPrefix(caseID, "0", "1", "2", "3") {
+	if normalizedGender == "male" && customerType == "lead" && hasCaseIDPrefix(caseID, "0", "1", "2", "3", "4", "5") {
 		older, err := isOlderThanNDays(firstFilledFormDate, 15)
 		if err != nil {
 			p.logger.Warn("failed to parse firstFilledFormDate",
