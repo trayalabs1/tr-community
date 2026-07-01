@@ -23,6 +23,13 @@ function closeFlow() {
   else window.history.back();
 }
 
+/** Notify the React Native shell of a flow event (no-op outside the webview). */
+function notifyNative(message: Record<string, unknown>) {
+  if (typeof window === 'undefined') return;
+  const w = window as any;
+  if (w.ReactNativeWebView) w.ReactNativeWebView.postMessage(JSON.stringify(message));
+}
+
 export default function UserGeneratedTipsClient({
   caseId,
   gender,
@@ -91,6 +98,12 @@ export default function UserGeneratedTipsClient({
       return;
     }
     setStep('submitted');
+    notifyNative({
+      type: 'tip_submitted',
+      component: COMPONENT,
+      topic: topic.title,
+      case_id: caseId,
+    });
   };
 
   const handleShareAnother = () => {
