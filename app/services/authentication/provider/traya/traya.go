@@ -408,7 +408,7 @@ func computeTargetChannels(normalizedGender string, orderCount int, isWithin60Da
 		targetChannels["traya-womens-community"] = true
 	}
 
-	if normalizedGender == "male" && customerType == "lead" && hasCaseIDPrefix(caseID, "0", "1", "2", "3") && leadOlderThan15Days {
+	if normalizedGender == "male" && customerType == "lead" && hasCaseIDPrefix(caseID, "0", "1", "2", "3", "4", "5") && leadOlderThan15Days {
 		targetChannels[trayaExplorersChannelSlug] = true
 	}
 
