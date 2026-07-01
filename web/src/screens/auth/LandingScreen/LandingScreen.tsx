@@ -28,9 +28,16 @@ type LandingScreenProps = {
   rewardCoins?: number;
   category?: string;
   type?: string;
+  tips?: boolean;
+  caseId?: string;
 };
 
-export function LandingScreen({ token, share, streakCount, rewardCoins, category, type }: LandingScreenProps) {
+const TIPS_CHANNEL_GENDER: Record<string, "M" | "F"> = {
+  "traya-explorers": "M",
+  "traya-womens-community": "F",
+};
+
+export function LandingScreen({ token, share, streakCount, rewardCoins, category, type, tips, caseId }: LandingScreenProps) {
   const router = useRouter();
   const { trigger } = useAuthTrayaToken({ token });
   const { mutate: mutateAccount } = useAccountGet();
@@ -51,6 +58,26 @@ export function LandingScreen({ token, share, streakCount, rewardCoins, category
     if (type) params.set("type", type);
     const query = params.toString();
     return query ? `?${query}` : "";
+  };
+
+  // Tips are only postable by members of the gender community channels, so route
+  // there only when the token exchange landed the user in one; otherwise fall
+  // back to the normal channel landing. Gender is taken from the channel the user
+  // was actually assigned to, not a URL hint.
+  const redirectToTips = async () => {
+    try {
+      const channelsResponse = await channelList();
+      const channels = channelsResponse?.channels ?? [];
+      const community = channels.find((c) => TIPS_CHANNEL_GENDER[c.slug]);
+      if (caseId && community) {
+        const gender = TIPS_CHANNEL_GENDER[community.slug] ?? "M";
+        router.push(`/user-generated-tips/${caseId}?gender=${gender}`);
+        return;
+      }
+    } catch {
+      // fall through to the default landing below
+    }
+    await redirectToFirstChannel();
   };
 
   const redirectToFirstChannel = async () => {
@@ -101,7 +128,11 @@ export function LandingScreen({ token, share, streakCount, rewardCoins, category
             // Silent fail - profile screen will handle it
           }
         }
-        await redirectToFirstChannel();
+        if (tips) {
+          await redirectToTips();
+        } else {
+          await redirectToFirstChannel();
+        }
       },
       {
         errorToast: false,
@@ -112,7 +143,7 @@ export function LandingScreen({ token, share, streakCount, rewardCoins, category
         },
       }
     );
-  }, [trigger, router, mutateAccount, share]);
+  }, [trigger, router, mutateAccount, share, tips, caseId]);
 
   // Retry handler for error state
   const handleEnterCommunity = async () => {
@@ -140,7 +171,11 @@ export function LandingScreen({ token, share, streakCount, rewardCoins, category
             // Silent fail - profile screen will handle it
           }
         }
-        await redirectToFirstChannel();
+        if (tips) {
+          await redirectToTips();
+        } else {
+          await redirectToFirstChannel();
+        }
       },
       {
         errorToast: false,
