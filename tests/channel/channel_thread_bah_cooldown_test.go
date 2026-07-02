@@ -83,7 +83,15 @@ func TestChannelThreadBAHCooldown(t *testing.T) {
 			tests.Ok(t, err, channelE)
 			channelEID := channelE.JSON200.Id
 
-			for _, ch := range []openapi.Identifier{channelAID, channelBID, channelCID, channelDID, channelEID} {
+			channelF, err := cl.ChannelCreateWithResponse(root, openapi.ChannelInitialProps{
+				Name:        "BAH Channel F",
+				Slug:        "bah-channel-f",
+				Description: "channel F",
+			}, ownerSession)
+			tests.Ok(t, err, channelF)
+			channelFID := channelF.JSON200.Id
+
+			for _, ch := range []openapi.Identifier{channelAID, channelBID, channelCID, channelDID, channelEID, channelFID} {
 				addMember, err := cl.ChannelMemberAddWithResponse(root, ch, openapi.ChannelMemberAdd{
 					AccountId: openapi.Identifier(member.ID.String()),
 					Role:      openapi.ChannelMemberAddRoleMember,
@@ -136,6 +144,14 @@ func TestChannelThreadBAHCooldown(t *testing.T) {
 			}, ownerSession)
 			tests.Ok(t, err, catE)
 			catEID := catE.JSON200.Id
+
+			catF, err := cl.ChannelCategoryCreateWithResponse(root, channelFID, openapi.CategoryInitialProps{
+				Name:        "General F",
+				Description: "general",
+				Colour:      "#abcdef",
+			}, ownerSession)
+			tests.Ok(t, err, catF)
+			catFID := catF.JSON200.Id
 
 			bahMeta := openapi.Metadata{"post_category": "BAH"}
 			plainMeta := openapi.Metadata{"post_category": "OTHER"}
@@ -310,6 +326,60 @@ func TestChannelThreadBAHCooldown(t *testing.T) {
 				tests.Ok(t, err, resp)
 				r.Equal(openapi.Review, resp.JSON200.Visibility,
 					"non-BAH posts submitted as Review must remain in review (auto-promote is BAH-only)")
+			})
+
+			bah7Meta := openapi.Metadata{"post_category": "BAH", "type": 7}
+			bah21Meta := openapi.Metadata{"post_category": "BAH", "type": 21}
+
+			t.Run("first 7-day streak stays published", func(t *testing.T) {
+				resp, err := cl.ChannelThreadCreateWithResponse(root, channelFID, openapi.ThreadInitialProps{
+					Title:      "7-day streak",
+					Body:       opt.New("<p>7 days</p>").Ptr(),
+					Category:   opt.New(catFID).Ptr(),
+					Visibility: opt.New(openapi.Published).Ptr(),
+					Meta:       &bah7Meta,
+				}, memberSession)
+				tests.Ok(t, err, resp)
+				r.Equal(openapi.Published, resp.JSON200.Visibility, "first 7-day streak must stay published")
+			})
+
+			t.Run("21-day streak stays published alongside 7-day in same window", func(t *testing.T) {
+				resp, err := cl.ChannelThreadCreateWithResponse(root, channelFID, openapi.ThreadInitialProps{
+					Title:      "21-day streak",
+					Body:       opt.New("<p>21 days</p>").Ptr(),
+					Category:   opt.New(catFID).Ptr(),
+					Visibility: opt.New(openapi.Published).Ptr(),
+					Meta:       &bah21Meta,
+				}, memberSession)
+				tests.Ok(t, err, resp)
+				r.Equal(openapi.Published, resp.JSON200.Visibility,
+					"a 21-day streak must publish even when a 7-day streak is within window: cooldown is per streak count")
+			})
+
+			t.Run("second 7-day streak within window goes to review", func(t *testing.T) {
+				resp, err := cl.ChannelThreadCreateWithResponse(root, channelFID, openapi.ThreadInitialProps{
+					Title:      "Another 7-day streak",
+					Body:       opt.New("<p>7 days again</p>").Ptr(),
+					Category:   opt.New(catFID).Ptr(),
+					Visibility: opt.New(openapi.Published).Ptr(),
+					Meta:       &bah7Meta,
+				}, otherSession)
+				tests.Ok(t, err, resp)
+				r.Equal(openapi.Review, resp.JSON200.Visibility,
+					"a second 7-day streak within window must be demoted: same streak count collides")
+			})
+
+			t.Run("review-submitted 7-day auto-promotes when only a 21-day is published", func(t *testing.T) {
+				resp, err := cl.ChannelThreadCreateWithResponse(root, channelDID, openapi.ThreadInitialProps{
+					Title:      "Review 7-day streak",
+					Body:       opt.New("<p>review 7</p>").Ptr(),
+					Category:   opt.New(catDID).Ptr(),
+					Visibility: opt.New(openapi.Review).Ptr(),
+					Meta:       &bah21Meta,
+				}, memberSession)
+				tests.Ok(t, err, resp)
+				r.Equal(openapi.Published, resp.JSON200.Visibility,
+					"a Review 21-day streak auto-promotes: prior published BAH on channel D has empty type, different count")
 			})
 		}))
 	}))
