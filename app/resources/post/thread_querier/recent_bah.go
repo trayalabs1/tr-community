@@ -46,12 +46,13 @@ func (d *Querier) HasRecentChannelPrescored(
 			predicate.Post(func(s *sql.Selector) {
 				metaCol := s.C(ent_post.FieldMetadata)
 				s.Where(sql.P(func(b *sql.Builder) {
+					b.WriteString("CAST(COALESCE(")
 					b.WriteString(metaCol)
-					b.WriteString("->>'post_category' = ")
+					b.WriteString("->>'post_category', '') AS TEXT) = ")
 					b.WriteString(quoteSQLLiteral(category))
-					b.WriteString(" AND ")
+					b.WriteString(" AND CAST(COALESCE(")
 					b.WriteString(metaCol)
-					b.WriteString("->>'type' = ")
+					b.WriteString("->>'type', '') AS TEXT) = ")
 					b.WriteString(quoteSQLLiteral(postType))
 				}))
 			}),
