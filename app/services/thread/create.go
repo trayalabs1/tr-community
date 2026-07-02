@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"math/rand/v2"
+	"strconv"
 	"time"
 
 	"github.com/Southclaws/dt"
@@ -46,6 +47,22 @@ func isPrescoredCategory(category string) bool {
 		return true
 	}
 	return false
+}
+
+// metaTypeString normalises meta["type"] to the text form Postgres yields from
+// metadata->>'type'. BAH sends the streak count as a JSON number (float64 after
+// unmarshal); feedback sends a string.
+func metaTypeString(v any) string {
+	switch t := v.(type) {
+	case string:
+		return t
+	case float64:
+		return strconv.FormatFloat(t, 'f', -1, 64)
+	case int:
+		return strconv.Itoa(t)
+	default:
+		return ""
+	}
 }
 
 func (s *service) Create(ctx context.Context,
@@ -107,11 +124,13 @@ func (s *service) Create(ctx context.Context,
 
 	if postCategoryAtCreate == "BAH" &&
 		(thr.Visibility == visibility.VisibilityPublished || thr.Visibility == visibility.VisibilityReview) {
-		recent, err := s.threadQuerier.HasRecentChannelBAH(
+		recent, err := s.threadQuerier.HasRecentChannelPrescored(
 			ctx,
 			thr.ChannelID,
 			time.Now().Add(-bahCooldownWindow),
 			xid.ID(thr.ID),
+			"BAH",
+			metaTypeString(meta["type"]),
 		)
 		if err != nil {
 			return nil, fault.Wrap(err, fctx.With(ctx))
