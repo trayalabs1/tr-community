@@ -86,7 +86,6 @@ export default function UserGeneratedTipsClient({
     setSubmitFailed(false);
     const { hasError } = await submitTip({
       caseId,
-      gender,
       topicId: topic.id,
       topicTitle: topic.title,
       text,
