@@ -20,6 +20,7 @@ import { useEventTracking } from "@/lib/moengage/useEventTracking";
 import { Spinner } from "@/components/ui/Spinner";
 import { generateRandomUsername } from "@/utils/generateUsername";
 import { PINNED_CHANNEL_SLUGS } from "@/lib/channel/pinned";
+import { pickTipsChannel, inferChannelGender } from "@/lib/channel/tipsChannel";
 
 type LandingScreenProps = {
   token: string;
@@ -30,11 +31,6 @@ type LandingScreenProps = {
   type?: string;
   tips?: boolean;
   caseId?: string;
-};
-
-const TIPS_CHANNEL_GENDER: Record<string, "M" | "F"> = {
-  "traya-explorers": "M",
-  "traya-womens-community": "F",
 };
 
 export function LandingScreen({ token, share, streakCount, rewardCoins, category, type, tips, caseId }: LandingScreenProps) {
@@ -60,17 +56,16 @@ export function LandingScreen({ token, share, streakCount, rewardCoins, category
     return query ? `?${query}` : "";
   };
 
-  // Tips are only postable by members of the gender community channels, so route
-  // there only when the token exchange landed the user in one; otherwise fall
-  // back to the normal channel landing. Gender is taken from the channel the user
-  // was actually assigned to, not a URL hint.
+  // Route to tips once the token exchange has assigned the user a community
+  // channel; the tip posts into that same channel. Gender is inferred from the
+  // channel for theming only. No channel → fall back to the normal landing.
   const redirectToTips = async () => {
     try {
       const channelsResponse = await channelList();
       const channels = channelsResponse?.channels ?? [];
-      const community = channels.find((c) => TIPS_CHANNEL_GENDER[c.slug]);
-      if (caseId && community) {
-        const gender = TIPS_CHANNEL_GENDER[community.slug] ?? "M";
+      const channel = pickTipsChannel(channels);
+      if (caseId && channel) {
+        const gender = inferChannelGender(channel);
         router.push(`/user-generated-tips/${caseId}?gender=${gender}`);
         return;
       }
