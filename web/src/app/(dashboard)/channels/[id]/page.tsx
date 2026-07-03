@@ -16,10 +16,13 @@ type Props = {
 export default async function Page(props: Props) {
   try {
     const params = await props.params;
-    const session = await getServerSession();
-    const { data: channel } = await channelGet(params.id);
-    const { data: notifications } = await notificationList({ status: ["unread"], page: "1" });
-    const { data: collections } = await collectionList({});
+    const [session, { data: channel }, { data: notifications }, { data: collections }] =
+      await Promise.all([
+        getServerSession(),
+        channelGet(params.id),
+        notificationList({ status: ["unread"], page: "1" }),
+        collectionList({}),
+      ]);
 
     const hasUnreadNotifications = (notifications?.notifications?.length ?? 0) > 0;
     const bookmarkCount = collections?.collections?.length ?? 0;
