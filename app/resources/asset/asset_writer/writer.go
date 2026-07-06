@@ -71,6 +71,23 @@ func (w *Writer) AddVersion(ctx context.Context,
 	return asset.Map(r), nil
 }
 
+func (w *Writer) UpdateContent(ctx context.Context,
+	id asset.AssetID,
+	size int,
+	mt mime.Type,
+) (*asset.Asset, error) {
+	r, err := w.db.Asset.
+		UpdateOneID(xid.ID(id)).
+		SetSize(size).
+		SetMimeType(mt.String()).
+		Save(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.Internal))
+	}
+
+	return asset.Map(r), nil
+}
+
 func (w *Writer) Remove(ctx context.Context, accountID xid.ID, id asset.Filename) error {
 	q := w.db.Asset.
 		Delete().Where(
