@@ -9,7 +9,6 @@ import (
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/account/notification"
-	"github.com/Southclaws/storyden/app/resources/asset"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/event/event_ref"
 	"github.com/Southclaws/storyden/app/resources/library"
@@ -223,14 +222,6 @@ type CommandSendNotification struct {
 
 type CommandSendEmail struct {
 	Message mailer.Message
-}
-
-// -
-// Asset processing
-// -
-
-type CommandConvertAsset struct {
-	AssetID asset.AssetID
 }
 
 type CommandSendBeacon struct {
