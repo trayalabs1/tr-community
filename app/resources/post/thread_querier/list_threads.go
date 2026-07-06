@@ -75,10 +75,18 @@ func (d *Querier) List(
 		}).
 		WithSentiment()
 
-	total, err := query.Clone().Count(ctx)
-	if err != nil {
-		return nil, fault.Wrap(err, fctx.With(ctx))
-	}
+	countQuery := query.Clone()
+
+	countPool := pond.NewGroup()
+	var total int
+	countPool.SubmitErr(func() error {
+		t, err := countQuery.Count(ctx)
+		if err != nil {
+			return fault.Wrap(err, fctx.With(ctx))
+		}
+		total = t
+		return nil
+	})
 
 	if queryOptions.useSentimentRanking {
 		rankExpr := `CASE
@@ -135,6 +143,10 @@ func (d *Querier) List(
 	result, err := query.All(ctx)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.Internal))
+	}
+
+	if err := countPool.Wait(); err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
 	isNextPage := len(result) > size
