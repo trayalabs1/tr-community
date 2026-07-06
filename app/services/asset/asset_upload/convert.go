@@ -15,12 +15,12 @@ import (
 	"github.com/Southclaws/storyden/internal/mime"
 )
 
-const jpegQuality = 85
+const JPEGQuality = 85
 
-// convertToJPEGMIMETypes are image formats that browsers cannot reliably
-// display and which are transcoded to JPEG on upload. Mirrors the set of
+// ConvertToJPEGMIMETypes are image formats that browsers cannot reliably
+// display and which are transcoded to JPEG after upload. Mirrors the set of
 // non-web-friendly types handled by traya-api-server's upload flow.
-var convertToJPEGMIMETypes = map[string]struct{}{
+var ConvertToJPEGMIMETypes = map[string]struct{}{
 	"image/heic":          {},
 	"image/heif":          {},
 	"image/heic-sequence": {},
@@ -29,27 +29,24 @@ var convertToJPEGMIMETypes = map[string]struct{}{
 	"image/tiff":          {},
 }
 
-func needsJPEGConversion(mt *mime.Type) bool {
-	_, ok := convertToJPEGMIMETypes[mt.String()]
+func NeedsJPEGConversion(mt mime.Type) bool {
+	_, ok := ConvertToJPEGMIMETypes[mt.String()]
 	return ok
 }
 
-func maybeConvertToJPEG(mt *mime.Type, r io.Reader) (io.Reader, *mime.Type, int64, bool, error) {
-	if !needsJPEGConversion(mt) {
-		return r, mt, -1, false, nil
-	}
-
+// ConvertToJPEG decodes any supported non-web-friendly image and re-encodes it
+// as JPEG. Decoding is memory-heavy (the decoders run in a WASM runtime), so
+// this must run off the request path.
+func ConvertToJPEG(r io.Reader) (io.Reader, int64, error) {
 	img, _, err := image.Decode(r)
 	if err != nil {
-		return nil, nil, 0, false, fault.Wrap(err)
+		return nil, 0, fault.Wrap(err)
 	}
 
 	buf := bytes.NewBuffer(nil)
-	if err := jpeg.Encode(buf, img, &jpeg.Options{Quality: jpegQuality}); err != nil {
-		return nil, nil, 0, false, fault.Wrap(err)
+	if err := jpeg.Encode(buf, img, &jpeg.Options{Quality: JPEGQuality}); err != nil {
+		return nil, 0, fault.Wrap(err)
 	}
 
-	jpegMIME := mime.New("image/jpeg")
-
-	return buf, &jpegMIME, int64(buf.Len()), true, nil
+	return buf, int64(buf.Len()), nil
 }
