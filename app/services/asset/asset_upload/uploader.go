@@ -55,6 +55,14 @@ func (s *Uploader) Upload(ctx context.Context, or io.Reader, size int64, name as
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
+	r, mt, convertedSize, converted, err := maybeConvertToJPEG(mt, r)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+	if converted {
+		size = convertedSize
+	}
+
 	a, err := func() (asset *asset.Asset, err error) {
 		if pid, ok := opts.ParentID.Get(); ok {
 			return s.assets.AddVersion(ctx, xid.ID(accountID), name, int(size), *mt, pid)
