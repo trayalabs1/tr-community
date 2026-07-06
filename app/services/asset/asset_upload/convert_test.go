@@ -16,17 +16,13 @@ import (
 	"github.com/Southclaws/storyden/internal/mime"
 )
 
-func assertConvertsToJPEG(t *testing.T, mimeType string, raw []byte) {
+func assertConvertsToJPEG(t *testing.T, raw []byte) {
 	t.Helper()
 	r := require.New(t)
 	a := assert.New(t)
 
-	mt := mime.New(mimeType)
-
-	out, outMT, size, converted, err := maybeConvertToJPEG(&mt, bytes.NewReader(raw))
+	out, size, err := ConvertToJPEG(bytes.NewReader(raw))
 	r.NoError(err)
-	a.True(converted)
-	a.Equal("image/jpeg", outMT.String())
 
 	outBytes, err := io.ReadAll(out)
 	r.NoError(err)
@@ -39,64 +35,58 @@ func assertConvertsToJPEG(t *testing.T, mimeType string, raw []byte) {
 	a.Positive(img.Bounds().Dy())
 }
 
-func TestMaybeConvertToJPEG_HEIC(t *testing.T) {
+func TestConvertToJPEG_HEIC(t *testing.T) {
 	raw, err := os.ReadFile("testdata/sample.heic")
 	require.NoError(t, err)
-	assertConvertsToJPEG(t, "image/heic", raw)
+	assertConvertsToJPEG(t, raw)
 }
 
-func TestMaybeConvertToJPEG_AVIF(t *testing.T) {
+func TestConvertToJPEG_AVIF(t *testing.T) {
 	raw, err := os.ReadFile("testdata/sample.avif")
 	require.NoError(t, err)
-	assertConvertsToJPEG(t, "image/avif", raw)
+	assertConvertsToJPEG(t, raw)
 }
 
-func TestMaybeConvertToJPEG_TIFF(t *testing.T) {
+func TestConvertToJPEG_TIFF(t *testing.T) {
 	src := image.NewRGBA(image.Rect(0, 0, 8, 8))
 	buf := bytes.NewBuffer(nil)
 	require.NoError(t, tiff.Encode(buf, src, nil))
-	assertConvertsToJPEG(t, "image/tiff", buf.Bytes())
+	assertConvertsToJPEG(t, buf.Bytes())
 }
 
-func TestMaybeConvertToJPEG_PassesThroughJPEG(t *testing.T) {
-	r := require.New(t)
+func TestNeedsJPEGConversion(t *testing.T) {
 	a := assert.New(t)
 
-	src := image.NewRGBA(image.Rect(0, 0, 4, 4))
-	buf := bytes.NewBuffer(nil)
-	r.NoError(jpeg.Encode(buf, src, nil))
-	original := buf.Bytes()
-
-	mt := mime.New("image/jpeg")
-
-	out, outMT, size, converted, err := maybeConvertToJPEG(&mt, bytes.NewReader(original))
-	r.NoError(err)
-	a.False(converted)
-	a.Equal("image/jpeg", outMT.String())
-	a.Equal(int64(-1), size)
-
-	passed, err := io.ReadAll(out)
-	r.NoError(err)
-	a.Equal(original, passed)
+	for _, mt := range []string{"image/heic", "image/heif", "image/avif", "image/tiff"} {
+		a.True(NeedsJPEGConversion(mime.New(mt)), mt)
+	}
+	for _, mt := range []string{"image/jpeg", "image/png", "image/webp", "image/gif"} {
+		a.False(NeedsJPEGConversion(mime.New(mt)), mt)
+	}
 }
 
-func TestMaybeConvertToJPEG_PassesThroughPNG(t *testing.T) {
-	r := require.New(t)
+func TestConvertToJPEG_RejectsNonImage(t *testing.T) {
+	_, _, err := ConvertToJPEG(bytes.NewReader([]byte("not an image")))
+	assert.Error(t, err)
+}
+
+func encodeImage(t *testing.T, encode func(io.Writer, image.Image) error) []byte {
+	t.Helper()
+	buf := bytes.NewBuffer(nil)
+	require.NoError(t, encode(buf, image.NewRGBA(image.Rect(0, 0, 4, 4))))
+	return buf.Bytes()
+}
+
+func TestConvertToJPEG_DecodesWebFriendly(t *testing.T) {
 	a := assert.New(t)
 
-	src := image.NewRGBA(image.Rect(0, 0, 4, 4))
-	buf := bytes.NewBuffer(nil)
-	r.NoError(png.Encode(buf, src))
-	original := buf.Bytes()
+	jpegBytes := encodeImage(t, func(w io.Writer, m image.Image) error { return jpeg.Encode(w, m, nil) })
+	out, _, err := ConvertToJPEG(bytes.NewReader(jpegBytes))
+	a.NoError(err)
+	a.NotNil(out)
 
-	mt := mime.New("image/png")
-
-	out, outMT, _, converted, err := maybeConvertToJPEG(&mt, bytes.NewReader(original))
-	r.NoError(err)
-	a.False(converted)
-	a.Equal("image/png", outMT.String())
-
-	passed, err := io.ReadAll(out)
-	r.NoError(err)
-	a.Equal(original, passed)
+	pngBytes := encodeImage(t, png.Encode)
+	out, _, err = ConvertToJPEG(bytes.NewReader(pngBytes))
+	a.NoError(err)
+	a.NotNil(out)
 }
