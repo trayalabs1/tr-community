@@ -11,7 +11,13 @@ import {
   useChannelThreadList,
   useChannelThreadListPersonalized,
 } from "@/api/openapi-client/channels";
-import { Account, Channel, ThreadReference } from "@/api/openapi-schema";
+import {
+  Account,
+  CategoryListOKResponse,
+  Channel,
+  ThreadListOKResponse,
+  ThreadReference,
+} from "@/api/openapi-schema";
 import { ChannelMobileHeader } from "@/components/channel/ChannelMobileHeader";
 import { ChannelFilterBar } from "@/components/channel/ChannelFilterBar";
 import { parsePromptNudges } from "@/components/feed/PromptNudge/prompts";
@@ -27,6 +33,8 @@ type Props = {
   channel: Channel;
   hasUnreadNotifications?: boolean;
   bookmarkCount?: number;
+  initialThreads?: ThreadListOKResponse;
+  initialCategories?: CategoryListOKResponse;
 };
 
 export function ChannelScreen(props: Props) {
@@ -37,14 +45,25 @@ export function ChannelScreen(props: Props) {
   const [dateRange, setDateRange] = useState<{ createdAfter?: string; createdBefore?: string }>({});
   const [excludeBAH, setExcludeBAH] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [allThreads, setAllThreads] = useState<ThreadReference[]>([]);
+  const [allThreads, setAllThreads] = useState<ThreadReference[]>(
+    props.initialThreads?.threads ?? [],
+  );
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
-  const loadedPagesRef = useRef<Set<number>>(new Set());
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(
+    props.initialThreads !== undefined,
+  );
+  const loadedPagesRef = useRef<Set<number>>(
+    new Set(
+      props.initialThreads?.current_page !== undefined
+        ? [props.initialThreads.current_page]
+        : [],
+    ),
+  );
 
   const { data: categories, isValidating: isCategoriesLoading } = useChannelCategoryList(props.channel.id, {
     swr: {
       revalidateOnFocus: false,
+      fallbackData: props.initialCategories,
     },
   });
 
@@ -67,12 +86,21 @@ export function ChannelScreen(props: Props) {
     threadParams['exclude_bah'] = 'true';
   }
 
+  const isDefaultView =
+    currentPage === 1 &&
+    !selectedCategorySlug &&
+    !selectedVisibility &&
+    !dateRange.createdAfter &&
+    !dateRange.createdBefore &&
+    !excludeBAH;
+
   const { data: threads, error, isValidating: isThreadsLoading } = useChannelThreadList(
     props.channel.id,
     threadParams,
     {
       swr: {
         revalidateOnFocus: false,
+        fallbackData: isDefaultView ? props.initialThreads : undefined,
       },
     }
   );
