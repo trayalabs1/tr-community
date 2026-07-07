@@ -2611,6 +2611,22 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorised" }
         "200": { description: OK }
 
+  /collections/default/posts/{post_id}:
+    put:
+      operationId: CollectionAddPostToDefault
+      description: |
+        Add a post to the authenticated account's default collection, creating
+        the default collection first if it does not exist yet. Enables one-tap
+        saving without requiring the user to pick or create a collection.
+      tags: [collections]
+      parameters:
+        - $ref: "#/components/parameters/PostIDParam"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/CollectionAddPostOK" }
+
   /collections/{collection_mark}/posts/{post_id}:
     put:
       operationId: CollectionAddPost
@@ -7595,11 +7611,16 @@ components:
 
     CollectionAdditionalProps:
       type: object
-      required: [item_count, has_queried_item]
+      required: [item_count, has_queried_item, is_default]
       properties:
         item_count:
           type: integer
         has_queried_item:
+          type: boolean
+        is_default:
+          description: |
+            Indicates this is the account's default collection, used for
+            one-tap saves when the user has not chosen a specific collection.
           type: boolean
 
     CollectionList:

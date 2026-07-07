@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -403,6 +404,7 @@ var (
 		{Name: "slug", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true},
 		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"draft", "unlisted", "review", "published", "archived"}, Default: "draft"},
+		{Name: "is_default", Type: field.TypeBool, Default: false},
 		{Name: "account_collections", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "cover_asset_id", Type: field.TypeString, Nullable: true, Size: 20},
 	}
@@ -414,15 +416,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "collections_accounts_collections",
-				Columns:    []*schema.Column{CollectionsColumns[8]},
+				Columns:    []*schema.Column{CollectionsColumns[9]},
 				RefColumns: []*schema.Column{AccountsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "collections_assets_cover_image",
-				Columns:    []*schema.Column{CollectionsColumns[9]},
+				Columns:    []*schema.Column{CollectionsColumns[10]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "unique_owner_default_collection",
+				Unique:  true,
+				Columns: []*schema.Column{CollectionsColumns[8], CollectionsColumns[9]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "is_default",
+				},
 			},
 		},
 	}

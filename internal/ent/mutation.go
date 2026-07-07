@@ -11722,6 +11722,7 @@ type CollectionMutation struct {
 	slug               *string
 	description        *string
 	visibility         *collection.Visibility
+	is_default         *bool
 	clearedFields      map[string]struct{}
 	owner              *xid.ID
 	clearedowner       bool
@@ -12169,6 +12170,42 @@ func (m *CollectionMutation) ResetVisibility() {
 	m.visibility = nil
 }
 
+// SetIsDefault sets the "is_default" field.
+func (m *CollectionMutation) SetIsDefault(b bool) {
+	m.is_default = &b
+}
+
+// IsDefault returns the value of the "is_default" field in the mutation.
+func (m *CollectionMutation) IsDefault() (r bool, exists bool) {
+	v := m.is_default
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsDefault returns the old "is_default" field's value of the Collection entity.
+// If the Collection object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CollectionMutation) OldIsDefault(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsDefault is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsDefault requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsDefault: %w", err)
+	}
+	return oldValue.IsDefault, nil
+}
+
+// ResetIsDefault resets all changes to the "is_default" field.
+func (m *CollectionMutation) ResetIsDefault() {
+	m.is_default = nil
+}
+
 // SetOwnerID sets the "owner" edge to the Account entity by id.
 func (m *CollectionMutation) SetOwnerID(id xid.ID) {
 	m.owner = &id
@@ -12390,7 +12427,7 @@ func (m *CollectionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CollectionMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, collection.FieldCreatedAt)
 	}
@@ -12414,6 +12451,9 @@ func (m *CollectionMutation) Fields() []string {
 	}
 	if m.visibility != nil {
 		fields = append(fields, collection.FieldVisibility)
+	}
+	if m.is_default != nil {
+		fields = append(fields, collection.FieldIsDefault)
 	}
 	return fields
 }
@@ -12439,6 +12479,8 @@ func (m *CollectionMutation) Field(name string) (ent.Value, bool) {
 		return m.CoverAssetID()
 	case collection.FieldVisibility:
 		return m.Visibility()
+	case collection.FieldIsDefault:
+		return m.IsDefault()
 	}
 	return nil, false
 }
@@ -12464,6 +12506,8 @@ func (m *CollectionMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldCoverAssetID(ctx)
 	case collection.FieldVisibility:
 		return m.OldVisibility(ctx)
+	case collection.FieldIsDefault:
+		return m.OldIsDefault(ctx)
 	}
 	return nil, fmt.Errorf("unknown Collection field %s", name)
 }
@@ -12528,6 +12572,13 @@ func (m *CollectionMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetVisibility(v)
+		return nil
+	case collection.FieldIsDefault:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsDefault(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Collection field %s", name)
@@ -12622,6 +12673,9 @@ func (m *CollectionMutation) ResetField(name string) error {
 		return nil
 	case collection.FieldVisibility:
 		m.ResetVisibility()
+		return nil
+	case collection.FieldIsDefault:
+		m.ResetIsDefault()
 		return nil
 	}
 	return fmt.Errorf("unknown Collection field %s", name)

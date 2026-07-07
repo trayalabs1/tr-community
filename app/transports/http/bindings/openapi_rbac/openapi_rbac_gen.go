@@ -147,6 +147,7 @@ type OperationPermissions interface {
 	CollectionGet() (bool, *rbac.Permission)
 	CollectionUpdate() (bool, *rbac.Permission)
 	CollectionDelete() (bool, *rbac.Permission)
+	CollectionAddPostToDefault() (bool, *rbac.Permission)
 	CollectionAddPost() (bool, *rbac.Permission)
 	CollectionRemovePost() (bool, *rbac.Permission)
 	CollectionAddNode() (bool, *rbac.Permission)
@@ -474,6 +475,8 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.CollectionUpdate()
 	case "CollectionDelete":
 		return optable.CollectionDelete()
+	case "CollectionAddPostToDefault":
+		return optable.CollectionAddPostToDefault()
 	case "CollectionAddPost":
 		return optable.CollectionAddPost()
 	case "CollectionRemovePost":

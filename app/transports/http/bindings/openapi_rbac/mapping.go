@@ -596,6 +596,10 @@ func (m *Mapping) CollectionAddPost() (bool, *rbac.Permission) {
 	return true, nil // See NOTE.
 }
 
+func (m *Mapping) CollectionAddPostToDefault() (bool, *rbac.Permission) {
+	return true, nil // See NOTE.
+}
+
 func (m *Mapping) CollectionRemovePost() (bool, *rbac.Permission) {
 	return true, nil // See NOTE.
 }

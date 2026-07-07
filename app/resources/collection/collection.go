@@ -24,6 +24,7 @@ type Collection struct {
 	Description opt.Optional[string]
 	Cover       opt.Optional[asset.Asset]
 
+	IsDefault      bool
 	ItemCount      uint
 	HasQueriedItem bool
 }
@@ -73,6 +74,7 @@ func Map(queriedItems []xid.ID) func(c *ent.Collection) (*Collection, error) {
 			Owner:          *pro,
 			Name:           c.Name,
 			Description:    opt.NewPtr(c.Description),
+			IsDefault:      c.IsDefault,
 			ItemCount:      uint(len(postsEdge) + len(nodesEdge)),
 			HasQueriedItem: hasQueriedItem,
 		}, nil

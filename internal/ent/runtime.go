@@ -460,6 +460,10 @@ func init() {
 	collection.DefaultUpdatedAt = collectionDescUpdatedAt.Default.(func() time.Time)
 	// collection.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	collection.UpdateDefaultUpdatedAt = collectionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// collectionDescIsDefault is the schema descriptor for is_default field.
+	collectionDescIsDefault := collectionFields[5].Descriptor()
+	// collection.DefaultIsDefault holds the default value on creation for the is_default field.
+	collection.DefaultIsDefault = collectionDescIsDefault.Default.(bool)
 	// collectionDescID is the schema descriptor for id field.
 	collectionDescID := collectionMixinFields0[0].Descriptor()
 	// collection.DefaultID holds the default value on creation for the id field.
