@@ -5,6 +5,7 @@ import { Arguments, MutatorCallback, useSWRConfig } from "swr";
 import {
   collectionAddNode,
   collectionAddPost,
+  collectionAddPostToDefault,
   collectionCreate,
   collectionDelete,
   collectionRemoveNode,
@@ -45,6 +46,7 @@ export function useCollectionMutations(session?: Account) {
         updatedAt: new Date().toISOString(),
         owner: session,
         has_queried_item: false,
+        is_default: false,
         item_count: 0,
         slug: create.slug ?? slugify(create.name),
         ...create,
@@ -205,6 +207,38 @@ export function useCollectionItemMutations(session: Account, router?: AppRouterI
     await collectionAddPost(collection.id, postID);
   };
 
+  const addPostToDefault = async (postID: string) => {
+    const threadListMutator: MutatorCallback<ThreadListOKResponse> = (data) => {
+      if (!data) return;
+
+      const newThreads = data.threads.map((t) => {
+        if (t.id === postID) {
+          return {
+            ...t,
+            collections: {
+              in_collections: t.collections.in_collections + 1,
+              has_collected: true,
+            },
+          };
+        }
+        return t;
+      });
+
+      return {
+        ...data,
+        threads: newThreads,
+      };
+    };
+
+    await mutate(threadListKeyFilterFn, threadListMutator, {
+      revalidate: false,
+    });
+
+    await collectionAddPostToDefault(postID);
+
+    await mutate(collectionListAnyKeyFilterFn);
+  };
+
   const removePost = async (collectionID: string, postID: string) => {
     const collectionQueryMutationKey = getCollectionListKey({
       has_item: postID,
@@ -292,6 +326,7 @@ export function useCollectionItemMutations(session: Account, router?: AppRouterI
 
   return {
     addPost,
+    addPostToDefault,
     removePost,
     addNode,
     removeNode,

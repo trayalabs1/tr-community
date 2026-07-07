@@ -7,12 +7,20 @@ import (
 	"github.com/Southclaws/fault/fctx"
 	"github.com/Southclaws/opt"
 
+	"github.com/rs/xid"
+
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/collection"
 	"github.com/Southclaws/storyden/app/resources/collection/collection_querier"
 	"github.com/Southclaws/storyden/app/resources/collection/collection_writer"
 	"github.com/Southclaws/storyden/app/resources/mark"
 	"github.com/Southclaws/storyden/app/services/collection/collection_auth"
+	"github.com/Southclaws/storyden/internal/ent"
+)
+
+const (
+	defaultCollectionName = "Saved"
+	defaultCollectionSlug = "saved"
 )
 
 type Manager struct {
@@ -49,6 +57,30 @@ func (s *Manager) Create(ctx context.Context, accID account.AccountID, name stri
 
 	col, err := s.colWriter.Create(ctx, accID, name, slug, opts...)
 	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return col, nil
+}
+
+func (s *Manager) GetOrCreateDefault(ctx context.Context, accID account.AccountID) (*collection.CollectionWithItems, error) {
+	existing, err := s.colQuerier.GetDefault(ctx, xid.ID(accID))
+	if err == nil {
+		return s.colQuerier.Get(ctx, collection.NewID(existing.Mark.ID()))
+	}
+	if !ent.IsNotFound(err) {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	col, err := s.colWriter.Create(ctx, accID, defaultCollectionName, defaultCollectionSlug, collection_writer.WithIsDefault(true))
+	if err != nil {
+		if ent.IsConstraintError(err) {
+			raced, gerr := s.colQuerier.GetDefault(ctx, xid.ID(accID))
+			if gerr != nil {
+				return nil, fault.Wrap(gerr, fctx.With(ctx))
+			}
+			return s.colQuerier.Get(ctx, collection.NewID(raced.Mark.ID()))
+		}
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 

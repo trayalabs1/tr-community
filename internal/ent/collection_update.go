@@ -142,6 +142,20 @@ func (_u *CollectionUpdate) SetNillableVisibility(v *collection.Visibility) *Col
 	return _u
 }
 
+// SetIsDefault sets the "is_default" field.
+func (_u *CollectionUpdate) SetIsDefault(v bool) *CollectionUpdate {
+	_u.mutation.SetIsDefault(v)
+	return _u
+}
+
+// SetNillableIsDefault sets the "is_default" field if the given value is not nil.
+func (_u *CollectionUpdate) SetNillableIsDefault(v *bool) *CollectionUpdate {
+	if v != nil {
+		_u.SetIsDefault(*v)
+	}
+	return _u
+}
+
 // SetOwnerID sets the "owner" edge to the Account entity by ID.
 func (_u *CollectionUpdate) SetOwnerID(id xid.ID) *CollectionUpdate {
 	_u.mutation.SetOwnerID(id)
@@ -356,6 +370,9 @@ func (_u *CollectionUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.Visibility(); ok {
 		_spec.SetField(collection.FieldVisibility, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.IsDefault(); ok {
+		_spec.SetField(collection.FieldIsDefault, field.TypeBool, value)
 	}
 	if _u.mutation.OwnerCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -659,6 +676,20 @@ func (_u *CollectionUpdateOne) SetNillableVisibility(v *collection.Visibility) *
 	return _u
 }
 
+// SetIsDefault sets the "is_default" field.
+func (_u *CollectionUpdateOne) SetIsDefault(v bool) *CollectionUpdateOne {
+	_u.mutation.SetIsDefault(v)
+	return _u
+}
+
+// SetNillableIsDefault sets the "is_default" field if the given value is not nil.
+func (_u *CollectionUpdateOne) SetNillableIsDefault(v *bool) *CollectionUpdateOne {
+	if v != nil {
+		_u.SetIsDefault(*v)
+	}
+	return _u
+}
+
 // SetOwnerID sets the "owner" edge to the Account entity by ID.
 func (_u *CollectionUpdateOne) SetOwnerID(id xid.ID) *CollectionUpdateOne {
 	_u.mutation.SetOwnerID(id)
@@ -903,6 +934,9 @@ func (_u *CollectionUpdateOne) sqlSave(ctx context.Context) (_node *Collection, 
 	}
 	if value, ok := _u.mutation.Visibility(); ok {
 		_spec.SetField(collection.FieldVisibility, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.IsDefault(); ok {
+		_spec.SetField(collection.FieldIsDefault, field.TypeBool, value)
 	}
 	if _u.mutation.OwnerCleared() {
 		edge := &sqlgraph.EdgeSpec{

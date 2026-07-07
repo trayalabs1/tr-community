@@ -164,6 +164,34 @@ export const collectionDelete = async (
 };
 
 /**
+ * Add a post to the authenticated account's default collection, creating
+the default collection first if it does not exist yet. Enables one-tap
+saving without requiring the user to pick or create a collection.
+
+ */
+export type collectionAddPostToDefaultResponse = {
+  data: CollectionAddPostOKResponse;
+  status: number;
+};
+
+export const getCollectionAddPostToDefaultUrl = (postId: string) => {
+  return `/collections/default/posts/${postId}`;
+};
+
+export const collectionAddPostToDefault = async (
+  postId: string,
+  options?: RequestInit,
+): Promise<collectionAddPostToDefaultResponse> => {
+  return fetcher<Promise<collectionAddPostToDefaultResponse>>(
+    getCollectionAddPostToDefaultUrl(postId),
+    {
+      ...options,
+      method: "PUT",
+    },
+  );
+};
+
+/**
  * Add a post to a collection. The collection must be owned by the account
 making the request. The post can be any published post of any kind.
 
