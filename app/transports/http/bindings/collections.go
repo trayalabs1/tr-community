@@ -146,6 +146,29 @@ func (i *Collections) CollectionAddPost(ctx context.Context, request openapi.Col
 	}, nil
 }
 
+func (i *Collections) CollectionAddPostToDefault(ctx context.Context, request openapi.CollectionAddPostToDefaultRequestObject) (openapi.CollectionAddPostToDefaultResponseObject, error) {
+	accountID, err := session.GetAccountID(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	def, err := i.colManager.GetOrCreateDefault(ctx, accountID)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	c, err := i.colItemManager.PostAdd(ctx,
+		collection.NewID(def.Mark.ID()),
+		post.ID(deserialiseID(request.PostId)))
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return openapi.CollectionAddPostToDefault200JSONResponse{
+		CollectionAddPostOKJSONResponse: openapi.CollectionAddPostOKJSONResponse(serialiseCollectionWithItems(c)),
+	}, nil
+}
+
 func (i *Collections) CollectionRemovePost(ctx context.Context, request openapi.CollectionRemovePostRequestObject) (openapi.CollectionRemovePostResponseObject, error) {
 	c, err := i.colItemManager.PostRemove(ctx,
 		collection.NewKey(request.CollectionMark),
@@ -194,6 +217,7 @@ func serialiseCollection(in *collection.Collection) openapi.Collection {
 		Slug:           in.Mark.String(),
 		Description:    in.Description.Ptr(),
 		Owner:          serialiseProfileReference(in.Owner),
+		IsDefault:      in.IsDefault,
 		ItemCount:      int(in.ItemCount),
 		HasQueriedItem: in.HasQueriedItem,
 	}
