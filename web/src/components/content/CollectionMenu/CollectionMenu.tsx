@@ -13,11 +13,12 @@ import { useDisclosure } from "@/utils/useDisclosure";
 
 import { CollectionCreateTrigger } from "../CollectionCreate/CollectionCreateTrigger";
 
-import { Props, useCollectionMenu } from "./useCollectionMenu";
+import { Props, useCollectionMenu, useQuickSave } from "./useCollectionMenu";
 
 export function CollectionMenu(props: Props) {
   const [multiSelect, setMultiSelect] = useState(false);
   const [selected, setSelected] = useState(0);
+  const quickSave = useQuickSave(props);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.shiftKey) setMultiSelect(true);
@@ -57,6 +58,7 @@ export function CollectionMenu(props: Props) {
             variant="subtle"
             size="xs"
             bookmarked={props.thread.collections.has_collected}
+            onClick={quickSave}
           />
         </Menu.Trigger>
 

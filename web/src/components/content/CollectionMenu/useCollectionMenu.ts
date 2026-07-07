@@ -12,6 +12,30 @@ export type Props = {
   thread: PostReference;
 };
 
+export function useQuickSave({ account, thread }: Props) {
+  const router = useRouter();
+  const { addPostToDefault, revalidate } = useCollectionItemMutations(
+    account,
+    router,
+  );
+  const { trackCardSave } = useEventTracking();
+
+  return async () => {
+    if (thread.collections.has_collected) {
+      return;
+    }
+
+    trackCardSave(thread.id, "save", undefined);
+
+    await handle(
+      async () => {
+        await addPostToDefault(thread.id);
+      },
+      { cleanup: async () => await revalidate() },
+    );
+  };
+}
+
 export function useCollectionMenu({ account, thread }: Props) {
   const router = useRouter();
   const { data, error } = useCollectionList({
@@ -19,8 +43,10 @@ export function useCollectionMenu({ account, thread }: Props) {
     has_item: thread.id,
   });
 
-  const { addPost, removePost, revalidate } =
-    useCollectionItemMutations(account, router);
+  const { addPost, removePost, revalidate } = useCollectionItemMutations(
+    account,
+    router,
+  );
   const { trackCardSave } = useEventTracking();
 
   if (!data) {

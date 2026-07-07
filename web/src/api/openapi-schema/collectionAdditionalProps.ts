@@ -10,5 +10,9 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
 
 export interface CollectionAdditionalProps {
   has_queried_item: boolean;
+  /** Indicates this is the account's default collection, used for
+one-tap saves when the user has not chosen a specific collection.
+ */
+  is_default: boolean;
   item_count: number;
 }

@@ -139,6 +139,24 @@ func (d *Querier) Get(ctx context.Context, qk collection.QueryKey, filters ...It
 	return collection.MapWithItems(col)
 }
 
+func (d *Querier) GetDefault(ctx context.Context, ownerID xid.ID) (*collection.Collection, error) {
+	col, err := d.db.Collection.
+		Query().
+		Where(
+			ent_collection.HasOwnerWith(ent_account.ID(ownerID)),
+			ent_collection.IsDefault(true),
+		).
+		WithOwner().
+		WithCollectionPosts().
+		WithCollectionNodes().
+		Only(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return collection.Map(nil)(col)
+}
+
 func (d *Querier) Probe(ctx context.Context, qk collection.QueryKey) (*collection.Collection, error) {
 	col, err := d.db.Collection.
 		Query().
