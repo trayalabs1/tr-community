@@ -115,7 +115,7 @@ export function ThreadCreateTrigger({
         channelID={channelID}
         channelName={channelName}
         session={session}
-        initialText={picked?.prompt.text}
+        initialText={picked?.prompt.placeholder ?? picked?.prompt.text}
         tag={picked?.prompt.tag}
         tagIndex={picked ? picked.index + 1 : undefined}
       />
