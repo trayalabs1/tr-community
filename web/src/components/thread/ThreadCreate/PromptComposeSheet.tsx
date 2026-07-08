@@ -1,14 +1,14 @@
 "use client";
 
 import { Drawer } from "vaul";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { handle } from "@/api/client";
 import { channelThreadCreate } from "@/api/openapi-client/channels";
 import { Account, Permission, Visibility } from "@/api/openapi-schema";
-import { ContentComposer } from "@/components/content/ContentComposer/ContentComposer";
 import { MemberAvatar } from "@/components/member/MemberBadge/MemberAvatar";
 import { Button } from "@/components/ui/button";
+import { EditIcon } from "@/components/ui/icons/Edit";
 import { CloseAction } from "@/components/site/Action/Close";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
 import { HStack, LStack, VStack, WStack, styled } from "@/styled-system/jsx";
@@ -44,6 +44,7 @@ export function PromptComposeSheet({
   const [body, setBody] = useState("");
   const [resetKey, setResetKey] = useState("");
   const [isPosting, setIsPosting] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { trackSubmitForReview } = useEventTracking();
   const { revalidate } = useFeedMutations(session, undefined, channelID);
 
@@ -51,7 +52,10 @@ export function PromptComposeSheet({
     if (isOpen) {
       setBody("");
       setResetKey(`prompt-${initialText ?? ""}-${isOpen}`);
+      const t = setTimeout(() => textareaRef.current?.focus(), 100);
+      return () => clearTimeout(t);
     }
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialText]);
 
@@ -62,16 +66,8 @@ export function PromptComposeSheet({
     onOpenChange({ open });
   }
 
-  function bodyText(html: string): string {
-    return (
-      new DOMParser()
-        .parseFromString(html, "text/html")
-        .querySelector("body")?.textContent?.trim() ?? ""
-    );
-  }
-
   async function handlePost() {
-    if (bodyText(body) === "") {
+    if (body.trim() === "") {
       return;
     }
 
@@ -148,13 +144,42 @@ export function PromptComposeSheet({
             <styled.div
               w="full"
               flex="1"
-              fontSize="xl"
-              style={{ minHeight: "5.5rem" }}
+              rounded="md"
+              p="3"
+              position="relative"
+              style={{
+                minHeight: "5.5rem",
+                backgroundColor: "#f0f5f1",
+                border: "1px solid var(--colors-border-default)",
+              }}
             >
-              <ContentComposer
+              <styled.textarea
+                ref={textareaRef}
                 key={resetKey}
-                onChange={setBody}
+                className="promptsheet__textarea"
+                w="full"
+                h="full"
+                fontSize="md"
+                value={body}
                 placeholder={initialText}
+                onChange={(e) => setBody(e.target.value)}
+                style={{
+                  minHeight: "5rem",
+                  paddingRight: "1.5rem",
+                  backgroundColor: "transparent",
+                  border: "none",
+                  resize: "none",
+                  outline: "none",
+                }}
+              />
+              <EditIcon
+                w="4"
+                h="4"
+                position="absolute"
+                top="3"
+                right="3"
+                color="fg.muted"
+                pointerEvents="none"
               />
             </styled.div>
 
@@ -238,6 +263,11 @@ export function PromptComposeSheet({
             bottom: 0;
             justify-content: center;
           }
+        }
+        .promptsheet__textarea::placeholder {
+          color: var(--colors-fg-muted);
+          opacity: 1;
+          font-size: var(--font-sizes-sm);
         }
       `}</style>
     </Drawer.Root>
