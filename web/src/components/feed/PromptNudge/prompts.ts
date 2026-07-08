@@ -12,6 +12,7 @@ import { Metadata } from "@/api/openapi-schema";
 export type PromptItem = {
   icon: string;
   text: string;
+  placeholder?: string;
   tag?: string;
 };
 
@@ -42,7 +43,7 @@ export function parsePromptNudges(meta?: Metadata): PromptItem[] {
       return [];
     }
 
-    const { icon, text, tag } = item as Record<string, unknown>;
+    const { icon, text, placeholder, tag } = item as Record<string, unknown>;
     if (typeof text !== "string" || text.trim() === "") {
       return [];
     }
@@ -51,6 +52,9 @@ export function parsePromptNudges(meta?: Metadata): PromptItem[] {
       {
         icon: typeof icon === "string" ? icon : DEFAULT_PROMPT_ICON,
         text,
+        ...(typeof placeholder === "string" && placeholder.trim() !== ""
+          ? { placeholder }
+          : {}),
         ...(typeof tag === "string" && tag.trim() !== "" ? { tag } : {}),
       },
     ];

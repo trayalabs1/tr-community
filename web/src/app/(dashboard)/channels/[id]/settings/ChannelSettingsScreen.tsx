@@ -122,10 +122,12 @@ export function ChannelSettingsScreen(props: Props) {
     await handle(async () => {
       const promptNudges = prompts
         .map((p) => {
+          const placeholder = p.placeholder?.trim();
           const tag = p.tag?.trim();
           return {
             icon: p.icon,
             text: p.text.trim(),
+            ...(placeholder ? { placeholder } : {}),
             ...(tag ? { tag } : {}),
           };
         })
@@ -252,47 +254,73 @@ export function ChannelSettingsScreen(props: Props) {
           <FormLabel>Posting prompts</FormLabel>
           <LStack gap="2">
             {prompts.map((prompt, index) => (
-              <HStack key={index} gap="2" width="full" alignItems="center">
-                <styled.select
-                  value={prompt.icon}
-                  onChange={(e) => updatePrompt(index, { icon: e.target.value })}
-                  rounded="sm"
-                  px="2"
-                  py="1.5"
-                  fontSize="sm"
-                  bg="bg.default"
-                  style={{ border: "1px solid var(--colors-border-default)" }}
-                >
-                  {PROMPT_ICON_KEYS.map((key) => (
-                    <option key={key} value={key}>
-                      {key}
-                    </option>
-                  ))}
-                </styled.select>
-                <Input
-                  flex="1"
-                  type="text"
-                  value={prompt.text}
-                  placeholder="Prompt text shown to members"
-                  onChange={(e) => updatePrompt(index, { text: e.target.value })}
-                />
-                <Input
-                  width="32"
-                  type="text"
-                  value={prompt.tag ?? ""}
-                  placeholder="Tag (optional)"
-                  onChange={(e) => updatePrompt(index, { tag: e.target.value })}
-                />
-                <IconButton
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  aria-label="Remove prompt"
-                  onClick={() => removePrompt(index)}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </HStack>
+              <LStack
+                key={index}
+                gap="2"
+                width="full"
+                p="3"
+                rounded="md"
+                style={{ border: "1px solid var(--colors-border-default)" }}
+              >
+                <HStack gap="2" width="full" alignItems="center">
+                  <styled.select
+                    value={prompt.icon}
+                    onChange={(e) =>
+                      updatePrompt(index, { icon: e.target.value })
+                    }
+                    rounded="sm"
+                    px="2"
+                    py="1.5"
+                    fontSize="sm"
+                    bg="bg.default"
+                    style={{ border: "1px solid var(--colors-border-default)" }}
+                  >
+                    {PROMPT_ICON_KEYS.map((key) => (
+                      <option key={key} value={key}>
+                        {key}
+                      </option>
+                    ))}
+                  </styled.select>
+                  <Input
+                    flex="1"
+                    type="text"
+                    value={prompt.text}
+                    placeholder="Prompt label shown to members"
+                    onChange={(e) =>
+                      updatePrompt(index, { text: e.target.value })
+                    }
+                  />
+                  <IconButton
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Remove prompt"
+                    onClick={() => removePrompt(index)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </HStack>
+                <HStack gap="2" width="full" alignItems="center">
+                  <Input
+                    flex="1"
+                    type="text"
+                    value={prompt.placeholder ?? ""}
+                    placeholder="Post box placeholder (optional)"
+                    onChange={(e) =>
+                      updatePrompt(index, { placeholder: e.target.value })
+                    }
+                  />
+                  <Input
+                    width="32"
+                    type="text"
+                    value={prompt.tag ?? ""}
+                    placeholder="Tag (optional)"
+                    onChange={(e) =>
+                      updatePrompt(index, { tag: e.target.value })
+                    }
+                  />
+                </HStack>
+              </LStack>
             ))}
             <Button type="button" variant="outline" size="sm" onClick={addPrompt}>
               <AddIcon />
@@ -300,9 +328,10 @@ export function ChannelSettingsScreen(props: Props) {
             </Button>
           </LStack>
           <FormHelperText>
-            Suggestions shown in the “Not sure what to post?” pill. Tapping one
-            opens the composer with the text as a placeholder; the optional tag
-            appears as a chip (e.g. “Just Started”).
+            The label appears in the “Not sure what to post?” pill. Tapping one
+            opens the composer with the placeholder shown in the post box; leave
+            it blank to reuse the label. The optional tag appears as a chip (e.g.
+            “Just Started”).
           </FormHelperText>
         </FormControl>
 

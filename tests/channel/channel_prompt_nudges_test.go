@@ -50,7 +50,7 @@ func TestChannelPromptNudges(t *testing.T) {
 
 			meta := openapi.Metadata{
 				"prompt_nudges": []any{
-					map[string]any{"icon": "kit", "text": "Just got my Kit 1 — starting today!"},
+					map[string]any{"icon": "kit", "text": "Just got my Kit 1 — starting today!", "placeholder": "Tell us how day one went..."},
 					map[string]any{"icon": "clock", "text": "When will I see results?"},
 				},
 			}
@@ -77,6 +77,11 @@ func TestChannelPromptNudges(t *testing.T) {
 			r.True(ok)
 			r.Equal("kit", first["icon"])
 			r.Equal("Just got my Kit 1 — starting today!", first["text"])
+			r.Equal("Tell us how day one went...", first["placeholder"])
+
+			second, ok := nudges[1].(map[string]any)
+			r.True(ok)
+			r.Nil(second["placeholder"], "placeholder is omitted when not set")
 		}))
 	}))
 }
