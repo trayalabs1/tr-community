@@ -10,6 +10,14 @@ export interface SubmitTipArgs {
   hasImage?: boolean;
 }
 
+const escapeHtml = (s: string): string =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+function buildTipBody(topicTitle: string, text: string): string {
+  const body = escapeHtml(text.trim()).replace(/\n/g, "<br/>");
+  return `<p><strong>${escapeHtml(topicTitle)}</strong></p><p>${body}</p>`;
+}
+
 export async function submitTip({
   topicId,
   topicTitle,
@@ -24,8 +32,8 @@ export async function submitTip({
     }
 
     await channelThreadCreate(channel.id, {
-      title: topicTitle,
-      body: text.trim(),
+      title: "Tip",
+      body: buildTipBody(topicTitle, text),
       visibility: Visibility.review,
       meta: {
         post_category: "tip",
