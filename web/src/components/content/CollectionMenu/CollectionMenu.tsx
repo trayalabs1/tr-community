@@ -13,9 +13,37 @@ import { useDisclosure } from "@/utils/useDisclosure";
 
 import { CollectionCreateTrigger } from "../CollectionCreate/CollectionCreateTrigger";
 
-import { Props, useCollectionMenu, useQuickSave } from "./useCollectionMenu";
+import {
+  Props,
+  useCollectionMenu,
+  useQuickSave,
+  useToggleSave,
+} from "./useCollectionMenu";
+
+const ENABLE_COLLECTION_MENU = false;
 
 export function CollectionMenu(props: Props) {
+  if (ENABLE_COLLECTION_MENU) {
+    return <CollectionMenuWithPicker {...props} />;
+  }
+
+  return <CollectionToggle {...props} />;
+}
+
+function CollectionToggle(props: Props) {
+  const { isSaved, onToggle } = useToggleSave(props);
+
+  return (
+    <BookmarkAction
+      variant="subtle"
+      size="xs"
+      bookmarked={isSaved}
+      onClick={onToggle}
+    />
+  );
+}
+
+function CollectionMenuWithPicker(props: Props) {
   const [multiSelect, setMultiSelect] = useState(false);
   const [selected, setSelected] = useState(0);
   const quickSave = useQuickSave(props);
