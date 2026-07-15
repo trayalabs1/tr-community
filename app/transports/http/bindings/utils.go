@@ -12,6 +12,7 @@ import (
 	"github.com/rs/xid"
 
 	"github.com/Southclaws/storyden/app/resources/account"
+	"github.com/Southclaws/storyden/app/resources/channel"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/mark"
 	"github.com/Southclaws/storyden/app/resources/pagination"
@@ -95,6 +96,7 @@ func serialiseThreadReference(t *thread.Thread) openapi.ThreadReference {
 
 		Category:        opt.Map(t.Category, serialiseCategoryReference).Ptr(),
 		ChannelId:       openapi.Identifier(t.ChannelID.String()),
+		Channel:         opt.Map(t.Channel, serialiseChannelReference).Ptr(),
 		ReferencePostId: opt.Map(t.ReferencePostID, func(id post.ID) openapi.Identifier { return openapi.Identifier(id.String()) }).Ptr(),
 		Visibility:      serialiseVisibility(t.Visibility),
 		Pinned:          t.Pinned,
@@ -110,6 +112,14 @@ func serialiseThreadReference(t *thread.Thread) openapi.ThreadReference {
 	}
 }
 
+func serialiseChannelReference(c channel.Channel) openapi.ChannelReference {
+	return openapi.ChannelReference{
+		Id:   openapi.Identifier(xid.ID(c.ID).String()),
+		Name: c.Name,
+		Slug: c.Slug,
+	}
+}
+
 func serialiseContentHTML(c datagraph.Content) string {
 	return c.HTML()
 }
@@ -121,6 +131,7 @@ func serialiseThread(t *thread.Thread) openapi.Thread {
 		Body:            serialiseContentHTML(t.Content),
 		Category:        opt.Map(t.Category, serialiseCategoryReference).Ptr(),
 		ChannelId:       openapi.Identifier(t.ChannelID.String()),
+		Channel:         opt.Map(t.Channel, serialiseChannelReference).Ptr(),
 		ReferencePostId: opt.Map(t.ReferencePostID, func(id post.ID) openapi.Identifier { return openapi.Identifier(id.String()) }).Ptr(),
 		Likes:           serialiseLikeStatus(&t.Likes),
 		Collections:     serialiseCollectionStatus(t.Collections),
@@ -189,8 +200,9 @@ func serialiseReplyPtr(p *reply.Reply) openapi.Reply {
 		Likes:       serialiseLikeStatus(&p.Likes),
 		Reacts:      dt.Map(p.Reacts, serialiseReact),
 		Meta:        (*openapi.Metadata)(&p.Meta),
-		Assets:      dt.Map(p.Assets, serialiseAssetPtr),
-		ReplyTo:     opt.Map(p.ReplyTo, serialiseReply).Ptr(),
+		Assets:        dt.Map(p.Assets, serialiseAssetPtr),
+		ReplyTo:       opt.Map(p.ReplyTo, serialiseReply).Ptr(),
+		CohortChannel: opt.Map(p.CohortChannel, serialiseChannelReference).Ptr(),
 	}
 }
 

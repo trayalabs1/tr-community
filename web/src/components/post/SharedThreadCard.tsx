@@ -196,6 +196,10 @@ function NestedOriginalThread({ threadId }: NestedOriginalThreadProps) {
 
   const firstImageUrl = getFirstImageFromBody(original.body);
 
+  const fromLabel = original.channel?.name
+    ? `From #${original.channel.name}`
+    : "From the original thread";
+
   return (
     <Link href={permalink} style={{ textDecoration: "none" }}>
       <styled.div
@@ -238,7 +242,7 @@ function NestedOriginalThread({ threadId }: NestedOriginalThreadProps) {
             fontWeight="medium"
             style={{ color: TRAYA_COLORS.primary }}
           >
-            From the original thread
+            {fromLabel}
           </styled.span>
         </styled.div>
 
