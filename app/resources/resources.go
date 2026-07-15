@@ -57,6 +57,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/post/reply_writer"
 	"github.com/Southclaws/storyden/app/resources/post/thread_cache"
 	"github.com/Southclaws/storyden/app/resources/post/thread_querier"
+	"github.com/Southclaws/storyden/app/resources/post/thread_share"
 	"github.com/Southclaws/storyden/app/resources/post/thread_writer"
 	"github.com/Southclaws/storyden/app/resources/profile/follow_querier"
 	"github.com/Southclaws/storyden/app/resources/profile/follow_writer"
@@ -103,6 +104,7 @@ func Build() fx.Option {
 			thread_writer.New,
 			thread_querier.New,
 			thread_cache.New,
+			thread_share.New,
 			reaction.New,
 			poll_vote.New,
 			like_querier.New,

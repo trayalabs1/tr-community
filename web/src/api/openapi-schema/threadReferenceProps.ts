@@ -8,9 +8,11 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
  * OpenAPI spec version: v1.25.13-canary
  */
 import type { CategoryReference } from "./categoryReference";
+import type { ChannelReference } from "./channelReference";
 import type { Identifier } from "./identifier";
 import type { LinkReference } from "./linkReference";
 import type { PinnedRank } from "./pinnedRank";
+import type { ProfileReference } from "./profileReference";
 import type { QuickReplyChips } from "./quickReplyChips";
 import type { ReadStatus } from "./readStatus";
 import type { ReplyStatus } from "./replyStatus";
@@ -26,5 +28,20 @@ export interface ThreadReferenceProps {
   quick_reply_chips?: QuickReplyChips;
   read_status?: ReadStatus;
   reply_status: ReplyStatus;
+  /** Present only when this thread is being rendered as a shared card
+in a destination channel's feed. The administrator who shared the
+thread into this channel.
+ */
+  shared_by?: ProfileReference;
+  /** Present only when this thread is being rendered as a shared card
+in a destination channel's feed. Identifies the channel the
+thread originated from.
+ */
+  shared_from?: ChannelReference;
+  /** Present only when this thread is being rendered as a shared card
+in a destination channel's feed. Set per-destination when the
+thread was shared.
+ */
+  subtitle?: string;
   tags: TagReferenceList;
 }

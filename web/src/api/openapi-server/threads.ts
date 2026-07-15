@@ -21,6 +21,11 @@ import type {
   ThreadGetResponse,
   ThreadListOKResponse,
   ThreadListParams,
+  ThreadShareCreateBody,
+  ThreadShareCreateOKResponse,
+  ThreadShareListOKResponse,
+  ThreadSharePinBody,
+  ThreadSharePinOKResponse,
   ThreadStatsDailyUsersOKResponse,
   ThreadUpdateBody,
   ThreadUpdateOKResponse,
@@ -298,6 +303,39 @@ export const channelReplyCreate = async (
 };
 
 /**
+ * Toggle the pinned state of a thread share within this destination
+channel. This only affects the pin for this channel's cohort feed
+and does not change the thread's pin state in its origin channel.
+Requires ADMINISTRATOR permission.
+
+ */
+export type threadSharePinResponse = {
+  data: ThreadSharePinOKResponse;
+  status: number;
+};
+
+export const getThreadSharePinUrl = (channelID: string, threadMark: string) => {
+  return `/channels/${channelID}/threads/${threadMark}/pin`;
+};
+
+export const threadSharePin = async (
+  channelID: string,
+  threadMark: string,
+  threadSharePinBody: ThreadSharePinBody,
+  options?: RequestInit,
+): Promise<threadSharePinResponse> => {
+  return fetcher<Promise<threadSharePinResponse>>(
+    getThreadSharePinUrl(channelID, threadMark),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(threadSharePinBody),
+    },
+  );
+};
+
+/**
  * Create a new thread within the specified category.
  */
 export type threadCreateResponse = {
@@ -506,6 +544,94 @@ export const threadVotePoll = async (
       method: "POST",
       headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(pollVoteBody),
+    },
+  );
+};
+
+/**
+ * Share a thread into one or more destination channels so it appears in
+each channel's feed as a shared card. A single subtitle, if provided,
+is applied to all destinations in this request. Requires ADMINISTRATOR
+permission.
+
+ */
+export type threadShareCreateResponse = {
+  data: ThreadShareCreateOKResponse;
+  status: number;
+};
+
+export const getThreadShareCreateUrl = (threadMark: string) => {
+  return `/threads/${threadMark}/shares`;
+};
+
+export const threadShareCreate = async (
+  threadMark: string,
+  threadShareCreateBody: ThreadShareCreateBody,
+  options?: RequestInit,
+): Promise<threadShareCreateResponse> => {
+  return fetcher<Promise<threadShareCreateResponse>>(
+    getThreadShareCreateUrl(threadMark),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(threadShareCreateBody),
+    },
+  );
+};
+
+/**
+ * Get a list of channels a thread is currently shared into.
+ */
+export type threadShareListResponse = {
+  data: ThreadShareListOKResponse;
+  status: number;
+};
+
+export const getThreadShareListUrl = (threadMark: string) => {
+  return `/threads/${threadMark}/shares`;
+};
+
+export const threadShareList = async (
+  threadMark: string,
+  options?: RequestInit,
+): Promise<threadShareListResponse> => {
+  return fetcher<Promise<threadShareListResponse>>(
+    getThreadShareListUrl(threadMark),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Unshare a thread from a destination channel. Requires ADMINISTRATOR
+permission.
+
+ */
+export type threadShareDeleteResponse = {
+  data: void;
+  status: number;
+};
+
+export const getThreadShareDeleteUrl = (
+  threadMark: string,
+  channelID: string,
+) => {
+  return `/threads/${threadMark}/shares/${channelID}`;
+};
+
+export const threadShareDelete = async (
+  threadMark: string,
+  channelID: string,
+  options?: RequestInit,
+): Promise<threadShareDeleteResponse> => {
+  return fetcher<Promise<threadShareDeleteResponse>>(
+    getThreadShareDeleteUrl(threadMark, channelID),
+    {
+      ...options,
+      method: "DELETE",
     },
   );
 };

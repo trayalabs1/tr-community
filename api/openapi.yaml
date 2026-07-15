@@ -1897,6 +1897,27 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "200": { $ref: "#/components/responses/ReplyCreateOK" }
 
+  /channels/{channelID}/threads/{thread_mark}/pin:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+      - $ref: "#/components/parameters/ThreadMarkParam"
+    put:
+      operationId: ThreadSharePin
+      description: |
+        Toggle the pinned state of a thread share within this destination
+        channel. This only affects the pin for this channel's cohort feed
+        and does not change the thread's pin state in its origin channel.
+        Requires ADMINISTRATOR permission.
+      tags: [channels, threads]
+      requestBody: { $ref: "#/components/requestBodies/ThreadSharePin" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadSharePinOK" }
+
   /channels/{channelID}/ranking/recalculate:
     parameters:
       - $ref: "#/components/parameters/ChannelID"
@@ -2327,6 +2348,52 @@ paths:
           $ref: '#/components/responses/ThreadVotePollOK'
         default:
           $ref: '#/components/responses/InternalServerError'
+
+  /threads/{thread_mark}/shares:
+    parameters:
+      - $ref: "#/components/parameters/ThreadMarkParam"
+    post:
+      operationId: ThreadShareCreate
+      description: |
+        Share a thread into one or more destination channels so it appears in
+        each channel's feed as a shared card. A single subtitle, if provided,
+        is applied to all destinations in this request. Requires ADMINISTRATOR
+        permission.
+      tags: [threads]
+      requestBody: { $ref: "#/components/requestBodies/ThreadShareCreate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadShareCreateOK" }
+    get:
+      operationId: ThreadShareList
+      description: Get a list of channels a thread is currently shared into.
+      tags: [threads]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadShareListOK" }
+
+  /threads/{thread_mark}/shares/{channelID}:
+    parameters:
+      - $ref: "#/components/parameters/ThreadMarkParam"
+      - $ref: "#/components/parameters/ChannelID"
+    delete:
+      operationId: ThreadShareDelete
+      description: |
+        Unshare a thread from a destination channel. Requires ADMINISTRATOR
+        permission.
+      tags: [threads]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { description: OK }
 
   #
   #                            888
@@ -3978,6 +4045,16 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/ThreadMutableProps" }
 
+    ThreadShareCreate:
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ThreadShareCreateProps" }
+
+    ThreadSharePin:
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ThreadSharePinProps" }
+
     ReplyCreate:
       description: Create a reply, which is a post within a thread.
       content:
@@ -4492,6 +4569,25 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/ThreadListResult" }
+
+    ThreadShareCreateOK:
+      description: Thread shared into the requested channels.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Thread"
+
+    ThreadShareListOK:
+      description: List of channels a thread is currently shared into.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ThreadShareListResult" }
+
+    ThreadSharePinOK:
+      description: Thread share pin state updated.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ThreadShare" }
 
     ThreadStatsDailyUsersOK:
       description: Count of unique authors who posted threads today (IST).
@@ -7148,6 +7244,54 @@ components:
         visibility: { $ref: "#/components/schemas/Visibility" }
         url: { $ref: "#/components/schemas/URL" }
 
+    ThreadShareCreateProps:
+      type: object
+      description: |
+        Share a thread into one or more destination channels. The subtitle,
+        if provided, is applied to all destinations in this request.
+      required: [channels]
+      properties:
+        channels:
+          type: array
+          items: { $ref: "#/components/schemas/Identifier" }
+          description: The destination channels to share the thread into.
+        subtitle:
+          type: string
+          description: Optional subtitle shown alongside the shared thread card.
+
+    ThreadSharePinProps:
+      type: object
+      required: [pinned]
+      properties:
+        pinned:
+          type: boolean
+          description: Whether the thread share should be pinned in this channel.
+
+    ThreadShare:
+      type: object
+      description: |
+        A single destination that a thread has been shared into, along with
+        the per-destination subtitle and pin state.
+      required: [channel, pinned]
+      properties:
+        channel: { $ref: "#/components/schemas/ChannelReference" }
+        subtitle:
+          type: string
+          description: Optional subtitle shown alongside the shared thread card.
+        pinned:
+          type: boolean
+          description: Whether the thread share is pinned in this channel.
+
+    ThreadShareList:
+      type: array
+      items: { $ref: "#/components/schemas/ThreadShare" }
+
+    ThreadShareListResult:
+      type: object
+      required: [shares]
+      properties:
+        shares: { $ref: "#/components/schemas/ThreadShareList" }
+
     ThreadReference:
       type: object
       description: |
@@ -7182,6 +7326,24 @@ components:
           format: date-time
           description: The time of the last reply to the thread.
         quick_reply_chips: { $ref: "#/components/schemas/QuickReplyChips" }
+        subtitle:
+          type: string
+          description: |
+            Present only when this thread is being rendered as a shared card
+            in a destination channel's feed. Set per-destination when the
+            thread was shared.
+        shared_from:
+          $ref: "#/components/schemas/ChannelReference"
+          description: |
+            Present only when this thread is being rendered as a shared card
+            in a destination channel's feed. Identifies the channel the
+            thread originated from.
+        shared_by:
+          $ref: "#/components/schemas/ProfileReference"
+          description: |
+            Present only when this thread is being rendered as a shared card
+            in a destination channel's feed. The administrator who shared the
+            thread into this channel.
 
     QuickReplyChips:
       type: object
@@ -7363,6 +7525,9 @@ components:
         root_id: { $ref: "#/components/schemas/Identifier" }
         root_slug: { $ref: "#/components/schemas/ThreadMark" }
         reply_to: { $ref: "#/components/schemas/Reply" }
+        origin_channel:
+          $ref: "#/components/schemas/ChannelReference"
+          description: The channel this reply was posted from, if applicable.
 
     ReplyInitialProps:
       type: object

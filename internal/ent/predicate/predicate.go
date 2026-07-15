@@ -116,3 +116,6 @@ type Setting func(*sql.Selector)
 
 // Tag is the predicate function for tag builders.
 type Tag func(*sql.Selector)
+
+// ThreadShare is the predicate function for threadshare builders.
+type ThreadShare func(*sql.Selector)

@@ -3,6 +3,7 @@ package reply
 
 import (
 	"github.com/Southclaws/opt"
+	"github.com/rs/xid"
 	"go.uber.org/fx"
 
 	"github.com/Southclaws/storyden/app/resources/account/account_querier"
@@ -27,6 +28,12 @@ type Partial struct {
 	ReplyTo    opt.Optional[post.ID]
 	Meta       opt.Optional[map[string]any]
 	Visibility opt.Optional[visibility.Visibility]
+
+	// OriginChannelID records the cohort a reply was actually posted from, which
+	// may differ from the root thread's own channel when the thread has been
+	// shared into another channel. When unset, the reply inherits the root
+	// thread's channel (the historical behaviour).
+	OriginChannelID opt.Optional[xid.ID]
 }
 
 func (p Partial) Opts() (opts []reply_writer.Option) {
@@ -34,6 +41,7 @@ func (p Partial) Opts() (opts []reply_writer.Option) {
 	p.ReplyTo.Call(func(v post.ID) { opts = append(opts, reply_writer.WithReplyTo(v)) })
 	p.Meta.Call(func(v map[string]any) { opts = append(opts, reply_writer.WithMeta(v)) })
 	p.Visibility.Call(func(v visibility.Visibility) { opts = append(opts, reply_writer.WithVisibility(v)) })
+	p.OriginChannelID.Call(func(v xid.ID) { opts = append(opts, reply_writer.WithChannel(v)) })
 	return
 }
 

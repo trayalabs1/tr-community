@@ -112,6 +112,10 @@ func (Post) Edges() []ent.Edge {
 			Annotations(entsql.OnDelete(entsql.SetNull)).
 			Comment("A many-to-many recursive self reference. The replyTo post is an optional post that this post is in reply to."),
 
+		edge.To("shares", ThreadShare.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)).
+			Comment("Interchannel shares that feature this root thread in other channels' feeds."),
+
 		edge.To("reacts", React.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 

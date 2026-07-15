@@ -38,6 +38,8 @@ import type {
   ThreadCreateOKResponse,
   ThreadGetResponse,
   ThreadListOKResponse,
+  ThreadSharePinBody,
+  ThreadSharePinOKResponse,
   ThreadStatsDailyUsersOKResponse,
   ThreadUpdateBody,
   ThreadUpdateOKResponse,
@@ -804,6 +806,39 @@ export const channelReplyCreate = async (
       method: "POST",
       headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(replyCreateBody),
+    },
+  );
+};
+
+/**
+ * Toggle the pinned state of a thread share within this destination
+channel. This only affects the pin for this channel's cohort feed
+and does not change the thread's pin state in its origin channel.
+Requires ADMINISTRATOR permission.
+
+ */
+export type threadSharePinResponse = {
+  data: ThreadSharePinOKResponse;
+  status: number;
+};
+
+export const getThreadSharePinUrl = (channelID: string, threadMark: string) => {
+  return `/channels/${channelID}/threads/${threadMark}/pin`;
+};
+
+export const threadSharePin = async (
+  channelID: string,
+  threadMark: string,
+  threadSharePinBody: ThreadSharePinBody,
+  options?: RequestInit,
+): Promise<threadSharePinResponse> => {
+  return fetcher<Promise<threadSharePinResponse>>(
+    getThreadSharePinUrl(channelID, threadMark),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(threadSharePinBody),
     },
   );
 };

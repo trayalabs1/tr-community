@@ -13,6 +13,7 @@ import {
   truncateBody,
 } from "@/components/report/ReportPostMenuItem";
 import { CancelAction } from "@/components/site/Action/Cancel";
+import { ThreadShareMenu } from "@/components/thread/ThreadShareMenu/ThreadShareMenu";
 import { DeleteIcon } from "@/components/ui/icons/Delete";
 import { EditIcon } from "@/components/ui/icons/Edit";
 import { LinkIcon } from "@/components/ui/icons/Link";
@@ -33,6 +34,9 @@ export function ThreadMenu(props: Props) {
     isConfirmingDelete,
     canPinThread,
     isThreadPinned,
+    canShareThread,
+    canPinInChannel,
+    isPinnedInChannel,
     handlers,
   } = useThreadMenu(props);
 
@@ -112,6 +116,28 @@ export function ThreadMenu(props: Props) {
                 </Menu.Item>
               )}
 
+              {canPinInChannel && !isPinnedInChannel && (
+                <Menu.Item
+                  value="pin-in-channel"
+                  onClick={handlers.handlePinInChannel}
+                >
+                  <HStack gap="1">
+                    <PinIcon /> Pin in this channel
+                  </HStack>
+                </Menu.Item>
+              )}
+
+              {canPinInChannel && isPinnedInChannel && (
+                <Menu.Item
+                  value="unpin-in-channel"
+                  onClick={handlers.handleUnpinInChannel}
+                >
+                  <HStack gap="1">
+                    <PinOffIcon /> Unpin in this channel
+                  </HStack>
+                </Menu.Item>
+              )}
+
               {isEditingEnabled && (
                 <Menu.Item value="edit" onClick={handlers.handleEdit}>
                   <HStack gap="1">
@@ -121,6 +147,8 @@ export function ThreadMenu(props: Props) {
               )}
 
               {isMovingEnabled && <CategoryMoveMenu thread={thread} />}
+
+              {canShareThread && <ThreadShareMenu thread={thread} />}
 
               {isDeletingEnabled &&
                 (isConfirmingDelete ? (

@@ -43,6 +43,13 @@ func Build() fx.Option {
 					return err
 				}
 
+				// When the reply was posted from a channel the thread was shared
+				// into, attribute it to that origin cohort rather than the root
+				// thread's own channel.
+				if origin, ok := evt.OriginChannelID.Get(); ok {
+					channelID = origin
+				}
+
 				if evt.ReplyAuthorID != evt.ThreadAuthorID {
 					err := notifier.Send(ctx,
 						evt.ThreadAuthorID,

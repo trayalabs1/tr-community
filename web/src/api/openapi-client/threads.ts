@@ -32,6 +32,11 @@ import type {
   ThreadGetResponse,
   ThreadListOKResponse,
   ThreadListParams,
+  ThreadShareCreateBody,
+  ThreadShareCreateOKResponse,
+  ThreadShareListOKResponse,
+  ThreadSharePinBody,
+  ThreadSharePinOKResponse,
   ThreadStatsDailyUsersOKResponse,
   ThreadUpdateBody,
   ThreadUpdateOKResponse,
@@ -586,6 +591,85 @@ export const useChannelReplyCreate = <
   };
 };
 /**
+ * Toggle the pinned state of a thread share within this destination
+channel. This only affects the pin for this channel's cohort feed
+and does not change the thread's pin state in its origin channel.
+Requires ADMINISTRATOR permission.
+
+ */
+export const threadSharePin = (
+  channelID: string,
+  threadMark: string,
+  threadSharePinBody: ThreadSharePinBody,
+) => {
+  return fetcher<ThreadSharePinOKResponse>({
+    url: `/channels/${channelID}/threads/${threadMark}/pin`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: threadSharePinBody,
+  });
+};
+
+export const getThreadSharePinMutationFetcher = (
+  channelID: string,
+  threadMark: string,
+) => {
+  return (
+    _: Key,
+    { arg }: { arg: ThreadSharePinBody },
+  ): Promise<ThreadSharePinOKResponse> => {
+    return threadSharePin(channelID, threadMark, arg);
+  };
+};
+export const getThreadSharePinMutationKey = (
+  channelID: string,
+  threadMark: string,
+) => [`/channels/${channelID}/threads/${threadMark}/pin`] as const;
+
+export type ThreadSharePinMutationResult = NonNullable<
+  Awaited<ReturnType<typeof threadSharePin>>
+>;
+export type ThreadSharePinMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useThreadSharePin = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  threadMark: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof threadSharePin>>,
+      TError,
+      Key,
+      ThreadSharePinBody,
+      Awaited<ReturnType<typeof threadSharePin>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getThreadSharePinMutationKey(channelID, threadMark);
+  const swrFn = getThreadSharePinMutationFetcher(channelID, threadMark);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
  * Create a new thread within the specified category.
  */
 export const threadCreate = (threadCreateBody: ThreadCreateBody) => {
@@ -973,6 +1057,199 @@ export const useThreadVotePoll = <TError = InternalServerErrorResponse>(
 
   const swrKey = swrOptions?.swrKey ?? getThreadVotePollMutationKey(threadMark);
   const swrFn = getThreadVotePollMutationFetcher(threadMark);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Share a thread into one or more destination channels so it appears in
+each channel's feed as a shared card. A single subtitle, if provided,
+is applied to all destinations in this request. Requires ADMINISTRATOR
+permission.
+
+ */
+export const threadShareCreate = (
+  threadMark: string,
+  threadShareCreateBody: ThreadShareCreateBody,
+) => {
+  return fetcher<ThreadShareCreateOKResponse>({
+    url: `/threads/${threadMark}/shares`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: threadShareCreateBody,
+  });
+};
+
+export const getThreadShareCreateMutationFetcher = (threadMark: string) => {
+  return (
+    _: Key,
+    { arg }: { arg: ThreadShareCreateBody },
+  ): Promise<ThreadShareCreateOKResponse> => {
+    return threadShareCreate(threadMark, arg);
+  };
+};
+export const getThreadShareCreateMutationKey = (threadMark: string) =>
+  [`/threads/${threadMark}/shares`] as const;
+
+export type ThreadShareCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof threadShareCreate>>
+>;
+export type ThreadShareCreateMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useThreadShareCreate = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  threadMark: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof threadShareCreate>>,
+      TError,
+      Key,
+      ThreadShareCreateBody,
+      Awaited<ReturnType<typeof threadShareCreate>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getThreadShareCreateMutationKey(threadMark);
+  const swrFn = getThreadShareCreateMutationFetcher(threadMark);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Get a list of channels a thread is currently shared into.
+ */
+export const threadShareList = (threadMark: string) => {
+  return fetcher<ThreadShareListOKResponse>({
+    url: `/threads/${threadMark}/shares`,
+    method: "GET",
+  });
+};
+
+export const getThreadShareListKey = (threadMark: string) =>
+  [`/threads/${threadMark}/shares`] as const;
+
+export type ThreadShareListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof threadShareList>>
+>;
+export type ThreadShareListQueryError =
+  | UnauthorisedResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useThreadShareList = <
+  TError =
+    | UnauthorisedResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  threadMark: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof threadShareList>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false && !!threadMark;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getThreadShareListKey(threadMark) : null));
+  const swrFn = () => threadShareList(threadMark);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Unshare a thread from a destination channel. Requires ADMINISTRATOR
+permission.
+
+ */
+export const threadShareDelete = (threadMark: string, channelID: string) => {
+  return fetcher<void>({
+    url: `/threads/${threadMark}/shares/${channelID}`,
+    method: "DELETE",
+  });
+};
+
+export const getThreadShareDeleteMutationFetcher = (
+  threadMark: string,
+  channelID: string,
+) => {
+  return (_: Key, __: { arg: Arguments }): Promise<void> => {
+    return threadShareDelete(threadMark, channelID);
+  };
+};
+export const getThreadShareDeleteMutationKey = (
+  threadMark: string,
+  channelID: string,
+) => [`/threads/${threadMark}/shares/${channelID}`] as const;
+
+export type ThreadShareDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof threadShareDelete>>
+>;
+export type ThreadShareDeleteMutationError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useThreadShareDelete = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  threadMark: string,
+  channelID: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof threadShareDelete>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof threadShareDelete>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ??
+    getThreadShareDeleteMutationKey(threadMark, channelID);
+  const swrFn = getThreadShareDeleteMutationFetcher(threadMark, channelID);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

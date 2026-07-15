@@ -19,6 +19,7 @@ import { useReplyContext } from "../ReplyContext";
 export type Props = {
   initialSession?: Account;
   thread: Thread;
+  channelID?: string;
 };
 
 type ReplyLocationState = {
@@ -32,13 +33,14 @@ export const FormSchema = z.object({
 });
 export type Form = z.infer<typeof FormSchema>;
 
-export function useReplyBox({ initialSession, thread }: Props) {
+export function useReplyBox({ initialSession, thread, channelID }: Props) {
   const session = useSession(initialSession);
   const { replyTo, clearReplyTo } = useReplyContext();
   const { createReply, revalidate } = useThreadMutations(
     thread,
     thread.replies.current_page,
     thread.replies.total_pages,
+    channelID,
   );
   const { trackCardReply, trackAdminReplied } = useEventTracking();
   const [resetKey, setResetKey] = useState("");

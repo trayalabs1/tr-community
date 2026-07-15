@@ -49,6 +49,8 @@ import type {
   ThreadCreateOKResponse,
   ThreadGetResponse,
   ThreadListOKResponse,
+  ThreadSharePinBody,
+  ThreadSharePinOKResponse,
   ThreadStatsDailyUsersOKResponse,
   ThreadUpdateBody,
   ThreadUpdateOKResponse,
@@ -1713,6 +1715,85 @@ export const useChannelReplyCreate = <
     swrOptions?.swrKey ??
     getChannelReplyCreateMutationKey(channelID, threadMark);
   const swrFn = getChannelReplyCreateMutationFetcher(channelID, threadMark);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Toggle the pinned state of a thread share within this destination
+channel. This only affects the pin for this channel's cohort feed
+and does not change the thread's pin state in its origin channel.
+Requires ADMINISTRATOR permission.
+
+ */
+export const threadSharePin = (
+  channelID: string,
+  threadMark: string,
+  threadSharePinBody: ThreadSharePinBody,
+) => {
+  return fetcher<ThreadSharePinOKResponse>({
+    url: `/channels/${channelID}/threads/${threadMark}/pin`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: threadSharePinBody,
+  });
+};
+
+export const getThreadSharePinMutationFetcher = (
+  channelID: string,
+  threadMark: string,
+) => {
+  return (
+    _: Key,
+    { arg }: { arg: ThreadSharePinBody },
+  ): Promise<ThreadSharePinOKResponse> => {
+    return threadSharePin(channelID, threadMark, arg);
+  };
+};
+export const getThreadSharePinMutationKey = (
+  channelID: string,
+  threadMark: string,
+) => [`/channels/${channelID}/threads/${threadMark}/pin`] as const;
+
+export type ThreadSharePinMutationResult = NonNullable<
+  Awaited<ReturnType<typeof threadSharePin>>
+>;
+export type ThreadSharePinMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useThreadSharePin = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  threadMark: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof threadSharePin>>,
+      TError,
+      Key,
+      ThreadSharePinBody,
+      Awaited<ReturnType<typeof threadSharePin>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getThreadSharePinMutationKey(channelID, threadMark);
+  const swrFn = getThreadSharePinMutationFetcher(channelID, threadMark);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

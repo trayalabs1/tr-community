@@ -27,6 +27,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/predicate"
 	"github.com/Southclaws/storyden/internal/ent/react"
 	"github.com/Southclaws/storyden/internal/ent/tag"
+	"github.com/Southclaws/storyden/internal/ent/threadshare"
 	"github.com/rs/xid"
 )
 
@@ -439,6 +440,21 @@ func (_u *PostUpdate) AddReplies(v ...*Post) *PostUpdate {
 	return _u.AddReplyIDs(ids...)
 }
 
+// AddShareIDs adds the "shares" edge to the ThreadShare entity by IDs.
+func (_u *PostUpdate) AddShareIDs(ids ...xid.ID) *PostUpdate {
+	_u.mutation.AddShareIDs(ids...)
+	return _u
+}
+
+// AddShares adds the "shares" edges to the ThreadShare entity.
+func (_u *PostUpdate) AddShares(v ...*ThreadShare) *PostUpdate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddShareIDs(ids...)
+}
+
 // AddReactIDs adds the "reacts" edge to the React entity by IDs.
 func (_u *PostUpdate) AddReactIDs(ids ...xid.ID) *PostUpdate {
 	_u.mutation.AddReactIDs(ids...)
@@ -694,6 +710,27 @@ func (_u *PostUpdate) RemoveReplies(v ...*Post) *PostUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReplyIDs(ids...)
+}
+
+// ClearShares clears all "shares" edges to the ThreadShare entity.
+func (_u *PostUpdate) ClearShares() *PostUpdate {
+	_u.mutation.ClearShares()
+	return _u
+}
+
+// RemoveShareIDs removes the "shares" edge to ThreadShare entities by IDs.
+func (_u *PostUpdate) RemoveShareIDs(ids ...xid.ID) *PostUpdate {
+	_u.mutation.RemoveShareIDs(ids...)
+	return _u
+}
+
+// RemoveShares removes "shares" edges to ThreadShare entities.
+func (_u *PostUpdate) RemoveShares(v ...*ThreadShare) *PostUpdate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveShareIDs(ids...)
 }
 
 // ClearReacts clears all "reacts" edges to the React entity.
@@ -1282,6 +1319,51 @@ func (_u *PostUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SharesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(threadshare.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSharesIDs(); len(nodes) > 0 && !_u.mutation.SharesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(threadshare.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SharesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(threadshare.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -2169,6 +2251,21 @@ func (_u *PostUpdateOne) AddReplies(v ...*Post) *PostUpdateOne {
 	return _u.AddReplyIDs(ids...)
 }
 
+// AddShareIDs adds the "shares" edge to the ThreadShare entity by IDs.
+func (_u *PostUpdateOne) AddShareIDs(ids ...xid.ID) *PostUpdateOne {
+	_u.mutation.AddShareIDs(ids...)
+	return _u
+}
+
+// AddShares adds the "shares" edges to the ThreadShare entity.
+func (_u *PostUpdateOne) AddShares(v ...*ThreadShare) *PostUpdateOne {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddShareIDs(ids...)
+}
+
 // AddReactIDs adds the "reacts" edge to the React entity by IDs.
 func (_u *PostUpdateOne) AddReactIDs(ids ...xid.ID) *PostUpdateOne {
 	_u.mutation.AddReactIDs(ids...)
@@ -2424,6 +2521,27 @@ func (_u *PostUpdateOne) RemoveReplies(v ...*Post) *PostUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReplyIDs(ids...)
+}
+
+// ClearShares clears all "shares" edges to the ThreadShare entity.
+func (_u *PostUpdateOne) ClearShares() *PostUpdateOne {
+	_u.mutation.ClearShares()
+	return _u
+}
+
+// RemoveShareIDs removes the "shares" edge to ThreadShare entities by IDs.
+func (_u *PostUpdateOne) RemoveShareIDs(ids ...xid.ID) *PostUpdateOne {
+	_u.mutation.RemoveShareIDs(ids...)
+	return _u
+}
+
+// RemoveShares removes "shares" edges to ThreadShare entities.
+func (_u *PostUpdateOne) RemoveShares(v ...*ThreadShare) *PostUpdateOne {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveShareIDs(ids...)
 }
 
 // ClearReacts clears all "reacts" edges to the React entity.
@@ -3042,6 +3160,51 @@ func (_u *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SharesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(threadshare.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSharesIDs(); len(nodes) > 0 && !_u.mutation.SharesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(threadshare.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SharesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(threadshare.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

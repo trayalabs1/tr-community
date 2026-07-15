@@ -10,6 +10,7 @@ import (
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/asset"
+	"github.com/Southclaws/storyden/app/resources/channel"
 	"github.com/Southclaws/storyden/app/resources/collection/collection_item_status"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/link/link_ref"
@@ -42,6 +43,10 @@ type Thread struct {
 
 	SentimentTag opt.Optional[string]
 	PrimaryTopic opt.Optional[string]
+
+	Subtitle   opt.Optional[string]
+	SharedFrom opt.Optional[channel.Channel]
+	SharedBy   opt.Optional[profile.Ref]
 }
 
 type ThreadRef struct {

@@ -1350,6 +1350,29 @@ func HasRepliesWith(preds ...predicate.Post) predicate.Post {
 	})
 }
 
+// HasShares applies the HasEdge predicate on the "shares" edge.
+func HasShares() predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SharesTable, SharesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSharesWith applies the HasEdge predicate on the "shares" edge with a given conditions (other predicates).
+func HasSharesWith(preds ...predicate.ThreadShare) predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := newSharesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasReacts applies the HasEdge predicate on the "reacts" edge.
 func HasReacts() predicate.Post {
 	return predicate.Post(func(s *sql.Selector) {

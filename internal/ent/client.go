@@ -53,6 +53,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/session"
 	"github.com/Southclaws/storyden/internal/ent/setting"
 	"github.com/Southclaws/storyden/internal/ent/tag"
+	"github.com/Southclaws/storyden/internal/ent/threadshare"
 
 	stdsql "database/sql"
 )
@@ -136,6 +137,8 @@ type Client struct {
 	Setting *SettingClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
+	// ThreadShare is the client for interacting with the ThreadShare builders.
+	ThreadShare *ThreadShareClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -184,6 +187,7 @@ func (c *Client) init() {
 	c.Session = NewSessionClient(c.config)
 	c.Setting = NewSettingClient(c.config)
 	c.Tag = NewTagClient(c.config)
+	c.ThreadShare = NewThreadShareClient(c.config)
 }
 
 type (
@@ -313,6 +317,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Session:             NewSessionClient(cfg),
 		Setting:             NewSettingClient(cfg),
 		Tag:                 NewTagClient(cfg),
+		ThreadShare:         NewThreadShareClient(cfg),
 	}, nil
 }
 
@@ -369,6 +374,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Session:             NewSessionClient(cfg),
 		Setting:             NewSettingClient(cfg),
 		Tag:                 NewTagClient(cfg),
+		ThreadShare:         NewThreadShareClient(cfg),
 	}, nil
 }
 
@@ -405,6 +411,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Notification, c.PollVote, c.Post, c.PostRead, c.PostSentiment, c.Property,
 		c.PropertySchema, c.PropertySchemaField, c.Question, c.React,
 		c.ReplyAdminQueue, c.Report, c.Role, c.Session, c.Setting, c.Tag,
+		c.ThreadShare,
 	} {
 		n.Use(hooks...)
 	}
@@ -421,6 +428,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Notification, c.PollVote, c.Post, c.PostRead, c.PostSentiment, c.Property,
 		c.PropertySchema, c.PropertySchemaField, c.Question, c.React,
 		c.ReplyAdminQueue, c.Report, c.Role, c.Session, c.Setting, c.Tag,
+		c.ThreadShare,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -503,6 +511,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Setting.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
+	case *ThreadShareMutation:
+		return c.ThreadShare.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -5321,6 +5331,22 @@ func (c *PostClient) QueryReplies(_m *Post) *PostQuery {
 	return query
 }
 
+// QueryShares queries the shares edge of a Post.
+func (c *PostClient) QueryShares(_m *Post) *ThreadShareQuery {
+	query := (&ThreadShareClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(threadshare.Table, threadshare.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, post.SharesTable, post.SharesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryReacts queries the reacts edge of a Post.
 func (c *PostClient) QueryReacts(_m *Post) *ReactQuery {
 	query := (&ReactClient{config: c.config}).Query()
@@ -7635,6 +7661,187 @@ func (c *TagClient) mutate(ctx context.Context, m *TagMutation) (Value, error) {
 	}
 }
 
+// ThreadShareClient is a client for the ThreadShare schema.
+type ThreadShareClient struct {
+	config
+}
+
+// NewThreadShareClient returns a client for the ThreadShare from the given config.
+func NewThreadShareClient(c config) *ThreadShareClient {
+	return &ThreadShareClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `threadshare.Hooks(f(g(h())))`.
+func (c *ThreadShareClient) Use(hooks ...Hook) {
+	c.hooks.ThreadShare = append(c.hooks.ThreadShare, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `threadshare.Intercept(f(g(h())))`.
+func (c *ThreadShareClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ThreadShare = append(c.inters.ThreadShare, interceptors...)
+}
+
+// Create returns a builder for creating a ThreadShare entity.
+func (c *ThreadShareClient) Create() *ThreadShareCreate {
+	mutation := newThreadShareMutation(c.config, OpCreate)
+	return &ThreadShareCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ThreadShare entities.
+func (c *ThreadShareClient) CreateBulk(builders ...*ThreadShareCreate) *ThreadShareCreateBulk {
+	return &ThreadShareCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ThreadShareClient) MapCreateBulk(slice any, setFunc func(*ThreadShareCreate, int)) *ThreadShareCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ThreadShareCreateBulk{err: fmt.Errorf("calling to ThreadShareClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ThreadShareCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ThreadShareCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ThreadShare.
+func (c *ThreadShareClient) Update() *ThreadShareUpdate {
+	mutation := newThreadShareMutation(c.config, OpUpdate)
+	return &ThreadShareUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ThreadShareClient) UpdateOne(_m *ThreadShare) *ThreadShareUpdateOne {
+	mutation := newThreadShareMutation(c.config, OpUpdateOne, withThreadShare(_m))
+	return &ThreadShareUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ThreadShareClient) UpdateOneID(id xid.ID) *ThreadShareUpdateOne {
+	mutation := newThreadShareMutation(c.config, OpUpdateOne, withThreadShareID(id))
+	return &ThreadShareUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ThreadShare.
+func (c *ThreadShareClient) Delete() *ThreadShareDelete {
+	mutation := newThreadShareMutation(c.config, OpDelete)
+	return &ThreadShareDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ThreadShareClient) DeleteOne(_m *ThreadShare) *ThreadShareDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ThreadShareClient) DeleteOneID(id xid.ID) *ThreadShareDeleteOne {
+	builder := c.Delete().Where(threadshare.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ThreadShareDeleteOne{builder}
+}
+
+// Query returns a query builder for ThreadShare.
+func (c *ThreadShareClient) Query() *ThreadShareQuery {
+	return &ThreadShareQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeThreadShare},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ThreadShare entity by its id.
+func (c *ThreadShareClient) Get(ctx context.Context, id xid.ID) (*ThreadShare, error) {
+	return c.Query().Where(threadshare.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ThreadShareClient) GetX(ctx context.Context, id xid.ID) *ThreadShare {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPost queries the post edge of a ThreadShare.
+func (c *ThreadShareClient) QueryPost(_m *ThreadShare) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(threadshare.Table, threadshare.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, threadshare.PostTable, threadshare.PostColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryChannel queries the channel edge of a ThreadShare.
+func (c *ThreadShareClient) QueryChannel(_m *ThreadShare) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(threadshare.Table, threadshare.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, threadshare.ChannelTable, threadshare.ChannelColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAccount queries the account edge of a ThreadShare.
+func (c *ThreadShareClient) QueryAccount(_m *ThreadShare) *AccountQuery {
+	query := (&AccountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(threadshare.Table, threadshare.FieldID, id),
+			sqlgraph.To(account.Table, account.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, threadshare.AccountTable, threadshare.AccountColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ThreadShareClient) Hooks() []Hook {
+	return c.hooks.ThreadShare
+}
+
+// Interceptors returns the client interceptors.
+func (c *ThreadShareClient) Interceptors() []Interceptor {
+	return c.inters.ThreadShare
+}
+
+func (c *ThreadShareClient) mutate(ctx context.Context, m *ThreadShareMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ThreadShareCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ThreadShareUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ThreadShareUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ThreadShareDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ThreadShare mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
@@ -7643,7 +7850,7 @@ type (
 		CollectionNode, CollectionPost, Email, Event, EventParticipant, Invitation,
 		LikePost, Link, MentionProfile, Node, Notification, PollVote, Post, PostRead,
 		PostSentiment, Property, PropertySchema, PropertySchemaField, Question, React,
-		ReplyAdminQueue, Report, Role, Session, Setting, Tag []ent.Hook
+		ReplyAdminQueue, Report, Role, Session, Setting, Tag, ThreadShare []ent.Hook
 	}
 	inters struct {
 		Account, AccountFollow, AccountRoles, AdminReplyTime, Asset, AuditLog,
@@ -7651,7 +7858,8 @@ type (
 		CollectionNode, CollectionPost, Email, Event, EventParticipant, Invitation,
 		LikePost, Link, MentionProfile, Node, Notification, PollVote, Post, PostRead,
 		PostSentiment, Property, PropertySchema, PropertySchemaField, Question, React,
-		ReplyAdminQueue, Report, Role, Session, Setting, Tag []ent.Interceptor
+		ReplyAdminQueue, Report, Role, Session, Setting, Tag,
+		ThreadShare []ent.Interceptor
 	}
 )
 

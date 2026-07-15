@@ -11,9 +11,15 @@ type Props = {
   initialSession?: Account;
   thread: Thread;
   currentPage?: number;
+  channelID?: string;
 };
 
-export function ReplyList({ initialSession, thread, currentPage }: Props) {
+export function ReplyList({
+  initialSession,
+  thread,
+  currentPage,
+  channelID,
+}: Props) {
   return (
     <styled.ol
       listStyleType="none"
@@ -33,7 +39,7 @@ export function ReplyList({ initialSession, thread, currentPage }: Props) {
             {start && <IntervalDivider interval={{ start, end }} />}
 
             <styled.li listStyleType="none" m="0">
-              <Reply initialSession={initialSession} thread={thread} reply={reply} currentPage={currentPage} />
+              <Reply initialSession={initialSession} thread={thread} reply={reply} currentPage={currentPage} channelID={channelID} />
             </styled.li>
           </Fragment>
         );

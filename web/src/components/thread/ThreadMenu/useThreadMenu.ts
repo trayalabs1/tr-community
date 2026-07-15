@@ -2,10 +2,12 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { parseAsBoolean, useQueryState } from "nuqs";
+import { useState } from "react";
 
 import { Permission, ThreadReference } from "src/api/openapi-schema";
 
 import { handle } from "@/api/client";
+import { threadSharePin } from "@/api/openapi-client/channels";
 import { useSession } from "@/auth";
 import { useConfirmation } from "@/components/site/useConfirmation";
 import { useFeedMutations } from "@/lib/feed/mutation";
@@ -23,6 +25,7 @@ export type Props = {
   editingEnabled?: boolean;
   movingEnabled?: boolean;
   onPinChange?: (pinned: boolean) => Promise<void>;
+  channelID?: string;
 };
 
 export function useThreadMenu({
@@ -30,6 +33,7 @@ export function useThreadMenu({
   editingEnabled,
   movingEnabled,
   onPinChange,
+  channelID,
 }: Props) {
   const router = useRouter();
   const account = useSession();
@@ -54,6 +58,13 @@ export function useThreadMenu({
     canDeletePost(thread, account) && thread.deletedAt === undefined;
   const canPinThread = hasPermission(account, Permission.MANAGE_POSTS);
   const isThreadPinned = (thread.pinned ?? 0) > 0;
+
+  const canShareThread = hasPermission(account, Permission.ADMINISTRATOR);
+  const canPinInChannel =
+    canShareThread && !!channelID && !!thread.shared_from;
+  const [isPinnedInChannel, setIsPinnedInChannel] = useState(
+    thread.shared_from !== undefined && (thread.pinned ?? 0) > 0,
+  );
 
   const permalink = getPermalinkForThread(thread.slug);
 
@@ -122,6 +133,34 @@ export function useThreadMenu({
     );
   }
 
+  async function handlePinInChannel() {
+    if (!channelID) return;
+
+    await handle(
+      async () => {
+        await threadSharePin(channelID, thread.slug, { pinned: true });
+        setIsPinnedInChannel(true);
+      },
+      {
+        cleanup: async () => await revalidate(),
+      },
+    );
+  }
+
+  async function handleUnpinInChannel() {
+    if (!channelID) return;
+
+    await handle(
+      async () => {
+        await threadSharePin(channelID, thread.slug, { pinned: false });
+        setIsPinnedInChannel(false);
+      },
+      {
+        cleanup: async () => await revalidate(),
+      },
+    );
+  }
+
   return {
     isSharingEnabled,
     isEditingEnabled,
@@ -130,6 +169,9 @@ export function useThreadMenu({
     isConfirmingDelete,
     canPinThread,
     isThreadPinned,
+    canShareThread,
+    canPinInChannel,
+    isPinnedInChannel,
     handlers: {
       handleCopyLink,
       handleShare,
@@ -138,6 +180,8 @@ export function useThreadMenu({
       handleCancelDelete,
       handlePinThread,
       handleUnpinThread,
+      handlePinInChannel,
+      handleUnpinInChannel,
     },
   };
 }

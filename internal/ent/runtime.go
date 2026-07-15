@@ -44,6 +44,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/session"
 	"github.com/Southclaws/storyden/internal/ent/setting"
 	"github.com/Southclaws/storyden/internal/ent/tag"
+	"github.com/Southclaws/storyden/internal/ent/threadshare"
 	"github.com/rs/xid"
 )
 
@@ -1388,6 +1389,45 @@ func init() {
 	// tag.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	tag.IDValidator = func() func(string) error {
 		validators := tagDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	threadshareMixin := schema.ThreadShare{}.Mixin()
+	threadshareMixinFields0 := threadshareMixin[0].Fields()
+	_ = threadshareMixinFields0
+	threadshareMixinFields1 := threadshareMixin[1].Fields()
+	_ = threadshareMixinFields1
+	threadshareFields := schema.ThreadShare{}.Fields()
+	_ = threadshareFields
+	// threadshareDescCreatedAt is the schema descriptor for created_at field.
+	threadshareDescCreatedAt := threadshareMixinFields1[0].Descriptor()
+	// threadshare.DefaultCreatedAt holds the default value on creation for the created_at field.
+	threadshare.DefaultCreatedAt = threadshareDescCreatedAt.Default.(func() time.Time)
+	// threadshareDescSubtitle is the schema descriptor for subtitle field.
+	threadshareDescSubtitle := threadshareFields[3].Descriptor()
+	// threadshare.DefaultSubtitle holds the default value on creation for the subtitle field.
+	threadshare.DefaultSubtitle = threadshareDescSubtitle.Default.(string)
+	// threadshareDescPinnedRank is the schema descriptor for pinned_rank field.
+	threadshareDescPinnedRank := threadshareFields[4].Descriptor()
+	// threadshare.DefaultPinnedRank holds the default value on creation for the pinned_rank field.
+	threadshare.DefaultPinnedRank = threadshareDescPinnedRank.Default.(int)
+	// threadshareDescID is the schema descriptor for id field.
+	threadshareDescID := threadshareMixinFields0[0].Descriptor()
+	// threadshare.DefaultID holds the default value on creation for the id field.
+	threadshare.DefaultID = threadshareDescID.Default.(func() xid.ID)
+	// threadshare.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	threadshare.IDValidator = func() func(string) error {
+		validators := threadshareDescID.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),

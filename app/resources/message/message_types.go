@@ -51,6 +51,9 @@ type EventThreadReplyCreated struct {
 	ReplyAuthorID   account.AccountID
 	ReplyToAuthorID opt.Optional[account.AccountID]
 	ReplyToTargetID opt.Optional[post.ID]
+	// OriginChannelID is the cohort the reply was posted from, which differs from
+	// the root thread's channel when the thread was shared into another channel.
+	OriginChannelID opt.Optional[xid.ID]
 }
 
 type EventThreadReplyDeleted struct {
@@ -67,6 +70,10 @@ type EventReplyRequiresAdminAttention struct {
 	ThreadID post.ID
 	ReplyID  post.ID
 	Snippet  string
+	// OriginChannelID is the cohort the reply was posted from, used to route the
+	// reply into the correct channel's moderation queue when the thread was
+	// shared into another channel.
+	OriginChannelID opt.Optional[xid.ID]
 }
 
 type EventAdminReplied struct {

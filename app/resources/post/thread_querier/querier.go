@@ -19,6 +19,7 @@ import (
 	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/Southclaws/storyden/internal/ent/predicate"
 	ent_tag "github.com/Southclaws/storyden/internal/ent/tag"
+	ent_threadshare "github.com/Southclaws/storyden/internal/ent/threadshare"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/spanner"
 )
 
@@ -55,9 +56,10 @@ type CategoryFilter struct {
 }
 
 type threadListOptions struct {
-	q                    *ent.PostQuery
-	ignorePinned         bool
-	useSentimentRanking  bool
+	q                   *ent.PostQuery
+	ignorePinned        bool
+	useSentimentRanking bool
+	channelID           opt.Optional[xid.ID]
 }
 
 type Query func(*threadListOptions)
@@ -183,7 +185,14 @@ func HasCategories(cf CategoryFilter) Query {
 
 func HasChannel(channelID xid.ID) Query {
 	return func(q *threadListOptions) {
-		q.q.Where(ent_post.ChannelID(channelID))
+		q.channelID = opt.New(channelID)
+		q.q.Where(ent_post.Or(
+			ent_post.ChannelID(channelID),
+			ent_post.HasSharesWith(
+				ent_threadshare.ChannelID(channelID),
+				ent_threadshare.DeletedAtIsNil(),
+			),
+		))
 	}
 }
 

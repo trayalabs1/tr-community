@@ -47,6 +47,7 @@ import (
 	"github.com/Southclaws/storyden/app/services/tag/autotagger"
 	"github.com/Southclaws/storyden/app/services/thread"
 	"github.com/Southclaws/storyden/app/services/thread_mark"
+	"github.com/Southclaws/storyden/app/services/thread_share"
 )
 
 func Build() fx.Option {
@@ -62,6 +63,7 @@ func Build() fx.Option {
 		channel.Build(),
 		channel_membership.Build(),
 		thread.Build(),
+		thread_share.Build(),
 		reply.Build(),
 		report.Build(),
 		post_liker.Build(),

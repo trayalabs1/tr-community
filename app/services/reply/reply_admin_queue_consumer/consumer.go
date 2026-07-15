@@ -31,6 +31,12 @@ func Build() fx.Option {
 					)
 				}
 
+				// Route into the origin cohort's moderation queue when the reply
+				// was posted from a channel the thread was shared into.
+				if origin, ok := evt.OriginChannelID.Get(); ok {
+					channelID = origin
+				}
+
 				_, err = writer.Enqueue(ctx, evt.ReplyID, evt.ThreadID, channelID, evt.Snippet)
 				return err
 			})

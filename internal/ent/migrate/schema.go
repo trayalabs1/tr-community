@@ -1394,6 +1394,64 @@ var (
 		Columns:    TagsColumns,
 		PrimaryKey: []*schema.Column{TagsColumns[0]},
 	}
+	// ThreadSharesColumns holds the columns for the "thread_shares" table.
+	ThreadSharesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "subtitle", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "pinned_rank", Type: field.TypeInt, Default: 0},
+		{Name: "pinned_at", Type: field.TypeTime, Nullable: true},
+		{Name: "post_id", Type: field.TypeString, Size: 20},
+		{Name: "channel_id", Type: field.TypeString, Size: 20},
+		{Name: "account_id", Type: field.TypeString, Size: 20},
+	}
+	// ThreadSharesTable holds the schema information for the "thread_shares" table.
+	ThreadSharesTable = &schema.Table{
+		Name:       "thread_shares",
+		Columns:    ThreadSharesColumns,
+		PrimaryKey: []*schema.Column{ThreadSharesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "thread_shares_posts_shares",
+				Columns:    []*schema.Column{ThreadSharesColumns[6]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "thread_shares_channels_channel",
+				Columns:    []*schema.Column{ThreadSharesColumns[7]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "thread_shares_accounts_account",
+				Columns:    []*schema.Column{ThreadSharesColumns[8]},
+				RefColumns: []*schema.Column{AccountsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "unique_thread_share",
+				Unique:  true,
+				Columns: []*schema.Column{ThreadSharesColumns[6], ThreadSharesColumns[7]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "deleted_at IS NULL",
+				},
+			},
+			{
+				Name:    "threadshare_channel_id_deleted_at",
+				Unique:  false,
+				Columns: []*schema.Column{ThreadSharesColumns[7], ThreadSharesColumns[2]},
+			},
+			{
+				Name:    "threadshare_account_id",
+				Unique:  false,
+				Columns: []*schema.Column{ThreadSharesColumns[8]},
+			},
+		},
+	}
 	// AccountTagsColumns holds the columns for the "account_tags" table.
 	AccountTagsColumns = []*schema.Column{
 		{Name: "account_id", Type: field.TypeString, Size: 20},
@@ -1633,6 +1691,7 @@ var (
 		SessionsTable,
 		SettingsTable,
 		TagsTable,
+		ThreadSharesTable,
 		AccountTagsTable,
 		LinkPostContentReferencesTable,
 		LinkNodeContentReferencesTable,
@@ -1714,6 +1773,9 @@ func init() {
 	ReportsTable.ForeignKeys[0].RefTable = AccountsTable
 	ReportsTable.ForeignKeys[1].RefTable = AccountsTable
 	SessionsTable.ForeignKeys[0].RefTable = AccountsTable
+	ThreadSharesTable.ForeignKeys[0].RefTable = PostsTable
+	ThreadSharesTable.ForeignKeys[1].RefTable = ChannelsTable
+	ThreadSharesTable.ForeignKeys[2].RefTable = AccountsTable
 	AccountTagsTable.ForeignKeys[0].RefTable = AccountsTable
 	AccountTagsTable.ForeignKeys[1].RefTable = TagsTable
 	LinkPostContentReferencesTable.ForeignKeys[0].RefTable = LinksTable
