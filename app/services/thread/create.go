@@ -12,6 +12,7 @@ import (
 	"github.com/Southclaws/fault/fctx"
 	"github.com/Southclaws/fault/fmsg"
 	"github.com/Southclaws/fault/ftag"
+	"github.com/Southclaws/opt"
 	"github.com/rs/xid"
 
 	"github.com/Southclaws/storyden/app/resources/account"
@@ -26,6 +27,8 @@ import (
 	"github.com/Southclaws/storyden/app/services/authentication/session"
 	"github.com/Southclaws/storyden/app/services/link/fetcher"
 	"github.com/Southclaws/storyden/app/services/moderation/checker"
+	"github.com/Southclaws/storyden/internal/ent"
+	ent_post "github.com/Southclaws/storyden/internal/ent/post"
 	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
 )
 
@@ -76,18 +79,11 @@ func (s *service) Create(ctx context.Context,
 		return nil, err
 	}
 
-	// A share references an existing root thread. Validate it exists and is a
-	// root (not a reply, and not itself a share).
+	// A share references an existing root thread. Validate the reference and
+	// the destination before creating the share post.
 	if refID, ok := partial.ReferenceID.Get(); ok {
-		ref, err := s.threadQuerier.Probe(ctx, post.ID(refID))
-		if err != nil {
-			return nil, fault.Wrap(err, fctx.With(ctx),
-				fmsg.WithDesc("reference not found", "The thread being shared does not exist."))
-		}
-		if ref.Root != post.ID(refID) {
-			return nil, fault.New("referenced post is not a root thread",
-				fctx.With(ctx), ftag.With(ftag.InvalidArgument),
-				fmsg.WithDesc("invalid reference", "Only a top-level thread can be shared."))
+		if err := s.validateShare(ctx, xid.ID(refID), partial.ChannelID); err != nil {
+			return nil, err
 		}
 	}
 
@@ -280,6 +276,62 @@ func (s *service) assignPrescoredSentiment(ctx context.Context, postID post.ID) 
 		Exec(ctx)
 	if err != nil {
 		return fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return nil
+}
+
+// validateShare enforces the rules for creating a share: the referenced post
+// must be a real root thread (not a reply, not itself a share), and the
+// destination channel must differ from the original's own channel and from any
+// channel it is already shared into.
+func (s *service) validateShare(ctx context.Context, refID xid.ID, dest opt.Optional[xid.ID]) error {
+	ref, err := s.db.Post.Get(ctx, refID)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.NotFound),
+				fmsg.WithDesc("reference not found", "The thread being shared does not exist."))
+		}
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+
+	if ref.RootPostID != nil {
+		return fault.New("referenced post is not a root thread",
+			fctx.With(ctx), ftag.With(ftag.InvalidArgument),
+			fmsg.WithDesc("invalid reference", "Only a top-level thread can be shared."))
+	}
+
+	if ref.ReferencePostID != nil {
+		return fault.New("referenced post is itself a share",
+			fctx.With(ctx), ftag.With(ftag.InvalidArgument),
+			fmsg.WithDesc("invalid reference", "A shared thread cannot be shared again."))
+	}
+
+	destChannel, ok := dest.Get()
+	if !ok {
+		return nil
+	}
+
+	if destChannel == ref.ChannelID {
+		return fault.New("shared into the thread's own channel",
+			fctx.With(ctx), ftag.With(ftag.InvalidArgument),
+			fmsg.WithDesc("invalid destination", "This thread already lives in that channel."))
+	}
+
+	exists, err := s.db.Post.Query().
+		Where(
+			ent_post.ReferencePostID(refID),
+			ent_post.ChannelID(destChannel),
+			ent_post.DeletedAtIsNil(),
+		).
+		Exist(ctx)
+	if err != nil {
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+	if exists {
+		return fault.New("thread already shared into this channel",
+			fctx.With(ctx), ftag.With(ftag.InvalidArgument),
+			fmsg.WithDesc("already shared", "This thread is already shared into that channel."))
 	}
 
 	return nil

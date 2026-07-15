@@ -55,7 +55,10 @@ export function useThreadMenu({
     canDeletePost(thread, account) && thread.deletedAt === undefined;
   const canPinThread = hasPermission(account, Permission.MANAGE_POSTS);
   const isThreadPinned = (thread.pinned ?? 0) > 0;
-  const canShareThread = hasPermission(account, Permission.ADMINISTRATOR);
+  // Admins can share, but a thread that is itself a share cannot be re-shared.
+  const canShareThread =
+    hasPermission(account, Permission.ADMINISTRATOR) &&
+    thread.reference_post_id === undefined;
 
   const permalink = getPermalinkForThread(thread.slug);
 
