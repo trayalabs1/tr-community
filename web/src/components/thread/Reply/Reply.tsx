@@ -3,6 +3,7 @@ import { Controller, ControllerProps } from "react-hook-form";
 
 import { Reply as ReplyType, Thread } from "@/api/openapi-schema";
 import { ContentComposer } from "@/components/content/ContentComposer/ContentComposer";
+import { CohortBadge } from "@/components/category/CohortBadge";
 import { MemberBadge } from "@/components/member/MemberBadge/MemberBadge";
 import { CancelAction } from "@/components/site/Action/Cancel";
 import { SaveAction } from "@/components/site/Action/Save";
@@ -68,6 +69,11 @@ export function Reply(props: Props) {
             time={new Date(reply.createdAt)}
             updated={new Date(reply.updatedAt)}
             absolute
+            more={
+              reply.cohort_channel ? (
+                <CohortBadge channel={reply.cohort_channel} />
+              ) : undefined
+            }
           />
 
           {isEditing ? (

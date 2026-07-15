@@ -111,6 +111,15 @@ func TestInterchannelThreadSharingPointer(t *testing.T) {
 				r.Nil(resp.JSON200.ReferencePostId)
 			})
 
+			t.Run("ThreadGet exposes the home channel name (for the shared card pill)", func(t *testing.T) {
+				// The share card names the source channel from the referenced
+				// thread's own payload — no separate (membership-gated) lookup.
+				resp, err := cl.ThreadGetWithResponse(root, originalID, nil, memberSession)
+				tests.Ok(t, err, resp)
+				r.NotNil(resp.JSON200.Channel, "thread must carry its home channel ref")
+				r.Equal("Month 8 Warriors", resp.JSON200.Channel.Name)
+			})
+
 			t.Run("cannot share into the thread's own channel", func(t *testing.T) {
 				resp, err := cl.ChannelThreadCreateWithResponse(root, sourceChannel, openapi.ThreadInitialProps{
 					Title:           "self share",
@@ -158,12 +167,46 @@ func TestInterchannelThreadSharingPointer(t *testing.T) {
 				r.GreaterOrEqual(resp.StatusCode(), 400, "like on a share row must be rejected")
 			})
 
+			// Member joins the source channel so they can reply on the original.
+			addSrc, err := cl.ChannelMemberAddWithResponse(root, sourceChannel, openapi.ChannelMemberAdd{
+				AccountId: openapi.Identifier(member.ID.String()),
+				Role:      openapi.ChannelMemberAddRoleMember,
+			}, adminSession)
+			tests.Ok(t, err, addSrc)
+
+			var memberReplyID string
+			var adminReplyID string
 			t.Run("interaction on the ORIGINAL still works — reply", func(t *testing.T) {
-				// Admin is a member of the source channel (created it).
-				resp, err := cl.ChannelReplyCreateWithResponse(root, sourceChannel, openapi.ThreadMark(originalSlug), openapi.ReplyInitialProps{
-					Body: "<p>reply on original</p>",
+				memberReply, err := cl.ChannelReplyCreateWithResponse(root, sourceChannel, openapi.ThreadMark(originalSlug), openapi.ReplyInitialProps{
+					Body: "<p>member reply</p>",
+				}, memberSession)
+				tests.Ok(t, err, memberReply)
+				memberReplyID = memberReply.JSON200.Id
+
+				adminReply, err := cl.ChannelReplyCreateWithResponse(root, sourceChannel, openapi.ThreadMark(originalSlug), openapi.ReplyInitialProps{
+					Body: "<p>admin reply</p>",
 				}, adminSession)
+				tests.Ok(t, err, adminReply)
+				adminReplyID = adminReply.JSON200.Id
+			})
+
+			t.Run("member reply is cohort-tagged; admin reply is not", func(t *testing.T) {
+				resp, err := cl.ThreadGetWithResponse(root, originalID, nil, adminSession)
 				tests.Ok(t, err, resp)
+
+				byID := map[string]*openapi.Reply{}
+				for i := range resp.JSON200.Replies.Replies {
+					rep := &resp.JSON200.Replies.Replies[i]
+					byID[rep.Id] = rep
+				}
+
+				memberReply := byID[memberReplyID]
+				r.NotNil(memberReply, "member reply must be present")
+				r.NotNil(memberReply.CohortChannel, "member reply must carry a cohort tag")
+
+				adminReply := byID[adminReplyID]
+				r.NotNil(adminReply, "admin reply must be present")
+				r.Nil(adminReply.CohortChannel, "admin reply must NOT carry a cohort tag")
 			})
 		}))
 	}))

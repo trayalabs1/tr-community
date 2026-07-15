@@ -7183,6 +7183,12 @@ components:
         link: { $ref: "#/components/schemas/LinkReference" }
         tags: { $ref: "#/components/schemas/TagReferenceList" }
         channel_id: { $ref: "#/components/schemas/Identifier" }
+        channel:
+          $ref: "#/components/schemas/ChannelReference"
+          description: |
+            The thread's home channel (name + slug). Populated on single-thread
+            reads so a shared card can name the source channel without a
+            separate membership-gated channel lookup.
         reference_post_id:
           $ref: "#/components/schemas/Identifier"
           description: |
@@ -7375,6 +7381,11 @@ components:
         root_id: { $ref: "#/components/schemas/Identifier" }
         root_slug: { $ref: "#/components/schemas/ThreadMark" }
         reply_to: { $ref: "#/components/schemas/Reply" }
+        cohort_channel:
+          $ref: "#/components/schemas/ChannelReference"
+          description: |
+            The reply author's most recent channel membership, shown as a tag
+            beside the reply to distinguish which cohort is replying.
 
     ReplyInitialProps:
       type: object

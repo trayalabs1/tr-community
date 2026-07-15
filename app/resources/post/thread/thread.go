@@ -10,6 +10,7 @@ import (
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/asset"
+	"github.com/Southclaws/storyden/app/resources/channel"
 	"github.com/Southclaws/storyden/app/resources/collection/collection_item_status"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/link/link_ref"
@@ -46,6 +47,11 @@ type Thread struct {
 	// ReferencePostID, when set, marks this thread as a share featuring the
 	// referenced thread. The client fetches the referenced thread separately.
 	ReferencePostID opt.Optional[post.ID]
+
+	// Channel is the thread's home channel (name + slug), when eager-loaded.
+	// Used so a shared card can name the source channel without a separate
+	// membership-gated lookup.
+	Channel opt.Optional[channel.Channel]
 }
 
 type ThreadRef struct {
@@ -150,6 +156,7 @@ func Map(m *ent.Post) (*Thread, error) {
 		SentimentTag:    sentimentTag,
 		PrimaryTopic:    primaryTopic,
 		ReferencePostID: mapReferencePostID(m),
+		Channel:         mapChannel(m),
 	}, nil
 }
 
@@ -160,6 +167,15 @@ func mapReferencePostID(m *ent.Post) opt.Optional[post.ID] {
 		return opt.NewEmpty[post.ID]()
 	}
 	return opt.New(post.ID(*m.ReferencePostID))
+}
+
+// mapChannel converts an eager-loaded channel edge into an optional channel ref
+// on the thread. Empty when the edge wasn't loaded.
+func mapChannel(m *ent.Post) opt.Optional[channel.Channel] {
+	if m.Edges.Channel == nil {
+		return opt.NewEmpty[channel.Channel]()
+	}
+	return opt.New(*channel.FromModel(m.Edges.Channel))
 }
 
 func Mapper(
@@ -242,6 +258,7 @@ func Mapper(
 			SentimentTag:    sentimentTag,
 			PrimaryTopic:    primaryTopic,
 			ReferencePostID: mapReferencePostID(m),
+			Channel:         mapChannel(m),
 		}, nil
 	}
 }
