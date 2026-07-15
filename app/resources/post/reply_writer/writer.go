@@ -112,6 +112,14 @@ func (d *Writer) Create(
 		return nil, fault.New("attempt to create post under non-thread post", fmsg.WithDesc("invalid parent", "Cannot reply to a non-thread post."))
 	}
 
+	// A share row references another thread and carries no conversation of its
+	// own; replies must be made on the referenced original, not the share.
+	if thread.ReferencePostID != nil {
+		return nil, fault.New("attempt to reply to a shared thread reference",
+			ftag.With(ftag.InvalidArgument),
+			fmsg.WithDesc("invalid parent", "Reply to the original thread, not the shared copy."))
+	}
+
 	q := tx.Post.
 		Create().
 		SetUpdatedAt(time.Now()).

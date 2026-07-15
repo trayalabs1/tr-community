@@ -162,6 +162,20 @@ func (_c *PostCreate) SetNillableReplyToPostID(v *xid.ID) *PostCreate {
 	return _c
 }
 
+// SetReferencePostID sets the "reference_post_id" field.
+func (_c *PostCreate) SetReferencePostID(v xid.ID) *PostCreate {
+	_c.mutation.SetReferencePostID(v)
+	return _c
+}
+
+// SetNillableReferencePostID sets the "reference_post_id" field if the given value is not nil.
+func (_c *PostCreate) SetNillableReferencePostID(v *xid.ID) *PostCreate {
+	if v != nil {
+		_c.SetReferencePostID(*v)
+	}
+	return _c
+}
+
 // SetBody sets the "body" field.
 func (_c *PostCreate) SetBody(v string) *PostCreate {
 	_c.mutation.SetBody(v)
@@ -350,6 +364,40 @@ func (_c *PostCreate) AddReplies(v ...*Post) *PostCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddReplyIDs(ids...)
+}
+
+// SetReferenceID sets the "reference" edge to the Post entity by ID.
+func (_c *PostCreate) SetReferenceID(id xid.ID) *PostCreate {
+	_c.mutation.SetReferenceID(id)
+	return _c
+}
+
+// SetNillableReferenceID sets the "reference" edge to the Post entity by ID if the given value is not nil.
+func (_c *PostCreate) SetNillableReferenceID(id *xid.ID) *PostCreate {
+	if id != nil {
+		_c = _c.SetReferenceID(*id)
+	}
+	return _c
+}
+
+// SetReference sets the "reference" edge to the Post entity.
+func (_c *PostCreate) SetReference(v *Post) *PostCreate {
+	return _c.SetReferenceID(v.ID)
+}
+
+// AddShareIDs adds the "shares" edge to the Post entity by IDs.
+func (_c *PostCreate) AddShareIDs(ids ...xid.ID) *PostCreate {
+	_c.mutation.AddShareIDs(ids...)
+	return _c
+}
+
+// AddShares adds the "shares" edges to the Post entity.
+func (_c *PostCreate) AddShares(v ...*Post) *PostCreate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddShareIDs(ids...)
 }
 
 // AddReactIDs adds the "reacts" edge to the React entity by IDs.
@@ -826,6 +874,39 @@ func (_c *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.ReferenceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   post.ReferenceTable,
+			Columns: []string{post.ReferenceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ReferencePostID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SharesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := _c.mutation.ReactsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -1205,6 +1286,24 @@ func (u *PostUpsert) ClearReplyToPostID() *PostUpsert {
 	return u
 }
 
+// SetReferencePostID sets the "reference_post_id" field.
+func (u *PostUpsert) SetReferencePostID(v xid.ID) *PostUpsert {
+	u.Set(post.FieldReferencePostID, v)
+	return u
+}
+
+// UpdateReferencePostID sets the "reference_post_id" field to the value that was provided on create.
+func (u *PostUpsert) UpdateReferencePostID() *PostUpsert {
+	u.SetExcluded(post.FieldReferencePostID)
+	return u
+}
+
+// ClearReferencePostID clears the value of the "reference_post_id" field.
+func (u *PostUpsert) ClearReferencePostID() *PostUpsert {
+	u.SetNull(post.FieldReferencePostID)
+	return u
+}
+
 // SetBody sets the "body" field.
 func (u *PostUpsert) SetBody(v string) *PostUpsert {
 	u.Set(post.FieldBody, v)
@@ -1542,6 +1641,27 @@ func (u *PostUpsertOne) UpdateReplyToPostID() *PostUpsertOne {
 func (u *PostUpsertOne) ClearReplyToPostID() *PostUpsertOne {
 	return u.Update(func(s *PostUpsert) {
 		s.ClearReplyToPostID()
+	})
+}
+
+// SetReferencePostID sets the "reference_post_id" field.
+func (u *PostUpsertOne) SetReferencePostID(v xid.ID) *PostUpsertOne {
+	return u.Update(func(s *PostUpsert) {
+		s.SetReferencePostID(v)
+	})
+}
+
+// UpdateReferencePostID sets the "reference_post_id" field to the value that was provided on create.
+func (u *PostUpsertOne) UpdateReferencePostID() *PostUpsertOne {
+	return u.Update(func(s *PostUpsert) {
+		s.UpdateReferencePostID()
+	})
+}
+
+// ClearReferencePostID clears the value of the "reference_post_id" field.
+func (u *PostUpsertOne) ClearReferencePostID() *PostUpsertOne {
+	return u.Update(func(s *PostUpsert) {
+		s.ClearReferencePostID()
 	})
 }
 
@@ -2068,6 +2188,27 @@ func (u *PostUpsertBulk) UpdateReplyToPostID() *PostUpsertBulk {
 func (u *PostUpsertBulk) ClearReplyToPostID() *PostUpsertBulk {
 	return u.Update(func(s *PostUpsert) {
 		s.ClearReplyToPostID()
+	})
+}
+
+// SetReferencePostID sets the "reference_post_id" field.
+func (u *PostUpsertBulk) SetReferencePostID(v xid.ID) *PostUpsertBulk {
+	return u.Update(func(s *PostUpsert) {
+		s.SetReferencePostID(v)
+	})
+}
+
+// UpdateReferencePostID sets the "reference_post_id" field to the value that was provided on create.
+func (u *PostUpsertBulk) UpdateReferencePostID() *PostUpsertBulk {
+	return u.Update(func(s *PostUpsert) {
+		s.UpdateReferencePostID()
+	})
+}
+
+// ClearReferencePostID clears the value of the "reference_post_id" field.
+func (u *PostUpsertBulk) ClearReferencePostID() *PostUpsertBulk {
+	return u.Update(func(s *PostUpsert) {
+		s.ClearReferencePostID()
 	})
 }
 

@@ -7135,6 +7135,12 @@ components:
         category: { $ref: "#/components/schemas/Identifier" }
         visibility: { $ref: "#/components/schemas/Visibility" }
         url: { $ref: "#/components/schemas/URL" }
+        reference_post_id:
+          $ref: "#/components/schemas/Identifier"
+          description: |
+            When set, this thread is a share that features the referenced
+            thread in this thread's channel. The body acts as the share
+            subtitle. Requires ADMINISTRATOR permission.
 
     ThreadMutableProps:
       type: object
@@ -7177,6 +7183,12 @@ components:
         link: { $ref: "#/components/schemas/LinkReference" }
         tags: { $ref: "#/components/schemas/TagReferenceList" }
         channel_id: { $ref: "#/components/schemas/Identifier" }
+        reference_post_id:
+          $ref: "#/components/schemas/Identifier"
+          description: |
+            Present when this thread is a share: the id of the referenced
+            original thread. Clients fetch the referenced thread's content
+            separately (via ThreadGet) to render the shared card.
         last_reply_at:
           type: string
           format: date-time

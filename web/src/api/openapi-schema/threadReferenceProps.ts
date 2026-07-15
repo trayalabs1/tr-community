@@ -25,6 +25,11 @@ export interface ThreadReferenceProps {
   pinned: PinnedRank;
   quick_reply_chips?: QuickReplyChips;
   read_status?: ReadStatus;
+  /** Present when this thread is a share: the id of the referenced
+original thread. Clients fetch the referenced thread's content
+separately (via ThreadGet) to render the shared card.
+ */
+  reference_post_id?: Identifier;
   reply_status: ReplyStatus;
   tags: TagReferenceList;
 }

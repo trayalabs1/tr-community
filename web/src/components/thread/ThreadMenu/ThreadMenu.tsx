@@ -13,6 +13,7 @@ import {
   truncateBody,
 } from "@/components/report/ReportPostMenuItem";
 import { CancelAction } from "@/components/site/Action/Cancel";
+import { ThreadShareMenu } from "@/components/thread/ThreadShareMenu/ThreadShareMenu";
 import { DeleteIcon } from "@/components/ui/icons/Delete";
 import { EditIcon } from "@/components/ui/icons/Edit";
 import { LinkIcon } from "@/components/ui/icons/Link";
@@ -33,6 +34,7 @@ export function ThreadMenu(props: Props) {
     isConfirmingDelete,
     canPinThread,
     isThreadPinned,
+    canShareThread,
     handlers,
   } = useThreadMenu(props);
 
@@ -121,6 +123,8 @@ export function ThreadMenu(props: Props) {
               )}
 
               {isMovingEnabled && <CategoryMoveMenu thread={thread} />}
+
+              {canShareThread && <ThreadShareMenu thread={thread} />}
 
               {isDeletingEnabled &&
                 (isConfirmingDelete ? (

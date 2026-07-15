@@ -943,6 +943,7 @@ var (
 		{Name: "link_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "root_post_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "reply_to_post_id", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "reference_post_id", Type: field.TypeString, Nullable: true, Size: 20},
 	}
 	// PostsTable holds the schema information for the "posts" table.
 	PostsTable = &schema.Table{
@@ -986,6 +987,12 @@ var (
 				RefColumns: []*schema.Column{PostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
+			{
+				Symbol:     "posts_posts_shares",
+				Columns:    []*schema.Column{PostsColumns[19]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
 		},
 		Indexes: []*schema.Index{
 			{
@@ -1022,6 +1029,11 @@ var (
 				Name:    "post_category_id_deleted_at_visibility",
 				Unique:  false,
 				Columns: []*schema.Column{PostsColumns[14], PostsColumns[3], PostsColumns[12]},
+			},
+			{
+				Name:    "post_reference_post_id",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[19]},
 			},
 		},
 	}
@@ -1699,6 +1711,7 @@ func init() {
 	PostsTable.ForeignKeys[3].RefTable = LinksTable
 	PostsTable.ForeignKeys[4].RefTable = PostsTable
 	PostsTable.ForeignKeys[5].RefTable = PostsTable
+	PostsTable.ForeignKeys[6].RefTable = PostsTable
 	PostReadsTable.ForeignKeys[0].RefTable = AccountsTable
 	PostReadsTable.ForeignKeys[1].RefTable = PostsTable
 	PostSentimentsTable.ForeignKeys[0].RefTable = PostsTable

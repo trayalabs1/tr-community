@@ -213,6 +213,26 @@ func (_u *PostUpdate) ClearReplyToPostID() *PostUpdate {
 	return _u
 }
 
+// SetReferencePostID sets the "reference_post_id" field.
+func (_u *PostUpdate) SetReferencePostID(v xid.ID) *PostUpdate {
+	_u.mutation.SetReferencePostID(v)
+	return _u
+}
+
+// SetNillableReferencePostID sets the "reference_post_id" field if the given value is not nil.
+func (_u *PostUpdate) SetNillableReferencePostID(v *xid.ID) *PostUpdate {
+	if v != nil {
+		_u.SetReferencePostID(*v)
+	}
+	return _u
+}
+
+// ClearReferencePostID clears the value of the "reference_post_id" field.
+func (_u *PostUpdate) ClearReferencePostID() *PostUpdate {
+	_u.mutation.ClearReferencePostID()
+	return _u
+}
+
 // SetBody sets the "body" field.
 func (_u *PostUpdate) SetBody(v string) *PostUpdate {
 	_u.mutation.SetBody(v)
@@ -437,6 +457,40 @@ func (_u *PostUpdate) AddReplies(v ...*Post) *PostUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddReplyIDs(ids...)
+}
+
+// SetReferenceID sets the "reference" edge to the Post entity by ID.
+func (_u *PostUpdate) SetReferenceID(id xid.ID) *PostUpdate {
+	_u.mutation.SetReferenceID(id)
+	return _u
+}
+
+// SetNillableReferenceID sets the "reference" edge to the Post entity by ID if the given value is not nil.
+func (_u *PostUpdate) SetNillableReferenceID(id *xid.ID) *PostUpdate {
+	if id != nil {
+		_u = _u.SetReferenceID(*id)
+	}
+	return _u
+}
+
+// SetReference sets the "reference" edge to the Post entity.
+func (_u *PostUpdate) SetReference(v *Post) *PostUpdate {
+	return _u.SetReferenceID(v.ID)
+}
+
+// AddShareIDs adds the "shares" edge to the Post entity by IDs.
+func (_u *PostUpdate) AddShareIDs(ids ...xid.ID) *PostUpdate {
+	_u.mutation.AddShareIDs(ids...)
+	return _u
+}
+
+// AddShares adds the "shares" edges to the Post entity.
+func (_u *PostUpdate) AddShares(v ...*Post) *PostUpdate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddShareIDs(ids...)
 }
 
 // AddReactIDs adds the "reacts" edge to the React entity by IDs.
@@ -694,6 +748,33 @@ func (_u *PostUpdate) RemoveReplies(v ...*Post) *PostUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReplyIDs(ids...)
+}
+
+// ClearReference clears the "reference" edge to the Post entity.
+func (_u *PostUpdate) ClearReference() *PostUpdate {
+	_u.mutation.ClearReference()
+	return _u
+}
+
+// ClearShares clears all "shares" edges to the Post entity.
+func (_u *PostUpdate) ClearShares() *PostUpdate {
+	_u.mutation.ClearShares()
+	return _u
+}
+
+// RemoveShareIDs removes the "shares" edge to Post entities by IDs.
+func (_u *PostUpdate) RemoveShareIDs(ids ...xid.ID) *PostUpdate {
+	_u.mutation.RemoveShareIDs(ids...)
+	return _u
+}
+
+// RemoveShares removes "shares" edges to Post entities.
+func (_u *PostUpdate) RemoveShares(v ...*Post) *PostUpdate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveShareIDs(ids...)
 }
 
 // ClearReacts clears all "reacts" edges to the React entity.
@@ -1279,6 +1360,80 @@ func (_u *PostUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Inverse: false,
 			Table:   post.RepliesTable,
 			Columns: []string{post.RepliesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ReferenceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   post.ReferenceTable,
+			Columns: []string{post.ReferenceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ReferenceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   post.ReferenceTable,
+			Columns: []string{post.ReferenceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SharesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSharesIDs(); len(nodes) > 0 && !_u.mutation.SharesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SharesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
@@ -1943,6 +2098,26 @@ func (_u *PostUpdateOne) ClearReplyToPostID() *PostUpdateOne {
 	return _u
 }
 
+// SetReferencePostID sets the "reference_post_id" field.
+func (_u *PostUpdateOne) SetReferencePostID(v xid.ID) *PostUpdateOne {
+	_u.mutation.SetReferencePostID(v)
+	return _u
+}
+
+// SetNillableReferencePostID sets the "reference_post_id" field if the given value is not nil.
+func (_u *PostUpdateOne) SetNillableReferencePostID(v *xid.ID) *PostUpdateOne {
+	if v != nil {
+		_u.SetReferencePostID(*v)
+	}
+	return _u
+}
+
+// ClearReferencePostID clears the value of the "reference_post_id" field.
+func (_u *PostUpdateOne) ClearReferencePostID() *PostUpdateOne {
+	_u.mutation.ClearReferencePostID()
+	return _u
+}
+
 // SetBody sets the "body" field.
 func (_u *PostUpdateOne) SetBody(v string) *PostUpdateOne {
 	_u.mutation.SetBody(v)
@@ -2167,6 +2342,40 @@ func (_u *PostUpdateOne) AddReplies(v ...*Post) *PostUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddReplyIDs(ids...)
+}
+
+// SetReferenceID sets the "reference" edge to the Post entity by ID.
+func (_u *PostUpdateOne) SetReferenceID(id xid.ID) *PostUpdateOne {
+	_u.mutation.SetReferenceID(id)
+	return _u
+}
+
+// SetNillableReferenceID sets the "reference" edge to the Post entity by ID if the given value is not nil.
+func (_u *PostUpdateOne) SetNillableReferenceID(id *xid.ID) *PostUpdateOne {
+	if id != nil {
+		_u = _u.SetReferenceID(*id)
+	}
+	return _u
+}
+
+// SetReference sets the "reference" edge to the Post entity.
+func (_u *PostUpdateOne) SetReference(v *Post) *PostUpdateOne {
+	return _u.SetReferenceID(v.ID)
+}
+
+// AddShareIDs adds the "shares" edge to the Post entity by IDs.
+func (_u *PostUpdateOne) AddShareIDs(ids ...xid.ID) *PostUpdateOne {
+	_u.mutation.AddShareIDs(ids...)
+	return _u
+}
+
+// AddShares adds the "shares" edges to the Post entity.
+func (_u *PostUpdateOne) AddShares(v ...*Post) *PostUpdateOne {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddShareIDs(ids...)
 }
 
 // AddReactIDs adds the "reacts" edge to the React entity by IDs.
@@ -2424,6 +2633,33 @@ func (_u *PostUpdateOne) RemoveReplies(v ...*Post) *PostUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReplyIDs(ids...)
+}
+
+// ClearReference clears the "reference" edge to the Post entity.
+func (_u *PostUpdateOne) ClearReference() *PostUpdateOne {
+	_u.mutation.ClearReference()
+	return _u
+}
+
+// ClearShares clears all "shares" edges to the Post entity.
+func (_u *PostUpdateOne) ClearShares() *PostUpdateOne {
+	_u.mutation.ClearShares()
+	return _u
+}
+
+// RemoveShareIDs removes the "shares" edge to Post entities by IDs.
+func (_u *PostUpdateOne) RemoveShareIDs(ids ...xid.ID) *PostUpdateOne {
+	_u.mutation.RemoveShareIDs(ids...)
+	return _u
+}
+
+// RemoveShares removes "shares" edges to Post entities.
+func (_u *PostUpdateOne) RemoveShares(v ...*Post) *PostUpdateOne {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveShareIDs(ids...)
 }
 
 // ClearReacts clears all "reacts" edges to the React entity.
@@ -3039,6 +3275,80 @@ func (_u *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) {
 			Inverse: false,
 			Table:   post.RepliesTable,
 			Columns: []string{post.RepliesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ReferenceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   post.ReferenceTable,
+			Columns: []string{post.ReferenceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ReferenceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   post.ReferenceTable,
+			Columns: []string{post.ReferenceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SharesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSharesIDs(); len(nodes) > 0 && !_u.mutation.SharesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SharesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),

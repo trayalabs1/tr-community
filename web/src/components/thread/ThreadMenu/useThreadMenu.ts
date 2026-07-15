@@ -23,6 +23,7 @@ export type Props = {
   editingEnabled?: boolean;
   movingEnabled?: boolean;
   onPinChange?: (pinned: boolean) => Promise<void>;
+  channelID?: string;
 };
 
 export function useThreadMenu({
@@ -54,6 +55,7 @@ export function useThreadMenu({
     canDeletePost(thread, account) && thread.deletedAt === undefined;
   const canPinThread = hasPermission(account, Permission.MANAGE_POSTS);
   const isThreadPinned = (thread.pinned ?? 0) > 0;
+  const canShareThread = hasPermission(account, Permission.ADMINISTRATOR);
 
   const permalink = getPermalinkForThread(thread.slug);
 
@@ -130,6 +132,7 @@ export function useThreadMenu({
     isConfirmingDelete,
     canPinThread,
     isThreadPinned,
+    canShareThread,
     handlers: {
       handleCopyLink,
       handleShare,

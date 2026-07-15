@@ -4,6 +4,9 @@ import (
 	"context"
 
 	"github.com/Southclaws/dt"
+	"github.com/Southclaws/fault"
+	"github.com/Southclaws/fault/fmsg"
+	"github.com/Southclaws/fault/ftag"
 	"github.com/rs/xid"
 
 	"github.com/Southclaws/storyden/app/resources/account"
@@ -40,6 +43,12 @@ func (l *PostLiker) AddPostLike(ctx context.Context, accountID account.AccountID
 	postRef, err := l.postQuerier.Probe(ctx, postID)
 	if err != nil {
 		return err
+	}
+
+	if postRef.IsShare {
+		return fault.New("attempt to like a shared thread reference",
+			ftag.With(ftag.InvalidArgument),
+			fmsg.WithDesc("invalid target", "Like the original thread, not the shared copy."))
 	}
 
 	if err := l.cache.Invalidate(ctx, xid.ID(postRef.Root)); err != nil {
