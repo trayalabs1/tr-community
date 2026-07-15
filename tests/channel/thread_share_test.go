@@ -111,6 +111,39 @@ func TestInterchannelThreadSharingPointer(t *testing.T) {
 				r.Nil(resp.JSON200.ReferencePostId)
 			})
 
+			t.Run("cannot share into the thread's own channel", func(t *testing.T) {
+				resp, err := cl.ChannelThreadCreateWithResponse(root, sourceChannel, openapi.ThreadInitialProps{
+					Title:           "self share",
+					Body:            opt.New("<p>x</p>").Ptr(),
+					Visibility:      opt.New(openapi.Published).Ptr(),
+					ReferencePostId: (*openapi.Identifier)(&originalID),
+				}, adminSession)
+				r.NoError(err)
+				r.GreaterOrEqual(resp.StatusCode(), 400, "sharing into the home channel must be rejected")
+			})
+
+			t.Run("cannot share into a channel it is already shared into", func(t *testing.T) {
+				resp, err := cl.ChannelThreadCreateWithResponse(root, destChannel, openapi.ThreadInitialProps{
+					Title:           "dup share",
+					Body:            opt.New("<p>x</p>").Ptr(),
+					Visibility:      opt.New(openapi.Published).Ptr(),
+					ReferencePostId: (*openapi.Identifier)(&originalID),
+				}, adminSession)
+				r.NoError(err)
+				r.GreaterOrEqual(resp.StatusCode(), 400, "duplicate share into the same channel must be rejected")
+			})
+
+			t.Run("cannot share a share (re-share)", func(t *testing.T) {
+				resp, err := cl.ChannelThreadCreateWithResponse(root, sourceChannel, openapi.ThreadInitialProps{
+					Title:           "share of a share",
+					Body:            opt.New("<p>x</p>").Ptr(),
+					Visibility:      opt.New(openapi.Published).Ptr(),
+					ReferencePostId: (*openapi.Identifier)(&shareID),
+				}, adminSession)
+				r.NoError(err)
+				r.GreaterOrEqual(resp.StatusCode(), 400, "sharing a share must be rejected")
+			})
+
 			t.Run("interaction on the share row is rejected — reply", func(t *testing.T) {
 				resp, err := cl.ChannelReplyCreateWithResponse(root, destChannel, openapi.ThreadMark(shareSlug), openapi.ReplyInitialProps{
 					Body: "<p>should be rejected</p>",
