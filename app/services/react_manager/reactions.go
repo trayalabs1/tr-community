@@ -5,6 +5,7 @@ import (
 
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
+	"github.com/Southclaws/fault/fmsg"
 	"github.com/Southclaws/fault/ftag"
 	"github.com/rs/xid"
 
@@ -54,6 +55,12 @@ func (s *Reactor) Add(ctx context.Context, postID post.ID, emoji string) (*react
 	pref, err := s.postQuerier.Probe(ctx, postID)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	if pref.IsShare {
+		return nil, fault.New("attempt to react to a shared thread reference",
+			fctx.With(ctx), ftag.With(ftag.InvalidArgument),
+			fmsg.WithDesc("invalid target", "React on the original thread, not the shared copy."))
 	}
 
 	if err := s.cache.Invalidate(ctx, xid.ID(pref.Root)); err != nil {

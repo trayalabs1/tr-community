@@ -745,12 +745,13 @@ func (c Channels) ChannelThreadCreate(ctx context.Context, request openapi.Chann
 		accountID,
 		meta,
 		thread_svc.Partial{
-			Content:    richContent,
-			Category:   category,
-			Tags:       tags,
-			Visibility: status,
-			URL:        url,
-			ChannelID:  opt.New(xid.ID(channelID)),
+			Content:     richContent,
+			Category:    category,
+			Tags:        tags,
+			Visibility:  status,
+			URL:         url,
+			ChannelID:   opt.New(xid.ID(channelID)),
+			ReferenceID: opt.NewPtrMap(request.Body.ReferencePostId, func(id openapi.Identifier) xid.ID { return openapi.ParseID(id) }),
 		},
 	)
 	if err != nil {

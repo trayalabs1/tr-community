@@ -29,6 +29,7 @@ import { usePostReplyChip } from "../thread/ReplyChips/usePostReplyChip";
 import { LikeButton } from "./LikeButton/LikeButton";
 import { useThreadCardModeration } from "./useThreadCardModeration";
 import { ProfileHoverTooltip } from "./ProfileHoverTooltip";
+import { SharedThreadCard } from "./SharedThreadCard";
 
 type Props = {
   thread: ThreadReference;
@@ -50,6 +51,8 @@ export const ThreadReferenceCard = memo(
       Permission.MANAGE_POSTS,
       Permission.ADMINISTRATOR,
     );
+
+    const isSharedCard = thread.reference_post_id !== undefined;
 
     const { isConfirmingDelete, handlers } = useThreadCardModeration(thread);
     const chipCandidates = thread.quick_reply_chips?.candidates ?? [];
@@ -83,6 +86,10 @@ export const ThreadReferenceCard = memo(
     const pollOptionDefs = isPoll
       ? (meta?.["poll_options"] as Array<{ id: string; text: string }> | undefined) ?? []
       : [];
+
+    if (isSharedCard) {
+      return <SharedThreadCard thread={thread} channelID={channelID} />;
+    }
 
     return (
       <styled.div
@@ -186,7 +193,7 @@ export const ThreadReferenceCard = memo(
                 (e.currentTarget as HTMLElement).style.opacity = "0.7";
               }}
             >
-              <ThreadMenu thread={thread} />
+              <ThreadMenu thread={thread} channelID={channelID} />
             </styled.div>
           )}
         </styled.div>

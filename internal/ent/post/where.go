@@ -106,6 +106,11 @@ func ReplyToPostID(v xid.ID) predicate.Post {
 	return predicate.Post(sql.FieldEQ(FieldReplyToPostID, v))
 }
 
+// ReferencePostID applies equality check predicate on the "reference_post_id" field. It's identical to ReferencePostIDEQ.
+func ReferencePostID(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldEQ(FieldReferencePostID, v))
+}
+
 // Body applies equality check predicate on the "body" field. It's identical to BodyEQ.
 func Body(v string) predicate.Post {
 	return predicate.Post(sql.FieldEQ(FieldBody, v))
@@ -704,6 +709,86 @@ func ReplyToPostIDEqualFold(v xid.ID) predicate.Post {
 func ReplyToPostIDContainsFold(v xid.ID) predicate.Post {
 	vc := v.String()
 	return predicate.Post(sql.FieldContainsFold(FieldReplyToPostID, vc))
+}
+
+// ReferencePostIDEQ applies the EQ predicate on the "reference_post_id" field.
+func ReferencePostIDEQ(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldEQ(FieldReferencePostID, v))
+}
+
+// ReferencePostIDNEQ applies the NEQ predicate on the "reference_post_id" field.
+func ReferencePostIDNEQ(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldNEQ(FieldReferencePostID, v))
+}
+
+// ReferencePostIDIn applies the In predicate on the "reference_post_id" field.
+func ReferencePostIDIn(vs ...xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldIn(FieldReferencePostID, vs...))
+}
+
+// ReferencePostIDNotIn applies the NotIn predicate on the "reference_post_id" field.
+func ReferencePostIDNotIn(vs ...xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldNotIn(FieldReferencePostID, vs...))
+}
+
+// ReferencePostIDGT applies the GT predicate on the "reference_post_id" field.
+func ReferencePostIDGT(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldGT(FieldReferencePostID, v))
+}
+
+// ReferencePostIDGTE applies the GTE predicate on the "reference_post_id" field.
+func ReferencePostIDGTE(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldGTE(FieldReferencePostID, v))
+}
+
+// ReferencePostIDLT applies the LT predicate on the "reference_post_id" field.
+func ReferencePostIDLT(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldLT(FieldReferencePostID, v))
+}
+
+// ReferencePostIDLTE applies the LTE predicate on the "reference_post_id" field.
+func ReferencePostIDLTE(v xid.ID) predicate.Post {
+	return predicate.Post(sql.FieldLTE(FieldReferencePostID, v))
+}
+
+// ReferencePostIDContains applies the Contains predicate on the "reference_post_id" field.
+func ReferencePostIDContains(v xid.ID) predicate.Post {
+	vc := v.String()
+	return predicate.Post(sql.FieldContains(FieldReferencePostID, vc))
+}
+
+// ReferencePostIDHasPrefix applies the HasPrefix predicate on the "reference_post_id" field.
+func ReferencePostIDHasPrefix(v xid.ID) predicate.Post {
+	vc := v.String()
+	return predicate.Post(sql.FieldHasPrefix(FieldReferencePostID, vc))
+}
+
+// ReferencePostIDHasSuffix applies the HasSuffix predicate on the "reference_post_id" field.
+func ReferencePostIDHasSuffix(v xid.ID) predicate.Post {
+	vc := v.String()
+	return predicate.Post(sql.FieldHasSuffix(FieldReferencePostID, vc))
+}
+
+// ReferencePostIDIsNil applies the IsNil predicate on the "reference_post_id" field.
+func ReferencePostIDIsNil() predicate.Post {
+	return predicate.Post(sql.FieldIsNull(FieldReferencePostID))
+}
+
+// ReferencePostIDNotNil applies the NotNil predicate on the "reference_post_id" field.
+func ReferencePostIDNotNil() predicate.Post {
+	return predicate.Post(sql.FieldNotNull(FieldReferencePostID))
+}
+
+// ReferencePostIDEqualFold applies the EqualFold predicate on the "reference_post_id" field.
+func ReferencePostIDEqualFold(v xid.ID) predicate.Post {
+	vc := v.String()
+	return predicate.Post(sql.FieldEqualFold(FieldReferencePostID, vc))
+}
+
+// ReferencePostIDContainsFold applies the ContainsFold predicate on the "reference_post_id" field.
+func ReferencePostIDContainsFold(v xid.ID) predicate.Post {
+	vc := v.String()
+	return predicate.Post(sql.FieldContainsFold(FieldReferencePostID, vc))
 }
 
 // BodyEQ applies the EQ predicate on the "body" field.
@@ -1342,6 +1427,52 @@ func HasReplies() predicate.Post {
 func HasRepliesWith(preds ...predicate.Post) predicate.Post {
 	return predicate.Post(func(s *sql.Selector) {
 		step := newRepliesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasReference applies the HasEdge predicate on the "reference" edge.
+func HasReference() predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ReferenceTable, ReferenceColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasReferenceWith applies the HasEdge predicate on the "reference" edge with a given conditions (other predicates).
+func HasReferenceWith(preds ...predicate.Post) predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := newReferenceStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasShares applies the HasEdge predicate on the "shares" edge.
+func HasShares() predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SharesTable, SharesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSharesWith applies the HasEdge predicate on the "shares" edge with a given conditions (other predicates).
+func HasSharesWith(preds ...predicate.Post) predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := newSharesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

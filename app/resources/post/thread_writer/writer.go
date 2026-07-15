@@ -108,6 +108,14 @@ func WithContentLinks(ids ...xid.ID) Option {
 	}
 }
 
+// WithReference marks this thread as a share that features the referenced
+// thread in this thread's channel.
+func WithReference(id xid.ID) Option {
+	return func(pm *ent.PostMutation) {
+		pm.SetReferencePostID(id)
+	}
+}
+
 func WithTagsAdd(refs ...tag_ref.ID) Option {
 	ids := dt.Map(refs, func(i tag_ref.ID) xid.ID { return xid.ID(i) })
 	return func(c *ent.PostMutation) {
