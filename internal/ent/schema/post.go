@@ -29,6 +29,10 @@ func (Post) Fields() []ent.Field {
 		field.String("root_post_id").GoType(xid.ID{}).Optional().Nillable(),
 		field.String("reply_to_post_id").GoType(xid.ID{}).Optional().Nillable(),
 
+		// share posts: a root post that references another thread, featuring it
+		// in this post's channel. Interaction is routed to the referenced thread.
+		field.String("reference_post_id").GoType(xid.ID{}).Optional().Nillable(),
+
 		// All posts
 		field.String("body"),
 		field.String("short"),
@@ -70,6 +74,9 @@ func (Post) Indexes() []ent.Index {
 
 		// Category filtering queries
 		index.Fields("category_id", "deleted_at", "visibility"),
+
+		// Share lookups: find the shares that reference a given thread.
+		index.Fields("reference_post_id"),
 	}
 }
 
@@ -111,6 +118,13 @@ func (Post) Edges() []ent.Edge {
 			Field("reply_to_post_id").
 			Annotations(entsql.OnDelete(entsql.SetNull)).
 			Comment("A many-to-many recursive self reference. The replyTo post is an optional post that this post is in reply to."),
+
+		edge.To("shares", Post.Type).
+			From("reference").
+			Unique().
+			Field("reference_post_id").
+			Annotations(entsql.OnDelete(entsql.Cascade)).
+			Comment("A recursive self reference. When set, this post is a share that features the referenced thread in this post's channel; deleting the referenced thread cascades to its shares."),
 
 		edge.To("reacts", React.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),

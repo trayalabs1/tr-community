@@ -11,6 +11,7 @@ import (
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
 	"github.com/Southclaws/fault/fmsg"
+	"github.com/Southclaws/fault/ftag"
 	"github.com/rs/xid"
 
 	"github.com/Southclaws/storyden/app/resources/account"
@@ -73,6 +74,21 @@ func (s *service) Create(ctx context.Context,
 ) (*thread.Thread, error) {
 	if err := authoriseMutation(ctx, partial); err != nil {
 		return nil, err
+	}
+
+	// A share references an existing root thread. Validate it exists and is a
+	// root (not a reply, and not itself a share).
+	if refID, ok := partial.ReferenceID.Get(); ok {
+		ref, err := s.threadQuerier.Probe(ctx, post.ID(refID))
+		if err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx),
+				fmsg.WithDesc("reference not found", "The thread being shared does not exist."))
+		}
+		if ref.Root != post.ID(refID) {
+			return nil, fault.New("referenced post is not a root thread",
+				fctx.With(ctx), ftag.With(ftag.InvalidArgument),
+				fmsg.WithDesc("invalid reference", "Only a top-level thread can be shared."))
+		}
 	}
 
 	opts := partial.Opts()
@@ -276,6 +292,17 @@ func authoriseMutation(ctx context.Context, partial Partial) error {
 			return fault.Wrap(err,
 				fctx.With(ctx),
 				fmsg.WithDesc("pinned state", "You do not have permission to create a pinned thread."),
+			)
+		}
+	}
+
+	if partial.ReferenceID.Ok() {
+		err := session.Authorise(ctx, nil, rbac.PermissionAdministrator)
+		if err != nil {
+			return fault.Wrap(err,
+				fctx.With(ctx),
+				ftag.With(ftag.PermissionDenied),
+				fmsg.WithDesc("share", "You do not have permission to share a thread into a channel."),
 			)
 		}
 	}

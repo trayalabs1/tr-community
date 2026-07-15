@@ -42,6 +42,10 @@ type Thread struct {
 
 	SentimentTag opt.Optional[string]
 	PrimaryTopic opt.Optional[string]
+
+	// ReferencePostID, when set, marks this thread as a share featuring the
+	// referenced thread. The client fetches the referenced thread separately.
+	ReferencePostID opt.Optional[post.ID]
 }
 
 type ThreadRef struct {
@@ -141,11 +145,21 @@ func Map(m *ent.Post) (*Thread, error) {
 		Pinned:      m.PinnedRank,
 		LastReplyAt: opt.New(m.LastReplyAt),
 
-		Category:     category,
-		Tags:         tags,
-		SentimentTag: sentimentTag,
-		PrimaryTopic: primaryTopic,
+		Category:        category,
+		Tags:            tags,
+		SentimentTag:    sentimentTag,
+		PrimaryTopic:    primaryTopic,
+		ReferencePostID: mapReferencePostID(m),
 	}, nil
+}
+
+// mapReferencePostID converts the ent nillable reference_post_id into an
+// optional post ID for the domain model.
+func mapReferencePostID(m *ent.Post) opt.Optional[post.ID] {
+	if m.ReferencePostID == nil {
+		return opt.NewEmpty[post.ID]()
+	}
+	return opt.New(post.ID(*m.ReferencePostID))
 }
 
 func Mapper(
@@ -222,11 +236,12 @@ func Mapper(
 			// Only populate the last-reply-at if there are replies.
 			LastReplyAt: opt.NewSafe(m.LastReplyAt, rs.Status(m.ID).Count > 0),
 
-			ReadStatus:   rr.Status(m.ID),
-			ReplyStatus:  rs.Status(m.ID),
-			Category:     category,
-			SentimentTag: sentimentTag,
-			PrimaryTopic: primaryTopic,
+			ReadStatus:      rr.Status(m.ID),
+			ReplyStatus:     rs.Status(m.ID),
+			Category:        category,
+			SentimentTag:    sentimentTag,
+			PrimaryTopic:    primaryTopic,
+			ReferencePostID: mapReferencePostID(m),
 		}, nil
 	}
 }
@@ -293,7 +308,8 @@ func ItemRef(t *ent.Post) (datagraph.Item, error) {
 		Category: opt.New(category.Category{
 			ID: category.CategoryID(t.CategoryID),
 		}),
-		Short: t.Short,
-		Tags:  dt.Map(t.Edges.Tags, tag_ref.Map(nil)),
+		Short:           t.Short,
+		Tags:            dt.Map(t.Edges.Tags, tag_ref.Map(nil)),
+		ReferencePostID: mapReferencePostID(t),
 	}, nil
 }
