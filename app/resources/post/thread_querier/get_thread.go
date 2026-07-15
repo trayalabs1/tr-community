@@ -123,6 +123,7 @@ func (d *Querier) Get(ctx context.Context, threadID post.ID, pageParams paginati
 			Limit(pageParams.Limit()).
 			Offset(pageParams.Offset()).
 			Order(ent.Asc(ent_post.FieldCreatedAt)).
+			WithChannel().
 			WithReplyTo(func(rq *ent.PostQuery) {
 				rq.Where(ent_post.DeletedAtIsNil())
 			}).
@@ -228,6 +229,10 @@ func (d *Querier) Get(ctx context.Context, threadID post.ID, pageParams paginati
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
+
+	// Each reply carries its true origin cohort. Whether to surface it as a tag
+	// is viewer-relative and decided by the client: it hides the tag on replies
+	// whose origin matches the channel the viewer is currently looking through.
 
 	p, err := threadMapper(threadResult)
 	if err != nil {

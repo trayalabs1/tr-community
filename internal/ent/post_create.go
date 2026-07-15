@@ -27,6 +27,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/Southclaws/storyden/internal/ent/react"
 	"github.com/Southclaws/storyden/internal/ent/tag"
+	"github.com/Southclaws/storyden/internal/ent/threadshare"
 	"github.com/rs/xid"
 )
 
@@ -350,6 +351,21 @@ func (_c *PostCreate) AddReplies(v ...*Post) *PostCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddReplyIDs(ids...)
+}
+
+// AddShareIDs adds the "shares" edge to the ThreadShare entity by IDs.
+func (_c *PostCreate) AddShareIDs(ids ...xid.ID) *PostCreate {
+	_c.mutation.AddShareIDs(ids...)
+	return _c
+}
+
+// AddShares adds the "shares" edges to the ThreadShare entity.
+func (_c *PostCreate) AddShares(v ...*ThreadShare) *PostCreate {
+	ids := make([]xid.ID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddShareIDs(ids...)
 }
 
 // AddReactIDs adds the "reacts" edge to the React entity by IDs.
@@ -819,6 +835,22 @@ func (_c *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(post.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SharesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.SharesTable,
+			Columns: []string{post.SharesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(threadshare.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

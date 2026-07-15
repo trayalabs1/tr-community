@@ -8,6 +8,7 @@ import {
   postReactRemove,
   postUpdate,
 } from "@/api/openapi-client/posts";
+import { channelReplyCreate } from "@/api/openapi-client/channels";
 import { replyCreate } from "@/api/openapi-client/replies";
 import { getThreadGetKey, threadUpdate } from "@/api/openapi-client/threads";
 import {
@@ -27,6 +28,7 @@ export function useThreadMutations(
   thread: ThreadReference,
   currentPage?: number,
   totalPages?: number,
+  channelID?: string,
 ) {
   const sessionInitial = useSession();
   const sessionRef = useRef(sessionInitial);
@@ -102,6 +104,13 @@ export function useThreadMutations(
       await mutate(key, mutator, {
         revalidate: false,
       });
+    }
+
+    // When replying from within a channel feed, use the channel-scoped endpoint
+    // so the reply records its origin cohort (which drives the cohort tag on
+    // shared threads). Falls back to the channel-less endpoint otherwise.
+    if (channelID) {
+      return await channelReplyCreate(channelID, thread.slug, reply);
     }
 
     return await replyCreate(thread.slug, reply);

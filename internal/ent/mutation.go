@@ -51,6 +51,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/session"
 	"github.com/Southclaws/storyden/internal/ent/setting"
 	"github.com/Southclaws/storyden/internal/ent/tag"
+	"github.com/Southclaws/storyden/internal/ent/threadshare"
 	"github.com/rs/xid"
 )
 
@@ -100,6 +101,7 @@ const (
 	TypeSession             = "Session"
 	TypeSetting             = "Setting"
 	TypeTag                 = "Tag"
+	TypeThreadShare         = "ThreadShare"
 )
 
 // AccountMutation represents an operation that mutates the Account nodes in the graph.
@@ -23739,6 +23741,9 @@ type PostMutation struct {
 	replies              map[xid.ID]struct{}
 	removedreplies       map[xid.ID]struct{}
 	clearedreplies       bool
+	shares               map[xid.ID]struct{}
+	removedshares        map[xid.ID]struct{}
+	clearedshares        bool
 	reacts               map[xid.ID]struct{}
 	removedreacts        map[xid.ID]struct{}
 	clearedreacts        bool
@@ -25000,6 +25005,60 @@ func (m *PostMutation) ResetReplies() {
 	m.removedreplies = nil
 }
 
+// AddShareIDs adds the "shares" edge to the ThreadShare entity by ids.
+func (m *PostMutation) AddShareIDs(ids ...xid.ID) {
+	if m.shares == nil {
+		m.shares = make(map[xid.ID]struct{})
+	}
+	for i := range ids {
+		m.shares[ids[i]] = struct{}{}
+	}
+}
+
+// ClearShares clears the "shares" edge to the ThreadShare entity.
+func (m *PostMutation) ClearShares() {
+	m.clearedshares = true
+}
+
+// SharesCleared reports if the "shares" edge to the ThreadShare entity was cleared.
+func (m *PostMutation) SharesCleared() bool {
+	return m.clearedshares
+}
+
+// RemoveShareIDs removes the "shares" edge to the ThreadShare entity by IDs.
+func (m *PostMutation) RemoveShareIDs(ids ...xid.ID) {
+	if m.removedshares == nil {
+		m.removedshares = make(map[xid.ID]struct{})
+	}
+	for i := range ids {
+		delete(m.shares, ids[i])
+		m.removedshares[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedShares returns the removed IDs of the "shares" edge to the ThreadShare entity.
+func (m *PostMutation) RemovedSharesIDs() (ids []xid.ID) {
+	for id := range m.removedshares {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SharesIDs returns the "shares" edge IDs in the mutation.
+func (m *PostMutation) SharesIDs() (ids []xid.ID) {
+	for id := range m.shares {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetShares resets all changes to the "shares" edge.
+func (m *PostMutation) ResetShares() {
+	m.shares = nil
+	m.clearedshares = false
+	m.removedshares = nil
+}
+
 // AddReactIDs adds the "reacts" edge to the React entity by ids.
 func (m *PostMutation) AddReactIDs(ids ...xid.ID) {
 	if m.reacts == nil {
@@ -26046,7 +26105,7 @@ func (m *PostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 19)
+	edges := make([]string, 0, 20)
 	if m.author != nil {
 		edges = append(edges, post.EdgeAuthor)
 	}
@@ -26070,6 +26129,9 @@ func (m *PostMutation) AddedEdges() []string {
 	}
 	if m.replies != nil {
 		edges = append(edges, post.EdgeReplies)
+	}
+	if m.shares != nil {
+		edges = append(edges, post.EdgeShares)
 	}
 	if m.reacts != nil {
 		edges = append(edges, post.EdgeReacts)
@@ -26149,6 +26211,12 @@ func (m *PostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case post.EdgeShares:
+		ids := make([]ent.Value, 0, len(m.shares))
+		for id := range m.shares {
+			ids = append(ids, id)
+		}
+		return ids
 	case post.EdgeReacts:
 		ids := make([]ent.Value, 0, len(m.reacts))
 		for id := range m.reacts {
@@ -26217,7 +26285,7 @@ func (m *PostMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 19)
+	edges := make([]string, 0, 20)
 	if m.removedtags != nil {
 		edges = append(edges, post.EdgeTags)
 	}
@@ -26226,6 +26294,9 @@ func (m *PostMutation) RemovedEdges() []string {
 	}
 	if m.removedreplies != nil {
 		edges = append(edges, post.EdgeReplies)
+	}
+	if m.removedshares != nil {
+		edges = append(edges, post.EdgeShares)
 	}
 	if m.removedreacts != nil {
 		edges = append(edges, post.EdgeReacts)
@@ -26276,6 +26347,12 @@ func (m *PostMutation) RemovedIDs(name string) []ent.Value {
 	case post.EdgeReplies:
 		ids := make([]ent.Value, 0, len(m.removedreplies))
 		for id := range m.removedreplies {
+			ids = append(ids, id)
+		}
+		return ids
+	case post.EdgeShares:
+		ids := make([]ent.Value, 0, len(m.removedshares))
+		for id := range m.removedshares {
 			ids = append(ids, id)
 		}
 		return ids
@@ -26339,7 +26416,7 @@ func (m *PostMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 19)
+	edges := make([]string, 0, 20)
 	if m.clearedauthor {
 		edges = append(edges, post.EdgeAuthor)
 	}
@@ -26363,6 +26440,9 @@ func (m *PostMutation) ClearedEdges() []string {
 	}
 	if m.clearedreplies {
 		edges = append(edges, post.EdgeReplies)
+	}
+	if m.clearedshares {
+		edges = append(edges, post.EdgeShares)
 	}
 	if m.clearedreacts {
 		edges = append(edges, post.EdgeReacts)
@@ -26420,6 +26500,8 @@ func (m *PostMutation) EdgeCleared(name string) bool {
 		return m.clearedreplyTo
 	case post.EdgeReplies:
 		return m.clearedreplies
+	case post.EdgeShares:
+		return m.clearedshares
 	case post.EdgeReacts:
 		return m.clearedreacts
 	case post.EdgeLikes:
@@ -26502,6 +26584,9 @@ func (m *PostMutation) ResetEdge(name string) error {
 		return nil
 	case post.EdgeReplies:
 		m.ResetReplies()
+		return nil
+	case post.EdgeShares:
+		m.ResetShares()
 		return nil
 	case post.EdgeReacts:
 		m.ResetReacts()
@@ -35274,4 +35359,956 @@ func (m *TagMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Tag edge %s", name)
+}
+
+// ThreadShareMutation represents an operation that mutates the ThreadShare nodes in the graph.
+type ThreadShareMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *xid.ID
+	created_at     *time.Time
+	deleted_at     *time.Time
+	subtitle       *string
+	pinned_rank    *int
+	addpinned_rank *int
+	pinned_at      *time.Time
+	clearedFields  map[string]struct{}
+	post           *xid.ID
+	clearedpost    bool
+	channel        *xid.ID
+	clearedchannel bool
+	account        *xid.ID
+	clearedaccount bool
+	done           bool
+	oldValue       func(context.Context) (*ThreadShare, error)
+	predicates     []predicate.ThreadShare
+}
+
+var _ ent.Mutation = (*ThreadShareMutation)(nil)
+
+// threadshareOption allows management of the mutation configuration using functional options.
+type threadshareOption func(*ThreadShareMutation)
+
+// newThreadShareMutation creates new mutation for the ThreadShare entity.
+func newThreadShareMutation(c config, op Op, opts ...threadshareOption) *ThreadShareMutation {
+	m := &ThreadShareMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeThreadShare,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withThreadShareID sets the ID field of the mutation.
+func withThreadShareID(id xid.ID) threadshareOption {
+	return func(m *ThreadShareMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ThreadShare
+		)
+		m.oldValue = func(ctx context.Context) (*ThreadShare, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ThreadShare.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withThreadShare sets the old ThreadShare of the mutation.
+func withThreadShare(node *ThreadShare) threadshareOption {
+	return func(m *ThreadShareMutation) {
+		m.oldValue = func(context.Context) (*ThreadShare, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ThreadShareMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ThreadShareMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ThreadShare entities.
+func (m *ThreadShareMutation) SetID(id xid.ID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ThreadShareMutation) ID() (id xid.ID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ThreadShareMutation) IDs(ctx context.Context) ([]xid.ID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []xid.ID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ThreadShare.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ThreadShareMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ThreadShareMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ThreadShare entity.
+// If the ThreadShare object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ThreadShareMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ThreadShareMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (m *ThreadShareMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *ThreadShareMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the ThreadShare entity.
+// If the ThreadShare object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ThreadShareMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *ThreadShareMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[threadshare.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *ThreadShareMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[threadshare.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *ThreadShareMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, threadshare.FieldDeletedAt)
+}
+
+// SetPostID sets the "post_id" field.
+func (m *ThreadShareMutation) SetPostID(x xid.ID) {
+	m.post = &x
+}
+
+// PostID returns the value of the "post_id" field in the mutation.
+func (m *ThreadShareMutation) PostID() (r xid.ID, exists bool) {
+	v := m.post
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPostID returns the old "post_id" field's value of the ThreadShare entity.
+// If the ThreadShare object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ThreadShareMutation) OldPostID(ctx context.Context) (v xid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPostID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPostID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPostID: %w", err)
+	}
+	return oldValue.PostID, nil
+}
+
+// ResetPostID resets all changes to the "post_id" field.
+func (m *ThreadShareMutation) ResetPostID() {
+	m.post = nil
+}
+
+// SetChannelID sets the "channel_id" field.
+func (m *ThreadShareMutation) SetChannelID(x xid.ID) {
+	m.channel = &x
+}
+
+// ChannelID returns the value of the "channel_id" field in the mutation.
+func (m *ThreadShareMutation) ChannelID() (r xid.ID, exists bool) {
+	v := m.channel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannelID returns the old "channel_id" field's value of the ThreadShare entity.
+// If the ThreadShare object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ThreadShareMutation) OldChannelID(ctx context.Context) (v xid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannelID: %w", err)
+	}
+	return oldValue.ChannelID, nil
+}
+
+// ResetChannelID resets all changes to the "channel_id" field.
+func (m *ThreadShareMutation) ResetChannelID() {
+	m.channel = nil
+}
+
+// SetAccountID sets the "account_id" field.
+func (m *ThreadShareMutation) SetAccountID(x xid.ID) {
+	m.account = &x
+}
+
+// AccountID returns the value of the "account_id" field in the mutation.
+func (m *ThreadShareMutation) AccountID() (r xid.ID, exists bool) {
+	v := m.account
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountID returns the old "account_id" field's value of the ThreadShare entity.
+// If the ThreadShare object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ThreadShareMutation) OldAccountID(ctx context.Context) (v xid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountID: %w", err)
+	}
+	return oldValue.AccountID, nil
+}
+
+// ResetAccountID resets all changes to the "account_id" field.
+func (m *ThreadShareMutation) ResetAccountID() {
+	m.account = nil
+}
+
+// SetSubtitle sets the "subtitle" field.
+func (m *ThreadShareMutation) SetSubtitle(s string) {
+	m.subtitle = &s
+}
+
+// Subtitle returns the value of the "subtitle" field in the mutation.
+func (m *ThreadShareMutation) Subtitle() (r string, exists bool) {
+	v := m.subtitle
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubtitle returns the old "subtitle" field's value of the ThreadShare entity.
+// If the ThreadShare object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ThreadShareMutation) OldSubtitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubtitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubtitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubtitle: %w", err)
+	}
+	return oldValue.Subtitle, nil
+}
+
+// ClearSubtitle clears the value of the "subtitle" field.
+func (m *ThreadShareMutation) ClearSubtitle() {
+	m.subtitle = nil
+	m.clearedFields[threadshare.FieldSubtitle] = struct{}{}
+}
+
+// SubtitleCleared returns if the "subtitle" field was cleared in this mutation.
+func (m *ThreadShareMutation) SubtitleCleared() bool {
+	_, ok := m.clearedFields[threadshare.FieldSubtitle]
+	return ok
+}
+
+// ResetSubtitle resets all changes to the "subtitle" field.
+func (m *ThreadShareMutation) ResetSubtitle() {
+	m.subtitle = nil
+	delete(m.clearedFields, threadshare.FieldSubtitle)
+}
+
+// SetPinnedRank sets the "pinned_rank" field.
+func (m *ThreadShareMutation) SetPinnedRank(i int) {
+	m.pinned_rank = &i
+	m.addpinned_rank = nil
+}
+
+// PinnedRank returns the value of the "pinned_rank" field in the mutation.
+func (m *ThreadShareMutation) PinnedRank() (r int, exists bool) {
+	v := m.pinned_rank
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPinnedRank returns the old "pinned_rank" field's value of the ThreadShare entity.
+// If the ThreadShare object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ThreadShareMutation) OldPinnedRank(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPinnedRank is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPinnedRank requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPinnedRank: %w", err)
+	}
+	return oldValue.PinnedRank, nil
+}
+
+// AddPinnedRank adds i to the "pinned_rank" field.
+func (m *ThreadShareMutation) AddPinnedRank(i int) {
+	if m.addpinned_rank != nil {
+		*m.addpinned_rank += i
+	} else {
+		m.addpinned_rank = &i
+	}
+}
+
+// AddedPinnedRank returns the value that was added to the "pinned_rank" field in this mutation.
+func (m *ThreadShareMutation) AddedPinnedRank() (r int, exists bool) {
+	v := m.addpinned_rank
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPinnedRank resets all changes to the "pinned_rank" field.
+func (m *ThreadShareMutation) ResetPinnedRank() {
+	m.pinned_rank = nil
+	m.addpinned_rank = nil
+}
+
+// SetPinnedAt sets the "pinned_at" field.
+func (m *ThreadShareMutation) SetPinnedAt(t time.Time) {
+	m.pinned_at = &t
+}
+
+// PinnedAt returns the value of the "pinned_at" field in the mutation.
+func (m *ThreadShareMutation) PinnedAt() (r time.Time, exists bool) {
+	v := m.pinned_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPinnedAt returns the old "pinned_at" field's value of the ThreadShare entity.
+// If the ThreadShare object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ThreadShareMutation) OldPinnedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPinnedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPinnedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPinnedAt: %w", err)
+	}
+	return oldValue.PinnedAt, nil
+}
+
+// ClearPinnedAt clears the value of the "pinned_at" field.
+func (m *ThreadShareMutation) ClearPinnedAt() {
+	m.pinned_at = nil
+	m.clearedFields[threadshare.FieldPinnedAt] = struct{}{}
+}
+
+// PinnedAtCleared returns if the "pinned_at" field was cleared in this mutation.
+func (m *ThreadShareMutation) PinnedAtCleared() bool {
+	_, ok := m.clearedFields[threadshare.FieldPinnedAt]
+	return ok
+}
+
+// ResetPinnedAt resets all changes to the "pinned_at" field.
+func (m *ThreadShareMutation) ResetPinnedAt() {
+	m.pinned_at = nil
+	delete(m.clearedFields, threadshare.FieldPinnedAt)
+}
+
+// ClearPost clears the "post" edge to the Post entity.
+func (m *ThreadShareMutation) ClearPost() {
+	m.clearedpost = true
+	m.clearedFields[threadshare.FieldPostID] = struct{}{}
+}
+
+// PostCleared reports if the "post" edge to the Post entity was cleared.
+func (m *ThreadShareMutation) PostCleared() bool {
+	return m.clearedpost
+}
+
+// PostIDs returns the "post" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PostID instead. It exists only for internal usage by the builders.
+func (m *ThreadShareMutation) PostIDs() (ids []xid.ID) {
+	if id := m.post; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPost resets all changes to the "post" edge.
+func (m *ThreadShareMutation) ResetPost() {
+	m.post = nil
+	m.clearedpost = false
+}
+
+// ClearChannel clears the "channel" edge to the Channel entity.
+func (m *ThreadShareMutation) ClearChannel() {
+	m.clearedchannel = true
+	m.clearedFields[threadshare.FieldChannelID] = struct{}{}
+}
+
+// ChannelCleared reports if the "channel" edge to the Channel entity was cleared.
+func (m *ThreadShareMutation) ChannelCleared() bool {
+	return m.clearedchannel
+}
+
+// ChannelIDs returns the "channel" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ChannelID instead. It exists only for internal usage by the builders.
+func (m *ThreadShareMutation) ChannelIDs() (ids []xid.ID) {
+	if id := m.channel; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetChannel resets all changes to the "channel" edge.
+func (m *ThreadShareMutation) ResetChannel() {
+	m.channel = nil
+	m.clearedchannel = false
+}
+
+// ClearAccount clears the "account" edge to the Account entity.
+func (m *ThreadShareMutation) ClearAccount() {
+	m.clearedaccount = true
+	m.clearedFields[threadshare.FieldAccountID] = struct{}{}
+}
+
+// AccountCleared reports if the "account" edge to the Account entity was cleared.
+func (m *ThreadShareMutation) AccountCleared() bool {
+	return m.clearedaccount
+}
+
+// AccountIDs returns the "account" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AccountID instead. It exists only for internal usage by the builders.
+func (m *ThreadShareMutation) AccountIDs() (ids []xid.ID) {
+	if id := m.account; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAccount resets all changes to the "account" edge.
+func (m *ThreadShareMutation) ResetAccount() {
+	m.account = nil
+	m.clearedaccount = false
+}
+
+// Where appends a list predicates to the ThreadShareMutation builder.
+func (m *ThreadShareMutation) Where(ps ...predicate.ThreadShare) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ThreadShareMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ThreadShareMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ThreadShare, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ThreadShareMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ThreadShareMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ThreadShare).
+func (m *ThreadShareMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ThreadShareMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, threadshare.FieldCreatedAt)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, threadshare.FieldDeletedAt)
+	}
+	if m.post != nil {
+		fields = append(fields, threadshare.FieldPostID)
+	}
+	if m.channel != nil {
+		fields = append(fields, threadshare.FieldChannelID)
+	}
+	if m.account != nil {
+		fields = append(fields, threadshare.FieldAccountID)
+	}
+	if m.subtitle != nil {
+		fields = append(fields, threadshare.FieldSubtitle)
+	}
+	if m.pinned_rank != nil {
+		fields = append(fields, threadshare.FieldPinnedRank)
+	}
+	if m.pinned_at != nil {
+		fields = append(fields, threadshare.FieldPinnedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ThreadShareMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case threadshare.FieldCreatedAt:
+		return m.CreatedAt()
+	case threadshare.FieldDeletedAt:
+		return m.DeletedAt()
+	case threadshare.FieldPostID:
+		return m.PostID()
+	case threadshare.FieldChannelID:
+		return m.ChannelID()
+	case threadshare.FieldAccountID:
+		return m.AccountID()
+	case threadshare.FieldSubtitle:
+		return m.Subtitle()
+	case threadshare.FieldPinnedRank:
+		return m.PinnedRank()
+	case threadshare.FieldPinnedAt:
+		return m.PinnedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ThreadShareMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case threadshare.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case threadshare.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
+	case threadshare.FieldPostID:
+		return m.OldPostID(ctx)
+	case threadshare.FieldChannelID:
+		return m.OldChannelID(ctx)
+	case threadshare.FieldAccountID:
+		return m.OldAccountID(ctx)
+	case threadshare.FieldSubtitle:
+		return m.OldSubtitle(ctx)
+	case threadshare.FieldPinnedRank:
+		return m.OldPinnedRank(ctx)
+	case threadshare.FieldPinnedAt:
+		return m.OldPinnedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ThreadShare field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ThreadShareMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case threadshare.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case threadshare.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
+		return nil
+	case threadshare.FieldPostID:
+		v, ok := value.(xid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPostID(v)
+		return nil
+	case threadshare.FieldChannelID:
+		v, ok := value.(xid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannelID(v)
+		return nil
+	case threadshare.FieldAccountID:
+		v, ok := value.(xid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountID(v)
+		return nil
+	case threadshare.FieldSubtitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubtitle(v)
+		return nil
+	case threadshare.FieldPinnedRank:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPinnedRank(v)
+		return nil
+	case threadshare.FieldPinnedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPinnedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ThreadShare field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ThreadShareMutation) AddedFields() []string {
+	var fields []string
+	if m.addpinned_rank != nil {
+		fields = append(fields, threadshare.FieldPinnedRank)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ThreadShareMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case threadshare.FieldPinnedRank:
+		return m.AddedPinnedRank()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ThreadShareMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case threadshare.FieldPinnedRank:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPinnedRank(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ThreadShare numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ThreadShareMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(threadshare.FieldDeletedAt) {
+		fields = append(fields, threadshare.FieldDeletedAt)
+	}
+	if m.FieldCleared(threadshare.FieldSubtitle) {
+		fields = append(fields, threadshare.FieldSubtitle)
+	}
+	if m.FieldCleared(threadshare.FieldPinnedAt) {
+		fields = append(fields, threadshare.FieldPinnedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ThreadShareMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ThreadShareMutation) ClearField(name string) error {
+	switch name {
+	case threadshare.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
+	case threadshare.FieldSubtitle:
+		m.ClearSubtitle()
+		return nil
+	case threadshare.FieldPinnedAt:
+		m.ClearPinnedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ThreadShare nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ThreadShareMutation) ResetField(name string) error {
+	switch name {
+	case threadshare.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case threadshare.FieldDeletedAt:
+		m.ResetDeletedAt()
+		return nil
+	case threadshare.FieldPostID:
+		m.ResetPostID()
+		return nil
+	case threadshare.FieldChannelID:
+		m.ResetChannelID()
+		return nil
+	case threadshare.FieldAccountID:
+		m.ResetAccountID()
+		return nil
+	case threadshare.FieldSubtitle:
+		m.ResetSubtitle()
+		return nil
+	case threadshare.FieldPinnedRank:
+		m.ResetPinnedRank()
+		return nil
+	case threadshare.FieldPinnedAt:
+		m.ResetPinnedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ThreadShare field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ThreadShareMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.post != nil {
+		edges = append(edges, threadshare.EdgePost)
+	}
+	if m.channel != nil {
+		edges = append(edges, threadshare.EdgeChannel)
+	}
+	if m.account != nil {
+		edges = append(edges, threadshare.EdgeAccount)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ThreadShareMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case threadshare.EdgePost:
+		if id := m.post; id != nil {
+			return []ent.Value{*id}
+		}
+	case threadshare.EdgeChannel:
+		if id := m.channel; id != nil {
+			return []ent.Value{*id}
+		}
+	case threadshare.EdgeAccount:
+		if id := m.account; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ThreadShareMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ThreadShareMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ThreadShareMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedpost {
+		edges = append(edges, threadshare.EdgePost)
+	}
+	if m.clearedchannel {
+		edges = append(edges, threadshare.EdgeChannel)
+	}
+	if m.clearedaccount {
+		edges = append(edges, threadshare.EdgeAccount)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ThreadShareMutation) EdgeCleared(name string) bool {
+	switch name {
+	case threadshare.EdgePost:
+		return m.clearedpost
+	case threadshare.EdgeChannel:
+		return m.clearedchannel
+	case threadshare.EdgeAccount:
+		return m.clearedaccount
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ThreadShareMutation) ClearEdge(name string) error {
+	switch name {
+	case threadshare.EdgePost:
+		m.ClearPost()
+		return nil
+	case threadshare.EdgeChannel:
+		m.ClearChannel()
+		return nil
+	case threadshare.EdgeAccount:
+		m.ClearAccount()
+		return nil
+	}
+	return fmt.Errorf("unknown ThreadShare unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ThreadShareMutation) ResetEdge(name string) error {
+	switch name {
+	case threadshare.EdgePost:
+		m.ResetPost()
+		return nil
+	case threadshare.EdgeChannel:
+		m.ResetChannel()
+		return nil
+	case threadshare.EdgeAccount:
+		m.ResetAccount()
+		return nil
+	}
+	return fmt.Errorf("unknown ThreadShare edge %s", name)
 }

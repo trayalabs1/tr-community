@@ -30,6 +30,7 @@ import (
 	channel_svc "github.com/Southclaws/storyden/app/services/channel"
 	membership_svc "github.com/Southclaws/storyden/app/services/channel_membership"
 	reply_svc "github.com/Southclaws/storyden/app/services/reply"
+	thread_share_svc "github.com/Southclaws/storyden/app/services/thread_share"
 	"github.com/Southclaws/storyden/app/services/reqinfo"
 	"github.com/Southclaws/storyden/app/services/sentiment/ranker"
 	thread_svc "github.com/Southclaws/storyden/app/services/thread"
@@ -45,12 +46,13 @@ type Channels struct {
 	category_svc    category_svc.Service
 	category_repo   *category.Repository
 	thread_cache    *thread_cache.Cache
-	thread_svc      thread_svc.Service
-	thread_mark_svc thread_mark.Service
-	reply_svc       *reply_svc.Mutator
-	accountQuery    *account_querier.Querier
-	profileQuery    *profile_querier.Querier
-	ranker          *ranker.Ranker
+	thread_svc       thread_svc.Service
+	thread_mark_svc  thread_mark.Service
+	reply_svc        *reply_svc.Mutator
+	thread_share_svc thread_share_svc.Service
+	accountQuery     *account_querier.Querier
+	profileQuery     *profile_querier.Querier
+	ranker           *ranker.Ranker
 }
 
 func NewChannels(
@@ -63,23 +65,25 @@ func NewChannels(
 	thread_svc thread_svc.Service,
 	thread_mark_svc thread_mark.Service,
 	reply_svc *reply_svc.Mutator,
+	thread_share_svc thread_share_svc.Service,
 	accountQuery *account_querier.Querier,
 	profileQuery *profile_querier.Querier,
 	ranker *ranker.Ranker,
 ) Channels {
 	return Channels{
-		channel_svc:     channel_svc,
-		membership_svc:  membership_svc,
-		membership_repo: membership_repo,
-		category_svc:    category_svc,
-		category_repo:   category_repo,
-		thread_cache:    thread_cache,
-		thread_svc:      thread_svc,
-		thread_mark_svc: thread_mark_svc,
-		reply_svc:       reply_svc,
-		accountQuery:    accountQuery,
-		profileQuery:    profileQuery,
-		ranker:          ranker,
+		channel_svc:      channel_svc,
+		membership_svc:   membership_svc,
+		membership_repo:  membership_repo,
+		category_svc:     category_svc,
+		category_repo:    category_repo,
+		thread_cache:     thread_cache,
+		thread_svc:       thread_svc,
+		thread_mark_svc:  thread_mark_svc,
+		reply_svc:        reply_svc,
+		thread_share_svc: thread_share_svc,
+		accountQuery:     accountQuery,
+		profileQuery:     profileQuery,
+		ranker:           ranker,
 	}
 }
 
@@ -1128,9 +1132,30 @@ func (c Channels) ChannelReplyCreate(ctx context.Context, request openapi.Channe
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
-	// Verify the thread belongs to this channel
-	if existingThread.ChannelID != xid.ID(channelID) {
-		return nil, fault.Wrap(fault.New("thread not found in this channel"), fctx.With(ctx))
+	// The thread must either live in this channel or have been shared into it.
+	// A reply posted through a channel the thread was shared into records that
+	// channel as its origin cohort.
+	isOwnChannel := existingThread.ChannelID == xid.ID(channelID)
+	originChannelID := opt.NewEmpty[xid.ID]()
+	if !isOwnChannel {
+		shares, err := c.thread_share_svc.ListForThread(ctx, postID)
+		if err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
+		}
+
+		sharedIntoChannel := false
+		for _, share := range shares {
+			if xid.ID(share.Channel.ID) == xid.ID(channelID) {
+				sharedIntoChannel = true
+				break
+			}
+		}
+
+		if !sharedIntoChannel {
+			return nil, fault.Wrap(fault.New("thread not found in this channel"), fctx.With(ctx))
+		}
+
+		originChannelID = opt.New(xid.ID(channelID))
 	}
 
 	richContent, err := datagraph.NewRichText(request.Body.Body)
@@ -1139,9 +1164,10 @@ func (c Channels) ChannelReplyCreate(ctx context.Context, request openapi.Channe
 	}
 
 	partial := reply_svc.Partial{
-		Content: opt.New(richContent),
-		ReplyTo: opt.Map(opt.NewPtr(request.Body.ReplyTo), deserialisePostID),
-		Meta:    opt.NewPtr((*map[string]any)(request.Body.Meta)),
+		Content:         opt.New(richContent),
+		ReplyTo:         opt.Map(opt.NewPtr(request.Body.ReplyTo), deserialisePostID),
+		Meta:            opt.NewPtr((*map[string]any)(request.Body.Meta)),
+		OriginChannelID: originChannelID,
 	}
 
 	post, err := c.reply_svc.Create(ctx,

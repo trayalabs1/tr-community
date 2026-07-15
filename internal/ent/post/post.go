@@ -68,6 +68,8 @@ const (
 	EdgeReplyTo = "replyTo"
 	// EdgeReplies holds the string denoting the replies edge name in mutations.
 	EdgeReplies = "replies"
+	// EdgeShares holds the string denoting the shares edge name in mutations.
+	EdgeShares = "shares"
 	// EdgeReacts holds the string denoting the reacts edge name in mutations.
 	EdgeReacts = "reacts"
 	// EdgeLikes holds the string denoting the likes edge name in mutations.
@@ -134,6 +136,13 @@ const (
 	RepliesTable = "posts"
 	// RepliesColumn is the table column denoting the replies relation/edge.
 	RepliesColumn = "reply_to_post_id"
+	// SharesTable is the table that holds the shares relation/edge.
+	SharesTable = "thread_shares"
+	// SharesInverseTable is the table name for the ThreadShare entity.
+	// It exists in this package in order to avoid circular dependency with the "threadshare" package.
+	SharesInverseTable = "thread_shares"
+	// SharesColumn is the table column denoting the shares relation/edge.
+	SharesColumn = "post_id"
 	// ReactsTable is the table that holds the reacts relation/edge.
 	ReactsTable = "reacts"
 	// ReactsInverseTable is the table name for the React entity.
@@ -465,6 +474,20 @@ func ByReplies(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// BySharesCount orders the results by shares count.
+func BySharesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSharesStep(), opts...)
+	}
+}
+
+// ByShares orders the results by shares terms.
+func ByShares(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSharesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByReactsCount orders the results by reacts count.
 func ByReactsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -658,6 +681,13 @@ func newRepliesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(Table, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RepliesTable, RepliesColumn),
+	)
+}
+func newSharesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SharesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SharesTable, SharesColumn),
 	)
 }
 func newReactsStep() *sqlgraph.Step {

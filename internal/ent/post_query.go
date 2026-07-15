@@ -28,6 +28,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/predicate"
 	"github.com/Southclaws/storyden/internal/ent/react"
 	"github.com/Southclaws/storyden/internal/ent/tag"
+	"github.com/Southclaws/storyden/internal/ent/threadshare"
 	"github.com/rs/xid"
 )
 
@@ -46,6 +47,7 @@ type PostQuery struct {
 	withPosts        *PostQuery
 	withReplyTo      *PostQuery
 	withReplies      *PostQuery
+	withShares       *ThreadShareQuery
 	withReacts       *ReactQuery
 	withLikes        *LikePostQuery
 	withMentions     *MentionProfileQuery
@@ -263,6 +265,28 @@ func (_q *PostQuery) QueryReplies() *PostQuery {
 			sqlgraph.From(post.Table, post.FieldID, selector),
 			sqlgraph.To(post.Table, post.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, post.RepliesTable, post.RepliesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryShares chains the current query on the "shares" edge.
+func (_q *PostQuery) QueryShares() *ThreadShareQuery {
+	query := (&ThreadShareClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, selector),
+			sqlgraph.To(threadshare.Table, threadshare.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, post.SharesTable, post.SharesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -712,6 +736,7 @@ func (_q *PostQuery) Clone() *PostQuery {
 		withPosts:        _q.withPosts.Clone(),
 		withReplyTo:      _q.withReplyTo.Clone(),
 		withReplies:      _q.withReplies.Clone(),
+		withShares:       _q.withShares.Clone(),
 		withReacts:       _q.withReacts.Clone(),
 		withLikes:        _q.withLikes.Clone(),
 		withMentions:     _q.withMentions.Clone(),
@@ -815,6 +840,17 @@ func (_q *PostQuery) WithReplies(opts ...func(*PostQuery)) *PostQuery {
 		opt(query)
 	}
 	_q.withReplies = query
+	return _q
+}
+
+// WithShares tells the query-builder to eager-load the nodes that are connected to
+// the "shares" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *PostQuery) WithShares(opts ...func(*ThreadShareQuery)) *PostQuery {
+	query := (&ThreadShareClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withShares = query
 	return _q
 }
 
@@ -1017,7 +1053,7 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 	var (
 		nodes       = []*Post{}
 		_spec       = _q.querySpec()
-		loadedTypes = [19]bool{
+		loadedTypes = [20]bool{
 			_q.withAuthor != nil,
 			_q.withCategory != nil,
 			_q.withChannel != nil,
@@ -1026,6 +1062,7 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 			_q.withPosts != nil,
 			_q.withReplyTo != nil,
 			_q.withReplies != nil,
+			_q.withShares != nil,
 			_q.withReacts != nil,
 			_q.withLikes != nil,
 			_q.withMentions != nil,
@@ -1108,6 +1145,13 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 		if err := _q.loadReplies(ctx, query, nodes,
 			func(n *Post) { n.Edges.Replies = []*Post{} },
 			func(n *Post, e *Post) { n.Edges.Replies = append(n.Edges.Replies, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withShares; query != nil {
+		if err := _q.loadShares(ctx, query, nodes,
+			func(n *Post) { n.Edges.Shares = []*ThreadShare{} },
+			func(n *Post, e *ThreadShare) { n.Edges.Shares = append(n.Edges.Shares, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1462,6 +1506,36 @@ func (_q *PostQuery) loadReplies(ctx context.Context, query *PostQuery, nodes []
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "reply_to_post_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *PostQuery) loadShares(ctx context.Context, query *ThreadShareQuery, nodes []*Post, init func(*Post), assign func(*Post, *ThreadShare)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[xid.ID]*Post)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(threadshare.FieldPostID)
+	}
+	query.Where(predicate.ThreadShare(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(post.SharesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.PostID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "post_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

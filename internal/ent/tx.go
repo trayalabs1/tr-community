@@ -88,6 +88,8 @@ type Tx struct {
 	Setting *SettingClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
+	// ThreadShare is the client for interacting with the ThreadShare builders.
+	ThreadShare *ThreadShareClient
 
 	// lazily loaded.
 	client     *Client
@@ -256,6 +258,7 @@ func (tx *Tx) init() {
 	tx.Session = NewSessionClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
+	tx.ThreadShare = NewThreadShareClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

@@ -207,7 +207,7 @@ export function ThreadScreen(props: Props) {
               </VStack>
 
               {!isEditing && (
-                <ThreadMenu thread={thread} editingEnabled movingEnabled onPinChange={handlers.handlePinChange} />
+                <ThreadMenu thread={thread} editingEnabled movingEnabled onPinChange={handlers.handlePinChange} channelID={props.channelID} />
               )}
             </HStack>
 
@@ -347,6 +347,7 @@ export function ThreadScreen(props: Props) {
               initialSession={props.initialSession}
               thread={thread}
               currentPage={data.thread.replies.current_page}
+              channelID={props.channelID}
             />
 
             {thread.reply_status.replies === 0 && (
@@ -370,7 +371,7 @@ export function ThreadScreen(props: Props) {
           </styled.div>
         </styled.div>
 
-        <ReplyBox initialSession={props.initialSession} thread={thread} />
+        <ReplyBox initialSession={props.initialSession} thread={thread} channelID={props.channelID} />
       </LStack>
     </ReplyProvider>
   );

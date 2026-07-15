@@ -136,13 +136,15 @@ func (s *Mutator) Create(
 			ReplyAuthorID:   authorID,
 			ReplyToAuthorID: replyToAuthorID,
 			ReplyToTargetID: replyToReplyID,
+			OriginChannelID: partial.OriginChannelID,
 		})
 
 		if !session.GetRoles(ctx).Permissions().HasAny(rbac.PermissionAdministrator) {
 			s.bus.Publish(ctx, &message.EventReplyRequiresAdminAttention{
-				ThreadID: p.RootPostID,
-				ReplyID:  p.ID,
-				Snippet:  snippet,
+				ThreadID:        p.RootPostID,
+				ReplyID:         p.ID,
+				Snippet:         snippet,
+				OriginChannelID: partial.OriginChannelID,
 			})
 		} else {
 			s.bus.Publish(ctx, &message.EventAdminReplied{

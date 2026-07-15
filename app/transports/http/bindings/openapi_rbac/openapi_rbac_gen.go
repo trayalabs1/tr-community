@@ -111,6 +111,7 @@ type OperationPermissions interface {
 	ChannelThreadUpdate() (bool, *rbac.Permission)
 	ChannelThreadDelete() (bool, *rbac.Permission)
 	ChannelReplyCreate() (bool, *rbac.Permission)
+	ThreadSharePin() (bool, *rbac.Permission)
 	ChannelRankingRecalculate() (bool, *rbac.Permission)
 	ChannelScoreUnscored() (bool, *rbac.Permission)
 	CategoryCreate() (bool, *rbac.Permission)
@@ -130,6 +131,9 @@ type OperationPermissions interface {
 	ReplyCreateMany() (bool, *rbac.Permission)
 	ThreadGetPoll() (bool, *rbac.Permission)
 	ThreadVotePoll() (bool, *rbac.Permission)
+	ThreadShareCreate() (bool, *rbac.Permission)
+	ThreadShareList() (bool, *rbac.Permission)
+	ThreadShareDelete() (bool, *rbac.Permission)
 	PostUpdate() (bool, *rbac.Permission)
 	PostDelete() (bool, *rbac.Permission)
 	PostReactAdd() (bool, *rbac.Permission)
@@ -403,6 +407,8 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.ChannelThreadDelete()
 	case "ChannelReplyCreate":
 		return optable.ChannelReplyCreate()
+	case "ThreadSharePin":
+		return optable.ThreadSharePin()
 	case "ChannelRankingRecalculate":
 		return optable.ChannelRankingRecalculate()
 	case "ChannelScoreUnscored":
@@ -441,6 +447,12 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.ThreadGetPoll()
 	case "ThreadVotePoll":
 		return optable.ThreadVotePoll()
+	case "ThreadShareCreate":
+		return optable.ThreadShareCreate()
+	case "ThreadShareList":
+		return optable.ThreadShareList()
+	case "ThreadShareDelete":
+		return optable.ThreadShareDelete()
 	case "PostUpdate":
 		return optable.PostUpdate()
 	case "PostDelete":

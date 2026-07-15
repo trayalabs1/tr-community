@@ -427,6 +427,22 @@ func (m *Mapping) ChannelReplyCreate() (bool, *rbac.Permission) {
 	return true, nil // Checked in service layer - must be member
 }
 
+func (m *Mapping) ThreadShareCreate() (bool, *rbac.Permission) {
+	return true, &rbac.PermissionAdministrator
+}
+
+func (m *Mapping) ThreadShareList() (bool, *rbac.Permission) {
+	return true, &rbac.PermissionAdministrator
+}
+
+func (m *Mapping) ThreadShareDelete() (bool, *rbac.Permission) {
+	return true, &rbac.PermissionAdministrator
+}
+
+func (m *Mapping) ThreadSharePin() (bool, *rbac.Permission) {
+	return true, &rbac.PermissionAdministrator
+}
+
 func (m *Mapping) ChannelFeedGet() (bool, *rbac.Permission) {
 	return true, nil // Checked in service layer - must be member
 }

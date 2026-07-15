@@ -17,22 +17,26 @@ import (
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/asset"
+	"github.com/Southclaws/storyden/app/resources/channel"
 	"github.com/Southclaws/storyden/app/resources/collection/collection_item_status"
 	"github.com/Southclaws/storyden/app/resources/pagination"
 	"github.com/Southclaws/storyden/app/resources/post"
 	"github.com/Southclaws/storyden/app/resources/post/reaction"
 	"github.com/Southclaws/storyden/app/resources/post/reply"
 	"github.com/Southclaws/storyden/app/resources/post/thread"
+	"github.com/Southclaws/storyden/app/resources/profile"
 	"github.com/Southclaws/storyden/app/resources/tag/tag_ref"
 	"github.com/Southclaws/storyden/internal/ent"
 	ent_account "github.com/Southclaws/storyden/internal/ent/account"
 	ent_asset "github.com/Southclaws/storyden/internal/ent/asset"
+	ent_channel "github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/link"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
 	ent_react "github.com/Southclaws/storyden/internal/ent/react"
 	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
 	ent_tag "github.com/Southclaws/storyden/internal/ent/tag"
+	ent_threadshare "github.com/Southclaws/storyden/internal/ent/threadshare"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/kv"
 )
 
@@ -123,7 +127,7 @@ func (d *Querier) List(
 				sentimentCol := t.C(ent_post_sentiment.FieldSentimentTag)
 				createdAtCol := s.C(ent_post.FieldCreatedAt)
 				s.OrderExpr(
-					sql.Expr(s.C(ent_post.FieldPinnedRank)+" DESC"),
+					sql.Expr(effectivePinRankExpr(s, queryOptions.channelID)+" DESC"),
 					sql.Expr(fmt.Sprintf(rankExpr, sentimentCol, createdAtCol)),
 					sql.Expr("COALESCE("+t.C(ent_post_sentiment.FieldRankScore)+", -1) DESC"),
 					sql.Expr(s.C(ent_post.FieldCreatedAt)+" DESC"),
@@ -223,6 +227,12 @@ func (d *Querier) List(
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
+	if channelID, ok := queryOptions.channelID.Get(); ok {
+		if err := d.decorateShares(ctx, channelID, threads); err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
+		}
+	}
+
 	return &Result{
 		PageSize:    size,
 		Results:     len(threads),
@@ -231,6 +241,109 @@ func (d *Querier) List(
 		NextPage:    nextPage,
 		Threads:     threads,
 	}, nil
+}
+
+// decorateShares attaches interchannel-share context (subtitle, source channel,
+// and the admin who shared) to any thread that appears in this channel's feed by
+// virtue of a share rather than living in the channel itself. Threads owned by
+// the channel are left untouched.
+func (d *Querier) decorateShares(ctx context.Context, channelID xid.ID, threads []*thread.Thread) error {
+	shared := make([]*thread.Thread, 0)
+	postIDs := make([]xid.ID, 0)
+	for _, t := range threads {
+		if t.ChannelID != channelID {
+			shared = append(shared, t)
+			postIDs = append(postIDs, xid.ID(t.ID))
+		}
+	}
+
+	if len(postIDs) == 0 {
+		return nil
+	}
+
+	shares, err := d.db.ThreadShare.Query().
+		Where(
+			ent_threadshare.PostIDIn(postIDs...),
+			ent_threadshare.ChannelID(channelID),
+			ent_threadshare.DeletedAtIsNil(),
+		).
+		WithChannel().
+		WithAccount().
+		All(ctx)
+	if err != nil {
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+
+	byPost := make(map[xid.ID]*ent.ThreadShare, len(shares))
+	sourceChannelIDs := make([]xid.ID, 0, len(shared))
+	for _, s := range shares {
+		byPost[s.PostID] = s
+	}
+	for _, t := range shared {
+		if _, ok := byPost[xid.ID(t.ID)]; ok && !t.ChannelID.IsZero() {
+			sourceChannelIDs = append(sourceChannelIDs, t.ChannelID)
+		}
+	}
+
+	sourceChannels := make(map[xid.ID]*channel.Channel)
+	if len(sourceChannelIDs) > 0 {
+		chans, err := d.db.Channel.Query().
+			Where(ent_channel.IDIn(sourceChannelIDs...)).
+			All(ctx)
+		if err != nil {
+			return fault.Wrap(err, fctx.With(ctx))
+		}
+		for _, c := range chans {
+			sourceChannels[c.ID] = channel.FromModel(c)
+		}
+	}
+
+	for _, t := range shared {
+		share, ok := byPost[xid.ID(t.ID)]
+		if !ok {
+			continue
+		}
+
+		if share.Subtitle != "" {
+			t.Subtitle = opt.New(share.Subtitle)
+		}
+		if src, ok := sourceChannels[t.ChannelID]; ok {
+			t.SharedFrom = opt.New(*src)
+		}
+		if share.Edges.Account != nil {
+			pro, err := profile.MapRef(share.Edges.Account)
+			if err != nil {
+				return fault.Wrap(err, fctx.With(ctx))
+			}
+			t.SharedBy = opt.New(*pro)
+		}
+	}
+
+	return nil
+}
+
+// effectivePinRankExpr returns the SQL expression for a thread's pin rank in the
+// context of a specific channel feed. For threads that live in the channel it is
+// the post's own pinned_rank; for threads featured via an interchannel share it is
+// the share row's pinned_rank, so a thread can be pinned in a destination cohort
+// without affecting its ordering in the source channel. When no channel is scoped
+// (e.g. site-wide feeds) it falls back to the post's own pinned_rank.
+func effectivePinRankExpr(s *sql.Selector, channelID opt.Optional[xid.ID]) string {
+	cid, ok := channelID.Get()
+	if !ok {
+		return s.C(ent_post.FieldPinnedRank)
+	}
+
+	shares := sql.Table(ent_threadshare.Table)
+	s.LeftJoin(shares).On(s.C(ent_post.FieldID), shares.C(ent_threadshare.FieldPostID))
+	s.OnP(sql.And(
+		sql.EQ(shares.C(ent_threadshare.FieldChannelID), cid),
+		sql.IsNull(shares.C(ent_threadshare.FieldDeletedAt)),
+	))
+
+	return "COALESCE(" +
+		shares.C(ent_threadshare.FieldPinnedRank) + ", " +
+		s.C(ent_post.FieldPinnedRank) + ")"
 }
 
 func (d *Querier) GetMany(ctx context.Context, threadIDs []post.ID, accountID opt.Optional[account.AccountID]) ([]*thread.Thread, error) {

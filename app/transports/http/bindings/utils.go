@@ -12,6 +12,7 @@ import (
 	"github.com/rs/xid"
 
 	"github.com/Southclaws/storyden/app/resources/account"
+	"github.com/Southclaws/storyden/app/resources/channel"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/mark"
 	"github.com/Southclaws/storyden/app/resources/pagination"
@@ -106,11 +107,22 @@ func serialiseThreadReference(t *thread.Thread) openapi.ThreadReference {
 		Collections:     serialiseCollectionStatus(t.Collections),
 		Link:            opt.Map(t.WebLink, serialiseLinkRef).Ptr(),
 		QuickReplyChips: quickReplyChipsFor(t),
+		Subtitle:        t.Subtitle.Ptr(),
+		SharedFrom:      opt.Map(t.SharedFrom, serialiseChannelReference).Ptr(),
+		SharedBy:        opt.Map(t.SharedBy, serialiseProfileReference).Ptr(),
 	}
 }
 
 func serialiseContentHTML(c datagraph.Content) string {
 	return c.HTML()
+}
+
+func serialiseChannelReference(c channel.Channel) openapi.ChannelReference {
+	return openapi.ChannelReference{
+		Id:   openapi.Identifier(xid.ID(c.ID).String()),
+		Name: c.Name,
+		Slug: c.Slug,
+	}
 }
 
 func serialiseThread(t *thread.Thread) openapi.Thread {
@@ -141,6 +153,9 @@ func serialiseThread(t *thread.Thread) openapi.Thread {
 		UpdatedAt:       t.UpdatedAt,
 		LastReplyAt:     t.LastReplyAt.Ptr(),
 		QuickReplyChips: quickReplyChipsFor(t),
+		Subtitle:        t.Subtitle.Ptr(),
+		SharedFrom:      opt.Map(t.SharedFrom, serialiseChannelReference).Ptr(),
+		SharedBy:        opt.Map(t.SharedBy, serialiseProfileReference).Ptr(),
 	}
 }
 
@@ -189,6 +204,9 @@ func serialiseReplyPtr(p *reply.Reply) openapi.Reply {
 		Meta:        (*openapi.Metadata)(&p.Meta),
 		Assets:      dt.Map(p.Assets, serialiseAssetPtr),
 		ReplyTo:     opt.Map(p.ReplyTo, serialiseReply).Ptr(),
+		OriginChannel: opt.Map(p.OriginChannel, func(c channel.Channel) openapi.ChannelReference {
+			return serialiseChannelReference(c)
+		}).Ptr(),
 	}
 }
 

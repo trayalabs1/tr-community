@@ -28,25 +28,28 @@ import (
 	"github.com/Southclaws/storyden/app/services/reqinfo"
 	thread_service "github.com/Southclaws/storyden/app/services/thread"
 	"github.com/Southclaws/storyden/app/services/thread_mark"
+	thread_share_svc "github.com/Southclaws/storyden/app/services/thread_share"
 	"github.com/Southclaws/storyden/app/transports/http/openapi"
 )
 
 type Threads struct {
-	thread_cache    *thread_cache.Cache
-	thread_svc      thread_service.Service
-	thread_mark_svc thread_mark.Service
-	accountQuery    *account_querier.Querier
-	profileQuery    *profile_querier.Querier
+	thread_cache     *thread_cache.Cache
+	thread_svc       thread_service.Service
+	thread_mark_svc  thread_mark.Service
+	thread_share_svc thread_share_svc.Service
+	accountQuery     *account_querier.Querier
+	profileQuery     *profile_querier.Querier
 }
 
 func NewThreads(
 	thread_cache *thread_cache.Cache,
 	thread_svc thread_service.Service,
 	thread_mark_svc thread_mark.Service,
+	thread_share_svc thread_share_svc.Service,
 	accountQuery *account_querier.Querier,
 	profileQuery *profile_querier.Querier,
 ) Threads {
-	return Threads{thread_cache, thread_svc, thread_mark_svc, accountQuery, profileQuery}
+	return Threads{thread_cache, thread_svc, thread_mark_svc, thread_share_svc, accountQuery, profileQuery}
 }
 
 func (i *Threads) ThreadCreate(ctx context.Context, request openapi.ThreadCreateRequestObject) (openapi.ThreadCreateResponseObject, error) {

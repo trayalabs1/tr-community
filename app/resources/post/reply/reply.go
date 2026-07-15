@@ -11,6 +11,7 @@ import (
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/asset"
+	"github.com/Southclaws/storyden/app/resources/channel"
 	"github.com/Southclaws/storyden/app/resources/collection/collection_item_status"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/post"
@@ -31,6 +32,11 @@ type Reply struct {
 	RootAuthor      profile.Ref
 	Slug            string // The root slug with the post ID as a #fragment
 	ReplyTo         opt.Optional[Reply]
+
+	// OriginChannel is the cohort the reply was posted from, present when it
+	// differs from the root thread's channel (i.e. the thread was shared into
+	// another channel and the reply came through that channel's feed).
+	OriginChannel opt.Optional[channel.Channel]
 }
 
 type ReplyRef struct {
@@ -226,6 +232,13 @@ func Mapper(
 			reply.RootThreadTitle = rootThreadTitle
 			reply.RootAuthor = *rootAuthor
 			reply.Slug = slug
+		}
+
+		// Carry the reply's own channel when eager-loaded; callers decide whether
+		// to surface it as an origin cohort tag (only when it differs from the
+		// root thread's channel, i.e. the thread was shared into this channel).
+		if m.Edges.Channel != nil {
+			reply.OriginChannel = opt.New(*channel.FromModel(m.Edges.Channel))
 		}
 
 		return reply, nil

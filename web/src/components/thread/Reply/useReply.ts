@@ -23,6 +23,9 @@ export type Props = {
   thread: Thread;
   reply: Reply;
   currentPage?: number;
+  // The channel the viewer is currently looking through, if any. Used to hide
+  // the origin-cohort tag on replies that came from this same channel.
+  channelID?: string;
 };
 
 export function useReply({

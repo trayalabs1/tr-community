@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Controller, ControllerProps } from "react-hook-form";
 
 import { Reply as ReplyType, Thread } from "@/api/openapi-schema";
+import { OriginChannelBadge } from "@/components/category/OriginChannelBadge";
 import { ContentComposer } from "@/components/content/ContentComposer/ContentComposer";
 import { MemberBadge } from "@/components/member/MemberBadge/MemberBadge";
 import { CancelAction } from "@/components/site/Action/Cancel";
@@ -33,7 +34,14 @@ export function Reply(props: Props) {
   } = useReply(props);
   const isTargeted = useFragmentScroll(props.reply.id);
 
-  const { initialSession, thread, reply, currentPage } = props;
+  const { initialSession, thread, reply, currentPage, channelID } = props;
+
+  // Show the origin-cohort tag only when the reply came from a channel other
+  // than the one the viewer is currently looking through. On the global thread
+  // route (no channelID) every reply keeps its origin tag.
+  const showOriginTag =
+    reply.origin_channel !== undefined &&
+    reply.origin_channel.id !== channelID;
 
   const isInReview = reply.visibility === "review";
 
@@ -68,6 +76,11 @@ export function Reply(props: Props) {
             time={new Date(reply.createdAt)}
             updated={new Date(reply.updatedAt)}
             absolute
+            more={
+              showOriginTag ? (
+                <OriginChannelBadge channel={reply.origin_channel!} />
+              ) : undefined
+            }
           />
 
           {isEditing ? (
