@@ -21,6 +21,11 @@ export interface ThreadInitialProps {
   category?: Identifier;
   meta?: Metadata;
   pinned?: PinnedRank;
+  /** When set, this thread is a share that features the referenced
+thread in this thread's channel. The body acts as the share
+subtitle. Requires ADMINISTRATOR permission.
+ */
+  reference_post_id?: Identifier;
   tags?: TagNameList;
   title: ThreadTitle;
   url?: Url;

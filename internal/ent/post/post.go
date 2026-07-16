@@ -36,6 +36,8 @@ const (
 	FieldRootPostID = "root_post_id"
 	// FieldReplyToPostID holds the string denoting the reply_to_post_id field in the database.
 	FieldReplyToPostID = "reply_to_post_id"
+	// FieldReferencePostID holds the string denoting the reference_post_id field in the database.
+	FieldReferencePostID = "reference_post_id"
 	// FieldBody holds the string denoting the body field in the database.
 	FieldBody = "body"
 	// FieldShort holds the string denoting the short field in the database.
@@ -68,6 +70,10 @@ const (
 	EdgeReplyTo = "replyTo"
 	// EdgeReplies holds the string denoting the replies edge name in mutations.
 	EdgeReplies = "replies"
+	// EdgeReference holds the string denoting the reference edge name in mutations.
+	EdgeReference = "reference"
+	// EdgeShares holds the string denoting the shares edge name in mutations.
+	EdgeShares = "shares"
 	// EdgeReacts holds the string denoting the reacts edge name in mutations.
 	EdgeReacts = "reacts"
 	// EdgeLikes holds the string denoting the likes edge name in mutations.
@@ -134,6 +140,14 @@ const (
 	RepliesTable = "posts"
 	// RepliesColumn is the table column denoting the replies relation/edge.
 	RepliesColumn = "reply_to_post_id"
+	// ReferenceTable is the table that holds the reference relation/edge.
+	ReferenceTable = "posts"
+	// ReferenceColumn is the table column denoting the reference relation/edge.
+	ReferenceColumn = "reference_post_id"
+	// SharesTable is the table that holds the shares relation/edge.
+	SharesTable = "posts"
+	// SharesColumn is the table column denoting the shares relation/edge.
+	SharesColumn = "reference_post_id"
 	// ReactsTable is the table that holds the reacts relation/edge.
 	ReactsTable = "reacts"
 	// ReactsInverseTable is the table name for the React entity.
@@ -220,6 +234,7 @@ var Columns = []string{
 	FieldLastReplyAt,
 	FieldRootPostID,
 	FieldReplyToPostID,
+	FieldReferencePostID,
 	FieldBody,
 	FieldShort,
 	FieldMetadata,
@@ -353,6 +368,11 @@ func ByReplyToPostID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldReplyToPostID, opts...).ToFunc()
 }
 
+// ByReferencePostID orders the results by the reference_post_id field.
+func ByReferencePostID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReferencePostID, opts...).ToFunc()
+}
+
 // ByBody orders the results by the body field.
 func ByBody(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBody, opts...).ToFunc()
@@ -462,6 +482,27 @@ func ByRepliesCount(opts ...sql.OrderTermOption) OrderOption {
 func ByReplies(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newRepliesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByReferenceField orders the results by reference field.
+func ByReferenceField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReferenceStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// BySharesCount orders the results by shares count.
+func BySharesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSharesStep(), opts...)
+	}
+}
+
+// ByShares orders the results by shares terms.
+func ByShares(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSharesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -658,6 +699,20 @@ func newRepliesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(Table, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RepliesTable, RepliesColumn),
+	)
+}
+func newReferenceStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(Table, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ReferenceTable, ReferenceColumn),
+	)
+}
+func newSharesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(Table, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SharesTable, SharesColumn),
 	)
 }
 func newReactsStep() *sqlgraph.Step {

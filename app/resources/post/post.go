@@ -51,6 +51,10 @@ type Post struct {
 type PostRef struct {
 	ID   ID
 	Root ID
+	// IsShare is true when this post references another thread (a share row).
+	// Shares carry no conversation of their own; interaction must target the
+	// referenced original instead.
+	IsShare bool
 }
 
 func (p *PostRef) IsThread() bool {
@@ -141,7 +145,8 @@ func MapRef(in *ent.Post) *PostRef {
 	}()
 
 	return &PostRef{
-		ID:   ID(in.ID),
-		Root: root,
+		ID:      ID(in.ID),
+		Root:    root,
+		IsShare: in.ReferencePostID != nil,
 	}
 }

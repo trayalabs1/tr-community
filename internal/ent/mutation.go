@@ -23739,6 +23739,11 @@ type PostMutation struct {
 	replies              map[xid.ID]struct{}
 	removedreplies       map[xid.ID]struct{}
 	clearedreplies       bool
+	reference            *xid.ID
+	clearedreference     bool
+	shares               map[xid.ID]struct{}
+	removedshares        map[xid.ID]struct{}
+	clearedshares        bool
 	reacts               map[xid.ID]struct{}
 	removedreacts        map[xid.ID]struct{}
 	clearedreacts        bool
@@ -24335,6 +24340,55 @@ func (m *PostMutation) ReplyToPostIDCleared() bool {
 func (m *PostMutation) ResetReplyToPostID() {
 	m.replyTo = nil
 	delete(m.clearedFields, post.FieldReplyToPostID)
+}
+
+// SetReferencePostID sets the "reference_post_id" field.
+func (m *PostMutation) SetReferencePostID(x xid.ID) {
+	m.reference = &x
+}
+
+// ReferencePostID returns the value of the "reference_post_id" field in the mutation.
+func (m *PostMutation) ReferencePostID() (r xid.ID, exists bool) {
+	v := m.reference
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReferencePostID returns the old "reference_post_id" field's value of the Post entity.
+// If the Post object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostMutation) OldReferencePostID(ctx context.Context) (v *xid.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReferencePostID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReferencePostID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReferencePostID: %w", err)
+	}
+	return oldValue.ReferencePostID, nil
+}
+
+// ClearReferencePostID clears the value of the "reference_post_id" field.
+func (m *PostMutation) ClearReferencePostID() {
+	m.reference = nil
+	m.clearedFields[post.FieldReferencePostID] = struct{}{}
+}
+
+// ReferencePostIDCleared returns if the "reference_post_id" field was cleared in this mutation.
+func (m *PostMutation) ReferencePostIDCleared() bool {
+	_, ok := m.clearedFields[post.FieldReferencePostID]
+	return ok
+}
+
+// ResetReferencePostID resets all changes to the "reference_post_id" field.
+func (m *PostMutation) ResetReferencePostID() {
+	m.reference = nil
+	delete(m.clearedFields, post.FieldReferencePostID)
 }
 
 // SetBody sets the "body" field.
@@ -25000,6 +25054,100 @@ func (m *PostMutation) ResetReplies() {
 	m.removedreplies = nil
 }
 
+// SetReferenceID sets the "reference" edge to the Post entity by id.
+func (m *PostMutation) SetReferenceID(id xid.ID) {
+	m.reference = &id
+}
+
+// ClearReference clears the "reference" edge to the Post entity.
+func (m *PostMutation) ClearReference() {
+	m.clearedreference = true
+	m.clearedFields[post.FieldReferencePostID] = struct{}{}
+}
+
+// ReferenceCleared reports if the "reference" edge to the Post entity was cleared.
+func (m *PostMutation) ReferenceCleared() bool {
+	return m.ReferencePostIDCleared() || m.clearedreference
+}
+
+// ReferenceID returns the "reference" edge ID in the mutation.
+func (m *PostMutation) ReferenceID() (id xid.ID, exists bool) {
+	if m.reference != nil {
+		return *m.reference, true
+	}
+	return
+}
+
+// ReferenceIDs returns the "reference" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ReferenceID instead. It exists only for internal usage by the builders.
+func (m *PostMutation) ReferenceIDs() (ids []xid.ID) {
+	if id := m.reference; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetReference resets all changes to the "reference" edge.
+func (m *PostMutation) ResetReference() {
+	m.reference = nil
+	m.clearedreference = false
+}
+
+// AddShareIDs adds the "shares" edge to the Post entity by ids.
+func (m *PostMutation) AddShareIDs(ids ...xid.ID) {
+	if m.shares == nil {
+		m.shares = make(map[xid.ID]struct{})
+	}
+	for i := range ids {
+		m.shares[ids[i]] = struct{}{}
+	}
+}
+
+// ClearShares clears the "shares" edge to the Post entity.
+func (m *PostMutation) ClearShares() {
+	m.clearedshares = true
+}
+
+// SharesCleared reports if the "shares" edge to the Post entity was cleared.
+func (m *PostMutation) SharesCleared() bool {
+	return m.clearedshares
+}
+
+// RemoveShareIDs removes the "shares" edge to the Post entity by IDs.
+func (m *PostMutation) RemoveShareIDs(ids ...xid.ID) {
+	if m.removedshares == nil {
+		m.removedshares = make(map[xid.ID]struct{})
+	}
+	for i := range ids {
+		delete(m.shares, ids[i])
+		m.removedshares[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedShares returns the removed IDs of the "shares" edge to the Post entity.
+func (m *PostMutation) RemovedSharesIDs() (ids []xid.ID) {
+	for id := range m.removedshares {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SharesIDs returns the "shares" edge IDs in the mutation.
+func (m *PostMutation) SharesIDs() (ids []xid.ID) {
+	for id := range m.shares {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetShares resets all changes to the "shares" edge.
+func (m *PostMutation) ResetShares() {
+	m.shares = nil
+	m.clearedshares = false
+	m.removedshares = nil
+}
+
 // AddReactIDs adds the "reacts" edge to the React entity by ids.
 func (m *PostMutation) AddReactIDs(ids ...xid.ID) {
 	if m.reacts == nil {
@@ -25586,7 +25734,7 @@ func (m *PostMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PostMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 19)
 	if m.created_at != nil {
 		fields = append(fields, post.FieldCreatedAt)
 	}
@@ -25616,6 +25764,9 @@ func (m *PostMutation) Fields() []string {
 	}
 	if m.replyTo != nil {
 		fields = append(fields, post.FieldReplyToPostID)
+	}
+	if m.reference != nil {
+		fields = append(fields, post.FieldReferencePostID)
 	}
 	if m.body != nil {
 		fields = append(fields, post.FieldBody)
@@ -25669,6 +25820,8 @@ func (m *PostMutation) Field(name string) (ent.Value, bool) {
 		return m.RootPostID()
 	case post.FieldReplyToPostID:
 		return m.ReplyToPostID()
+	case post.FieldReferencePostID:
+		return m.ReferencePostID()
 	case post.FieldBody:
 		return m.Body()
 	case post.FieldShort:
@@ -25714,6 +25867,8 @@ func (m *PostMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldRootPostID(ctx)
 	case post.FieldReplyToPostID:
 		return m.OldReplyToPostID(ctx)
+	case post.FieldReferencePostID:
+		return m.OldReferencePostID(ctx)
 	case post.FieldBody:
 		return m.OldBody(ctx)
 	case post.FieldShort:
@@ -25808,6 +25963,13 @@ func (m *PostMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetReplyToPostID(v)
+		return nil
+	case post.FieldReferencePostID:
+		v, ok := value.(xid.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReferencePostID(v)
 		return nil
 	case post.FieldBody:
 		v, ok := value.(string)
@@ -25928,6 +26090,9 @@ func (m *PostMutation) ClearedFields() []string {
 	if m.FieldCleared(post.FieldReplyToPostID) {
 		fields = append(fields, post.FieldReplyToPostID)
 	}
+	if m.FieldCleared(post.FieldReferencePostID) {
+		fields = append(fields, post.FieldReferencePostID)
+	}
 	if m.FieldCleared(post.FieldMetadata) {
 		fields = append(fields, post.FieldMetadata)
 	}
@@ -25968,6 +26133,9 @@ func (m *PostMutation) ClearField(name string) error {
 		return nil
 	case post.FieldReplyToPostID:
 		m.ClearReplyToPostID()
+		return nil
+	case post.FieldReferencePostID:
+		m.ClearReferencePostID()
 		return nil
 	case post.FieldMetadata:
 		m.ClearMetadata()
@@ -26016,6 +26184,9 @@ func (m *PostMutation) ResetField(name string) error {
 	case post.FieldReplyToPostID:
 		m.ResetReplyToPostID()
 		return nil
+	case post.FieldReferencePostID:
+		m.ResetReferencePostID()
+		return nil
 	case post.FieldBody:
 		m.ResetBody()
 		return nil
@@ -26046,7 +26217,7 @@ func (m *PostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 19)
+	edges := make([]string, 0, 21)
 	if m.author != nil {
 		edges = append(edges, post.EdgeAuthor)
 	}
@@ -26070,6 +26241,12 @@ func (m *PostMutation) AddedEdges() []string {
 	}
 	if m.replies != nil {
 		edges = append(edges, post.EdgeReplies)
+	}
+	if m.reference != nil {
+		edges = append(edges, post.EdgeReference)
+	}
+	if m.shares != nil {
+		edges = append(edges, post.EdgeShares)
 	}
 	if m.reacts != nil {
 		edges = append(edges, post.EdgeReacts)
@@ -26149,6 +26326,16 @@ func (m *PostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case post.EdgeReference:
+		if id := m.reference; id != nil {
+			return []ent.Value{*id}
+		}
+	case post.EdgeShares:
+		ids := make([]ent.Value, 0, len(m.shares))
+		for id := range m.shares {
+			ids = append(ids, id)
+		}
+		return ids
 	case post.EdgeReacts:
 		ids := make([]ent.Value, 0, len(m.reacts))
 		for id := range m.reacts {
@@ -26217,7 +26404,7 @@ func (m *PostMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 19)
+	edges := make([]string, 0, 21)
 	if m.removedtags != nil {
 		edges = append(edges, post.EdgeTags)
 	}
@@ -26226,6 +26413,9 @@ func (m *PostMutation) RemovedEdges() []string {
 	}
 	if m.removedreplies != nil {
 		edges = append(edges, post.EdgeReplies)
+	}
+	if m.removedshares != nil {
+		edges = append(edges, post.EdgeShares)
 	}
 	if m.removedreacts != nil {
 		edges = append(edges, post.EdgeReacts)
@@ -26276,6 +26466,12 @@ func (m *PostMutation) RemovedIDs(name string) []ent.Value {
 	case post.EdgeReplies:
 		ids := make([]ent.Value, 0, len(m.removedreplies))
 		for id := range m.removedreplies {
+			ids = append(ids, id)
+		}
+		return ids
+	case post.EdgeShares:
+		ids := make([]ent.Value, 0, len(m.removedshares))
+		for id := range m.removedshares {
 			ids = append(ids, id)
 		}
 		return ids
@@ -26339,7 +26535,7 @@ func (m *PostMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 19)
+	edges := make([]string, 0, 21)
 	if m.clearedauthor {
 		edges = append(edges, post.EdgeAuthor)
 	}
@@ -26363,6 +26559,12 @@ func (m *PostMutation) ClearedEdges() []string {
 	}
 	if m.clearedreplies {
 		edges = append(edges, post.EdgeReplies)
+	}
+	if m.clearedreference {
+		edges = append(edges, post.EdgeReference)
+	}
+	if m.clearedshares {
+		edges = append(edges, post.EdgeShares)
 	}
 	if m.clearedreacts {
 		edges = append(edges, post.EdgeReacts)
@@ -26420,6 +26622,10 @@ func (m *PostMutation) EdgeCleared(name string) bool {
 		return m.clearedreplyTo
 	case post.EdgeReplies:
 		return m.clearedreplies
+	case post.EdgeReference:
+		return m.clearedreference
+	case post.EdgeShares:
+		return m.clearedshares
 	case post.EdgeReacts:
 		return m.clearedreacts
 	case post.EdgeLikes:
@@ -26465,6 +26671,9 @@ func (m *PostMutation) ClearEdge(name string) error {
 	case post.EdgeReplyTo:
 		m.ClearReplyTo()
 		return nil
+	case post.EdgeReference:
+		m.ClearReference()
+		return nil
 	case post.EdgeLink:
 		m.ClearLink()
 		return nil
@@ -26502,6 +26711,12 @@ func (m *PostMutation) ResetEdge(name string) error {
 		return nil
 	case post.EdgeReplies:
 		m.ResetReplies()
+		return nil
+	case post.EdgeReference:
+		m.ResetReference()
+		return nil
+	case post.EdgeShares:
+		m.ResetShares()
 		return nil
 	case post.EdgeReacts:
 		m.ResetReacts()
