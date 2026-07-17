@@ -64,6 +64,35 @@ func (d *Querier) GetByID(ctx context.Context, id account.AccountID) (*account.A
 	return acc, nil
 }
 
+func (d *Querier) GetByIDForSession(ctx context.Context, id account.AccountID) (*account.AccountWithEdges, error) {
+	result, err := d.db.Account.
+		Query().
+		Where(account_ent.ID(xid.ID(id))).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.NotFound))
+		}
+
+		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.Internal))
+	}
+
+	hr, err := d.roleQuerier.ListFor(ctx, result)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	ref, err := account.MapRef(result)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return &account.AccountWithEdges{
+		Account: *ref,
+		Roles:   hr,
+	}, nil
+}
+
 func (d *Querier) GetHandleAndMetadata(ctx context.Context, id account.AccountID) (string, map[string]any, error) {
 	acc, err := d.db.Account.
 		Query().
