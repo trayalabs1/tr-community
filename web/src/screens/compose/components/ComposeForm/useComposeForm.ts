@@ -110,12 +110,13 @@ export function useComposeForm({
       return;
     }
 
-    if (!isPoll && containsMobileNumber(body)) {
+    const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
+
+    if (!isAdmin && !isPoll && containsMobileNumber(body)) {
       form.setError("body", { message: MOBILE_NUMBER_ERROR });
       throw new Error(MOBILE_NUMBER_ERROR);
     }
 
-    const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
     const targetVisibility = isAdmin ? Visibility.published : Visibility.review;
 
     const payload: ThreadInitialProps = {

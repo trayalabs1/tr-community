@@ -7,28 +7,48 @@ test("plain text with no digits", () => {
   assert.is(containsMobileNumber("hello world"), false);
 });
 
-test("five or fewer digits allowed", () => {
+test("short number allowed", () => {
   assert.is(containsMobileNumber("order 12345"), false);
 });
 
-test("digits split across html allowed when five or fewer", () => {
-  assert.is(containsMobileNumber("<p>call at 3pm on day 12</p>"), false);
+test("nine digits allowed", () => {
+  assert.is(containsMobileNumber("987654321"), false);
 });
 
-test("ten digit number blocked", () => {
+test("bare ten digit number blocked", () => {
   assert.is(containsMobileNumber("9876543210"), true);
 });
 
-test("number with spaces blocked", () => {
-  assert.is(containsMobileNumber("call me on 98765 43210"), true);
+test("ten digits with country code blocked", () => {
+  assert.is(containsMobileNumber("+919876543210"), true);
 });
 
-test("number inside html body blocked", () => {
+test("ten digits with single-digit country code blocked", () => {
+  assert.is(containsMobileNumber("+19876543210"), true);
+});
+
+test("ten digit number embedded in text blocked", () => {
+  assert.is(containsMobileNumber("call me 9876543210 now"), true);
+});
+
+test("ten digit number inside html body blocked", () => {
   assert.is(containsMobileNumber("<p>my number is 9876543210</p>"), true);
 });
 
+test("number with spaces allowed", () => {
+  assert.is(containsMobileNumber("call me on 98765 43210"), false);
+});
+
+test("eleven digit run allowed", () => {
+  assert.is(containsMobileNumber("98765432101"), false);
+});
+
+test("twelve digit id allowed", () => {
+  assert.is(containsMobileNumber("id 987654321012"), false);
+});
+
 test("digits inside html tags and attributes ignored", () => {
-  assert.is(containsMobileNumber('<a href="/t/123456789">link</a>'), false);
+  assert.is(containsMobileNumber('<a href="/t/1234567890">link</a>'), false);
 });
 
 test("empty string allowed", () => {

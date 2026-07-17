@@ -30,10 +30,7 @@ type ReplyLocationState = {
 };
 
 export const FormSchema = z.object({
-  body: z
-    .string()
-    .min(1, "Please enter a message.")
-    .refine((body) => !containsMobileNumber(body), MOBILE_NUMBER_ERROR),
+  body: z.string().min(1, "Please enter a message."),
 });
 export type Form = z.infer<typeof FormSchema>;
 
@@ -67,6 +64,11 @@ export function useReplyBox({ initialSession, thread }: Props) {
 
   const handleSubmit = form.handleSubmit(async (data: Form) => {
     const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
+
+    if (!isAdmin && containsMobileNumber(data.body)) {
+      toast.error(MOBILE_NUMBER_ERROR);
+      return;
+    }
 
     trackCardReply(thread.id, data.body.length, undefined, "reply_box");
 
