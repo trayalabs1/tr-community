@@ -76,6 +76,7 @@ func Build() fx.Option {
 		fx.Provide(
 			settings.New,
 			account_querier.New,
+			account_querier.ProvideSessionAccountLoader,
 			account_writer.New,
 			access_key.New,
 			email.New,
