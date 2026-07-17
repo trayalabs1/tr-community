@@ -14,6 +14,7 @@ import (
 	"github.com/Southclaws/storyden/app/services/asset"
 	"github.com/Southclaws/storyden/app/services/audit/audit_logger"
 	"github.com/Southclaws/storyden/app/services/authentication"
+	"github.com/Southclaws/storyden/app/services/authentication/session_cache"
 	"github.com/Southclaws/storyden/app/services/avatar"
 	"github.com/Southclaws/storyden/app/services/avatar_gen"
 	"github.com/Southclaws/storyden/app/services/beacon_listener"
@@ -58,6 +59,7 @@ func Build() fx.Option {
 		onboarding.Build(),
 		account_suspension.Build(),
 		authentication.Build(),
+		session_cache.Build(),
 		category.Build(),
 		channel.Build(),
 		channel_membership.Build(),

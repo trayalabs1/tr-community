@@ -60,6 +60,13 @@ func newSQL(cfg config.Config) (*sql.DB, *sqlx.DB, error) {
 		return nil, nil, fault.Wrap(err, fmsg.With("failed to connect to database"))
 	}
 
+	for _, h := range []*sql.DB{d, x.DB} {
+		h.SetMaxOpenConns(cfg.DatabaseMaxOpenConns)
+		h.SetMaxIdleConns(cfg.DatabaseMaxIdleConns)
+		h.SetConnMaxLifetime(cfg.DatabaseConnMaxLifetime)
+		h.SetConnMaxIdleTime(cfg.DatabaseConnMaxIdleTime)
+	}
+
 	return d, x, nil
 }
 
@@ -128,6 +135,7 @@ func newEntClient(lc fx.Lifecycle, tf tracing.Factory, cfg config.Config, db *sq
 				schema.WithApplyHook(populateLastReplyAt()),
 				schema.WithApplyHook(migrateReplyVisibility()),
 				schema.WithApplyHook(createPostCategoryIndex()),
+				schema.WithApplyHook(createThreadEdgeIndex()),
 			); err != nil {
 				return fault.Wrap(err, fctx.With(ctx))
 			}
@@ -322,6 +330,29 @@ func createPostCategoryIndex() schema.ApplyHook {
 			`, []any{}, nil)
 			if err != nil {
 				return fault.Wrap(err, fmsg.With("failed to create post_category index"))
+			}
+
+			return nil
+		})
+	}
+}
+
+// createThreadEdgeIndex adds an index on the tag_posts M2M join table keyed by
+// post_id. Ent generates the join table with a composite primary key led by
+// tag_id, so seeking a post's tags (GET /api/threads/:id) can't use it. The
+// post_assets join table already leads with post_id, so it needs no extra index.
+//
+// Idempotent via IF NOT EXISTS.
+func createThreadEdgeIndex() schema.ApplyHook {
+	return func(next schema.Applier) schema.Applier {
+		return schema.ApplyFunc(func(ctx context.Context, conn dialect.ExecQuerier, plan *migrate.Plan) error {
+			if err := next.Apply(ctx, conn, plan); err != nil {
+				return err
+			}
+
+			err := conn.Exec(ctx, `CREATE INDEX IF NOT EXISTS tag_posts_post_id ON tag_posts (post_id)`, []any{}, nil)
+			if err != nil {
+				return fault.Wrap(err, fmsg.With("failed to create tag_posts index"))
 			}
 
 			return nil
