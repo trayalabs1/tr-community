@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { Account, DatagraphItemKind, Thread, Permission } from "src/api/openapi-schema";
@@ -13,6 +14,7 @@ import { sendBeacon } from "@/lib/beacon/beacon";
 import { useThreadMutations } from "@/lib/thread/mutation";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
 import { hasPermission } from "@/utils/permissions";
+import { containsMobileNumber, MOBILE_NUMBER_ERROR } from "@/utils/content-validation";
 
 import { useReplyContext } from "../ReplyContext";
 
@@ -28,7 +30,10 @@ type ReplyLocationState = {
 };
 
 export const FormSchema = z.object({
-  body: z.string().min(1, "Please enter a message."),
+  body: z
+    .string()
+    .min(1, "Please enter a message.")
+    .refine((body) => !containsMobileNumber(body), MOBILE_NUMBER_ERROR),
 });
 export type Form = z.infer<typeof FormSchema>;
 
@@ -109,6 +114,10 @@ export function useReplyBox({ initialSession, thread }: Props) {
         cleanup: async () => await revalidate(),
       },
     );
+  }, (errors) => {
+    if (errors.body) {
+      toast.error(errors.body.message);
+    }
   });
 
   return {

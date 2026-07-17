@@ -13,6 +13,7 @@ import { Thread, ThreadInitialProps, Visibility, Permission } from "src/api/open
 
 import { handle } from "@/api/client";
 import { hasPermission } from "@/utils/permissions";
+import { containsMobileNumber, MOBILE_NUMBER_ERROR } from "@/utils/content-validation";
 import { useSession } from "@/auth";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
@@ -107,6 +108,11 @@ export function useComposeForm({
     if (!isPoll && !body.trim()) {
       form.setError("body", { message: "Body is required" });
       return;
+    }
+
+    if (!isPoll && containsMobileNumber(body)) {
+      form.setError("body", { message: MOBILE_NUMBER_ERROR });
+      throw new Error(MOBILE_NUMBER_ERROR);
     }
 
     const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
