@@ -84,6 +84,22 @@ type Config struct {
 	*/
 	DatabaseURL string `default:"sqlite://data/data.db?_pragma=foreign_keys(1)" envconfig:"DATABASE_URL"`
 	/*
+	   The maximum number of open connections to the database.
+
+	   Size this per-pod so that `pods × DATABASE_MAX_OPEN_CONNS` stays under the database's `max_connections` budget shared with other services.
+	*/
+	DatabaseMaxOpenConns int `default:"25" envconfig:"DATABASE_MAX_OPEN_CONNS"`
+	/*
+	   The maximum number of idle connections retained in the pool.
+
+	   Keep this equal to `DATABASE_MAX_OPEN_CONNS` so idle connections are never eagerly closed under steady load, which avoids per-request connection churn and repeated DNS resolution.
+	*/
+	DatabaseMaxIdleConns int `default:"25" envconfig:"DATABASE_MAX_IDLE_CONNS"`
+	// The maximum amount of time a connection may be reused before it is closed and replaced.
+	DatabaseConnMaxLifetime time.Duration `default:"30m" envconfig:"DATABASE_CONN_MAX_LIFETIME"`
+	// The maximum amount of time a connection may remain idle before it is closed.
+	DatabaseConnMaxIdleTime time.Duration `default:"5m" envconfig:"DATABASE_CONN_MAX_IDLE_TIME"`
+	/*
 	   The interface on which the API service will for HTTP requests.
 
 	   Typically, in a containerised environment, this should be all interfaces (`0.0.0.0`.)

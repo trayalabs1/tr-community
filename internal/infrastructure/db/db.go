@@ -60,6 +60,13 @@ func newSQL(cfg config.Config) (*sql.DB, *sqlx.DB, error) {
 		return nil, nil, fault.Wrap(err, fmsg.With("failed to connect to database"))
 	}
 
+	for _, h := range []*sql.DB{d, x.DB} {
+		h.SetMaxOpenConns(cfg.DatabaseMaxOpenConns)
+		h.SetMaxIdleConns(cfg.DatabaseMaxIdleConns)
+		h.SetConnMaxLifetime(cfg.DatabaseConnMaxLifetime)
+		h.SetConnMaxIdleTime(cfg.DatabaseConnMaxIdleTime)
+	}
+
 	return d, x, nil
 }
 
