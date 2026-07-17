@@ -71,6 +71,7 @@ export function QueueScreen() {
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("all");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [excludeBAH, setExcludeBAH] = useState(true);
+  const [excludeFeedback, setExcludeFeedback] = useState(true);
 
   useEffect(() => {
     if (!accountId) {
@@ -140,6 +141,7 @@ export function QueueScreen() {
   const { data: threadData, isValidating: isThreadsLoading } = useThreadList({
     visibility: [Visibility.review],
     ...(excludeBAH && { exclude_bah: true }),
+    ...(excludeFeedback && { exclude_feedback: true }),
   });
 
   const { data: pendingReplyData, isValidating: isPendingReplyLoading } = useThreadList({
@@ -148,6 +150,7 @@ export function QueueScreen() {
     created_before: pendingReplyRange.createdBefore,
     no_replies: true,
     ...(excludeBAH && { exclude_bah: true }),
+    ...(excludeFeedback && { exclude_feedback: true }),
     page: String(pendingReplyPage),
   });
 
@@ -497,6 +500,31 @@ export function QueueScreen() {
                 }}
               >
                 Hide Streak Posts
+              </styled.button>
+            </HStack>
+          </VStack>
+
+          <VStack alignItems="start" gap="2" width="full">
+            <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
+              Feedback Posts
+            </styled.label>
+            <HStack gap="2" flexWrap="wrap">
+              <styled.button
+                onClick={() => setExcludeFeedback(!excludeFeedback)}
+                fontSize="xs"
+                cursor="pointer"
+                px="3"
+                py="1.5"
+                rounded="full"
+                transition="all"
+                style={{
+                  backgroundColor: excludeFeedback ? "var(--colors-bg-default)" : "var(--colors-bg-subtle)",
+                  color: excludeFeedback ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
+                  border: "1px solid var(--colors-border-default)",
+                  fontWeight: excludeFeedback ? "600" : "400",
+                }}
+              >
+                Hide Feedback
               </styled.button>
             </HStack>
           </VStack>

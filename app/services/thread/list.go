@@ -18,23 +18,24 @@ import (
 )
 
 type Params struct {
-	Query         opt.Optional[string]
-	CreatedBefore opt.Optional[time.Time]
-	CreatedAfter  opt.Optional[time.Time]
-	UpdatedBefore opt.Optional[time.Time]
-	AccountID     opt.Optional[account.AccountID]
-	Visibility    opt.Optional[[]visibility.Visibility]
-	Tags          opt.Optional[[]xid.ID]
-	Categories    opt.Optional[thread_querier.CategoryFilter]
-	ChannelID     opt.Optional[xid.ID]
-	IgnorePinned         opt.Optional[bool]
-	NoReplies            opt.Optional[bool]
-	NoLikes              opt.Optional[bool]
-	UseSentimentRanking  bool
-	ExcludeBAH           bool
-	BAHOnly              bool
-	PostCategories       []string
-	Sentiments           []string
+	Query               opt.Optional[string]
+	CreatedBefore       opt.Optional[time.Time]
+	CreatedAfter        opt.Optional[time.Time]
+	UpdatedBefore       opt.Optional[time.Time]
+	AccountID           opt.Optional[account.AccountID]
+	Visibility          opt.Optional[[]visibility.Visibility]
+	Tags                opt.Optional[[]xid.ID]
+	Categories          opt.Optional[thread_querier.CategoryFilter]
+	ChannelID           opt.Optional[xid.ID]
+	IgnorePinned        opt.Optional[bool]
+	NoReplies           opt.Optional[bool]
+	NoLikes             opt.Optional[bool]
+	UseSentimentRanking bool
+	ExcludeBAH          bool
+	ExcludeFeedback     bool
+	BAHOnly             bool
+	PostCategories      []string
+	Sentiments          []string
 }
 
 func (s *service) List(ctx context.Context,
@@ -74,6 +75,9 @@ func (s *service) List(ctx context.Context,
 		q = append(q, thread_querier.OnlyBAHPosts())
 	} else if opts.ExcludeBAH {
 		q = append(q, thread_querier.ExcludeBAHPosts())
+	}
+	if opts.ExcludeFeedback {
+		q = append(q, thread_querier.ExcludeFeedbackPosts())
 	}
 	if len(opts.PostCategories) > 0 {
 		q = append(q, thread_querier.HasPostCategories(opts.PostCategories))
