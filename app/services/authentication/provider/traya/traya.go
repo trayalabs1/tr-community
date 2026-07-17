@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Southclaws/dt"
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
 	"github.com/Southclaws/fault/fmsg"
@@ -463,13 +464,21 @@ func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID accou
 	}
 
 	// Step 4: Build map of current managed channels (channelID -> slug)
+	channelIDs := dt.Map(currentMemberships, func(m *channel_membership.Membership) channel.ChannelID {
+		return channel.ChannelID(m.ChannelID)
+	})
+
+	channelsByID, err := p.channelRepo.GetMany(ctx, channelIDs...)
+	if err != nil {
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+
 	currentManagedChannels := make(map[xid.ID]string)
 	for _, membership := range currentMemberships {
-		ch, err := p.channelRepo.Get(ctx, channel.ChannelID(membership.ChannelID))
-		if err != nil {
+		ch, ok := channelsByID[membership.ChannelID]
+		if !ok {
 			p.logger.Warn("failed to get channel for membership",
-				slog.String("channel_id", membership.ChannelID.String()),
-				slog.String("error", err.Error()))
+				slog.String("channel_id", membership.ChannelID.String()))
 			continue
 		}
 

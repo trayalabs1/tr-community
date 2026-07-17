@@ -120,6 +120,30 @@ func (r *Repository) Get(ctx context.Context, id ChannelID) (*Channel, error) {
 	return FromModel(channel), nil
 }
 
+func (r *Repository) GetMany(ctx context.Context, ids ...ChannelID) (map[xid.ID]*Channel, error) {
+	if len(ids) == 0 {
+		return map[xid.ID]*Channel{}, nil
+	}
+
+	xids := dt.Map(ids, func(id ChannelID) xid.ID { return xid.ID(id) })
+
+	channels, err := r.db.Channel.Query().
+		Where(ent_channel.IDIn(xids...)).
+		WithCoverImage().
+		WithIcon().
+		All(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	result := make(map[xid.ID]*Channel, len(channels))
+	for _, c := range channels {
+		result[c.ID] = FromModel(c)
+	}
+
+	return result, nil
+}
+
 func (r *Repository) GetBySlug(ctx context.Context, slug string) (*Channel, error) {
 	channel, err := r.db.Channel.Query().
 		Where(ent_channel.Slug(slug)).
