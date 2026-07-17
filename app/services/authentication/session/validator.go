@@ -15,12 +15,12 @@ import (
 
 type Validator struct {
 	tokenRepo      token.Repository
-	accountQuerier *account_querier.Querier
+	accountQuerier account_querier.SessionAccountLoader
 	roleQuerier    *role_querier.Querier
 	akRepo         *access_key.Repository
 }
 
-func NewValidator(tokenRepo token.Repository, accountQuerier *account_querier.Querier, roleQuerier *role_querier.Querier, akRepo *access_key.Repository) *Validator {
+func NewValidator(tokenRepo token.Repository, accountQuerier account_querier.SessionAccountLoader, roleQuerier *role_querier.Querier, akRepo *access_key.Repository) *Validator {
 	return &Validator{
 		tokenRepo:      tokenRepo,
 		accountQuerier: accountQuerier,
