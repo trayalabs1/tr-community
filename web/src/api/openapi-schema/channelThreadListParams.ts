@@ -62,4 +62,8 @@ will be ignored, only the value containing "null" will be considered.
    * Exclude posts with post_category BAH from results.
    */
   exclude_bah?: boolean;
+  /**
+   * Exclude posts with post_category feedback from results.
+   */
+  exclude_feedback?: boolean;
 };

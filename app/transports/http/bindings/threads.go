@@ -231,20 +231,21 @@ func (i *Threads) ThreadList(ctx context.Context, request openapi.ThreadListRequ
 
 	page = max(0, page-1)
 	result, err := i.thread_svc.List(ctx, page, pageSize, thread_service.Params{
-		Query:         query,
-		AccountID:     author,
-		Visibility:    visibilities,
-		Tags:          tags,
-		Categories:    cats,
-		IgnorePinned:  ignorePinned,
-		CreatedAfter:  createdAfter,
-		CreatedBefore: createdBefore,
-		NoReplies:     noReplies,
-		NoLikes:       noLikes,
-		ExcludeBAH:    request.Params.ExcludeBah != nil && *request.Params.ExcludeBah,
-		BAHOnly:       request.Params.BahOnly != nil && *request.Params.BahOnly,
-		PostCategories: opt.NewPtr(request.Params.PostCategories).Or(nil),
-		Sentiments:     opt.NewPtr(request.Params.Sentiments).Or(nil),
+		Query:           query,
+		AccountID:       author,
+		Visibility:      visibilities,
+		Tags:            tags,
+		Categories:      cats,
+		IgnorePinned:    ignorePinned,
+		CreatedAfter:    createdAfter,
+		CreatedBefore:   createdBefore,
+		NoReplies:       noReplies,
+		NoLikes:         noLikes,
+		ExcludeBAH:      request.Params.ExcludeBah != nil && *request.Params.ExcludeBah,
+		ExcludeFeedback: request.Params.ExcludeFeedback != nil && *request.Params.ExcludeFeedback,
+		BAHOnly:         request.Params.BahOnly != nil && *request.Params.BahOnly,
+		PostCategories:  opt.NewPtr(request.Params.PostCategories).Or(nil),
+		Sentiments:      opt.NewPtr(request.Params.Sentiments).Or(nil),
 	})
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))

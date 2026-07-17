@@ -826,6 +826,7 @@ func (c Channels) ChannelThreadList(ctx context.Context, request openapi.Channel
 		CreatedBefore:       createdBefore,
 		UseSentimentRanking: true,
 		ExcludeBAH:          request.Params.ExcludeBah != nil && *request.Params.ExcludeBah,
+		ExcludeFeedback:     request.Params.ExcludeFeedback != nil && *request.Params.ExcludeFeedback,
 	})
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
