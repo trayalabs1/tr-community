@@ -55,9 +55,9 @@ type CategoryFilter struct {
 }
 
 type threadListOptions struct {
-	q                    *ent.PostQuery
-	ignorePinned         bool
-	useSentimentRanking  bool
+	q                   *ent.PostQuery
+	ignorePinned        bool
+	useSentimentRanking bool
 }
 
 type Query func(*threadListOptions)
@@ -107,6 +107,16 @@ func ExcludeBAHPosts() Query {
 		q.q.Where(predicate.Post(func(s *sql.Selector) {
 			s.Where(sql.P(func(b *sql.Builder) {
 				b.WriteString("COALESCE(" + s.C(ent_post.FieldMetadata) + "->>'post_category', '') != 'BAH'")
+			}))
+		}))
+	}
+}
+
+func ExcludeFeedbackPosts() Query {
+	return func(q *threadListOptions) {
+		q.q.Where(predicate.Post(func(s *sql.Selector) {
+			s.Where(sql.P(func(b *sql.Builder) {
+				b.WriteString("COALESCE(" + s.C(ent_post.FieldMetadata) + "->>'post_category', '') != 'feedback'")
 			}))
 		}))
 	}

@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { Account, DatagraphItemKind, Thread, Permission } from "src/api/openapi-schema";
@@ -13,6 +14,7 @@ import { sendBeacon } from "@/lib/beacon/beacon";
 import { useThreadMutations } from "@/lib/thread/mutation";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
 import { hasPermission } from "@/utils/permissions";
+import { containsMobileNumber, MOBILE_NUMBER_ERROR } from "@/utils/content-validation";
 
 import { useReplyContext } from "../ReplyContext";
 
@@ -63,6 +65,11 @@ export function useReplyBox({ initialSession, thread }: Props) {
   const handleSubmit = form.handleSubmit(async (data: Form) => {
     const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
 
+    if (!isAdmin && containsMobileNumber(data.body)) {
+      toast.error(MOBILE_NUMBER_ERROR);
+      return;
+    }
+
     trackCardReply(thread.id, data.body.length, undefined, "reply_box");
 
     if (isAdmin) {
@@ -109,6 +116,10 @@ export function useReplyBox({ initialSession, thread }: Props) {
         cleanup: async () => await revalidate(),
       },
     );
+  }, (errors) => {
+    if (errors.body) {
+      toast.error(errors.body.message);
+    }
   });
 
   return {

@@ -80,6 +80,10 @@ will be ignored, only the value containing "null" will be considered.
    */
   exclude_bah?: boolean;
   /**
+   * Exclude posts with post_category feedback from results.
+   */
+  exclude_feedback?: boolean;
+  /**
    * Show only posts with post_category BAH.
    */
   bah_only?: boolean;
