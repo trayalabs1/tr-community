@@ -29,6 +29,7 @@ import (
 	"github.com/Southclaws/storyden/app/services/report/system_report"
 	"github.com/Southclaws/storyden/app/services/semdex"
 	"github.com/Southclaws/storyden/internal/ent"
+	"github.com/Southclaws/storyden/internal/infrastructure/cache"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/spanner"
 	"github.com/Southclaws/storyden/internal/infrastructure/pubsub"
 )
@@ -116,6 +117,7 @@ type service struct {
 	mentioner      *mentioner.Mentioner
 	cpm            *moderation.Manager
 	cache          *thread_cache.Cache
+	cacheStore     cache.Store
 	systemReporter *system_report.Manager
 }
 
@@ -134,6 +136,7 @@ func New(
 	mentioner *mentioner.Mentioner,
 	cpm *moderation.Manager,
 	cache *thread_cache.Cache,
+	cacheStore cache.Store,
 	systemReporter *system_report.Manager,
 ) Service {
 	return &service{
@@ -151,6 +154,7 @@ func New(
 		mentioner:      mentioner,
 		cpm:            cpm,
 		cache:          cache,
+		cacheStore:     cacheStore,
 		systemReporter: systemReporter,
 	}
 }

@@ -132,6 +132,77 @@ func OnlyBAHPosts() Query {
 	}
 }
 
+// ShareCombo identifies a share post by its metadata post_category and,
+// optionally, its type. An empty Type matches any post in the category.
+type ShareCombo struct {
+	Category string
+	Type     string
+}
+
+func shareComboPredicate(s *sql.Selector, b *sql.Builder, combo ShareCombo) {
+	catCol := s.C(ent_post.FieldMetadata) + "->>'post_category'"
+	typCol := s.C(ent_post.FieldMetadata) + "->>'type'"
+
+	b.WriteString("(")
+	b.WriteString(catCol + " = ")
+	b.Arg(combo.Category)
+	if combo.Type != "" {
+		b.WriteString(" AND " + typCol + " = ")
+		b.Arg(combo.Type)
+	}
+	b.WriteString(")")
+}
+
+// ExcludeShareCombos filters out posts matching any of the given share combos,
+// leaving the organic queue.
+func ExcludeShareCombos(combos []ShareCombo) Query {
+	return func(q *threadListOptions) {
+		if len(combos) == 0 {
+			return
+		}
+		q.q.Where(predicate.Post(func(s *sql.Selector) {
+			s.Where(sql.P(func(b *sql.Builder) {
+				b.WriteString("NOT (")
+				for i, combo := range combos {
+					if i > 0 {
+						b.WriteString(" OR ")
+					}
+					shareComboPredicate(s, b, combo)
+				}
+				b.WriteString(")")
+			}))
+		}))
+	}
+}
+
+// OnlyShareCombos restricts results to posts matching any of the given share
+// combos, forming the share queue.
+func OnlyShareCombos(combos []ShareCombo) Query {
+	return func(q *threadListOptions) {
+		if len(combos) == 0 {
+			// No combos means nothing is a share; match nothing.
+			q.q.Where(predicate.Post(func(s *sql.Selector) {
+				s.Where(sql.P(func(b *sql.Builder) {
+					b.WriteString("1 = 0")
+				}))
+			}))
+			return
+		}
+		q.q.Where(predicate.Post(func(s *sql.Selector) {
+			s.Where(sql.P(func(b *sql.Builder) {
+				b.WriteString("(")
+				for i, combo := range combos {
+					if i > 0 {
+						b.WriteString(" OR ")
+					}
+					shareComboPredicate(s, b, combo)
+				}
+				b.WriteString(")")
+			}))
+		}))
+	}
+}
+
 func HasPostCategories(categories []string) Query {
 	return func(q *threadListOptions) {
 		if len(categories) == 0 {

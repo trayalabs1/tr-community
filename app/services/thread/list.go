@@ -36,6 +36,7 @@ type Params struct {
 	BAHOnly             bool
 	PostCategories      []string
 	Sentiments          []string
+	InterleaveShares    bool
 }
 
 func (s *service) List(ctx context.Context,
@@ -94,12 +95,7 @@ func (s *service) List(ctx context.Context,
 			// builds a query specifically for moderators to see in-review posts
 			// as well as authors to see their own posts in-review while other
 			// members will just see published posts.
-			isModerator := false
-			if accountID.Ok() {
-				roles := session.GetRoles(ctx)
-				isModerator = roles.Permissions().HasAny(rbac.PermissionManagePosts, rbac.PermissionAdministrator)
-			}
-			return thread_querier.HasPublishedOrOwnInReview(accountID, isModerator)
+			return thread_querier.HasPublishedOrOwnInReview(accountID, isModerator(ctx, accountID))
 		}
 
 		onlyRequestingPublished := len(v) == 1 && v[0] == visibility.VisibilityPublished
@@ -141,6 +137,21 @@ func (s *service) List(ctx context.Context,
 		return thread_querier.HasStatus(v...)
 	}()
 	q = append(q, vq)
+
+	// The interleaved feed is precomputed once and cached as an ordered ID
+	// sequence, but only for the default unfiltered channel feed. Filtered
+	// requests and pages beyond the cached window fall through to the plain
+	// ranked query.
+	if opts.InterleaveShares && isCacheableFeed(opts) {
+		channelID, _ := opts.ChannelID.Get()
+		result, handled, err := s.listCachedInterleaved(ctx, channelID, page, size, accountID, isModerator(ctx, accountID), q)
+		if err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
+		}
+		if handled {
+			return result, nil
+		}
+	}
 
 	thr, err := s.threadQuerier.List(ctx, page, size, accountID, q...)
 	if err != nil {
