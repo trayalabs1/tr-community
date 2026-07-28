@@ -73,8 +73,9 @@ func matchesStep(t *thread.Thread, step rotationStep) bool {
 func mergeFeed(organic []*thread.Thread, shares []*thread.Thread, page, size int) ([]*thread.Thread, bool) {
 	upper := (page + 1) * size
 
+	sq := newShareQueues(shares)
+
 	merged := make([]*thread.Thread, 0, upper+1)
-	used := make([]bool, len(shares))
 	organicIdx := 0
 	rotationPtr := 0
 
@@ -82,8 +83,7 @@ func mergeFeed(organic []*thread.Thread, shares []*thread.Thread, page, size int
 	// extra item to detect a following page. Stop early once both queues drain.
 	for len(merged) <= upper {
 		organicRemaining := organicIdx < len(organic)
-		sharesRemaining := usedCount(used) < len(shares)
-		if !organicRemaining && !sharesRemaining {
+		if !organicRemaining && sq.remaining == 0 {
 			break
 		}
 
@@ -91,12 +91,11 @@ func mergeFeed(organic []*thread.Thread, shares []*thread.Thread, page, size int
 		isShareSlot := pos%shareSlotInterval == 0
 
 		if isShareSlot && organicRemaining {
-			// Walk the rotation from the current pointer and place the first type
-			// that has an available share, resuming the pointer after it. Empty
-			// types collapse out rather than yielding the slot to organic.
-			if idx := nextRemainingShare(shares, used, &rotationPtr); idx >= 0 {
-				used[idx] = true
-				merged = append(merged, shares[idx])
+			// Walk the rotation from the current pointer and place the first step
+			// that still has a share, resuming the pointer after it. Empty steps
+			// collapse out rather than yielding the slot to organic.
+			if s := sq.next(&rotationPtr); s != nil {
+				merged = append(merged, s)
 				continue
 			}
 
@@ -114,9 +113,8 @@ func mergeFeed(organic []*thread.Thread, shares []*thread.Thread, page, size int
 
 		// Organic exhausted: append remaining shares sequentially in rotation
 		// order, cycling through steps until every share is placed.
-		if idx := nextRemainingShare(shares, used, &rotationPtr); idx >= 0 {
-			used[idx] = true
-			merged = append(merged, shares[idx])
+		if s := sq.next(&rotationPtr); s != nil {
+			merged = append(merged, s)
 			continue
 		}
 
@@ -137,48 +135,63 @@ func mergeFeed(organic []*thread.Thread, shares []*thread.Thread, page, size int
 	return merged[lower:end], hasMore
 }
 
-func usedCount(used []bool) int {
-	n := 0
-	for _, u := range used {
-		if u {
-			n++
-		}
-	}
-	return n
+// shareQueues buckets shares by rotation step for O(1) selection. Each share is
+// assigned to the first rotation step it matches (mirroring first-match-wins);
+// any share matching no step lands in the fallback queue. Input order is
+// preserved within each queue, so heads remain most-recent (created_at DESC).
+type shareQueues struct {
+	byStep    [][]*thread.Thread
+	stepHead  []int
+	fallback  []*thread.Thread
+	fallHead  int
+	remaining int
 }
 
-// nextShareForStep returns the index of the most-recent unused share matching
-// the step, or -1. Shares are pre-sorted created_at DESC, so the first match wins.
-func nextShareForStep(shares []*thread.Thread, used []bool, step rotationStep) int {
-	for i, s := range shares {
-		if used[i] {
-			continue
+func newShareQueues(shares []*thread.Thread) *shareQueues {
+	sq := &shareQueues{
+		byStep:   make([][]*thread.Thread, len(rotation)),
+		stepHead: make([]int, len(rotation)),
+	}
+
+	for _, s := range shares {
+		assigned := false
+		for i, step := range rotation {
+			if matchesStep(s, step) {
+				sq.byStep[i] = append(sq.byStep[i], s)
+				assigned = true
+				break
+			}
 		}
-		if matchesStep(s, step) {
-			return i
+		if !assigned {
+			sq.fallback = append(sq.fallback, s)
 		}
 	}
-	return -1
+
+	sq.remaining = len(shares)
+	return sq
 }
 
-// nextRemainingShare drains the share queue once organic is exhausted. It walks
-// the rotation to preserve rotation order; if the current step has no unused
-// share it advances until it finds one, giving up after a full cycle with no hit.
-func nextRemainingShare(shares []*thread.Thread, used []bool, rotationPtr *int) int {
+// next returns the most-recent unused share by walking the rotation from
+// rotationPtr, resuming the pointer just after the step it drew from. When every
+// step queue is empty it drains the fallback queue; nil when all are exhausted.
+func (sq *shareQueues) next(rotationPtr *int) *thread.Thread {
 	for attempts := 0; attempts < len(rotation); attempts++ {
-		step := rotation[*rotationPtr%len(rotation)]
-		*rotationPtr++
-		if idx := nextShareForStep(shares, used, step); idx >= 0 {
-			return idx
+		i := *rotationPtr % len(rotation)
+		(*rotationPtr)++
+		if sq.stepHead[i] < len(sq.byStep[i]) {
+			s := sq.byStep[i][sq.stepHead[i]]
+			sq.stepHead[i]++
+			sq.remaining--
+			return s
 		}
 	}
 
-	// No step matched a remaining share (e.g. a category not covered by the
-	// rotation); append whatever is left in created_at order.
-	for i := range shares {
-		if !used[i] {
-			return i
-		}
+	if sq.fallHead < len(sq.fallback) {
+		s := sq.fallback[sq.fallHead]
+		sq.fallHead++
+		sq.remaining--
+		return s
 	}
-	return -1
+
+	return nil
 }

@@ -140,8 +140,10 @@ type ShareCombo struct {
 }
 
 func shareComboPredicate(s *sql.Selector, b *sql.Builder, combo ShareCombo) {
-	catCol := s.C(ent_post.FieldMetadata) + "->>'post_category'"
-	typCol := s.C(ent_post.FieldMetadata) + "->>'type'"
+	// COALESCE to '' so posts without the metadata key compare as a non-match
+	// (NULL) rather than propagating NULL through NOT (...) and dropping the row.
+	catCol := "COALESCE(" + s.C(ent_post.FieldMetadata) + "->>'post_category', '')"
+	typCol := "COALESCE(" + s.C(ent_post.FieldMetadata) + "->>'type', '')"
 
 	b.WriteString("(")
 	b.WriteString(catCol + " = ")
