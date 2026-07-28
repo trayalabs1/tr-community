@@ -1,4 +1,5 @@
 import { SharePostScreen } from "@/screens/compose/SharePostScreen";
+import { parseMediaParam } from "@/screens/compose/sharePostContent";
 
 type Props = {
   params: Promise<{
@@ -9,6 +10,8 @@ type Props = {
     reward_coins?: string;
     category?: string;
     type?: string;
+    body?: string;
+    media?: string;
   }>;
 };
 
@@ -32,6 +35,8 @@ export default async function Page(props: Props) {
       rewardCoins={rewardCoins}
       category={searchParams?.category}
       type={searchParams?.type}
+      body={searchParams?.body}
+      media={parseMediaParam(searchParams?.media)}
     />
   );
 }

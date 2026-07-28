@@ -32,9 +32,11 @@ type LandingScreenProps = {
   tips?: boolean;
   caseId?: string;
   post?: string;
+  body?: string;
+  media?: string;
 };
 
-export function LandingScreen({ token, share, streakCount, rewardCoins, category, type, tips, caseId, post }: LandingScreenProps) {
+export function LandingScreen({ token, share, streakCount, rewardCoins, category, type, tips, caseId, post, body, media }: LandingScreenProps) {
   const router = useRouter();
   const { trigger } = useAuthTrayaToken({ token });
   const { mutate: mutateAccount } = useAccountGet();
@@ -53,6 +55,8 @@ export function LandingScreen({ token, share, streakCount, rewardCoins, category
     if (rewardCoins !== undefined) params.set("reward_coins", String(rewardCoins));
     if (category) params.set("category", category);
     if (type) params.set("type", type);
+    if (body) params.set("body", body);
+    if (media) params.set("media", media);
     const query = params.toString();
     return query ? `?${query}` : "";
   };
@@ -96,7 +100,8 @@ export function LandingScreen({ token, share, streakCount, rewardCoins, category
       if (targetChannel?.id) {
         const hasBahShareParams = share && streakCount !== undefined && rewardCoins !== undefined;
         const hasFeedbackShareParams = share && category === "feedback" && type === "progress";
-        if (hasBahShareParams || hasFeedbackShareParams) {
+        const hasGenericShareParams = Boolean(share && body?.trim());
+        if (hasBahShareParams || hasFeedbackShareParams || hasGenericShareParams) {
           router.push(`/channels/${targetChannel.id}/share-post${shareQuery}`);
         } else {
           router.push(`/channels/${targetChannel.id}`);
@@ -151,7 +156,7 @@ export function LandingScreen({ token, share, streakCount, rewardCoins, category
         },
       }
     );
-  }, [trigger, router, mutateAccount, share, tips, caseId, post]);
+  }, [trigger, router, mutateAccount, share, tips, caseId, post, body, media]);
 
   // Retry handler for error state
   const handleEnterCommunity = async () => {
