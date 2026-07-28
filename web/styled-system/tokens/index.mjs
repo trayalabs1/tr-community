@@ -3056,11 +3056,11 @@ const tokens = {
     "variable": "var(--radii-l3)"
   },
   "fonts.body": {
-    "value": "var(--fonts-inter)",
+    "value": "var(--fonts-nunito)",
     "variable": "var(--fonts-body)"
   },
   "fonts.heading": {
-    "value": "var(--fonts-inter-display)",
+    "value": "var(--fonts-nunito)",
     "variable": "var(--fonts-heading)"
   },
   "blurs.frosted": {
