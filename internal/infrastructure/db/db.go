@@ -135,6 +135,7 @@ func newEntClient(lc fx.Lifecycle, tf tracing.Factory, cfg config.Config, db *sq
 				schema.WithApplyHook(populateLastReplyAt()),
 				schema.WithApplyHook(migrateReplyVisibility()),
 				schema.WithApplyHook(createPostCategoryIndex()),
+				schema.WithApplyHook(createShareComboIndex()),
 				schema.WithApplyHook(createThreadEdgeIndex()),
 			); err != nil {
 				return fault.Wrap(err, fctx.With(ctx))
@@ -330,6 +331,36 @@ func createPostCategoryIndex() schema.ApplyHook {
 			`, []any{}, nil)
 			if err != nil {
 				return fault.Wrap(err, fmsg.With("failed to create post_category index"))
+			}
+
+			return nil
+		})
+	}
+}
+
+// createShareComboIndex adds an expression index on
+// (metadata->>'post_category', metadata->>'type') to back the share-combo
+// filters (OnlyShareCombos / ExcludeShareCombos) used to split the channel feed
+// into its share and organic queues. Ent can't declare expression indexes, so
+// it's created here. The index is partial — scoped to undeleted root posts, the
+// set the feed scans — to keep it small and hot.
+//
+// Idempotent via IF NOT EXISTS. The expression and partial predicate are
+// supported by both PostgreSQL and SQLite.
+func createShareComboIndex() schema.ApplyHook {
+	return func(next schema.Applier) schema.Applier {
+		return schema.ApplyFunc(func(ctx context.Context, conn dialect.ExecQuerier, plan *migrate.Plan) error {
+			if err := next.Apply(ctx, conn, plan); err != nil {
+				return err
+			}
+
+			err := conn.Exec(ctx, `
+				CREATE INDEX IF NOT EXISTS post_share_combo_threads
+				ON posts ((metadata->>'post_category'), (metadata->>'type'))
+				WHERE root_post_id IS NULL AND deleted_at IS NULL
+			`, []any{}, nil)
+			if err != nil {
+				return fault.Wrap(err, fmsg.With("failed to create share combo index"))
 			}
 
 			return nil

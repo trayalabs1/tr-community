@@ -150,6 +150,8 @@ func (s *service) feedSequence(
 				return post.ID(id)
 			}), nil
 		}
+		// Cached value is unparseable (corrupt or a stale format); drop it so the
+		// rebuild below can repopulate a clean sequence.
 		_ = s.cacheStore.Delete(ctx, key)
 	}
 

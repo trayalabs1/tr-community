@@ -142,6 +142,10 @@ func (s *service) List(ctx context.Context,
 	// sequence, but only for the default unfiltered channel feed. Filtered
 	// requests and pages beyond the cached window fall through to the plain
 	// ranked query.
+	// A cache miss inside listCachedInterleaved already recomputes the interleave
+	// from the DB, so the only error that surfaces here is a genuine DB failure —
+	// which the plain query below would hit too. Propagate it rather than masking
+	// it behind a second failing query.
 	if opts.InterleaveShares && isCacheableFeed(opts) {
 		channelID, _ := opts.ChannelID.Get()
 		result, handled, err := s.listCachedInterleaved(ctx, channelID, page, size, accountID, isModerator(ctx, accountID), q)
