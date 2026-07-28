@@ -19,6 +19,7 @@ import {
 import { styled } from "@/styled-system/jsx";
 import { VStack } from "@/styled-system/jsx";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { buildGenericBody, isSafeMediaUrl } from "./sharePostContent";
 
 type Props = {
   channelID: string;
@@ -26,6 +27,8 @@ type Props = {
   rewardCoins?: number;
   category?: string;
   type?: string;
+  body?: string;
+  media?: string[];
 };
 
 function getStreakImageUrl(streakCount: number): string {
@@ -44,7 +47,15 @@ function buildFeedbackBody(): string {
   return `<p>${FEEDBACK_PROGRESS_COPY}</p><img src="${FEEDBACK_PROGRESS_IMAGE}" alt="Progress update" />`;
 }
 
-export function SharePostScreen({ channelID, streakCount, rewardCoins, category, type }: Props) {
+export function SharePostScreen({
+  channelID,
+  streakCount,
+  rewardCoins,
+  category,
+  type,
+  body: bodyParam,
+  media,
+}: Props) {
   const router = useRouter();
   const { mutate } = useSWRConfig();
   const session = useSession();
@@ -52,23 +63,31 @@ export function SharePostScreen({ channelID, streakCount, rewardCoins, category,
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const genericText = bodyParam?.trim() ?? "";
+  const genericMedia = (media ?? []).filter(isSafeMediaUrl);
+
   const isFeedbackProgress = category === "feedback" && type === "progress";
   const isBahStreak = streakCount !== undefined && rewardCoins !== undefined;
+  const isGenericShare = !isFeedbackProgress && !isBahStreak && genericText !== "";
 
-  if (!isFeedbackProgress && !isBahStreak) {
+  if (!isFeedbackProgress && !isBahStreak && !isGenericShare) {
     router.replace(`/channels/${channelID}`);
     return null;
   }
 
-  const previewImage = isFeedbackProgress
-    ? FEEDBACK_PROGRESS_IMAGE
-    : getStreakImageUrl(streakCount as number);
-  const previewCopy = isFeedbackProgress
-    ? FEEDBACK_PROGRESS_COPY
-    : `I just won ${rewardCoins} coins by completing my ${streakCount} day streak  🙌 `;
-  const previewAlt = isFeedbackProgress
-    ? "Progress update"
-    : `${streakCount}-Day streak - Won ${rewardCoins} coins`;
+  const previewImages = isGenericShare
+    ? genericMedia
+    : [isFeedbackProgress ? FEEDBACK_PROGRESS_IMAGE : getStreakImageUrl(streakCount as number)];
+  const previewCopy = isGenericShare
+    ? genericText
+    : isFeedbackProgress
+      ? FEEDBACK_PROGRESS_COPY
+      : `I just won ${rewardCoins} coins by completing my ${streakCount} day streak  🙌 `;
+  const previewAlt = isGenericShare
+    ? ""
+    : isFeedbackProgress
+      ? "Progress update"
+      : `${streakCount}-Day streak - Won ${rewardCoins} coins`;
 
   const handlePost = async () => {
     if (isSubmitting) return;
@@ -83,9 +102,11 @@ export function SharePostScreen({ channelID, streakCount, rewardCoins, category,
         : isAdmin
           ? Visibility.published
           : Visibility.review;
-      const body = isFeedbackProgress
-        ? buildFeedbackBody()
-        : buildStreakBody(streakCount as number, rewardCoins as number);
+      const body = isGenericShare
+        ? buildGenericBody(genericText, genericMedia)
+        : isFeedbackProgress
+          ? buildFeedbackBody()
+          : buildStreakBody(streakCount as number, rewardCoins as number);
 
       if (isFeedbackProgress) {
         trackSharePostCommunity("progress_update", channelID);
@@ -93,9 +114,14 @@ export function SharePostScreen({ channelID, streakCount, rewardCoins, category,
         trackSubmitForReview(body.length, false, false, channelID);
       }
 
-      const meta = isFeedbackProgress
-        ? { post_category: "feedback", type: "progress" }
-        : { post_category: "BAH", type: streakCount };
+      const meta = isGenericShare
+        ? {
+            ...(category ? { post_category: category } : {}),
+            ...(type ? { type } : {}),
+          }
+        : isFeedbackProgress
+          ? { post_category: "feedback", type: "progress" }
+          : { post_category: "BAH", type: streakCount };
 
       const payload: ThreadInitialProps = {
         title: "",
@@ -120,7 +146,11 @@ export function SharePostScreen({ channelID, streakCount, rewardCoins, category,
     }
   };
 
-  const headerTitle = isFeedbackProgress ? "Share Your Progress" : "Share Your Streak";
+  const headerTitle = isGenericShare
+    ? "Share Post"
+    : isFeedbackProgress
+      ? "Share Your Progress"
+      : "Share Your Streak";
 
   return (
     <VStack gap="0" minH="dvh" style={{ backgroundColor: "#f9fafb" }}>
@@ -173,7 +203,9 @@ export function SharePostScreen({ channelID, streakCount, rewardCoins, category,
             {previewCopy}
           </styled.p>
 
-          <styled.img src={previewImage} alt={previewAlt} w="full" />
+          {previewImages.map((src) => (
+            <styled.img key={src} src={src} alt={previewAlt} w="full" />
+          ))}
         </VStack>
 
         {error && (
