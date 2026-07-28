@@ -1,33 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { Account, Channel } from "@/api/openapi-schema";
-import { MembersIcon } from "@/components/ui/icons/Members";
+import { useRouter } from "next/navigation";
+import { Account, Channel, Permission } from "@/api/openapi-schema";
+import { hasPermission } from "@/utils/permissions";
 import { ProfileIcon } from "@/components/ui/icons/Profile";
-import { HeaderWithBackArrow } from "@/components/site/Header";
-import { HStack, VStack, styled } from "@/styled-system/jsx";
-import { getAssetURL } from "@/utils/asset";
-import { ChannelFilterBar } from "@/components/channel/ChannelFilterBar";
+import { ArrowLeftIcon } from "@/components/ui/icons/Arrow";
+import { SearchIcon } from "@/components/ui/icons/Search";
+import { NotificationIcon } from "@/components/ui/icons/Notification";
+import { HStack, VStack, Box, styled } from "@/styled-system/jsx";
+import { FeedFilterChips } from "@/components/channel/FeedFilterChips";
 import { parsePromptNudges } from "@/components/feed/PromptNudge/prompts";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
-import { getAvatarColor } from "@/utils/avatar-colors";
-import { BookmarkButton } from "@/components/channel/BookmarkButton";
-import { NotificationButton } from "@/components/channel/NotificationButton";
-import { useChannelPermissions } from "@/lib/channel/permissions";
+import { UsersPostedToday } from "@/components/feed/QuickShare/UsersPostedToday";
+import { ThreadCreateTrigger } from "@/components/thread/ThreadCreate/ThreadCreateTrigger";
 
 type ChannelMobileHeaderProps = {
   channel: Channel;
   session?: Account;
   categories: any[];
   selectedCategorySlug: string | null;
-  selectedVisibility: string | null;
   onCategoryChange: (slug: string | null) => void;
-  onVisibilityChange: (visibility: string | null) => void;
-  onDateRangeChange?: (range: { createdAfter?: string; createdBefore?: string }) => void;
-  excludeBAH?: boolean;
-  onExcludeBAHChange?: (exclude: boolean) => void;
   hasUnreadNotifications?: boolean;
-  bookmarkCount?: number;
 };
 
 export function ChannelMobileHeader({
@@ -35,44 +29,11 @@ export function ChannelMobileHeader({
   session,
   categories,
   selectedCategorySlug,
-  selectedVisibility,
   onCategoryChange,
-  onVisibilityChange,
-  onDateRangeChange,
-  excludeBAH,
-  onExcludeBAHChange,
   hasUnreadNotifications = false,
-  bookmarkCount = 0,
 }: ChannelMobileHeaderProps) {
-  const permissions = useChannelPermissions(channel.id);
-  const isAdmin = permissions.isOwner || permissions.isAdmin;
-
-  const channelIcon = channel?.icon ? (
-    <styled.img
-      src={getAssetURL(channel.icon.path)}
-      alt={channel.name}
-      w="8"
-      h="8"
-      rounded="lg"
-      objectFit="cover"
-      flexShrink="0"
-    />
-  ) : (
-    <styled.div
-      w="8"
-      h="8"
-      rounded="lg"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      flexShrink="0"
-      style={{
-        background: TRAYA_COLORS.secondary,
-      }}
-    >
-      <MembersIcon width="5" height="5" style={{ color: TRAYA_COLORS.primary }} />
-    </styled.div>
-  );
+  const router = useRouter();
+  const canManagePosts = hasPermission(session, Permission.MANAGE_POSTS);
 
   return (
     <VStack
@@ -82,101 +43,137 @@ export function ChannelMobileHeader({
       position="sticky"
       top="0"
       zIndex="sticky"
-      bg="white"
-      display={{ base: "flex", md: "none" }}
+      display="flex"
     >
-      {isAdmin ? (
-        <HeaderWithBackArrow
-          title={channel.name}
-          subtitle={channel.description || undefined}
-          headerIcon={channelIcon}
-          headerIconBackground="transparent"
-          mobileOnly
-          showBorder={false}
-        />
-      ) : (
+      <VStack
+        alignItems="start"
+        gap="0"
+        width="full"
+        style={{
+          background:
+            "linear-gradient(180deg, rgb(235,245,240) 0%, rgb(237,246,242) 40.76%, rgb(249,252,250) 52.15%, #ffffff 100%)",
+        }}
+      >
         <HStack
-          display={{ base: "flex", md: "none" }}
-          alignItems="center"
-          gap="3"
-          p="4"
-          borderBottomWidth="thin"
-          borderBottomColor="border.default"
           justifyContent="space-between"
-          bg="white"
+          alignItems="center"
           width="full"
-          style={{
-            borderBottomColor: TRAYA_COLORS.neutral.border,
-          }}
+          h="14"
+          pl="1"
+          pr="3.5"
+          style={{ backgroundColor: "#eaf5f0" }}
         >
-          <HStack gap="3" flex="1" alignItems="center">
-            {session ? (
+          <styled.button
+            type="button"
+            onClick={() => router.back()}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            w="9"
+            h="9"
+            aria-label="Back"
+            style={{ background: "transparent", border: "none", cursor: "pointer", padding: "0" }}
+          >
+            <ArrowLeftIcon width="6" height="6" style={{ color: "var(--colors-fg-default)" }} />
+          </styled.button>
+
+          <HStack gap="2" alignItems="center" flexShrink="0">
+            <Link href="/notifications" aria-label="Notifications">
+              <styled.div position="relative" display="inline-flex" alignItems="center" justifyContent="center" w="10" h="10">
+                <NotificationIcon width="5" height="5" style={{ color: "var(--colors-fg-default)" }} />
+                {hasUnreadNotifications && (
+                  <Box
+                    position="absolute"
+                    borderRadius="full"
+                    w="2"
+                    h="2"
+                    style={{ top: "8px", right: "8px", backgroundColor: TRAYA_COLORS.heart }}
+                  />
+                )}
+              </styled.div>
+            </Link>
+
+            <Link href="/search" aria-label="Search">
+              <styled.div display="inline-flex" alignItems="center" justifyContent="center" w="10" h="10">
+                <SearchIcon width="5" height="5" style={{ color: "var(--colors-fg-default)" }} />
+              </styled.div>
+            </Link>
+
+            {session && (
               <Link href={`/m/${session.handle}`} style={{ textDecoration: "none" }}>
                 <styled.div
-                  w="8"
-                  h="8"
-                  rounded="full"
+                  position="relative"
+                  overflow="hidden"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
                   flexShrink="0"
-                  style={{
-                    background: getAvatarColor(session.handle),
-                  }}
+                  rounded="full"
+                  style={{ width: "38px", height: "38px", backgroundColor: "#ffdd81" }}
                 >
-                  <ProfileIcon style={{ color: "white", width: "18px", height: "18px" }} />
+                  <styled.span
+                    fontWeight="semibold"
+                    style={{ color: "#404040", fontSize: "18px", lineHeight: "22px" }}
+                  >
+                    {(session.name?.charAt(0) || session.handle.charAt(0)).toUpperCase()}
+                  </styled.span>
+                  <styled.div
+                    position="absolute"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    style={{
+                      bottom: "0",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      padding: "1px 10px",
+                      backgroundColor: "rgba(0,0,0,0.6)",
+                    }}
+                  >
+                    <styled.span
+                      fontWeight="semibold"
+                      style={{ color: "white", fontSize: "8px", lineHeight: "10px", letterSpacing: "0.8px" }}
+                    >
+                      YOU
+                    </styled.span>
+                  </styled.div>
                 </styled.div>
               </Link>
-            ) : (
-              channelIcon
             )}
-            <VStack alignItems="start" gap="0.5">
-              <styled.h3
-                fontWeight="semibold"
-                color="fg.default"
-                style={{
-                  margin: "0",
-                  fontSize: "16px",
-                }}
-              >
-                {channel.name}
-              </styled.h3>
-              {channel.description && (
-                <styled.p
-                  fontSize="xs"
-                  color="fg.muted"
-                  style={{
-                    margin: "0",
-                    lineHeight: "1.3",
-                  }}
-                  lineClamp={1}
-                >
-                  {channel.description}
-                </styled.p>
-              )}
-            </VStack>
-          </HStack>
-          <HStack gap="2" flexShrink="0">
-            <BookmarkButton count={bookmarkCount} />
-            <NotificationButton hasUnread={hasUnreadNotifications} />
           </HStack>
         </HStack>
-      )}
 
-      {/* Filter Bar and Create Post - Mobile */}
-      <styled.div display={{ base: "block", md: "none" }} width="full" px="4" pt="1" pb="0">
-        <ChannelFilterBar
-          channelID={channel.id}
-          channelName={channel.name}
+        <VStack alignItems="start" gap="4" width="full" px="4" pt="3" pb="3">
+          <styled.h1
+            fontWeight="semibold"
+            style={{ margin: "0", fontSize: "20px", lineHeight: "24px", letterSpacing: "-0.1px", color: "#2c2c2a" }}
+          >
+            {channel.name}
+          </styled.h1>
+
+          <ThreadCreateTrigger
+            channelID={channel.id}
+            channelName={channel.name}
+            promptNudges={parsePromptNudges(channel.meta)}
+          />
+
+          <UsersPostedToday signedIn={Boolean(session)} channelID={channel.id} />
+        </VStack>
+      </VStack>
+
+      {/* Filter Chips — hidden for admins on desktop (they use the admin Filters bar) */}
+      <styled.div
+        display={canManagePosts ? { base: "block", md: "none" } : "block"}
+        width="full"
+        bg="white"
+        px="4"
+        pt="3"
+        pb="3"
+      >
+        <FeedFilterChips
           categories={categories}
           selectedCategorySlug={selectedCategorySlug}
-          selectedVisibility={selectedVisibility}
           onCategoryChange={onCategoryChange}
-          onVisibilityChange={onVisibilityChange}
-          onDateRangeChange={onDateRangeChange}
-          excludeBAH={excludeBAH}
-          onExcludeBAHChange={onExcludeBAHChange}
-          promptNudges={parsePromptNudges(channel.meta)}
         />
       </styled.div>
     </VStack>

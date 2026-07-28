@@ -24,6 +24,12 @@ export type Props = {
   movingEnabled?: boolean;
   onPinChange?: (pinned: boolean) => Promise<void>;
   channelID?: string;
+  /**
+   * When provided, the Delete menu item calls this instead of rendering its own
+   * confirmation sheet — lets a parent (e.g. ThreadCard) own the sheet so it
+   * lives outside this menu's portal.
+   */
+  onRequestDelete?: () => void;
 };
 
 export function useThreadMenu({
@@ -140,6 +146,7 @@ export function useThreadMenu({
       handleCopyLink,
       handleShare,
       handleEdit,
+      handleDelete,
       handleConfirmDelete,
       handleCancelDelete,
       handlePinThread,
