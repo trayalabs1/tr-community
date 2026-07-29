@@ -36,7 +36,7 @@ export async function submitTip({
       body: buildTipBody(topicTitle, text),
       visibility: Visibility.review,
       meta: {
-        post_category: "tip",
+        post_category: "feedback",
         type: topicId,
       },
     });
