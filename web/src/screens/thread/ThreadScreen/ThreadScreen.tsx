@@ -6,12 +6,16 @@ import { match } from "ts-pattern";
 
 import { Unready } from "src/components/site/Unready";
 
-import { Permission, Thread, Visibility } from "@/api/openapi-schema";
+import { Permission, ThreadReference, Visibility } from "@/api/openapi-schema";
 import { useSession } from "@/auth";
 import { ContentComposer } from "@/components/content/ContentComposer/ContentComposer";
 import { LinkCard } from "@/components/library/links/LinkCard";
 import { PollCard } from "@/components/poll/PollCard";
 import { LikeButton } from "@/components/post/LikeButton/LikeButton";
+import { ExpandableText } from "@/components/post/ExpandableText";
+import { BookmarkPill } from "@/components/post/BookmarkPill";
+import { CategoryBadge } from "@/components/category/CategoryBadge";
+import { MessageSquareTextIcon } from "@/components/ui/icons/MessageSquare";
 import { CancelAction } from "@/components/site/Action/Cancel";
 import { SaveAction } from "@/components/site/Action/Save";
 import { HeaderWithBackArrow } from "@/components/site/Header";
@@ -25,11 +29,7 @@ import { ThreadDeletedAlert } from "@/components/thread/ThreadDeletedAlert";
 import { ThreadMenu } from "@/components/thread/ThreadMenu/ThreadMenu";
 import { TagListField } from "@/components/thread/ThreadTagList";
 import { FormErrorText } from "@/components/ui/FormErrorText";
-import { Heading } from "@/components/ui/heading";
 import { HeadingInput } from "@/components/ui/heading-input";
-import { ArrowLeftIcon } from "@/components/ui/icons/Arrow";
-import { DiscussionIcon, DiscussionParticipatingIcon } from "@/components/ui/icons/Discussion";
-import { LikeIcon, LikeSavedIcon } from "@/components/ui/icons/Like";
 import { VisibilityBadge } from "@/components/visibility/VisibilityBadge";
 import { HStack, LStack, VStack, WStack, styled } from "@/styled-system/jsx";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
@@ -73,9 +73,9 @@ export function ThreadScreen(props: Props) {
 
   return (
     <ReplyProvider>
-      <LStack gap="0" width="full" height="screen" style={{ backgroundColor: "white" }}>
+      <LStack gap="0" width="full" height="screen" maxW="[600px]" mx="auto" style={{ backgroundColor: "#f0f0f0" }}>
         <HeaderWithBackArrow
-          title="Post"
+          title=""
           mobileOnly
           isSticky
         />
@@ -84,9 +84,11 @@ export function ThreadScreen(props: Props) {
         <styled.div
           flex="1"
           width="full"
+          pb={{ base: "28", md: "0" }}
           style={{
             overflowY: "auto",
             minHeight: 0,
+            backgroundColor: "#f0f0f0",
           }}
         >
           {/* Desktop Breadcrumbs - Only on Desktop */}
@@ -117,13 +119,14 @@ export function ThreadScreen(props: Props) {
           </styled.div>
 
           <styled.form
-            px="4"
-            pt="4"
-            pb="0"
+            px="5"
+            pt="7"
+            pb="7"
             display="flex"
             flexDirection="column"
             gap="0"
             width="full"
+            bg="white"
             onSubmit={handlers.handleSave}
           >
             {/* Editing Controls - Mobile Only */}
@@ -146,58 +149,42 @@ export function ThreadScreen(props: Props) {
             )}
 
             {/* Post Header */}
-            <HStack gap="3" alignItems="start" width="full" mb="1">
+            <HStack gap="3" alignItems="center" width="full" mb="3">
               <Link href={`/m/${thread.author.handle}`} style={{ textDecoration: "none" }}>
                 <styled.div
-                  w="12"
-                  h="12"
                   rounded="full"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
-                  fontSize="lg"
                   fontWeight="semibold"
                   style={{
+                    width: "38px",
+                    height: "38px",
+                    fontSize: "18px",
                     backgroundColor: getAvatarColor(thread.author.handle),
                     color: "white",
                     cursor: "pointer",
-                    transition: "opacity 0.2s",
                     flexShrink: 0,
                   }}
-                  _hover={{ opacity: "8" }}
                 >
-                  {thread.author.handle.charAt(0).toUpperCase()}
+                  {(thread.author.name?.charAt(0) || thread.author.handle.charAt(0)).toUpperCase()}
                 </styled.div>
               </Link>
 
-              <VStack alignItems="start" gap="1" flex="1">
-                <HStack gap="2" alignItems="center">
-                  <Link href={`/m/${thread.author.handle}`} style={{ textDecoration: "none" }}>
-                    <styled.span
-                      fontWeight="semibold"
-                      color="fg.default"
-                      _hover={{ textDecoration: "underline" }}
-                    >
-                      @{thread.author.handle}
-                    </styled.span>
-                  </Link>
-                  {isAdmin && (
-                    <styled.span
-                      px="2"
-                      py="0.5"
-                      fontSize="xs"
-                      fontWeight="medium"
-                      rounded="full"
-                      style={{
-                        backgroundColor: `${TRAYA_COLORS.primary}10`,
-                        color: TRAYA_COLORS.primary,
-                      }}
-                    >
-                      Admin
-                    </styled.span>
-                  )}
-                </HStack>
-                <styled.span fontSize="sm" color="fg.muted">
+              <VStack alignItems="start" gap="0.5" flex="1" minW="0">
+                <Link href={`/m/${thread.author.handle}`} style={{ textDecoration: "none" }}>
+                  <styled.span
+                    fontWeight="bold"
+                    style={{
+                      fontSize: "14px",
+                      lineHeight: "20px",
+                      color: TRAYA_COLORS.primary,
+                    }}
+                  >
+                    {thread.author.name || `@${thread.author.handle}`}
+                  </styled.span>
+                </Link>
+                <styled.span style={{ fontSize: "12px", lineHeight: "16px", color: "#999999", letterSpacing: "0.24px" }}>
                   {new Date(thread.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
@@ -206,51 +193,56 @@ export function ThreadScreen(props: Props) {
                 </styled.span>
               </VStack>
 
-              {!isEditing && (
-                <ThreadMenu thread={thread} editingEnabled movingEnabled onPinChange={handlers.handlePinChange} />
+              {!isEditing && session && (
+                <HStack gap="3" alignItems="center" flexShrink="0">
+                  <BookmarkPill account={session} thread={thread as unknown as ThreadReference} />
+                  <ThreadMenu thread={thread} editingEnabled movingEnabled onPinChange={handlers.handlePinChange} />
+                </HStack>
               )}
             </HStack>
 
             {/* Post Content */}
             {!isPoll && (
-              <styled.div mb="1">
+              <styled.div mb="3" width="full">
                 {isEditing ? (
                   <TitleInput name="title" control={form.control} />
                 ) : (
-                  <styled.p
-                    fontSize="sm"
-                    color="fg.default"
-                    style={{
-                      whiteSpace: "pre-wrap",
-                      lineHeight: "1.6",
-                      margin: "0",
-                      fontSize: "15px",
-                    }}
-                  >
-                    {thread.title}
-                  </styled.p>
+                  <ExpandableText
+                    text={thread.body || thread.description || thread.title}
+                    fallback={thread.description || thread.title}
+                    clampLines={6}
+                  />
                 )}
               </styled.div>
             )}
 
             {/* Tags/Category */}
-            <HStack gap="2" mb="4" flexWrap="wrap">
-              {thread.category && (
-                <styled.div
-                  px="3"
-                  py="1.5"
-                  fontSize="sm"
-                  fontWeight="medium"
-                  rounded="full"
-                  style={{
-                    backgroundColor: TRAYA_COLORS.tertiary,
-                    color: TRAYA_COLORS.primary,
-                  }}
-                >
-                  {thread.category.name}
-                </styled.div>
-              )}
-            </HStack>
+            {(thread.category || (thread.tags && thread.tags.length > 0)) && (
+              <HStack gap="1" mb="4" flexWrap="wrap" alignItems="center">
+                {thread.category && <CategoryBadge category={thread.category} />}
+                {thread.tags?.map((tag) => (
+                  <styled.div
+                    key={tag.name}
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    style={{
+                      height: "19px",
+                      padding: "0 8px",
+                      borderRadius: "48px",
+                      backgroundColor: "#ecf5f8",
+                    }}
+                  >
+                    <styled.span
+                      fontWeight="bold"
+                      style={{ color: "#404040", fontSize: "10px", lineHeight: "12px", letterSpacing: "0.4px", textTransform: "uppercase" }}
+                    >
+                      {tag.name}
+                    </styled.span>
+                  </styled.div>
+                ))}
+              </HStack>
+            )}
 
             {/* Body Content */}
             {thread.link && <LinkCard link={thread.link} />}
@@ -271,34 +263,31 @@ export function ThreadScreen(props: Props) {
                 <PollCard threadMark={thread.slug} optionDefs={pollOptionDefs} />
               </styled.div>
             ) : (
-              <ThreadBodyInput
-                control={form.control}
-                name="body"
-                initialValue={thread.body}
-                resetKey={resetKey}
-                disabled={!isEditing}
-                handleEmptyStateChange={handlers.handleEmptyStateChange}
-              />
+              // Read mode shows the body via ExpandableText above; the rich
+              // ContentComposer only mounts when editing.
+              isEditing && (
+                <ThreadBodyInput
+                  control={form.control}
+                  name="body"
+                  initialValue={thread.body}
+                  resetKey={resetKey}
+                  disabled={!isEditing}
+                  handleEmptyStateChange={handlers.handleEmptyStateChange}
+                />
+              )
             )}
 
             {/* Actions */}
-            <HStack
-              gap="6"
-              py="3"
-              borderTopWidth="thin"
-              borderTopColor="border.default"
-              mt="4"
-              style={{
-                borderTopColor: TRAYA_COLORS.border.subtle,
-              }}
-            >
+            <HStack gap="2.5" mt="4" alignItems="center">
               <LikeButton thread={thread} showCount />
 
-              <HStack gap="2" fontSize="sm" fontWeight="medium" color="fg.muted">
-                <span>
-                  <DiscussionIcon width="5" />
-                </span>
-                <span>{thread.reply_status.replies}</span>
+              <HStack gap="1" alignItems="center">
+                <styled.div display="flex" alignItems="center" justifyContent="center" w="7" h="7" color="fg.muted">
+                  <MessageSquareTextIcon width="5" height="5" />
+                </styled.div>
+                <styled.span style={{ fontSize: "12px", fontWeight: 500, color: "#404040", letterSpacing: "0.24px" }}>
+                  {thread.reply_status.replies}
+                </styled.span>
               </HStack>
 
               {match(thread.visibility)
@@ -325,8 +314,8 @@ export function ThreadScreen(props: Props) {
           </styled.form>
 
           {/* Comments Section */}
-          <styled.div py="4" px="2" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <styled.h3 fontSize="md" fontWeight="semibold" color="fg.default">
+          <styled.div py="4" px="4" style={{ display: "flex", flexDirection: "column", gap: "0.75rem", backgroundColor: "#f0f0f0" }}>
+            <styled.h3 style={{ fontSize: "18px", lineHeight: "22px", fontWeight: 600, color: "#404040" }}>
               Comments ({thread.reply_status.replies})
             </styled.h3>
 
@@ -370,7 +359,19 @@ export function ThreadScreen(props: Props) {
           </styled.div>
         </styled.div>
 
-        <ReplyBox initialSession={props.initialSession} thread={thread} />
+        <styled.div
+          flexShrink="0"
+          width="full"
+          position={{ base: "fixed", md: "sticky" }}
+          bottom="0"
+          left="0"
+          right="0"
+          zIndex="sticky"
+          maxW={{ base: "full", md: "[600px]" }}
+          mx="auto"
+        >
+          <ReplyBox initialSession={props.initialSession} thread={thread} />
+        </styled.div>
       </LStack>
     </ReplyProvider>
   );
@@ -439,53 +440,3 @@ function ThreadBodyInput({
   );
 }
 
-function ThreadStats({ thread }: { thread: Thread }) {
-  const likeCount = thread.likes.likes;
-  const likeLabel = likeCount === 1 ? "like" : "likes";
-  const replyCount = thread.reply_status.replies;
-  const replyLabel = replyCount === 1 ? "reply" : "replies";
-
-  return (
-    <HStack gap="4" color="fg.muted">
-      <styled.span
-        display="flex"
-        gap="1"
-        alignItems="center"
-        title={thread.likes.liked ? "You liked this thread" : undefined}
-      >
-        <span>
-          {thread.likes.liked ? (
-            <LikeSavedIcon width="4" />
-          ) : (
-            <LikeIcon width="4" />
-          )}
-        </span>
-        <span>
-          {likeCount} {likeLabel}
-        </span>
-      </styled.span>
-
-      <styled.span
-        display="flex"
-        gap="1"
-        alignItems="center"
-        title={
-          thread.reply_status.replied
-            ? "You have replied to this thread"
-            : undefined
-        }
-      >
-        <span>
-          {thread.reply_status.replied ? (
-            <DiscussionParticipatingIcon width="4" />
-          ) : (
-            <DiscussionIcon width="4" />
-          )}
-        </span>
-        <span>
-          {replyCount} {replyLabel}
-        </span>
-      </styled.span>
-    </HStack>
-  );
-}
