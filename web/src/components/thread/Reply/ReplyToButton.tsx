@@ -1,6 +1,7 @@
+import { Undo2 } from "lucide-react";
+
 import { Reply, Thread } from "@/api/openapi-schema";
-import { IconButton } from "@/components/ui/icon-button";
-import { ReplyIcon } from "@/components/ui/icons/Reply";
+import { styled } from "@/styled-system/jsx";
 
 import { useReplyContext } from "../ReplyContext";
 
@@ -17,14 +18,29 @@ export function ReplyToButton(props: Props) {
   }
 
   return (
-    <IconButton
+    <styled.button
       type="button"
-      size="xs"
-      variant="ghost"
-      aria-label="Reply to this"
       onClick={handleClick}
+      display="flex"
+      alignItems="center"
+      gap="1"
+      aria-label="Reply to this"
+      style={{
+        height: "24px",
+        padding: "0 12px 0 8px",
+        borderRadius: "6px",
+        backgroundColor: "#ffffff",
+        border: "none",
+        cursor: "pointer",
+      }}
     >
-      <ReplyIcon />
-    </IconButton>
+      <Undo2 size={14} color="#404040" />
+      <styled.span
+        fontWeight="semibold"
+        style={{ fontSize: "12px", lineHeight: "16px", letterSpacing: "0.24px", color: "#404040" }}
+      >
+        Reply
+      </styled.span>
+    </styled.button>
   );
 }
