@@ -100,4 +100,20 @@ export const bg = {
       _osDark: "#1E2E2A",
     },
   },
+
+  searchHeader: {
+    value: {
+      _osLight: "#EAF5F0",
+      _osDark: "#16241F",
+    },
+  },
+
+  searchPanel: {
+    value: {
+      _osLight:
+        "linear-gradient(180deg, rgb(235, 245, 240) 0%, rgb(237, 246, 242) 40.757%, rgb(249, 252, 250) 52.149%, rgb(255, 255, 255) 100%)",
+      _osDark:
+        "linear-gradient(180deg, #16241F 0%, #16241F 40.757%, #12201B 52.149%, #0F1A16 100%)",
+    },
+  },
 };
