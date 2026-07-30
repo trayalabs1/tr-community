@@ -3347,6 +3347,14 @@ const tokens = {
     "value": "var(--colors-bg-search-input)",
     "variable": "var(--colors-bg-search-input)"
   },
+  "colors.bg.searchHeader": {
+    "value": "var(--colors-bg-search-header)",
+    "variable": "var(--colors-bg-search-header)"
+  },
+  "colors.bg.searchPanel": {
+    "value": "var(--colors-bg-search-panel)",
+    "variable": "var(--colors-bg-search-panel)"
+  },
   "colors.fg.default": {
     "value": "var(--colors-fg-default)",
     "variable": "var(--colors-fg-default)"
@@ -4186,6 +4194,14 @@ const tokens = {
   "colors.colorPalette.searchInput": {
     "value": "var(--colors-color-palette-search-input)",
     "variable": "var(--colors-color-palette-search-input)"
+  },
+  "colors.colorPalette.searchHeader": {
+    "value": "var(--colors-color-palette-search-header)",
+    "variable": "var(--colors-color-palette-search-header)"
+  },
+  "colors.colorPalette.searchPanel": {
+    "value": "var(--colors-color-palette-search-panel)",
+    "variable": "var(--colors-color-palette-search-panel)"
   },
   "colors.colorPalette.outline": {
     "value": "var(--colors-color-palette-outline)",
