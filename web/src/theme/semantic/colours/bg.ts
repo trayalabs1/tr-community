@@ -116,4 +116,25 @@ export const bg = {
         "linear-gradient(180deg, #16241F 0%, #16241F 40.757%, #12201B 52.149%, #0F1A16 100%)",
     },
   },
+
+  notificationPage: {
+    value: {
+      _osLight: "#F0F0F0",
+      _osDark: "{colors.slate.dark.2}",
+    },
+  },
+
+  notificationRead: {
+    value: {
+      _osLight: "#F7F7F7",
+      _osDark: "{colors.slate.dark.3}",
+    },
+  },
+
+  notificationUnread: {
+    value: {
+      _osLight: "#FFFFFF",
+      _osDark: "{colors.slate.dark.4}",
+    },
+  },
 };

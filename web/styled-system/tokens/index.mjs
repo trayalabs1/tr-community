@@ -3355,6 +3355,18 @@ const tokens = {
     "value": "var(--colors-bg-search-panel)",
     "variable": "var(--colors-bg-search-panel)"
   },
+  "colors.bg.notificationPage": {
+    "value": "var(--colors-bg-notification-page)",
+    "variable": "var(--colors-bg-notification-page)"
+  },
+  "colors.bg.notificationRead": {
+    "value": "var(--colors-bg-notification-read)",
+    "variable": "var(--colors-bg-notification-read)"
+  },
+  "colors.bg.notificationUnread": {
+    "value": "var(--colors-bg-notification-unread)",
+    "variable": "var(--colors-bg-notification-unread)"
+  },
   "colors.fg.default": {
     "value": "var(--colors-fg-default)",
     "variable": "var(--colors-fg-default)"
@@ -4202,6 +4214,18 @@ const tokens = {
   "colors.colorPalette.searchPanel": {
     "value": "var(--colors-color-palette-search-panel)",
     "variable": "var(--colors-color-palette-search-panel)"
+  },
+  "colors.colorPalette.notificationPage": {
+    "value": "var(--colors-color-palette-notification-page)",
+    "variable": "var(--colors-color-palette-notification-page)"
+  },
+  "colors.colorPalette.notificationRead": {
+    "value": "var(--colors-color-palette-notification-read)",
+    "variable": "var(--colors-color-palette-notification-read)"
+  },
+  "colors.colorPalette.notificationUnread": {
+    "value": "var(--colors-color-palette-notification-unread)",
+    "variable": "var(--colors-color-palette-notification-unread)"
   },
   "colors.colorPalette.outline": {
     "value": "var(--colors-color-palette-outline)",
