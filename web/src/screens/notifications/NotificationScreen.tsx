@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useQueryState } from "nuqs";
 
 import {
@@ -10,7 +9,7 @@ import {
 import { NotificationItem } from "@/components/notifications/item";
 import { NotificationList } from "@/components/notifications/NotificationList";
 import { useNotifications } from "@/components/notifications/useNotifications";
-import { ArrowLeftIcon } from "@/components/ui/icons/Arrow";
+import { CenteredBackHeader } from "@/components/site/Header";
 import { UnreadyBanner } from "@/components/site/Unready";
 import { Switch } from "@/components/ui/switch";
 import { styled } from "@/styled-system/jsx";
@@ -75,7 +74,6 @@ export function useNotificationScreen(props: Props) {
 
 export function NotificationScreen(props: Props) {
   const { ready, error, data, status, handlers } = useNotificationScreen(props);
-  const router = useRouter();
 
   if (!ready) {
     return <UnreadyBanner error={error} />;
@@ -87,49 +85,7 @@ export function NotificationScreen(props: Props) {
 
   return (
     <styled.div display="flex" flexDirection="column" w="full" h="full">
-      <styled.div
-        position="sticky"
-        top="0"
-        zIndex="sticky"
-        display="flex"
-        alignItems="center"
-        h="14"
-        px="1"
-        bg="bg.default"
-      >
-        <styled.button
-          type="button"
-          aria-label="Go back"
-          onClick={() => router.back()}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          w="12"
-          h="12"
-          flexShrink="0"
-          color="fg.default"
-          bg="transparent"
-          border="none"
-          cursor="pointer"
-        >
-          <ArrowLeftIcon width="6" height="6" />
-        </styled.button>
-
-        <styled.h1
-          flex="1"
-          minW="0"
-          fontSize="xl"
-          lineHeight="[24px]"
-          fontWeight="bold"
-          letterSpacing="[0.2px]"
-          color="fg.default"
-          textAlign="center"
-        >
-          Notifications
-        </styled.h1>
-
-        <styled.div w="12" flexShrink="0" />
-      </styled.div>
+      <CenteredBackHeader title="Notifications" />
 
       <styled.div
         flex="1"

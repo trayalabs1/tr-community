@@ -3367,6 +3367,10 @@ const tokens = {
     "value": "var(--colors-bg-notification-unread)",
     "variable": "var(--colors-bg-notification-unread)"
   },
+  "colors.bg.savedPage": {
+    "value": "var(--colors-bg-saved-page)",
+    "variable": "var(--colors-bg-saved-page)"
+  },
   "colors.fg.default": {
     "value": "var(--colors-fg-default)",
     "variable": "var(--colors-fg-default)"
@@ -4226,6 +4230,10 @@ const tokens = {
   "colors.colorPalette.notificationUnread": {
     "value": "var(--colors-color-palette-notification-unread)",
     "variable": "var(--colors-color-palette-notification-unread)"
+  },
+  "colors.colorPalette.savedPage": {
+    "value": "var(--colors-color-palette-saved-page)",
+    "variable": "var(--colors-color-palette-saved-page)"
   },
   "colors.colorPalette.outline": {
     "value": "var(--colors-color-palette-outline)",

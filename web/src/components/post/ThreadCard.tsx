@@ -61,8 +61,8 @@ export const ThreadReferenceCard = memo(
 
     const title = thread.title || thread.link?.title || "Untitled post";
 
-    const hasReplied = thread.reply_status.replied > 0;
-    const replyCount = thread.reply_status.replies;
+    const hasReplied = (thread.reply_status?.replied ?? 0) > 0;
+    const replyCount = thread.reply_status?.replies ?? 0;
     const replyCountLabel =
       replyCount === 1 ? `1 reply` : `${replyCount} replies`;
 
