@@ -1,21 +1,3 @@
-import {
-  DatagraphItemKind,
-  DatagraphItemList,
-  Thread,
-} from "@/api/openapi-schema";
+import { datagraphItemThreads } from "@/lib/datagraph/threads";
 
-export function searchResultThreads(
-  items: DatagraphItemList | undefined,
-): Thread[] {
-  if (!items) {
-    return [];
-  }
-
-  return items.reduce<Thread[]>((acc, item) => {
-    if (item.kind === DatagraphItemKind.thread) {
-      acc.push(item.ref);
-    }
-
-    return acc;
-  }, []);
-}
+export const searchResultThreads = datagraphItemThreads;

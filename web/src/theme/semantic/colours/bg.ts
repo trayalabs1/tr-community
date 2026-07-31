@@ -137,4 +137,11 @@ export const bg = {
       _osDark: "{colors.slate.dark.4}",
     },
   },
+
+  savedPage: {
+    value: {
+      _osLight: "#F0F0F0",
+      _osDark: "{colors.slate.dark.2}",
+    },
+  },
 };
