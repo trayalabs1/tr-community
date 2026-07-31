@@ -144,4 +144,11 @@ export const bg = {
       _osDark: "{colors.slate.dark.2}",
     },
   },
+
+  profileStats: {
+    value: {
+      _osLight: "#F7F7F7",
+      _osDark: "{colors.slate.dark.3}",
+    },
+  },
 };

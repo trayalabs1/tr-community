@@ -8,10 +8,11 @@ import { styled } from "@/styled-system/jsx";
 
 type Props = {
   title: ReactNode;
+  action?: ReactNode;
   onBack?: () => void;
 };
 
-export function CenteredBackHeader({ title, onBack }: Props) {
+export function CenteredBackHeader({ title, action, onBack }: Props) {
   const router = useRouter();
   const handleBack = onBack ?? (() => router.back());
 
@@ -58,7 +59,15 @@ export function CenteredBackHeader({ title, onBack }: Props) {
         {title}
       </styled.h1>
 
-      <styled.div w="12" flexShrink="0" />
+      <styled.div
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        w="12"
+        flexShrink="0"
+      >
+        {action}
+      </styled.div>
     </styled.div>
   );
 }

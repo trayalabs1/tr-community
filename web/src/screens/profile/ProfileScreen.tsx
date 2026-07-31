@@ -9,14 +9,13 @@ import { MemberIdent } from "@/components/member/MemberBadge/MemberIdent";
 import { MemberOptionsMenu } from "@/components/member/MemberOptions/MemberOptionsMenu";
 import { ProfileAccountManagement } from "@/components/profile/ProfileAccountManagement/ProfileAccountManagement";
 import { ProfileContent } from "@/components/profile/ProfileContent/ProfileContent";
+import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileSuspendedBanner } from "@/components/profile/ProfileSuspendedBanner";
 import { RoleBadgeList } from "@/components/role/RoleBadge/RoleBadgeList";
-import { EditAction } from "@/components/site/Action/Edit";
 import { MoreAction } from "@/components/site/Action/More";
 import { SaveAction } from "@/components/site/Action/Save";
-import { DotSeparator } from "@/components/site/Dot";
-import { HeaderWithBackArrow } from "@/components/site/Header";
-import { LikeIcon } from "@/components/ui/icons/Like";
+import { CenteredBackHeader } from "@/components/site/Header";
+import { EditIcon } from "@/components/ui/icons/Edit";
 import { Input } from "@/components/ui/input";
 import { hasPermission } from "@/utils/permissions";
 import {
@@ -47,7 +46,29 @@ export function ProfileScreen(props: Props) {
   return (
     <LStack w="full">
       <CardBox p="0">
-        <HeaderWithBackArrow title="My Profile" />
+        <CenteredBackHeader
+          title={isSelf ? "My Profile" : profile.name}
+          action={
+            isSelf && !isEditing ? (
+              <styled.button
+                type="button"
+                aria-label="Edit profile"
+                onClick={handlers.handleSetEditing}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                w="12"
+                h="12"
+                color="fg.default"
+                bg="transparent"
+                border="none"
+                cursor="pointer"
+              >
+                <EditIcon width="5" height="5" />
+              </styled.button>
+            ) : undefined
+          }
+        />
 
         {/* Profile Content */}
         <VStack alignItems="center" p="6" gap="4">
@@ -60,7 +81,7 @@ export function ProfileScreen(props: Props) {
             />
           </Box>
 
-          {/* Handle with Edit Icon */}
+          {/* Name with Edit Icon */}
           <VStack alignItems="center" gap="1">
             <HStack gap="2" alignItems="center">
               {isEditing ? (
@@ -73,11 +94,16 @@ export function ProfileScreen(props: Props) {
                   {...form.register("handle")}
                 />
               ) : (
-                <styled.p fontSize="lg" fontWeight="semibold" color="fg.default">
-                  @{profile.handle}
+                <styled.p
+                  fontSize="md"
+                  lineHeight="[24px]"
+                  fontWeight="medium"
+                  color="fg.default"
+                >
+                  {profile.name}
                 </styled.p>
               )}
-              {isSelf && (
+              {!isSelf && (
                 <MemberOptionsMenu profile={profile} asChild onEditClick={handlers.handleSetEditing}>
                   <MoreAction type="button" size="sm" />
                 </MemberOptionsMenu>
@@ -90,55 +116,10 @@ export function ProfileScreen(props: Props) {
             </VStack>
           </VStack>
 
-          {/* Stats Grid */}
-          <styled.div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "1rem",
-              width: "100%",
-              maxWidth: "400px",
-            }}
-          >
-            {/* Member Since */}
-            <styled.div
-              style={{
-                padding: "1.5rem",
-                backgroundColor: "#f8f9f8",
-                borderRadius: "1rem",
-                textAlign: "center",
-                border: "1px solid #e5e7e5",
-              }}
-            >
-              <styled.p fontSize="xs" color="fg.muted" fontWeight="medium" style={{ marginBottom: "0.5rem" }}>
-                Member Since
-              </styled.p>
-              <styled.p fontSize="lg" fontWeight="semibold" color="fg.default">
-                {new Date(profile.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "short",
-                })}
-              </styled.p>
-            </styled.div>
-
-            {/* Likes Received */}
-            <styled.div
-              style={{
-                padding: "1.5rem",
-                backgroundColor: "#faf8f3",
-                borderRadius: "1rem",
-                textAlign: "center",
-                border: "1px solid #e5e7e5",
-              }}
-            >
-              <styled.p fontSize="xs" color="fg.muted" fontWeight="medium" style={{ marginBottom: "0.5rem" }}>
-                Likes Received
-              </styled.p>
-              <styled.p fontSize="lg" fontWeight="semibold" color="fg.default">
-                {profile.like_score}
-              </styled.p>
-            </styled.div>
-          </styled.div>
+          <ProfileStats
+            joined={profile.joined}
+            likeScore={profile.like_score}
+          />
         </VStack>
 
         {session && hasPermission(session, Permission.ADMINISTRATOR) && (
