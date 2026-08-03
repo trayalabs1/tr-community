@@ -3056,11 +3056,11 @@ const tokens = {
     "variable": "var(--radii-l3)"
   },
   "fonts.body": {
-    "value": "var(--fonts-inter)",
+    "value": "var(--fonts-nunito)",
     "variable": "var(--fonts-body)"
   },
   "fonts.heading": {
-    "value": "var(--fonts-inter-display)",
+    "value": "var(--fonts-nunito)",
     "variable": "var(--fonts-heading)"
   },
   "blurs.frosted": {
@@ -3346,6 +3346,46 @@ const tokens = {
   "colors.bg.searchInput": {
     "value": "var(--colors-bg-search-input)",
     "variable": "var(--colors-bg-search-input)"
+  },
+  "colors.bg.searchHeader": {
+    "value": "var(--colors-bg-search-header)",
+    "variable": "var(--colors-bg-search-header)"
+  },
+  "colors.bg.searchPanel": {
+    "value": "var(--colors-bg-search-panel)",
+    "variable": "var(--colors-bg-search-panel)"
+  },
+  "colors.bg.notificationPage": {
+    "value": "var(--colors-bg-notification-page)",
+    "variable": "var(--colors-bg-notification-page)"
+  },
+  "colors.bg.notificationRead": {
+    "value": "var(--colors-bg-notification-read)",
+    "variable": "var(--colors-bg-notification-read)"
+  },
+  "colors.bg.notificationUnread": {
+    "value": "var(--colors-bg-notification-unread)",
+    "variable": "var(--colors-bg-notification-unread)"
+  },
+  "colors.bg.savedPage": {
+    "value": "var(--colors-bg-saved-page)",
+    "variable": "var(--colors-bg-saved-page)"
+  },
+  "colors.bg.profileStats": {
+    "value": "var(--colors-bg-profile-stats)",
+    "variable": "var(--colors-bg-profile-stats)"
+  },
+  "colors.bg.composerPage": {
+    "value": "var(--colors-bg-composer-page)",
+    "variable": "var(--colors-bg-composer-page)"
+  },
+  "colors.bg.composerAction": {
+    "value": "var(--colors-bg-composer-action)",
+    "variable": "var(--colors-bg-composer-action)"
+  },
+  "colors.bg.composerCard": {
+    "value": "var(--colors-bg-composer-card)",
+    "variable": "var(--colors-bg-composer-card)"
   },
   "colors.fg.default": {
     "value": "var(--colors-fg-default)",
@@ -4186,6 +4226,46 @@ const tokens = {
   "colors.colorPalette.searchInput": {
     "value": "var(--colors-color-palette-search-input)",
     "variable": "var(--colors-color-palette-search-input)"
+  },
+  "colors.colorPalette.searchHeader": {
+    "value": "var(--colors-color-palette-search-header)",
+    "variable": "var(--colors-color-palette-search-header)"
+  },
+  "colors.colorPalette.searchPanel": {
+    "value": "var(--colors-color-palette-search-panel)",
+    "variable": "var(--colors-color-palette-search-panel)"
+  },
+  "colors.colorPalette.notificationPage": {
+    "value": "var(--colors-color-palette-notification-page)",
+    "variable": "var(--colors-color-palette-notification-page)"
+  },
+  "colors.colorPalette.notificationRead": {
+    "value": "var(--colors-color-palette-notification-read)",
+    "variable": "var(--colors-color-palette-notification-read)"
+  },
+  "colors.colorPalette.notificationUnread": {
+    "value": "var(--colors-color-palette-notification-unread)",
+    "variable": "var(--colors-color-palette-notification-unread)"
+  },
+  "colors.colorPalette.savedPage": {
+    "value": "var(--colors-color-palette-saved-page)",
+    "variable": "var(--colors-color-palette-saved-page)"
+  },
+  "colors.colorPalette.profileStats": {
+    "value": "var(--colors-color-palette-profile-stats)",
+    "variable": "var(--colors-color-palette-profile-stats)"
+  },
+  "colors.colorPalette.composerPage": {
+    "value": "var(--colors-color-palette-composer-page)",
+    "variable": "var(--colors-color-palette-composer-page)"
+  },
+  "colors.colorPalette.composerAction": {
+    "value": "var(--colors-color-palette-composer-action)",
+    "variable": "var(--colors-color-palette-composer-action)"
+  },
+  "colors.colorPalette.composerCard": {
+    "value": "var(--colors-color-palette-composer-card)",
+    "variable": "var(--colors-color-palette-composer-card)"
   },
   "colors.colorPalette.outline": {
     "value": "var(--colors-color-palette-outline)",

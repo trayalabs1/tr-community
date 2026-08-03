@@ -2,6 +2,7 @@
 
 import { Portal } from "@ark-ui/react";
 import { format } from "date-fns/format";
+import { useState } from "react";
 
 import { MoreAction } from "src/components/site/Action/More";
 
@@ -12,8 +13,8 @@ import {
   ReportPostMenuItem,
   truncateBody,
 } from "@/components/report/ReportPostMenuItem";
-import { CancelAction } from "@/components/site/Action/Cancel";
 import { ThreadShareMenu } from "@/components/thread/ThreadShareMenu/ThreadShareMenu";
+import { DeleteConfirmSheet } from "./DeleteConfirmSheet";
 import { DeleteIcon } from "@/components/ui/icons/Delete";
 import { EditIcon } from "@/components/ui/icons/Edit";
 import { LinkIcon } from "@/components/ui/icons/Link";
@@ -31,16 +32,20 @@ export function ThreadMenu(props: Props) {
     isEditingEnabled,
     isMovingEnabled,
     isDeletingEnabled,
-    isConfirmingDelete,
     canPinThread,
     isThreadPinned,
     canShareThread,
     handlers,
   } = useThreadMenu(props);
 
-  const { thread } = props;
+  const { thread, onRequestDelete } = props;
+
+  const [showDeleteSheet, setShowDeleteSheet] = useState(false);
+
+  const handleDeleteClick = onRequestDelete ?? (() => setShowDeleteSheet(true));
 
   return (
+    <>
     <Menu.Root
       positioning={{
         shift: 32,
@@ -126,46 +131,30 @@ export function ThreadMenu(props: Props) {
 
               {canShareThread && <ThreadShareMenu thread={thread} />}
 
-              {isDeletingEnabled &&
-                (isConfirmingDelete ? (
-                  <HStack gap="0">
-                    <Menu.Item
-                      className={menuItemColorPalette({ colorPalette: "red" })}
-                      value="delete"
-                      w="full"
-                      closeOnSelect={false}
-                      onClick={handlers.handleConfirmDelete}
-                    >
-                      Are you sure?
-                    </Menu.Item>
-
-                    <Menu.Item
-                      value="delete-cancel"
-                      closeOnSelect={false}
-                      asChild
-                    >
-                      <CancelAction
-                        borderRadius="md"
-                        onClick={handlers.handleCancelDelete}
-                      />
-                    </Menu.Item>
+              {isDeletingEnabled && (
+                <Menu.Item
+                  className={menuItemColorPalette({ colorPalette: "red" })}
+                  value="delete"
+                  onClick={handleDeleteClick}
+                >
+                  <HStack gap="1">
+                    <DeleteIcon /> Delete
                   </HStack>
-                ) : (
-                  <Menu.Item
-                    className={menuItemColorPalette({ colorPalette: "red" })}
-                    value="delete"
-                    closeOnSelect={false}
-                    onClick={handlers.handleConfirmDelete}
-                  >
-                    <HStack gap="1">
-                      <DeleteIcon /> Delete
-                    </HStack>
-                  </Menu.Item>
-                ))}
+                </Menu.Item>
+              )}
             </Menu.ItemGroup>
           </Menu.Content>
         </Menu.Positioner>
       </Portal>
     </Menu.Root>
+
+    {!onRequestDelete && (
+      <DeleteConfirmSheet
+        isOpen={showDeleteSheet}
+        onOpenChange={setShowDeleteSheet}
+        onConfirm={handlers.handleDelete}
+      />
+    )}
+    </>
   );
 }

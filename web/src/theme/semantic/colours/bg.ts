@@ -100,4 +100,76 @@ export const bg = {
       _osDark: "#1E2E2A",
     },
   },
+
+  searchHeader: {
+    value: {
+      _osLight: "#EAF5F0",
+      _osDark: "#16241F",
+    },
+  },
+
+  searchPanel: {
+    value: {
+      _osLight:
+        "linear-gradient(180deg, rgb(235, 245, 240) 0%, rgb(237, 246, 242) 40.757%, rgb(249, 252, 250) 52.149%, rgb(255, 255, 255) 100%)",
+      _osDark:
+        "linear-gradient(180deg, #16241F 0%, #16241F 40.757%, #12201B 52.149%, #0F1A16 100%)",
+    },
+  },
+
+  notificationPage: {
+    value: {
+      _osLight: "#F0F0F0",
+      _osDark: "{colors.slate.dark.2}",
+    },
+  },
+
+  notificationRead: {
+    value: {
+      _osLight: "#F7F7F7",
+      _osDark: "{colors.slate.dark.3}",
+    },
+  },
+
+  notificationUnread: {
+    value: {
+      _osLight: "#FFFFFF",
+      _osDark: "{colors.slate.dark.4}",
+    },
+  },
+
+  savedPage: {
+    value: {
+      _osLight: "#F0F0F0",
+      _osDark: "{colors.slate.dark.2}",
+    },
+  },
+
+  profileStats: {
+    value: {
+      _osLight: "#F7F7F7",
+      _osDark: "{colors.slate.dark.3}",
+    },
+  },
+
+  composerPage: {
+    value: {
+      _osLight: "#F7F7F7",
+      _osDark: "{colors.slate.dark.2}",
+    },
+  },
+
+  composerAction: {
+    value: {
+      _osLight: "#DAEBF1",
+      _osDark: "{colors.blue.dark.4}",
+    },
+  },
+
+  composerCard: {
+    value: {
+      _osLight: "#FFFFFF",
+      _osDark: "{colors.slate.dark.4}",
+    },
+  },
 };

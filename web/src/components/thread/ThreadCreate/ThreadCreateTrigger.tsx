@@ -5,8 +5,7 @@ import { useSession } from "@/auth";
 import { ButtonProps } from "@/components/ui/button";
 import { PromptNudge } from "@/components/feed/PromptNudge/PromptNudge";
 import { PromptItem } from "@/components/feed/PromptNudge/prompts";
-import { EditIcon } from "@/components/ui/icons/Edit";
-import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { Send } from "lucide-react";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
 import { LStack, styled } from "@/styled-system/jsx";
 
@@ -29,10 +28,7 @@ export function ThreadCreateTrigger({
   const promptSheet = useDisclosure();
   const { trackEvent } = useEventTracking();
   const session = useSession();
-  const firstName = session?.name?.split(" ")[0];
-  const placeholder = firstName
-    ? `Type your questions ${firstName}`
-    : "Type your questions & doubts here...";
+  const placeholder = "What's in your mind?";
   const [picked, setPicked] = useState<
     { prompt: PromptItem; index: number } | undefined
   >(undefined);
@@ -64,44 +60,40 @@ export function ThreadCreateTrigger({
         onClick={handleCreatePostClick}
         display="flex"
         alignItems="center"
+        justifyContent="space-between"
         gap="3"
         w="full"
-        py="3"
-        px="4"
-        rounded="full"
         cursor="pointer"
         style={{
           background: "white",
-          border: `1.5px solid ${TRAYA_COLORS.primary}`,
+          border: "1px solid white",
+          borderRadius: "14px",
+          padding: "14px 16px",
+          boxShadow: "0px 4px 6px rgba(0,0,0,0.12)",
         }}
         {...props}
       >
-        <styled.div
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          flexShrink="0"
-          rounded="full"
-          style={{
-            width: "32px",
-            height: "32px",
-            backgroundColor: TRAYA_COLORS.tertiary,
-          }}
-        >
-          <EditIcon
-            style={{
-              width: "16px",
-              height: "16px",
-              color: TRAYA_COLORS.primary,
-            }}
-          />
-        </styled.div>
         <styled.span
-          fontSize="sm"
-          style={{ color: TRAYA_COLORS.neutral.textMuted }}
+          textAlign="left"
+          style={{
+            color: "#999999",
+            fontSize: "14px",
+            fontWeight: 500,
+            lineHeight: "20px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
         >
           {placeholder}
         </styled.span>
+        <Send
+          size={20}
+          style={{
+            flexShrink: 0,
+            color: "var(--colors-fg-default)",
+          }}
+        />
       </styled.button>
 
       {promptNudges && promptNudges.length > 0 && (

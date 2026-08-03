@@ -188,45 +188,20 @@ export function ChannelScreen(props: Props) {
   const hasMore = threads?.next_page !== undefined;
 
   return (
-    <LStack gap="0" p="0">
+    <LStack gap="0" p="0" maxW="[600px]" mx="auto" width="full">
       <ChannelMobileHeader
         channel={props.channel}
         session={props.session}
         categories={categories?.categories || []}
         selectedCategorySlug={selectedCategorySlug}
-        selectedVisibility={selectedVisibility}
         onCategoryChange={setSelectedCategorySlug}
-        onVisibilityChange={setSelectedVisibility}
-        onDateRangeChange={setDateRange}
-        excludeBAH={excludeBAH}
-        onExcludeBAHChange={setExcludeBAH}
         hasUnreadNotifications={props.hasUnreadNotifications}
-        bookmarkCount={props.bookmarkCount}
       />
 
       <LStack gap="6" p="4">
 
-      {/* Desktop Channel Header */}
-      <VStack alignItems="start" gap="2" width="full" display={{ base: "none", md: "flex" }}>
-        <HStack justifyContent="space-between" width="full">
-          <Heading as="h1" size="2xl">
-            {props.channel.name}
-          </Heading>
-          {permissions.canManageChannel && (
-            <Button asChild size="sm" variant="ghost">
-              <Link href={`/channels/${props.channel.id}/settings`}>
-                Settings
-              </Link>
-            </Button>
-          )}
-        </HStack>
-        {props.channel.description && (
-          <styled.p color="fg.muted">{props.channel.description}</styled.p>
-        )}
-      </VStack>
-
-      {/* Filter Bar - Desktop Only */}
-      <styled.div display={{ base: "none", md: "block" }} width="full">
+      {/* Admin Filter Bar (visibility / date / streak) + Settings on the same row — desktop only; mobile uses FeedFilterChips */}
+      <styled.div width="full" display={{ base: "none", md: "block" }}>
         <ChannelFilterBar
           channelID={props.channel.id}
           channelName={props.channel.name}
@@ -239,11 +214,28 @@ export function ChannelScreen(props: Props) {
           excludeBAH={excludeBAH}
           onExcludeBAHChange={setExcludeBAH}
           promptNudges={promptNudges}
+          hideComposer
+          rightSlot={
+            permissions.canManageChannel ? (
+              <Button asChild size="sm" variant="ghost" display={{ base: "none", md: "inline-flex" }}>
+                <Link href={`/channels/${props.channel.id}/settings`}>
+                  Settings
+                </Link>
+              </Button>
+            ) : undefined
+          }
         />
       </styled.div>
 
       {/* Threads Section */}
-      <VStack alignItems="start" gap="4" width="full">
+      <VStack
+        alignItems="start"
+        gap="4"
+        width="full"
+        mx={{ base: "-4", md: "0" }}
+        w={{ base: "auto", md: "full" }}
+        bg={{ base: "[#f0f0f0]", md: "transparent" }}
+      >
 
         {!hasInitiallyLoaded ? (
           <styled.div
@@ -272,7 +264,7 @@ export function ChannelScreen(props: Props) {
             return (
           <>
             {showPersonalized && (
-              <VStack alignItems="start" gap="4" width="full">
+              <VStack alignItems="start" gap={{ base: "2", md: "4" }} width="full">
                 {personalized!.self_recent.map((selfThread) => {
                   const group = personalized!.similar.find(
                     (g) => g.for_thread_id === selfThread.id,
@@ -296,7 +288,7 @@ export function ChannelScreen(props: Props) {
               </VStack>
             )}
 
-            <VStack alignItems="start" gap="4" width="full">
+            <VStack alignItems="start" gap={{ base: "2", md: "4" }} width="full">
               {filteredThreads.map((thread, index) => (
                 <Fragment key={thread.id}>
                   <ThreadReferenceCard

@@ -10,8 +10,8 @@ export const semanticTokens = defineSemanticTokens({
     l3: { value: "{radii.md}" },
   },
   fonts: {
-    body: { value: "{fonts.inter}" },
-    heading: { value: "{fonts.interDisplay}" },
+    body: { value: "{fonts.nunito}" },
+    heading: { value: "{fonts.nunito}" },
   },
   blurs: {
     frosted: { value: "10px" },
