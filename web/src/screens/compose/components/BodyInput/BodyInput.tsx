@@ -17,14 +17,7 @@ export function BodyInput({ onAssetUpload }: PropsWithChildren<Props>) {
   const { control } = useBodyInput();
 
   return (
-    <styled.div
-      w="full"
-      h="auto"
-      minH="32"
-      flex="1"
-      display="flex"
-      flexDirection="column"
-    >
+    <styled.div w="full" h="auto" minH="32" rounded="md" p="1" style={{ backgroundColor: "#f0f5f1", display: "flex", flexDirection: "column" }}>
       <FormControl h="auto" minH="32" flex="1" display="flex" flexDir="column">
         <Controller
           render={({ field, formState }) => (
@@ -32,7 +25,6 @@ export function BodyInput({ onAssetUpload }: PropsWithChildren<Props>) {
               onChange={field.onChange}
               onAssetUpload={onAssetUpload}
               initialValue={formState.defaultValues?.["body"]}
-              placeholder="Write your heart out....."
             />
           )}
           control={control}
