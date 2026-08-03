@@ -36,9 +36,9 @@ export function LikeButton({ showCount = false, ...props }: LikeButtonProps) {
       >
         <span>
           {props.thread.likes.liked ? (
-            <LikeSavedIcon width="4" />
+            <LikeSavedIcon width="5" height="5" />
           ) : (
-            <LikeIcon width="4" />
+            <LikeIcon width="5" height="5" />
           )}
         </span>
         <styled.span
