@@ -18,7 +18,7 @@ export function ProfileContent(props: Props) {
   return (
     <VStack alignItems="start" w="full" gap="0">
       <Tabs.Root width="full" variant="line" defaultValue="posts">
-        <Tabs.List>
+        <Tabs.List justifyContent="center">
           <Tabs.Trigger
             value="posts"
             textTransform="uppercase"
