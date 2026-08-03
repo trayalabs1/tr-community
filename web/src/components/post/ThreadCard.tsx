@@ -17,7 +17,10 @@ import { CategoryBadge } from "../category/CategoryBadge";
 import { PostReviewBadge } from "../thread/PostReviewBadge";
 import { ThreadMenu } from "../thread/ThreadMenu/ThreadMenu";
 import { DeleteConfirmSheet } from "../thread/ThreadMenu/DeleteConfirmSheet";
-import { MessageSquareTextIcon } from "../ui/icons/MessageSquare";
+import {
+  MessageSquareIcon,
+  MessageSquareTextIcon,
+} from "../ui/icons/MessageSquare";
 
 import { PollCard } from "../poll/PollCard";
 import { ReplyChips } from "../thread/ReplyChips/ReplyChips";
@@ -318,7 +321,13 @@ export const ThreadReferenceCard = memo(
                 ariaLabel="Comments"
                 title={replyStatusLabel}
                 count={replyCount}
-                icon={<MessageSquareTextIcon width="4" height="4" />}
+                icon={
+                  replyCount > 0 ? (
+                    <MessageSquareTextIcon width="5" height="5" />
+                  ) : (
+                    <MessageSquareIcon width="5" height="5" />
+                  )
+                }
               />
             </Link>
 

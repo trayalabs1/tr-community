@@ -36,7 +36,7 @@ export function ActionPill({
       aria-label={ariaLabel}
       title={title ?? ariaLabel}
       style={{
-        backgroundColor: active ? "#404040" : "#f7f7f7",
+        backgroundColor: active ? "#404040" : "transparent",
         border: "none",
         cursor: "pointer",
         padding: "6px 14px",

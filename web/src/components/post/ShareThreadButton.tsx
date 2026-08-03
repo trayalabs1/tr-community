@@ -5,16 +5,12 @@ import { toast } from "sonner";
 
 import { useCopyToClipboard } from "@/utils/useCopyToClipboard";
 
-import { Share2 } from "lucide-react";
-
 import { ThreadReference } from "@/api/openapi-schema";
 import { getPermalinkForThread } from "@/components/thread/utils";
+import { ShareNodesIcon } from "@/components/ui/icons/Share";
 import { useShare } from "@/utils/client";
-import { styled } from "@/styled-system/jsx";
 
 import { ActionPill } from "./ActionPill";
-
-const Share2Icon = styled(Share2);
 
 type Props = {
   thread: ThreadReference;
@@ -54,7 +50,7 @@ export function ShareThreadButton({ thread }: Props) {
     <ActionPill
       ariaLabel="Share post"
       onClick={handleShare}
-      icon={<Share2Icon width="4" height="4" />}
+      icon={<ShareNodesIcon width="6" height="6" />}
     />
   );
 }

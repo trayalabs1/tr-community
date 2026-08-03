@@ -25,9 +25,9 @@ export function FeedActionLike({ thread }: Props) {
       onClick={handleClick}
       icon={
         liked ? (
-          <LikeSavedIcon width="4" height="4" style={{ color: LIKED_RED }} />
+          <LikeSavedIcon width="5" height="5" style={{ color: LIKED_RED }} />
         ) : (
-          <LikeIcon width="4" height="4" />
+          <LikeIcon width="5" height="5" />
         )
       }
     />
