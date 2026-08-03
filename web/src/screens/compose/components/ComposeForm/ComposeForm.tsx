@@ -6,7 +6,6 @@ import { CategorySelectFlat } from "@/components/category/CategorySelect/Categor
 import { useCategorySelect } from "@/components/category/CategorySelect/useCategorySelect";
 // import { TagListField } from "@/components/thread/ThreadTagList";
 import { PollComposer } from "@/components/poll/PollComposer";
-import { Button } from "@/components/ui/button";
 import { HStack, VStack, LStack, styled } from "@/styled-system/jsx";
 import { hasPermission } from "@/utils/permissions";
 import { useSession } from "@/auth";
@@ -24,6 +23,7 @@ export function ComposeForm(props: Props) {
   const [isPoll, setIsPoll] = useState(false);
 
   const hasCategories = ready && collection.items && collection.items.length > 0;
+  const isPublishable = form.formState.isValid && !state.isPublishing;
 
   return (
     <styled.form
@@ -31,14 +31,12 @@ export function ComposeForm(props: Props) {
       flexDir="column"
       alignItems="start"
       w="full"
-      h="full"
       onSubmit={handlers.handlePublish(isPoll)}
-      overflow="hidden"
       bg="transparent"
     >
       <FormProvider {...form}>
         {/* Scrollable Content Area */}
-        <LStack gap="4" w="full" p={{ base: "3", md: "4" }} flex="1" overflowY="auto" minH="0">
+        <LStack gap="4" w="full" p={{ base: "3", md: "4" }} flex="1">
           {/* Title Input - Commented Out */}
           {/* <styled.div w="full">
             <TitleInput />
@@ -91,20 +89,7 @@ export function ComposeForm(props: Props) {
               onOptionsChange={handlers.setPollOptions}
             />
           ) : (
-            <styled.div
-              display="flex"
-              flexDirection="column"
-              justifyContent="space-between"
-              w="full"
-              flex="1"
-              minH="[220px]"
-              p="3"
-              bg="bg.composerCard"
-              borderRadius="2xl"
-              boxShadow="[0px 0px 5px rgba(0, 0, 0, 0.12)]"
-            >
-              <BodyInput onAssetUpload={handlers.handleAssetUpload} />
-            </styled.div>
+            <BodyInput onAssetUpload={handlers.handleAssetUpload} />
           )}
 
           {/* Category Selection - Only show if admin and categories exist */}
@@ -148,31 +133,52 @@ export function ComposeForm(props: Props) {
           style={{ flexShrink: 0 }}
         >
           {/* Submit Buttons */}
-          <HStack gap="2" w={{ base: "full", md: "auto" }}>
-            <Button
-              variant="ghost"
-              size="sm"
+          <HStack gap="2">
+            <styled.button
               type="button"
               disabled={!form.formState.isValid || state.isSavingDraft}
               onClick={handlers.handleSaveDraft}
-              loading={state.isSavingDraft}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              gap="2"
+              h="12"
+              px="6"
+              borderRadius="[12px]"
+              fontSize="md"
+              lineHeight="[20px]"
+              fontWeight="semibold"
+              whiteSpace="nowrap"
+              cursor="pointer"
+              bg="bg.composerDraft"
+              color="fg.default"
+              border="none"
+              _disabled={{ cursor: "not-allowed", opacity: "[0.6]" }}
             >
-              Save Draft
-            </Button>
+              {state.isSavingDraft ? "Saving..." : "Save Draft"}
+            </styled.button>
 
-            <Button
-              size="sm"
+            <styled.button
               type="submit"
-              disabled={!form.formState.isValid || state.isPublishing}
-              loading={state.isPublishing}
-              w={{ base: "full", md: "auto" }}
-              style={{
-                backgroundColor: TRAYA_COLORS.primary,
-                color: "white",
-              }}
+              disabled={!isPublishable}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              gap="2"
+              h="12"
+              px="6"
+              borderRadius="[12px]"
+              fontSize="md"
+              lineHeight="[20px]"
+              fontWeight="semibold"
+              whiteSpace="nowrap"
+              color="white"
+              bg={isPublishable ? "bg.composerSubmit" : "bg.composerSubmitDisabled"}
+              border="none"
+              cursor={isPublishable ? "pointer" : "not-allowed"}
             >
-              {"Post"}
-            </Button>
+              {state.isPublishing ? "Posting..." : "Post"}
+            </styled.button>
           </HStack>
         </HStack>
       </FormProvider>

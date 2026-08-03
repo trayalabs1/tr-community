@@ -15,7 +15,10 @@ import { LikeButton } from "@/components/post/LikeButton/LikeButton";
 import { ExpandableText } from "@/components/post/ExpandableText";
 import { BookmarkPill } from "@/components/post/BookmarkPill";
 import { CategoryBadge } from "@/components/category/CategoryBadge";
-import { MessageSquareTextIcon } from "@/components/ui/icons/MessageSquare";
+import {
+  MessageSquareIcon,
+  MessageSquareTextIcon,
+} from "@/components/ui/icons/MessageSquare";
 import { CancelAction } from "@/components/site/Action/Cancel";
 import { SaveAction } from "@/components/site/Action/Save";
 import { HeaderWithBackArrow } from "@/components/site/Header";
@@ -283,7 +286,11 @@ export function ThreadScreen(props: Props) {
 
               <HStack gap="1" alignItems="center">
                 <styled.div display="flex" alignItems="center" justifyContent="center" w="7" h="7" color="fg.muted">
-                  <MessageSquareTextIcon width="5" height="5" />
+                  {thread.reply_status.replies > 0 ? (
+                    <MessageSquareTextIcon width="5" height="5" />
+                  ) : (
+                    <MessageSquareIcon width="5" height="5" />
+                  )}
                 </styled.div>
                 <styled.span style={{ fontSize: "12px", fontWeight: 500, color: "#404040", letterSpacing: "0.24px" }}>
                   {thread.reply_status.replies}

@@ -159,6 +159,13 @@ export const bg = {
     },
   },
 
+  composerCard: {
+    value: {
+      _osLight: "#FFFFFF",
+      _osDark: "{colors.slate.dark.4}",
+    },
+  },
+
   composerAction: {
     value: {
       _osLight: "#DAEBF1",
@@ -166,10 +173,24 @@ export const bg = {
     },
   },
 
-  composerCard: {
+  composerDraft: {
     value: {
-      _osLight: "#FFFFFF",
+      _osLight: "#F0F0F0",
       _osDark: "{colors.slate.dark.4}",
+    },
+  },
+
+  composerSubmit: {
+    value: {
+      _osLight: "#404040",
+      _osDark: "{colors.slate.dark.11}",
+    },
+  },
+
+  composerSubmitDisabled: {
+    value: {
+      _osLight: "#C9C9C9",
+      _osDark: "{colors.slate.dark.6}",
     },
   },
 };

@@ -18,14 +18,20 @@ export function BodyInput({ onAssetUpload }: PropsWithChildren<Props>) {
 
   return (
     <styled.div
-      w="full"
-      h="auto"
-      minH="32"
-      flex="1"
       display="flex"
       flexDirection="column"
+      w="full"
+      flexShrink="0"
+      h="auto"
+      minH="[50dvh]"
+      p="3"
+      bg="bg.composerCard"
+      borderRadius="2xl"
+      borderWidth="thin"
+      borderStyle="solid"
+      borderColor="border.default"
     >
-      <FormControl h="auto" minH="32" flex="1" display="flex" flexDir="column">
+      <FormControl h="auto" flex="1" display="flex" flexDir="column">
         <Controller
           render={({ field, formState }) => (
             <ContentComposer
@@ -33,6 +39,7 @@ export function BodyInput({ onAssetUpload }: PropsWithChildren<Props>) {
               onAssetUpload={onAssetUpload}
               initialValue={formState.defaultValues?.["body"]}
               placeholder="Write your heart out....."
+              hideTools
             />
           )}
           control={control}

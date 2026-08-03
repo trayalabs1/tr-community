@@ -21,8 +21,8 @@ export function BookmarkPill({ account, thread }: Props) {
       onClick={onToggle}
       icon={
         <BookmarkIcon
-          width="4"
-          height="4"
+          width="5"
+          height="5"
           style={{ fill: isSaved ? "currentColor" : "none" }}
         />
       }
