@@ -1,8 +1,9 @@
 import { BubbleMenu, EditorContent } from "@tiptap/react";
 
 import { EditIcon } from "@/components/ui/icons/Edit";
+import { MediaStackIcon } from "@/components/ui/icons/Media";
 import { css, cx } from "@/styled-system/css";
-import { LStack } from "@/styled-system/jsx";
+import { HStack, LStack, styled } from "@/styled-system/jsx";
 
 import { ComposerTools } from "../ComposerTools";
 import { ContentDragOverlay } from "../ContentDragOverlay";
@@ -42,6 +43,8 @@ export function ContentComposerRich(props: ContentComposerProps) {
       className={cx("typography", props.className)}
       position="relative"
       w="full"
+      h={props.hideTools ? "full" : undefined}
+      flex={props.hideTools ? "1" : undefined}
       gap="1"
       minHeight="8"
       onDragOver={handlers.handleDragOver}
@@ -66,7 +69,36 @@ export function ContentComposerRich(props: ContentComposerProps) {
           <div dangerouslySetInnerHTML={{ __html: initialValueHTML }} />
         )}
       </div>
-      {editor && (
+      {editor && props.hideTools && (
+        <HStack w="full" justifyContent="flex-end" flexShrink="0" mt="auto">
+          <styled.label
+            htmlFor={`composer-image-${uniqueID}`}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            w="10"
+            h="10"
+            flexShrink="0"
+            borderRadius="[10px]"
+            bg="bg.composerAction"
+            color="fg.composerAction"
+            cursor="pointer"
+            title="Add an image"
+          >
+            <MediaStackIcon width="5" height="5" />
+          </styled.label>
+          <styled.input
+            id={`composer-image-${uniqueID}`}
+            type="file"
+            multiple
+            display="none"
+            accept="image/*"
+            onChange={handlers.handleFileUpload}
+          />
+        </HStack>
+      )}
+
+      {editor && !props.hideTools && (
         <div style={{ position: "relative", width: "100%", flexShrink: 0 }}>
           <ComposerTools
             enabled={!props.disabled}

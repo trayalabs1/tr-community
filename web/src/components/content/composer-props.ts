@@ -12,4 +12,8 @@ export type ContentComposerProps = {
   placeholder?: string;
   onChange?: (value: string, isEmpty: boolean) => void;
   onAssetUpload?: (asset: Asset) => void;
+
+  // Suppresses the floating ComposerTools toolbar for surfaces that provide
+  // their own controls.
+  hideTools?: boolean;
 };
