@@ -151,4 +151,25 @@ export const bg = {
       _osDark: "{colors.slate.dark.3}",
     },
   },
+
+  composerPage: {
+    value: {
+      _osLight: "#F7F7F7",
+      _osDark: "{colors.slate.dark.2}",
+    },
+  },
+
+  composerAction: {
+    value: {
+      _osLight: "#DAEBF1",
+      _osDark: "{colors.blue.dark.4}",
+    },
+  },
+
+  composerCard: {
+    value: {
+      _osLight: "#FFFFFF",
+      _osDark: "{colors.slate.dark.4}",
+    },
+  },
 };

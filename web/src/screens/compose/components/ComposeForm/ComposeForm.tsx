@@ -33,13 +33,8 @@ export function ComposeForm(props: Props) {
       w="full"
       h="full"
       onSubmit={handlers.handlePublish(isPoll)}
-      borderRadius={{ base: "lg", md: "2xl" }}
       overflow="hidden"
-      style={{
-        backgroundColor: "var(--colors-bg-surface)",
-        border: "1px solid var(--colors-border-default)",
-        boxShadow: "var(--shadows-lg)",
-      }}
+      bg="transparent"
     >
       <FormProvider {...form}>
         {/* Scrollable Content Area */}
@@ -96,14 +91,27 @@ export function ComposeForm(props: Props) {
               onOptionsChange={handlers.setPollOptions}
             />
           ) : (
-            <BodyInput onAssetUpload={handlers.handleAssetUpload} />
+            <styled.div
+              display="flex"
+              flexDirection="column"
+              justifyContent="space-between"
+              w="full"
+              flex="1"
+              minH="[220px]"
+              p="3"
+              bg="bg.composerCard"
+              borderRadius="2xl"
+              boxShadow="[0px 0px 5px rgba(0, 0, 0, 0.12)]"
+            >
+              <BodyInput onAssetUpload={handlers.handleAssetUpload} />
+            </styled.div>
           )}
 
           {/* Category Selection - Only show if admin and categories exist */}
           {isAdmin && hasCategories && (
             <VStack gap="2" w="full" alignItems="start">
               <styled.label fontSize="sm" fontWeight="medium" color="fg.muted">
-                Topic
+                Topics
               </styled.label>
               <styled.div w="full">
                 <CategorySelectFlat
@@ -137,11 +145,7 @@ export function ComposeForm(props: Props) {
           alignItems="center"
           p={{ base: "3", md: "4" }}
           gap="2"
-          style={{
-            borderTop: "1px solid var(--colors-border-default)",
-            backgroundColor: "var(--colors-bg-surface)",
-            flexShrink: 0,
-          }}
+          style={{ flexShrink: 0 }}
         >
           {/* Submit Buttons */}
           <HStack gap="2" w={{ base: "full", md: "auto" }}>
@@ -152,9 +156,8 @@ export function ComposeForm(props: Props) {
               disabled={!form.formState.isValid || state.isSavingDraft}
               onClick={handlers.handleSaveDraft}
               loading={state.isSavingDraft}
-              display={{ base: "none", md: "block" }}
             >
-              Save draft
+              Save Draft
             </Button>
 
             <Button
