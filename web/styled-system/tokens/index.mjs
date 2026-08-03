@@ -3375,18 +3375,6 @@ const tokens = {
     "value": "var(--colors-bg-profile-stats)",
     "variable": "var(--colors-bg-profile-stats)"
   },
-  "colors.bg.composerPage": {
-    "value": "var(--colors-bg-composer-page)",
-    "variable": "var(--colors-bg-composer-page)"
-  },
-  "colors.bg.composerAction": {
-    "value": "var(--colors-bg-composer-action)",
-    "variable": "var(--colors-bg-composer-action)"
-  },
-  "colors.bg.composerCard": {
-    "value": "var(--colors-bg-composer-card)",
-    "variable": "var(--colors-bg-composer-card)"
-  },
   "colors.fg.default": {
     "value": "var(--colors-fg-default)",
     "variable": "var(--colors-fg-default)"
@@ -4254,18 +4242,6 @@ const tokens = {
   "colors.colorPalette.profileStats": {
     "value": "var(--colors-color-palette-profile-stats)",
     "variable": "var(--colors-color-palette-profile-stats)"
-  },
-  "colors.colorPalette.composerPage": {
-    "value": "var(--colors-color-palette-composer-page)",
-    "variable": "var(--colors-color-palette-composer-page)"
-  },
-  "colors.colorPalette.composerAction": {
-    "value": "var(--colors-color-palette-composer-action)",
-    "variable": "var(--colors-color-palette-composer-action)"
-  },
-  "colors.colorPalette.composerCard": {
-    "value": "var(--colors-color-palette-composer-card)",
-    "variable": "var(--colors-color-palette-composer-card)"
   },
   "colors.colorPalette.outline": {
     "value": "var(--colors-color-palette-outline)",
