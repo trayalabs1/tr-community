@@ -15,14 +15,16 @@ export function LikeButton({ showCount = false, ...props }: LikeButtonProps) {
   const likeCount = props.thread.likes.likes;
 
   if (showCount) {
-    const hasLikes = likeCount > 0;
+    // Red only when the viewer has liked it. Likes from other people leave the
+    // icon in its default state.
+    const isLiked = props.thread.likes.liked;
     return (
       <styled.button
         display="flex"
         alignItems="center"
         gap="1"
         style={{
-          color: hasLikes ? TRAYA_COLORS.heart : "var(--colors-fg-muted)",
+          color: isLiked ? TRAYA_COLORS.heart : "var(--colors-fg-default)",
           backgroundColor: "transparent",
           border: "none",
           cursor: "pointer",
@@ -30,12 +32,12 @@ export function LikeButton({ showCount = false, ...props }: LikeButtonProps) {
           fontFamily: "inherit",
           fontSize: "14px",
         }}
-        aria-label={props.thread.likes.liked ? "Unlike" : "Like"}
-        title={props.thread.likes.liked ? "Unlike" : "Like"}
+        aria-label={isLiked ? "Unlike" : "Like"}
+        title={isLiked ? "Unlike" : "Like"}
         onClick={handleClick}
       >
         <span>
-          {props.thread.likes.liked ? (
+          {isLiked ? (
             <LikeSavedIcon width="5" height="5" />
           ) : (
             <LikeIcon width="5" height="5" />
