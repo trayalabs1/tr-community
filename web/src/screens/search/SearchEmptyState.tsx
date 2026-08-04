@@ -8,23 +8,21 @@ export function SearchEmptyState() {
       flexDirection="column"
       alignItems="center"
       justifyContent="center"
-      gap="1"
+      gap="[14px]"
       py="7"
       px="4"
       textAlign="center"
     >
-      <styled.div
+      <styled.span
         display="flex"
         alignItems="center"
         justifyContent="center"
-        w="20"
-        h="20"
-        color="fg.muted"
+        w="[46px]"
+        h="[46px]"
+        color="[#B5B5B5]"
       >
-        <styled.span display="flex" w="10" h="10">
-          <SearchIcon />
-        </styled.span>
-      </styled.div>
+        <SearchIcon width="[46px]" height="[46px]" />
+      </styled.span>
 
       <styled.p
         fontSize="sm"
