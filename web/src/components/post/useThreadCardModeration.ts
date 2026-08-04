@@ -47,16 +47,8 @@ export function useThreadCardModeration(thread: ThreadReference) {
 
   async function handleDelete() {
     await handle(async () => {
-      await withUndo({
-        message: "Thread deleted",
-        duration: 5000,
-        toastId: `thread-${thread.id}`,
-        action: async () => {
-          await deleteThread(thread.id);
-          await resolveReport();
-        },
-        onUndo: () => {},
-      });
+      await deleteThread(thread.id);
+      await resolveReport();
     });
   }
 
