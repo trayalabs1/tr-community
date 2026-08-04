@@ -1,7 +1,7 @@
 import { FormEvent } from "react";
 import { UseFormRegisterReturn } from "react-hook-form";
 
-import { CloseIcon } from "@/components/ui/icons/Close";
+import { ArrowLeftIcon } from "@/components/ui/icons/Arrow";
 import { SearchIcon } from "@/components/ui/icons/Search";
 import { styled } from "@/styled-system/jsx";
 
@@ -27,7 +27,7 @@ export function SearchHeader({
       <styled.div
         display="flex"
         alignItems="center"
-        justifyContent="flex-end"
+        justifyContent="space-between"
         gap="2"
         h="14"
         pl="1"
@@ -36,19 +36,21 @@ export function SearchHeader({
       >
         <styled.button
           type="button"
-          aria-label="Close search"
+          aria-label="Back"
           onClick={onClose}
           display="flex"
           alignItems="center"
           justifyContent="center"
-          w="10"
-          h="10"
+          w="9"
+          h="9"
+          p="0"
+          flexShrink="0"
           color="fg.default"
           bg="transparent"
           border="none"
           cursor="pointer"
         >
-          <CloseIcon w="5" h="5" />
+          <ArrowLeftIcon width="6" height="6" />
         </styled.button>
 
         <styled.span
