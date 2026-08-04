@@ -33,9 +33,10 @@ type LandingScreenProps = {
   caseId?: string;
   body?: string;
   media?: string;
+  post?: string;
 };
 
-export function LandingScreen({ token, share, streakCount, rewardCoins, category, type, tips, caseId, body, media }: LandingScreenProps) {
+export function LandingScreen({ token, share, streakCount, rewardCoins, category, type, tips, caseId, body, media, post }: LandingScreenProps) {
   const router = useRouter();
   const { trigger } = useAuthTrayaToken({ token });
   const { mutate: mutateAccount } = useAccountGet();
@@ -77,6 +78,16 @@ export function LandingScreen({ token, share, streakCount, rewardCoins, category
       // fall through to the default landing below
     }
     await redirectToFirstChannel();
+  };
+
+  // Deeplink from an app banner (marketing carousel): land the user on the exact
+  // post they tapped. /t/locate resolves a thread *or* reply id to its canonical
+  // thread URL — adding ?page= and the #postId anchor when the id is a reply — so
+  // the banner only has to carry the post id, no channel or slug. replace() keeps
+  // the landing spinner out of history; backing onto it would re-run the token
+  // exchange and bounce the user forward again.
+  const redirectToPost = (postId: string) => {
+    router.replace(`/t/locate/${encodeURIComponent(postId)}`);
   };
 
   const redirectToFirstChannel = async () => {
@@ -128,7 +139,9 @@ export function LandingScreen({ token, share, streakCount, rewardCoins, category
             // Silent fail - profile screen will handle it
           }
         }
-        if (tips) {
+        if (post) {
+          redirectToPost(post);
+        } else if (tips) {
           await redirectToTips();
         } else {
           await redirectToFirstChannel();
@@ -143,7 +156,7 @@ export function LandingScreen({ token, share, streakCount, rewardCoins, category
         },
       }
     );
-  }, [trigger, router, mutateAccount, share, tips, caseId, body, media]);
+  }, [trigger, router, mutateAccount, share, tips, caseId, body, media, post]);
 
   // Retry handler for error state
   const handleEnterCommunity = async () => {
@@ -171,7 +184,9 @@ export function LandingScreen({ token, share, streakCount, rewardCoins, category
             // Silent fail - profile screen will handle it
           }
         }
-        if (tips) {
+        if (post) {
+          redirectToPost(post);
+        } else if (tips) {
           await redirectToTips();
         } else {
           await redirectToFirstChannel();

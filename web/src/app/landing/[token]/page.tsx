@@ -15,6 +15,7 @@ type Props = {
     case_id?: string;
     body?: string;
     media?: string;
+    post?: string;
   }>;
 };
 
@@ -47,6 +48,7 @@ export default async function Page(props: Props) {
       caseId={searchParams?.case_id}
       body={searchParams?.body}
       media={searchParams?.media}
+      post={searchParams?.post}
     />
   );
 }
