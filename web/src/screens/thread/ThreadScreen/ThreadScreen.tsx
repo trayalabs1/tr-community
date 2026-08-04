@@ -80,7 +80,7 @@ export function ThreadScreen(props: Props) {
 
   return (
     <ReplyProvider>
-      <LStack gap="0" width="full" height="screen" maxW="[600px]" mx="auto" style={{ backgroundColor: "#f0f0f0" }}>
+      <LStack gap="0" width="full" height="screen" maxW="[600px]" mx="auto" bg="bg.surfaceWhite">
         <HeaderWithBackArrow
           title=""
           mobileOnly
@@ -95,7 +95,6 @@ export function ThreadScreen(props: Props) {
           style={{
             overflowY: "auto",
             minHeight: 0,
-            backgroundColor: "#f0f0f0",
           }}
         >
           {/* Desktop Breadcrumbs - Only on Desktop */}
@@ -348,7 +347,7 @@ export function ThreadScreen(props: Props) {
           </styled.form>
 
           {/* Comments Section */}
-          <styled.div py="4" px="4" style={{ display: "flex", flexDirection: "column", gap: "0.75rem", backgroundColor: "#f0f0f0" }}>
+          <styled.div py="4" px="4" bg="bg.surfaceWhite" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             <styled.h3 style={{ fontSize: "18px", lineHeight: "22px", fontWeight: 600, color: "#404040" }}>
               Comments ({thread.reply_status.replies})
             </styled.h3>
