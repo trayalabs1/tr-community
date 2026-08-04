@@ -77,7 +77,7 @@ export function LibraryPageMenu({
       onInteractOutside={onInteractOutside}
     >
       <Menu.Trigger asChild>
-        {children ?? <MoreAction variant="subtle" size="xs" {...props} />}
+        {children ?? <MoreAction size="xs" {...props} />}
       </Menu.Trigger>
 
       <Portal>

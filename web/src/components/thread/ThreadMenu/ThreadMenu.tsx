@@ -47,7 +47,7 @@ export function ThreadMenu(props: Props) {
       lazyMount
     >
       <Menu.Trigger asChild>
-        <MoreAction variant="subtle" size="xs" />
+        <MoreAction size="xs" />
       </Menu.Trigger>
 
       <Portal>

@@ -183,7 +183,7 @@ export function ThreadScreen(props: Props) {
                     style={{
                       fontSize: "14px",
                       lineHeight: "20px",
-                      color: TRAYA_COLORS.primary,
+                      color: "#404040",
                     }}
                   >
                     {thread.author.name || `@${thread.author.handle}`}
@@ -311,7 +311,7 @@ export function ThreadScreen(props: Props) {
               <LikeButton thread={thread} showCount />
 
               <HStack gap="1" alignItems="center">
-                <styled.div display="flex" alignItems="center" justifyContent="center" w="7" h="7" color="fg.muted">
+                <styled.div display="flex" alignItems="center" justifyContent="center" w="7" h="7" style={{ color: TRAYA_COLORS.actionIcon }}>
                   {thread.reply_status.replies > 0 ? (
                     <MessageSquareTextIcon width="5" height="5" />
                   ) : (
