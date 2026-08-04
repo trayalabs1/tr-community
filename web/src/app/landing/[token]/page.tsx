@@ -13,6 +13,7 @@ type Props = {
     type?: string;
     tips?: string;
     case_id?: string;
+    post?: string;
   }>;
 };
 
@@ -43,6 +44,7 @@ export default async function Page(props: Props) {
       type={searchParams?.type}
       tips={searchParams?.tips === "true"}
       caseId={searchParams?.case_id}
+      post={searchParams?.post}
     />
   );
 }
