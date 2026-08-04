@@ -1,4 +1,4 @@
-import { LikeIcon } from "@/components/ui/icons/Like";
+import { LikeSavedIcon } from "@/components/ui/icons/Like";
 import { styled } from "@/styled-system/jsx";
 
 type Props = {
@@ -28,7 +28,7 @@ export function ProfileStats({ joined, likeScore }: Props) {
       <StatCell
         label="Likes received"
         value={likeScore}
-        icon={<LikeIcon width="4" height="4" color="traya.accent.heart" />}
+        icon={<LikeSavedIcon width="4" height="4" color="traya.accent.heart" />}
       />
     </styled.div>
   );

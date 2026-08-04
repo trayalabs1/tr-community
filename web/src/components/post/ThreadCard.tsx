@@ -11,7 +11,7 @@ import { useSession } from "src/auth";
 import { styled } from "@/styled-system/jsx";
 import { formatDateTime } from "@/utils/date";
 import { hasPermission } from "@/utils/permissions";
-import { getAvatarColor } from "@/utils/avatar-colors";
+import { getAvatarColor, getAuthorAvatarStyle } from "@/utils/avatar-colors";
 
 import { CategoryBadge } from "../category/CategoryBadge";
 import { PostReviewBadge } from "../thread/PostReviewBadge";
@@ -32,7 +32,7 @@ import { FeedActionLike } from "./FeedActionLike";
 import { useThreadCardModeration } from "./useThreadCardModeration";
 import { ProfileHoverTooltip } from "./ProfileHoverTooltip";
 import { SharedThreadCard } from "./SharedThreadCard";
-import { ShareThreadButton } from "./ShareThreadButton";
+// import { ShareThreadButton } from "./ShareThreadButton";
 
 type Props = {
   thread: ThreadReference;
@@ -129,8 +129,7 @@ export const ThreadReferenceCard = memo(
                   fontSize="sm"
                   fontWeight="semibold"
                   style={{
-                    backgroundColor: getAvatarColor(thread.author.handle),
-                    color: "white",
+                    ...getAuthorAvatarStyle(thread.author.handle, session?.handle),
                     border: "none",
                     cursor: "pointer",
                     transition: "opacity 0.2s ease-in-out",
@@ -331,7 +330,8 @@ export const ThreadReferenceCard = memo(
               />
             </Link>
 
-            <ShareThreadButton thread={thread} channelID={channelID} />
+            {/* Share hidden by request; component kept for when it returns. */}
+            {/* <ShareThreadButton thread={thread} channelID={channelID} /> */}
           </styled.div>
         )}
 

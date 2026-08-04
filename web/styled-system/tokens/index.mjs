@@ -3379,9 +3379,9 @@ const tokens = {
     "value": "var(--colors-bg-composer-page)",
     "variable": "var(--colors-bg-composer-page)"
   },
-  "colors.bg.composerCard": {
-    "value": "var(--colors-bg-composer-card)",
-    "variable": "var(--colors-bg-composer-card)"
+  "colors.bg.surfaceWhite": {
+    "value": "var(--colors-bg-surface-white)",
+    "variable": "var(--colors-bg-surface-white)"
   },
   "colors.bg.composerAction": {
     "value": "var(--colors-bg-composer-action)",
@@ -4275,9 +4275,9 @@ const tokens = {
     "value": "var(--colors-color-palette-composer-page)",
     "variable": "var(--colors-color-palette-composer-page)"
   },
-  "colors.colorPalette.composerCard": {
-    "value": "var(--colors-color-palette-composer-card)",
-    "variable": "var(--colors-color-palette-composer-card)"
+  "colors.colorPalette.surfaceWhite": {
+    "value": "var(--colors-color-palette-surface-white)",
+    "variable": "var(--colors-color-palette-surface-white)"
   },
   "colors.colorPalette.composerAction": {
     "value": "var(--colors-color-palette-composer-action)",

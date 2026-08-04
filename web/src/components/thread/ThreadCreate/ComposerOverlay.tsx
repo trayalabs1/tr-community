@@ -4,7 +4,7 @@ import { Dialog } from "@ark-ui/react";
 import { PropsWithChildren, useEffect } from "react";
 
 import { useSession } from "@/auth";
-import { MemberAvatar } from "@/components/member/MemberBadge/MemberAvatar";
+import { SelfAvatarBadge } from "@/components/member/MemberBadge/SelfAvatarBadge";
 import { ArrowLeftIcon } from "@/components/ui/icons/Arrow";
 import { NotificationIcon } from "@/components/ui/icons/Notification";
 import { SearchIcon } from "@/components/ui/icons/Search";
@@ -131,7 +131,9 @@ export function ComposerOverlay({
                   <SearchIcon width="5" height="5" />
                 </styled.span>
 
-                {session && <MemberAvatar profile={session} size="md" />}
+                {session && (
+                  <SelfAvatarBadge account={session} asLink={false} />
+                )}
               </HStack>
             </styled.div>
 

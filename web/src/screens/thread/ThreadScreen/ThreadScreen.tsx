@@ -36,7 +36,7 @@ import { HeadingInput } from "@/components/ui/heading-input";
 import { VisibilityBadge } from "@/components/visibility/VisibilityBadge";
 import { HStack, LStack, VStack, WStack, styled } from "@/styled-system/jsx";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
-import { getAvatarColor } from "@/utils/avatar-colors";
+import { getAvatarColor, getAuthorAvatarStyle } from "@/utils/avatar-colors";
 import { hasPermission } from "@/utils/permissions";
 
 import { Form, Props, useThreadScreen } from "./useThreadScreen";
@@ -68,6 +68,10 @@ export function ThreadScreen(props: Props) {
   const session = useSession(props.initialSession);
   const isAdmin = hasPermission(session, Permission.ADMINISTRATOR);
 
+  const bodyImages = [
+    ...(thread.body ?? "").matchAll(/<img[^>]+src=["']([^"']+)["']/gi),
+  ].map((m) => m[1] as string);
+
   const threadMeta = thread.meta as Record<string, unknown> | undefined;
   const isPoll = threadMeta?.["is_poll"] === true;
   const pollOptionDefs = isPoll
@@ -76,7 +80,7 @@ export function ThreadScreen(props: Props) {
 
   return (
     <ReplyProvider>
-      <LStack gap="0" width="full" height="screen" maxW="[600px]" mx="auto" style={{ backgroundColor: "#f0f0f0" }}>
+      <LStack gap="0" width="full" height="screen" maxW="[600px]" mx="auto" bg="bg.surfaceWhite">
         <HeaderWithBackArrow
           title=""
           mobileOnly
@@ -91,7 +95,6 @@ export function ThreadScreen(props: Props) {
           style={{
             overflowY: "auto",
             minHeight: 0,
-            backgroundColor: "#f0f0f0",
           }}
         >
           {/* Desktop Breadcrumbs - Only on Desktop */}
@@ -164,8 +167,7 @@ export function ThreadScreen(props: Props) {
                     width: "38px",
                     height: "38px",
                     fontSize: "18px",
-                    backgroundColor: getAvatarColor(thread.author.handle),
-                    color: "white",
+                    ...getAuthorAvatarStyle(thread.author.handle, session?.handle),
                     cursor: "pointer",
                     flexShrink: 0,
                   }}
@@ -181,7 +183,7 @@ export function ThreadScreen(props: Props) {
                     style={{
                       fontSize: "14px",
                       lineHeight: "20px",
-                      color: TRAYA_COLORS.primary,
+                      color: "#404040",
                     }}
                   >
                     {thread.author.name || `@${thread.author.handle}`}
@@ -216,6 +218,30 @@ export function ThreadScreen(props: Props) {
                     clampLines={6}
                   />
                 )}
+              </styled.div>
+            )}
+
+            {/* Images from the post body. ExpandableText renders text only, so
+                they are pulled out and shown here. */}
+            {!isPoll && !isEditing && bodyImages.length > 0 && (
+              <styled.div
+                display="flex"
+                flexDirection="column"
+                gap="2"
+                mb="4"
+                w="full"
+              >
+                {bodyImages.map((src) => (
+                  <styled.img
+                    key={src}
+                    src={src}
+                    alt=""
+                    w="full"
+                    h="auto"
+                    borderRadius="lg"
+                    style={{ objectFit: "cover" }}
+                  />
+                ))}
               </styled.div>
             )}
 
@@ -285,7 +311,7 @@ export function ThreadScreen(props: Props) {
               <LikeButton thread={thread} showCount />
 
               <HStack gap="1" alignItems="center">
-                <styled.div display="flex" alignItems="center" justifyContent="center" w="7" h="7" color="fg.muted">
+                <styled.div display="flex" alignItems="center" justifyContent="center" w="7" h="7" style={{ color: TRAYA_COLORS.actionIcon }}>
                   {thread.reply_status.replies > 0 ? (
                     <MessageSquareTextIcon width="5" height="5" />
                   ) : (
@@ -321,7 +347,7 @@ export function ThreadScreen(props: Props) {
           </styled.form>
 
           {/* Comments Section */}
-          <styled.div py="4" px="4" style={{ display: "flex", flexDirection: "column", gap: "0.75rem", backgroundColor: "#f0f0f0" }}>
+          <styled.div py="4" px="4" bg="bg.surfaceWhite" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             <styled.h3 style={{ fontSize: "18px", lineHeight: "22px", fontWeight: 600, color: "#404040" }}>
               Comments ({thread.reply_status.replies})
             </styled.h3>

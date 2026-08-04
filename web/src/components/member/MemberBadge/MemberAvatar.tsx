@@ -1,9 +1,10 @@
 import { ProfileReference } from "@/api/openapi-schema";
+import { useSession } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { MediaAddIcon } from "@/components/ui/icons/Media";
 import { css } from "@/styled-system/css";
 import { Box, styled } from "@/styled-system/jsx";
-import { getAvatarColor } from "@/utils/avatar-colors";
+import { SELF_AVATAR_COLOR, getAvatarColor } from "@/utils/avatar-colors";
 
 import { EditAvatarTrigger } from "../EditAvatar/EditAvatarModal";
 
@@ -24,8 +25,10 @@ export type Props = {
 };
 
 export function MemberAvatar({ profile, size, editable }: Props) {
+  const session = useSession();
   const { width, height } = avatarSize(size);
   const firstLetter = profile.handle.charAt(0).toUpperCase();
+  const isSelf = Boolean(session) && session?.id === profile.id;
 
   return (
     <Box position="relative" flexShrink="0">
@@ -54,7 +57,10 @@ export function MemberAvatar({ profile, size, editable }: Props) {
         style={{
           width: `${width}px`,
           height: `${height}px`,
-          background: getAvatarColor(profile.handle),
+          background: isSelf
+            ? SELF_AVATAR_COLOR
+            : getAvatarColor(profile.handle),
+          color: isSelf ? "#404040" : "white",
           fontSize: size === "xs" ? "10px" : size === "sm" ? "12px" : size === "md" ? "14px" : "36px",
         }}
       >
