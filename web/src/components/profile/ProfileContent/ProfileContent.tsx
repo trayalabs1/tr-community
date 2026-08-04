@@ -2,18 +2,69 @@ import { Unready } from "src/components/site/Unready";
 
 import { ThreadReferenceList } from "@/components/post/ThreadReferenceList";
 import * as Tabs from "@/components/ui/tabs";
-import { VStack } from "@/styled-system/jsx";
+import { VStack, styled } from "@/styled-system/jsx";
 
 import { Props, useProfileContent } from "./useProfileContent";
 
 export function ProfileContent(props: Props) {
-  const { ready, error, data } = useProfileContent(props);
+  const result = useProfileContent(props);
 
-  if (!ready) {
-    return <Unready error={error} />;
+  if (!result.ready) {
+    return <Unready error={result.error} />;
   }
 
-  const { threads } = data;
+  const { isSelf, data, handlers } = result;
+  const { threads, total, hasMore } = data;
+
+  const list = (
+    <>
+      <ThreadReferenceList threads={threads} />
+
+      {hasMore && (
+        <styled.div w="full" px="4" py="4" bg="bg.savedPage">
+          <styled.button
+            type="button"
+            onClick={handlers.handleLoadMore}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            w="full"
+            h="12"
+            borderRadius="[12px]"
+            fontSize="sm"
+            fontWeight="semibold"
+            color="fg.default"
+            bg="bg.surfaceWhite"
+            borderWidth="thin"
+            borderStyle="solid"
+            borderColor="border.default"
+            cursor="pointer"
+          >
+            Load More
+          </styled.button>
+        </styled.div>
+      )}
+    </>
+  );
+
+  if (!isSelf) {
+    return (
+      <VStack alignItems="start" w="full" gap="0">
+        <styled.div w="full" px="4" py="3" bg="bg.savedPage">
+          <styled.h2
+            fontSize="md"
+            lineHeight="[24px]"
+            fontWeight="semibold"
+            color="fg.default"
+          >
+            Threads ({total})
+          </styled.h2>
+        </styled.div>
+
+        {list}
+      </VStack>
+    );
+  }
 
   return (
     <VStack alignItems="start" w="full" gap="0">
@@ -30,9 +81,7 @@ export function ProfileContent(props: Props) {
           <Tabs.Indicator />
         </Tabs.List>
 
-        <Tabs.Content value="posts">
-          <ThreadReferenceList threads={threads} />
-        </Tabs.Content>
+        <Tabs.Content value="posts">{list}</Tabs.Content>
       </Tabs.Root>
     </VStack>
   );
