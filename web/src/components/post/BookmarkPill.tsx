@@ -17,7 +17,6 @@ export function BookmarkPill({ account, thread }: Props) {
   return (
     <ActionPill
       ariaLabel={isSaved ? "Remove bookmark" : "Bookmark"}
-      active={isSaved}
       onClick={onToggle}
       icon={
         <BookmarkIcon
