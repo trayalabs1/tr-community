@@ -170,11 +170,7 @@ export function ChannelMobileHeader({
         pt="3"
         pb="3"
       >
-        <FeedFilterChips
-          categories={categories}
-          selectedCategorySlug={selectedCategorySlug}
-          onCategoryChange={onCategoryChange}
-        />
+        <FeedFilterChips />
       </styled.div>
     </VStack>
   );
