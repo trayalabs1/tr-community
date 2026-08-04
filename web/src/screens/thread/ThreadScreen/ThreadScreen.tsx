@@ -68,6 +68,10 @@ export function ThreadScreen(props: Props) {
   const session = useSession(props.initialSession);
   const isAdmin = hasPermission(session, Permission.ADMINISTRATOR);
 
+  const bodyImages = [
+    ...(thread.body ?? "").matchAll(/<img[^>]+src=["']([^"']+)["']/gi),
+  ].map((m) => m[1] as string);
+
   const threadMeta = thread.meta as Record<string, unknown> | undefined;
   const isPoll = threadMeta?.["is_poll"] === true;
   const pollOptionDefs = isPoll
@@ -215,6 +219,30 @@ export function ThreadScreen(props: Props) {
                     clampLines={6}
                   />
                 )}
+              </styled.div>
+            )}
+
+            {/* Images from the post body. ExpandableText renders text only, so
+                they are pulled out and shown here. */}
+            {!isPoll && !isEditing && bodyImages.length > 0 && (
+              <styled.div
+                display="flex"
+                flexDirection="column"
+                gap="2"
+                mb="4"
+                w="full"
+              >
+                {bodyImages.map((src) => (
+                  <styled.img
+                    key={src}
+                    src={src}
+                    alt=""
+                    w="full"
+                    h="auto"
+                    borderRadius="lg"
+                    style={{ objectFit: "cover" }}
+                  />
+                ))}
               </styled.div>
             )}
 
