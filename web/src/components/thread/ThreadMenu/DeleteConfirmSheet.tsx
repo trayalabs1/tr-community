@@ -9,21 +9,27 @@ type Props = {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void | Promise<void>;
+  /** Question shown to the author, e.g. "…delete this comment?". */
   title?: string;
+  /** Supporting line under the question. */
   message?: string;
+  /** Label for the destructive action. */
+  confirmLabel?: string;
+  /** Label shown while the destructive action runs. */
+  confirmingLabel?: string;
+  /** Label for the action that keeps the content. */
+  cancelLabel?: string;
 };
-
-const DESTRUCTIVE = "#E54336";
-const MUTED = "#787878";
-const BORDER = "#dedede";
-const TEXT = "#404040";
 
 export function DeleteConfirmSheet({
   isOpen,
   onOpenChange,
   onConfirm,
-  title = "Delete this post?",
-  message = "This action cannot be undone.",
+  title = "Are you sure you want to delete this post?",
+  message = "You won't be able to undo this",
+  confirmLabel = "Delete",
+  confirmingLabel = "Deleting...",
+  cancelLabel = "Keep",
 }: Props) {
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -54,50 +60,46 @@ export function DeleteConfirmSheet({
               maxWidth={{ base: "full", md: "md" }}
               alignItems="stretch"
               gap="0"
-              style={{
-                backgroundColor: "#ffffff",
-                borderTopLeftRadius: "28px",
-                borderTopRightRadius: "28px",
-              }}
+              bg="bg.surfaceWhite"
+              borderTopRadius="[28px]"
             >
               <styled.div display="flex" justifyContent="center" pt="3" pb="2">
                 <styled.div
-                  style={{
-                    width: "40px",
-                    height: "5px",
-                    borderRadius: "100px",
-                    backgroundColor: BORDER,
-                  }}
+                  w="10"
+                  h="[5px]"
+                  borderRadius="[100px]"
+                  bg="border.default"
                 />
               </styled.div>
 
-              <VStack alignItems="stretch" gap="5" style={{ padding: "20px 20px 40px" }}>
-                <VStack alignItems="center" gap="2">
+              <VStack alignItems="stretch" gap="6" px="5" pt="3" pb="10">
+                <VStack alignItems="center" gap="1">
                   <Dialog.Title asChild>
                     <styled.p
+                      m="0"
+                      fontSize="lg"
+                      lineHeight="[22px]"
                       fontWeight="semibold"
-                      style={{ margin: 0, fontSize: "16px", lineHeight: "20px", color: TEXT }}
+                      color="fg.default"
+                      textAlign="center"
                     >
                       {title}
                     </styled.p>
                   </Dialog.Title>
                   <Dialog.Description asChild>
                     <styled.p
-                      fontWeight="medium"
-                      style={{
-                        margin: 0,
-                        fontSize: "14px",
-                        lineHeight: "20px",
-                        color: MUTED,
-                        textAlign: "center",
-                      }}
+                      m="0"
+                      fontSize="xs"
+                      lineHeight="[16px]"
+                      color="fg.muted"
+                      textAlign="center"
                     >
                       {message}
                     </styled.p>
                   </Dialog.Description>
                 </VStack>
 
-                <VStack alignItems="stretch" gap="3">
+                <styled.div display="flex" alignItems="center" gap="3" w="full">
                   <styled.button
                     type="button"
                     onClick={handleConfirm}
@@ -105,21 +107,19 @@ export function DeleteConfirmSheet({
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
-                    w="full"
-                    style={{
-                      height: "48px",
-                      borderRadius: "12px",
-                      backgroundColor: DESTRUCTIVE,
-                      color: "#ffffff",
-                      fontSize: "16px",
-                      fontWeight: 600,
-                      lineHeight: "20px",
-                      border: "none",
-                      cursor: isDeleting ? "default" : "pointer",
-                      opacity: isDeleting ? 0.7 : 1,
-                    }}
+                    flex="1"
+                    h="12"
+                    borderRadius="[12px]"
+                    fontSize="md"
+                    lineHeight="[20px]"
+                    fontWeight="semibold"
+                    color="fg.default"
+                    bg="bg.profileStats"
+                    border="none"
+                    cursor={isDeleting ? "default" : "pointer"}
+                    _disabled={{ opacity: "[0.7]" }}
                   >
-                    {isDeleting ? "Deleting..." : "Delete post"}
+                    {isDeleting ? confirmingLabel : confirmLabel}
                   </styled.button>
 
                   <Dialog.CloseTrigger asChild>
@@ -129,23 +129,21 @@ export function DeleteConfirmSheet({
                       display="flex"
                       alignItems="center"
                       justifyContent="center"
-                      w="full"
-                      style={{
-                        height: "48px",
-                        borderRadius: "12px",
-                        backgroundColor: "#ffffff",
-                        color: TEXT,
-                        fontSize: "16px",
-                        fontWeight: 600,
-                        lineHeight: "20px",
-                        border: `1px solid ${BORDER}`,
-                        cursor: "pointer",
-                      }}
+                      flex="1"
+                      h="12"
+                      borderRadius="[12px]"
+                      fontSize="md"
+                      lineHeight="[20px]"
+                      fontWeight="semibold"
+                      color="white"
+                      bg="bg.composerSubmit"
+                      border="none"
+                      cursor="pointer"
                     >
-                      Cancel
+                      {cancelLabel}
                     </styled.button>
                   </Dialog.CloseTrigger>
-                </VStack>
+                </styled.div>
               </VStack>
             </VStack>
           </Dialog.Content>
@@ -157,12 +155,12 @@ export function DeleteConfirmSheet({
           position: fixed;
           inset: 0;
           background-color: rgba(0, 0, 0, 0.5);
-          z-index: 50;
+          z-index: var(--z-index-overlay);
         }
         .deletesheet__positioner {
           position: fixed;
           inset: 0;
-          z-index: 51;
+          z-index: var(--z-index-modal);
           display: flex;
           flex-direction: column;
           justify-content: flex-end;
