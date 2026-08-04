@@ -13,7 +13,7 @@ import { Heading } from "@/components/ui/heading";
 import { HStack, LStack, VStack, styled } from "@/styled-system/jsx";
 import { canCreateChannels } from "@/lib/channel/server-permissions";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
-import { getAvatarColor } from "@/utils/avatar-colors";
+import { SELF_AVATAR_COLOR } from "@/utils/avatar-colors";
 import { PINNED_CHANNEL_SLUGS } from "@/lib/channel/pinned";
 
 const isJourneyChannel = (channelName: string): boolean => {
@@ -82,14 +82,14 @@ export default async function ChannelsPage() {
             justifyContent="center"
             flexShrink="0"
             style={{
-              background: getAvatarColor(session.handle),
+              background: SELF_AVATAR_COLOR,
               lineHeight: "1",
             }}
           >
             <styled.span
               fontSize="sm"
               fontWeight="bold"
-              color="white"
+              style={{ color: "#404040" }}
             >
               {( session.handle)
                 .split(" ")

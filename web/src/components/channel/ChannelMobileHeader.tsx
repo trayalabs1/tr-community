@@ -10,6 +10,7 @@ import { SearchIcon } from "@/components/ui/icons/Search";
 import { NotificationIcon } from "@/components/ui/icons/Notification";
 import { HStack, VStack, Box, styled } from "@/styled-system/jsx";
 import { FeedFilterChips } from "@/components/channel/FeedFilterChips";
+import { SelfAvatarBadge } from "@/components/member/MemberBadge/SelfAvatarBadge";
 import { parsePromptNudges } from "@/components/feed/PromptNudge/prompts";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { UsersPostedToday } from "@/components/feed/QuickShare/UsersPostedToday";
@@ -99,47 +100,7 @@ export function ChannelMobileHeader({
               </styled.div>
             </Link>
 
-            {session && (
-              <Link href={`/m/${session.handle}`} style={{ textDecoration: "none" }}>
-                <styled.div
-                  position="relative"
-                  overflow="hidden"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  flexShrink="0"
-                  rounded="full"
-                  style={{ width: "38px", height: "38px", backgroundColor: "#ffdd81" }}
-                >
-                  <styled.span
-                    fontWeight="semibold"
-                    style={{ color: "#404040", fontSize: "18px", lineHeight: "22px" }}
-                  >
-                    {(session.name?.charAt(0) || session.handle.charAt(0)).toUpperCase()}
-                  </styled.span>
-                  <styled.div
-                    position="absolute"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    style={{
-                      bottom: "0",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      padding: "1px 10px",
-                      backgroundColor: "rgba(0,0,0,0.6)",
-                    }}
-                  >
-                    <styled.span
-                      fontWeight="semibold"
-                      style={{ color: "white", fontSize: "8px", lineHeight: "10px", letterSpacing: "0.8px" }}
-                    >
-                      YOU
-                    </styled.span>
-                  </styled.div>
-                </styled.div>
-              </Link>
-            )}
+            {session && <SelfAvatarBadge account={session} />}
           </HStack>
         </HStack>
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Controller, ControllerProps } from "react-hook-form";
 
 import { Reply as ReplyType, Thread } from "@/api/openapi-schema";
+import { useSession } from "@/auth";
 import { ContentComposer } from "@/components/content/ContentComposer/ContentComposer";
 import { CohortBadge } from "@/components/category/CohortBadge";
 import { MemberBadge } from "@/components/member/MemberBadge/MemberBadge";
@@ -11,7 +12,7 @@ import { Timestamp } from "@/components/site/Timestamp";
 import { ReplyIcon } from "@/components/ui/icons/Reply";
 import { HStack, VStack, WStack, styled } from "@/styled-system/jsx";
 import { hstack } from "@/styled-system/patterns";
-import { getAvatarColor } from "@/utils/avatar-colors";
+import { getAvatarColor, getAuthorAvatarStyle } from "@/utils/avatar-colors";
 
 import { PostReviewBadge } from "../PostReviewBadge";
 import { ReactList } from "../ReactList/ReactList";
@@ -22,6 +23,7 @@ import { useFragmentScroll } from "./useFragmentScroll";
 import { Form, Props, useReply } from "./useReply";
 
 export function Reply(props: Props) {
+  const session = useSession();
   const {
     isEmpty,
     isEditing,
@@ -76,8 +78,7 @@ export function Reply(props: Props) {
                 width: "22px",
                 height: "22px",
                 fontSize: "10.4px",
-                backgroundColor: getAvatarColor(reply.author.handle),
-                color: "white",
+                ...getAuthorAvatarStyle(reply.author.handle, session?.handle),
               }}
             >
               {(reply.author.name?.charAt(0) || reply.author.handle.charAt(0)).toUpperCase()}

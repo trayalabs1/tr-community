@@ -36,7 +36,7 @@ import { HeadingInput } from "@/components/ui/heading-input";
 import { VisibilityBadge } from "@/components/visibility/VisibilityBadge";
 import { HStack, LStack, VStack, WStack, styled } from "@/styled-system/jsx";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
-import { getAvatarColor } from "@/utils/avatar-colors";
+import { getAvatarColor, getAuthorAvatarStyle } from "@/utils/avatar-colors";
 import { hasPermission } from "@/utils/permissions";
 
 import { Form, Props, useThreadScreen } from "./useThreadScreen";
@@ -164,8 +164,7 @@ export function ThreadScreen(props: Props) {
                     width: "38px",
                     height: "38px",
                     fontSize: "18px",
-                    backgroundColor: getAvatarColor(thread.author.handle),
-                    color: "white",
+                    ...getAuthorAvatarStyle(thread.author.handle, session?.handle),
                     cursor: "pointer",
                     flexShrink: 0,
                   }}
