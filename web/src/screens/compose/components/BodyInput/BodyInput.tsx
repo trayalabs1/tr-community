@@ -32,7 +32,7 @@ export function BodyInput({ onAssetUpload }: PropsWithChildren<Props>) {
         h="auto"
         minH="[50dvh]"
         p="3"
-        bg="bg.composerCard"
+        bg="bg.surfaceWhite"
         borderRadius="2xl"
         borderWidth="thin"
         borderStyle="solid"

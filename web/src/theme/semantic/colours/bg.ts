@@ -147,7 +147,7 @@ export const bg = {
 
   profileStats: {
     value: {
-      _osLight: "#F7F7F7",
+      _osLight: "#F0F0F0",
       _osDark: "{colors.slate.dark.3}",
     },
   },
@@ -159,7 +159,9 @@ export const bg = {
     },
   },
 
-  composerCard: {
+  // Plain white surface. bg.default resolves to #f9f9f9 in this theme, which is
+  // too close to the greys used for insets like the profile stats panel.
+  surfaceWhite: {
     value: {
       _osLight: "#FFFFFF",
       _osDark: "{colors.slate.dark.4}",

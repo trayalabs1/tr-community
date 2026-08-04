@@ -11,11 +11,9 @@ import { ProfileAccountManagement } from "@/components/profile/ProfileAccountMan
 import { ProfileContent } from "@/components/profile/ProfileContent/ProfileContent";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { ProfileSuspendedBanner } from "@/components/profile/ProfileSuspendedBanner";
-import { RoleBadgeList } from "@/components/role/RoleBadge/RoleBadgeList";
 import { MoreAction } from "@/components/site/Action/More";
-import { SaveAction } from "@/components/site/Action/Save";
 import { CenteredBackHeader } from "@/components/site/Header";
-import { EditIcon } from "@/components/ui/icons/Edit";
+import { PencilLineIcon } from "@/components/ui/icons/Edit";
 import { Input } from "@/components/ui/input";
 import { hasPermission } from "@/utils/permissions";
 import {
@@ -44,8 +42,8 @@ export function ProfileScreen(props: Props) {
     !profile.bio || profile.bio === "" || profile.bio === "<body></body>";
 
   return (
-    <LStack w="full">
-      <CardBox p="0">
+    <LStack w="full" pb={isSelf && isEditing ? "24" : "0"}>
+      <CardBox p="0" backgroundColor="bg.surfaceWhite">
         <CenteredBackHeader
           title={isSelf ? "My Profile" : profile.name}
           action={
@@ -64,7 +62,7 @@ export function ProfileScreen(props: Props) {
                 border="none"
                 cursor="pointer"
               >
-                <EditIcon width="5" height="5" />
+                <PencilLineIcon width="5" height="5" />
               </styled.button>
             ) : undefined
           }
@@ -82,15 +80,22 @@ export function ProfileScreen(props: Props) {
           </Box>
 
           {/* Name with Edit Icon */}
-          <VStack alignItems="center" gap="1">
-            <HStack gap="2" alignItems="center">
+          <VStack alignItems="center" gap="1" w="full">
+            <HStack gap="2" alignItems="center" w="full" justify="center">
               {isEditing ? (
                 <Input
-                  maxW="40"
-                  size="sm"
-                  height="7"
-                  px="2"
-                  fontWeight="semibold"
+                  w="full"
+                  h="12"
+                  px="4"
+                  textAlign="center"
+                  fontSize="md"
+                  fontWeight="medium"
+                  color="fg.default"
+                  bg="bg.profileStats"
+                  borderRadius="[12px]"
+                  borderWidth="thin"
+                  borderStyle="solid"
+                  borderColor="border.default"
                   {...form.register("handle")}
                 />
               ) : (
@@ -109,17 +114,21 @@ export function ProfileScreen(props: Props) {
                 </MemberOptionsMenu>
               )}
             </HStack>
-
-            {/* Badge */}
-            <VStack alignItems="center" gap="1">
-              <RoleBadgeList roles={profile.roles} />
-            </VStack>
           </VStack>
 
-          <ProfileStats
-            joined={profile.joined}
-            likeScore={profile.like_score}
-          />
+          <styled.div
+            w="full"
+            pointerEvents={isEditing ? "none" : "auto"}
+            style={{
+              opacity: isEditing ? 0.4 : 1,
+              transition: "opacity 0.2s ease-in-out",
+            }}
+          >
+            <ProfileStats
+              joined={profile.joined}
+              likeScore={profile.like_score}
+            />
+          </styled.div>
         </VStack>
 
         {session && hasPermission(session, Permission.ADMINISTRATOR) && (
@@ -141,10 +150,38 @@ export function ProfileScreen(props: Props) {
         )}
 
         {isSelf && isEditing && (
-          <styled.form p="3" onSubmit={handlers.handleSave}>
-            <HStack justify="center">
-              <SaveAction size="sm">Save</SaveAction>
-            </HStack>
+          <styled.form
+            position="fixed"
+            bottom="0"
+            left="[50%]"
+            transform="translateX(-50%)"
+            zIndex="sticky"
+            w="full"
+            maxW="[600px]"
+            px="4"
+            pt="3"
+            pb="4"
+            bg="bg.surfaceWhite"
+            onSubmit={handlers.handleSave}
+          >
+            <styled.button
+              type="submit"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              w="full"
+              h="14"
+              borderRadius="[12px]"
+              fontSize="md"
+              lineHeight="[20px]"
+              fontWeight="semibold"
+              color="white"
+              bg="bg.composerSubmit"
+              border="none"
+              cursor="pointer"
+            >
+              Save Changes
+            </styled.button>
           </styled.form>
         )}
 
@@ -206,7 +243,16 @@ export function ProfileScreen(props: Props) {
         )}
       </CardBox>
 
-      <ProfileContent session={session} profile={profile} />
+      <styled.div
+        w="full"
+        pointerEvents={isEditing ? "none" : "auto"}
+        style={{
+          opacity: isEditing ? 0.4 : 1,
+          transition: "opacity 0.2s ease-in-out",
+        }}
+      >
+        <ProfileContent session={session} profile={profile} />
+      </styled.div>
     </LStack>
   );
 }
