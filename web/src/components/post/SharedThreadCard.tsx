@@ -6,7 +6,7 @@ import { useSession } from "src/auth";
 
 import { styled } from "@/styled-system/jsx";
 import { formatDateTime } from "@/utils/date";
-import { getAvatarColor } from "@/utils/avatar-colors";
+import { getAvatarColor, getAuthorAvatarStyle } from "@/utils/avatar-colors";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 import { Badge } from "../ui/badge";
@@ -70,7 +70,7 @@ export function SharedThreadCard({ thread, channelID }: Props) {
               fontSize="sm"
               fontWeight="semibold"
               style={{
-                backgroundColor: getAvatarColor(thread.author.handle),
+                ...getAuthorAvatarStyle(thread.author.handle, session?.handle),
                 color: "white",
                 border: "none",
                 cursor: "pointer",
@@ -155,6 +155,7 @@ type NestedOriginalThreadProps = {
 };
 
 function NestedOriginalThread({ threadId }: NestedOriginalThreadProps) {
+  const session = useSession();
   const { data: original, error } = useThreadGet(threadId);
 
   if (!original) {
@@ -258,7 +259,7 @@ function NestedOriginalThread({ threadId }: NestedOriginalThreadProps) {
               fontSize="xs"
               fontWeight="semibold"
               style={{
-                backgroundColor: getAvatarColor(original.author.handle),
+                ...getAuthorAvatarStyle(original.author.handle, session?.handle),
                 color: "white",
                 flexShrink: 0,
               }}
