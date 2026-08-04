@@ -188,7 +188,16 @@ export function ChannelScreen(props: Props) {
   const hasMore = threads?.next_page !== undefined;
 
   return (
-    <LStack gap="0" p="0" maxW="[600px]" mx="auto" width="full">
+    <styled.div
+      display="flex"
+      flexDirection="column"
+      alignItems="start"
+      gap="0"
+      p="0"
+      width="full"
+      mx="auto"
+      maxW={{ base: "[600px]", md: "[none]" }}
+    >
       <ChannelMobileHeader
         channel={props.channel}
         session={props.session}
@@ -332,6 +341,6 @@ export function ChannelScreen(props: Props) {
         )}
       </VStack>
       </LStack>
-    </LStack>
+    </styled.div>
   );
 }
