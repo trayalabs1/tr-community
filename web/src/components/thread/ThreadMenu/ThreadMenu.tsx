@@ -1,14 +1,12 @@
 "use client";
 
 import { Portal } from "@ark-ui/react";
-import { format } from "date-fns/format";
 import { useState } from "react";
 
 import { MoreAction } from "src/components/site/Action/More";
 
 import { DatagraphItemKind } from "@/api/openapi-schema";
 import { CategoryMoveMenu } from "@/components/category/CategoryMoveMenu/CategoryMoveMenu";
-import { MemberBadge } from "@/components/member/MemberBadge/MemberBadge";
 import {
   ReportPostMenuItem,
   truncateBody,
@@ -17,18 +15,14 @@ import { ThreadShareMenu } from "@/components/thread/ThreadShareMenu/ThreadShare
 import { DeleteConfirmSheet } from "./DeleteConfirmSheet";
 import { DeleteIcon } from "@/components/ui/icons/Delete";
 import { EditIcon } from "@/components/ui/icons/Edit";
-import { LinkIcon } from "@/components/ui/icons/Link";
 import { PinIcon, PinOffIcon } from "@/components/ui/icons/Pin";
-import { ShareIcon } from "@/components/ui/icons/Share";
 import * as Menu from "@/components/ui/menu";
-import { HStack, styled } from "@/styled-system/jsx";
-import { menuItemColorPalette } from "@/styled-system/patterns";
+import { HStack } from "@/styled-system/jsx";
 
 import { Props, useThreadMenu } from "./useThreadMenu";
 
 export function ThreadMenu(props: Props) {
   const {
-    isSharingEnabled,
     isEditingEnabled,
     isMovingEnabled,
     isDeletingEnabled,
@@ -58,42 +52,8 @@ export function ThreadMenu(props: Props) {
 
       <Portal>
         <Menu.Positioner>
-          <Menu.Content minW="36">
+          <Menu.Content minW="36" className="threadmenu__content">
             <Menu.ItemGroup id="group">
-              <Menu.ItemGroupLabel
-                display="flex"
-                flexDir="column"
-                userSelect="none"
-              >
-                <styled.span>{`Post by @${thread.author.handle}`}</styled.span>
-
-                <MemberBadge
-                  profile={thread.author}
-                  size="sm"
-                  name="full-vertical"
-                />
-
-                <styled.time fontWeight="normal">
-                  {format(new Date(thread.createdAt), "yyyy-MM-dd")}
-                </styled.time>
-              </Menu.ItemGroupLabel>
-
-              <Menu.Separator />
-
-              {/* <Menu.Item value="copy-link" onClick={handlers.handleCopyLink}>
-                <HStack gap="1">
-                  <LinkIcon /> Copy link
-                </HStack>
-              </Menu.Item>
-
-              {isSharingEnabled && (
-                <Menu.Item value="share" onClick={handlers.handleShare}>
-                  <HStack gap="1">
-                    <ShareIcon /> Share
-                  </HStack>
-                </Menu.Item>
-              )} */}
-
               <ReportPostMenuItem
                 menuLabel="Report thread"
                 targetKind={DatagraphItemKind.thread}
@@ -133,12 +93,13 @@ export function ThreadMenu(props: Props) {
 
               {isDeletingEnabled && (
                 <Menu.Item
-                  className={menuItemColorPalette({ colorPalette: "red" })}
                   value="delete"
                   onClick={handleDeleteClick}
+                  color="fg.destructive"
+                  css={{ "& :where(svg)": { color: "fg.destructive" } }}
                 >
                   <HStack gap="1">
-                    <DeleteIcon /> Delete
+                    <DeleteIcon /> Delete post
                   </HStack>
                 </Menu.Item>
               )}
@@ -147,6 +108,13 @@ export function ThreadMenu(props: Props) {
         </Menu.Positioner>
       </Portal>
     </Menu.Root>
+
+    <style jsx global>{`
+      /* Separate each action with a hairline, matching the design. */
+      .threadmenu__content > [role="group"] > *:not(:last-child) {
+        border-bottom: 1px solid var(--colors-border-default);
+      }
+    `}</style>
 
     {!onRequestDelete && (
       <DeleteConfirmSheet
