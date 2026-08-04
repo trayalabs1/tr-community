@@ -24,7 +24,7 @@ export function LikeButton({ showCount = false, ...props }: LikeButtonProps) {
         alignItems="center"
         gap="1"
         style={{
-          color: isLiked ? TRAYA_COLORS.heart : "var(--colors-fg-default)",
+          color: isLiked ? TRAYA_COLORS.heart : TRAYA_COLORS.actionIcon,
           backgroundColor: "transparent",
           border: "none",
           cursor: "pointer",
@@ -48,6 +48,7 @@ export function LikeButton({ showCount = false, ...props }: LikeButtonProps) {
           fontWeight="medium"
           fontVariantNumeric="tabular-nums"
           fontVariant="tabular-nums"
+          style={{ color: "#404040" }}
         >
           {likeCount}
         </styled.span>

@@ -28,6 +28,11 @@ export const TRAYA_COLORS = {
   // Accent colors
   heart: "#F04343",
 
+  // Outline colour for the post action icons (like, comment) in their default,
+  // un-actioned state. Matches the theme's gray.light.9 step. The count beside
+  // them stays #404040.
+  actionIcon: "#8D8D8D",
+
   // Color Usage by Screen/Area (Following exact design flow)
   screens: {
     home: {

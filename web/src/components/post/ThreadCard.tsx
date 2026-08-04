@@ -32,7 +32,7 @@ import { FeedActionLike } from "./FeedActionLike";
 import { useThreadCardModeration } from "./useThreadCardModeration";
 import { ProfileHoverTooltip } from "./ProfileHoverTooltip";
 import { SharedThreadCard } from "./SharedThreadCard";
-import { ShareThreadButton } from "./ShareThreadButton";
+// import { ShareThreadButton } from "./ShareThreadButton";
 
 type Props = {
   thread: ThreadReference;
@@ -330,7 +330,8 @@ export const ThreadReferenceCard = memo(
               />
             </Link>
 
-            <ShareThreadButton thread={thread} channelID={channelID} />
+            {/* Share hidden by request; component kept for when it returns. */}
+            {/* <ShareThreadButton thread={thread} channelID={channelID} /> */}
           </styled.div>
         )}
 

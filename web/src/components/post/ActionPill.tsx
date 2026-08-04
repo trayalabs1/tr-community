@@ -3,6 +3,7 @@
 import { ReactNode } from "react";
 
 import { styled } from "@/styled-system/jsx";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 type Props = {
   icon: ReactNode;
@@ -41,7 +42,7 @@ export function ActionPill({
         cursor: "pointer",
         padding: "6px 14px",
         borderRadius: "96px",
-        color: active ? "#ffffff" : "var(--colors-fg-default)",
+        color: active ? "#ffffff" : TRAYA_COLORS.actionIcon,
       }}
     >
       {icon}

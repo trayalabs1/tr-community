@@ -22,7 +22,7 @@ export function CollectionMenu(props: Props) {
   return (
     <Menu.Root lazyMount>
       <Menu.Trigger asChild>
-        <MoreAction variant="subtle" size="xs" />
+        <MoreAction size="xs" />
       </Menu.Trigger>
 
       <Portal>
