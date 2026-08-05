@@ -1,4 +1,5 @@
 import { BubbleMenu, EditorContent } from "@tiptap/react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 import { EditIcon } from "@/components/ui/icons/Edit";
 import { MediaStackIcon } from "@/components/ui/icons/Media";
@@ -11,8 +12,10 @@ import { ContentComposerProps } from "../composer-props";
 
 import "./styles.css";
 
+import { CameraCaptureDialog } from "./CameraCaptureDialog";
 import { EditorMenu } from "./EditorMenu";
 import { LinkPasteMenu } from "./LinkPasteMenu";
+import { MediaUploadSheet } from "./MediaUploadSheet";
 import { useContentComposer } from "./useContentComposerRich";
 
 declare module "@tiptap/core" {
@@ -35,6 +38,51 @@ export function ContentComposerRich(props: ContentComposerProps) {
     handlers,
     format,
   } = useContentComposer(props);
+
+  const [isMediaSheetOpen, setMediaSheetOpen] = useState(false);
+  const [isCameraOpen, setCameraOpen] = useState(false);
+  // Resolved after mount: reading matchMedia during render would disagree with
+  // the server-rendered markup and trip a hydration error.
+  const [isTouchDevice, setTouchDevice] = useState(false);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const filesInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTouchDevice(window.matchMedia("(pointer: coarse)").matches);
+  }, []);
+
+  // <input capture> opens the native camera on mobile but is ignored on
+  // desktop, where it falls back to a file browser. So desktop gets a real
+  // getUserMedia capture instead.
+  function handleTakePhoto() {
+    const supportsCaptureAttribute = "capture" in document.createElement("input");
+
+    if (supportsCaptureAttribute && isTouchDevice) {
+      cameraInputRef.current?.click();
+      return;
+    }
+
+    setCameraOpen(true);
+  }
+
+  // Route a captured photo through the same input the file picker uses, so it
+  // takes the existing upload path rather than a second one that could drift.
+  // React's onChange is synthetic and does not fire for a programmatic
+  // dispatch, so the handler is invoked directly with the input as target.
+  function handleCameraCapture(file: File) {
+    const input = cameraInputRef.current;
+    if (!input) return;
+
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    input.files = transfer.files;
+
+    handlers.handleFileUpload({
+      currentTarget: input,
+      target: input,
+    } as unknown as ChangeEvent<HTMLInputElement>);
+  }
 
   return (
     <LStack
@@ -71,8 +119,9 @@ export function ContentComposerRich(props: ContentComposerProps) {
       </div>
       {editor && props.hideTools && (
         <HStack w="full" justifyContent="flex-end" flexShrink="0" mt="auto">
-          <styled.label
-            htmlFor={`composer-image-${uniqueID}`}
+          <styled.button
+            type="button"
+            onClick={() => setMediaSheetOpen(true)}
             display="flex"
             alignItems="center"
             justifyContent="center"
@@ -83,17 +132,52 @@ export function ContentComposerRich(props: ContentComposerProps) {
             bg="bg.composerAction"
             color="fg.composerAction"
             cursor="pointer"
+            border="none"
             title="Add an image"
+            aria-label="Add an image"
           >
             <MediaStackIcon width="5" height="5" />
-          </styled.label>
+          </styled.button>
+
+          {/* One input per source: the OS picker is configured by the accept
+              and capture attributes, so each entry needs its own element. */}
           <styled.input
-            id={`composer-image-${uniqueID}`}
+            ref={galleryInputRef}
             type="file"
             multiple
             display="none"
             accept="image/*"
             onChange={handlers.handleFileUpload}
+          />
+          <styled.input
+            ref={filesInputRef}
+            type="file"
+            multiple
+            display="none"
+            onChange={handlers.handleFileUpload}
+          />
+          <styled.input
+            ref={cameraInputRef}
+            type="file"
+            display="none"
+            accept="image/*"
+            capture="environment"
+            onChange={handlers.handleFileUpload}
+          />
+
+          <MediaUploadSheet
+            isOpen={isMediaSheetOpen}
+            onOpenChange={setMediaSheetOpen}
+            showGallery={isTouchDevice}
+            onUploadGallery={() => galleryInputRef.current?.click()}
+            onChooseFromFiles={() => filesInputRef.current?.click()}
+            onTakePhoto={handleTakePhoto}
+          />
+
+          <CameraCaptureDialog
+            isOpen={isCameraOpen}
+            onOpenChange={setCameraOpen}
+            onCapture={handleCameraCapture}
           />
         </HStack>
       )}
