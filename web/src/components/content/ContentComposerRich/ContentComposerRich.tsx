@@ -1,5 +1,5 @@
 import { BubbleMenu, EditorContent } from "@tiptap/react";
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { EditIcon } from "@/components/ui/icons/Edit";
 import { MediaStackIcon } from "@/components/ui/icons/Media";
@@ -66,22 +66,12 @@ export function ContentComposerRich(props: ContentComposerProps) {
     setCameraOpen(true);
   }
 
-  // Route a captured photo through the same input the file picker uses, so it
-  // takes the existing upload path rather than a second one that could drift.
-  // React's onChange is synthetic and does not fire for a programmatic
-  // dispatch, so the handler is invoked directly with the input as target.
+  // Upload the captured photo directly. Assigning it to the hidden input and
+  // reusing handleFileUpload crashed the page: that handler clears its input by
+  // reassigning `type`, which throws a DOMException when the FileList was set
+  // programmatically instead of chosen by the user.
   function handleCameraCapture(file: File) {
-    const input = cameraInputRef.current;
-    if (!input) return;
-
-    const transfer = new DataTransfer();
-    transfer.items.add(file);
-    input.files = transfer.files;
-
-    handlers.handleFileUpload({
-      currentTarget: input,
-      target: input,
-    } as unknown as ChangeEvent<HTMLInputElement>);
+    void handlers.handleFilesDirect([file]);
   }
 
   return (
