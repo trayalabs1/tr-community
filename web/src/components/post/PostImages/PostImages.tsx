@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@/components/ui/icons/Chevron";
 import { styled } from "@/styled-system/jsx";
 
 type Props = {
@@ -68,8 +72,8 @@ function SingleImage({ src, rounded }: { src: string; rounded: boolean }) {
 
 // Built on native CSS scroll snapping rather than a carousel library: swiping
 // is then just the browser scrolling the track, which no drag state machine can
-// swallow. The page is derived from scroll position, and the dots scroll the
-// track back — one source of truth either way.
+// swallow. The page is derived from scroll position, and the arrows scroll the
+// track — one source of truth either way, so a swipe and a tap cannot disagree.
 function ImageCarousel({
   images,
   rounded,
@@ -97,7 +101,19 @@ function ImageCarousel({
   function goTo(index: number) {
     const track = trackRef.current;
     if (!track) return;
-    track.scrollTo({ left: index * track.clientWidth, behavior: "smooth" });
+
+    const target = Math.min(Math.max(index, 0), images.length - 1);
+    const left = target * track.clientWidth;
+
+    // Update state here rather than waiting for the scroll listener: smooth
+    // scrolling can be suppressed (reduced-motion settings, some embedded
+    // webviews) and the arrows must not stall when it is.
+    setPage(target);
+
+    // Assign directly and let CSS scroll-behavior animate it. scrollTo with
+    // behavior: "smooth" is silently ignored in some embedded webviews, which
+    // leaves the arrows doing nothing; a plain assignment always lands.
+    track.scrollLeft = left;
   }
 
   return (
@@ -166,32 +182,17 @@ function ImageCarousel({
         >
           {page + 1}/{images.length}
         </styled.div>
-      </styled.div>
 
-      <styled.div
-        display="flex"
-        justifyContent="center"
-        style={{ gap: "6px", paddingTop: "8px" }}
-      >
-        {images.map((src, index) => (
-          <styled.button
-            key={src}
-            type="button"
-            aria-label={`Go to image ${index + 1}`}
-            aria-current={index === page}
-            onClick={() => goTo(index)}
-            style={{
-              width: index === page ? "16px" : "6px",
-              height: "6px",
-              borderRadius: "999px",
-              border: "none",
-              padding: 0,
-              cursor: "pointer",
-              transition: "width 0.2s ease, background-color 0.2s ease",
-              backgroundColor: index === page ? "#404040" : "#D9D9D9",
-            }}
-          />
-        ))}
+        <ArrowButton
+          side="left"
+          disabled={page === 0}
+          onClick={() => goTo(page - 1)}
+        />
+        <ArrowButton
+          side="right"
+          disabled={page === images.length - 1}
+          onClick={() => goTo(page + 1)}
+        />
       </styled.div>
 
       <style jsx global>{`
@@ -201,11 +202,66 @@ function ImageCarousel({
           /* Horizontal gestures scroll the track; vertical ones stay with the
              page so the feed still scrolls under a swipe. */
           touch-action: pan-y;
+          /* Animates the arrows' scrollLeft assignment. Declared in CSS rather
+             than passed to scrollTo so it applies however the scroll is set. */
+          scroll-behavior: smooth;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .postimages__track {
+            scroll-behavior: auto;
+          }
         }
         .postimages__track::-webkit-scrollbar {
           display: none;
         }
       `}</style>
     </styled.div>
+  );
+}
+
+/** Overlaid previous/next control. Disabled at the ends rather than looping, so
+ *  the position in the set stays legible. */
+function ArrowButton({
+  side,
+  disabled,
+  onClick,
+}: {
+  side: "left" | "right";
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const Icon = side === "left" ? ChevronLeftIcon : ChevronRightIcon;
+
+  return (
+    <styled.button
+      type="button"
+      aria-label={side === "left" ? "Previous image" : "Next image"}
+      disabled={disabled}
+      onClick={onClick}
+      position="absolute"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      style={{
+        top: "50%",
+        transform: "translateY(-50%)",
+        [side]: "8px",
+        width: "32px",
+        height: "32px",
+        borderRadius: "999px",
+        border: "none",
+        padding: 0,
+        cursor: disabled ? "default" : "pointer",
+        backgroundColor: "rgba(0, 0, 0, 0.55)",
+        color: "#FFFFFF",
+        // Hidden rather than unmounted at the ends, so the remaining arrow does
+        // not shift and the hit area stays where the reader last tapped.
+        opacity: disabled ? 0 : 1,
+        pointerEvents: disabled ? "none" : "auto",
+        transition: "opacity 0.15s ease",
+      }}
+    >
+      <Icon width="5" height="5" />
+    </styled.button>
   );
 }
