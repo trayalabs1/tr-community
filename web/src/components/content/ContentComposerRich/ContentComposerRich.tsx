@@ -49,12 +49,21 @@ export function ContentComposerRich(props: ContentComposerProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setTouchDevice(window.matchMedia("(pointer: coarse)").matches);
+    // Touch capability or a touch-shaped UA. Either is enough to prefer the OS
+    // camera app, and getting this wrong on a phone is expensive: the in-page
+    // getUserMedia fallback allocates far more memory than the webview allows.
+    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    const touchCapable = navigator.maxTouchPoints > 0 || "ontouchstart" in window;
+    const mobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(
+      navigator.userAgent,
+    );
+    setTouchDevice(coarsePointer || touchCapable || mobileUA);
   }, []);
 
-  // <input capture> opens the native camera on mobile but is ignored on
-  // desktop, where it falls back to a file browser. So desktop gets a real
-  // getUserMedia capture instead.
+  // Prefer <input capture>, which hands off to the OS camera app: the photo
+  // arrives as a file the browser never had to decode. The in-page getUserMedia
+  // dialog is a desktop-only fallback, because desktop browsers ignore the
+  // capture attribute and would otherwise just open a file browser.
   function handleTakePhoto() {
     const supportsCaptureAttribute = "capture" in document.createElement("input");
 
