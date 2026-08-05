@@ -12,13 +12,11 @@ type Props = {
 };
 
 // Slides sit in a fixed square and scale to fit inside it, so a 16:9 image keeps
-// its shape and gains cream bands rather than being cropped. object-fit:
+// its shape and gains white bands rather than being cropped. object-fit:
 // contain is the CSS equivalent of the spec's scale = MIN(viewport / image) on
 // both axes.
 const SQUARE = "1 / 1";
-// The theme's amber.light.2 — warm without the peach cast of the orange scale,
-// which already signals "in review" on comment cards.
-const BACKDROP = "#FEFBE9";
+const BACKDROP = "#FFFFFF";
 
 export function PostImages({ images, rounded = true }: Props) {
   if (images.length === 0) {
@@ -34,7 +32,7 @@ export function PostImages({ images, rounded = true }: Props) {
 
 // A single image keeps a dynamic height: it fills the width and grows as tall as
 // its aspect ratio needs, up to a square. Anything taller than square is clamped
-// to the square and gains cream bands left and right.
+// to the square and gains white bands left and right.
 function SingleImage({ src, rounded }: { src: string; rounded: boolean }) {
   const [ratio, setRatio] = useState<number | null>(null);
 
