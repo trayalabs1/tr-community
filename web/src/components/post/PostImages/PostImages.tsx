@@ -1,7 +1,6 @@
 "use client";
 
-import { Carousel } from "@ark-ui/react/carousel";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { styled } from "@/styled-system/jsx";
 
@@ -67,6 +66,10 @@ function SingleImage({ src, rounded }: { src: string; rounded: boolean }) {
   );
 }
 
+// Built on native CSS scroll snapping rather than a carousel library: swiping
+// is then just the browser scrolling the track, which no drag state machine can
+// swallow. The page is derived from scroll position, and the dots scroll the
+// track back — one source of truth either way.
 function ImageCarousel({
   images,
   rounded,
@@ -74,61 +77,77 @@ function ImageCarousel({
   images: string[];
   rounded: boolean;
 }) {
+  const trackRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
 
+  const syncPage = useCallback(() => {
+    const track = trackRef.current;
+    if (!track || track.clientWidth === 0) return;
+    const next = Math.round(track.scrollLeft / track.clientWidth);
+    setPage(Math.min(Math.max(next, 0), images.length - 1));
+  }, [images.length]);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    track.addEventListener("scroll", syncPage, { passive: true });
+    return () => track.removeEventListener("scroll", syncPage);
+  }, [syncPage]);
+
+  function goTo(index: number) {
+    const track = trackRef.current;
+    if (!track) return;
+    track.scrollTo({ left: index * track.clientWidth, behavior: "smooth" });
+  }
+
   return (
-    <Carousel.Root
-      slideCount={images.length}
-      page={page}
-      onPageChange={(details) => setPage(details.page)}
-      allowMouseDrag
-      style={{ width: "100%" }}
-    >
+    <styled.div width="full">
       <styled.div position="relative" width="full">
-        <Carousel.ItemGroup
+        <styled.div
+          ref={trackRef}
+          className="postimages__track"
+          display="flex"
+          width="full"
           style={{
-            width: "100%",
             aspectRatio: SQUARE,
             borderRadius: rounded ? "var(--radii-lg)" : undefined,
-            overflow: "hidden",
-            // Grid tracks default to min-content, which a tall slide can grow
-            // past. Pin the row so the square always wins.
-            gridAutoRows: "100%",
-            alignItems: "stretch",
+            overflowX: "auto",
+            overflowY: "hidden",
+            scrollSnapType: "x mandatory",
+            overscrollBehaviorX: "contain",
+            backgroundColor: BACKDROP,
           }}
         >
-          {images.map((src, index) => (
-            <Carousel.Item
+          {images.map((src) => (
+            <styled.div
               key={src}
-              index={index}
-              // A very tall image would otherwise stretch the grid track it
-              // sits in — height: 100% resolves against that track, not the
-              // square — so the slide is pinned to the viewport and clips.
-              style={{ height: "100%", minHeight: 0, overflow: "hidden" }}
+              flexShrink="0"
+              width="full"
+              height="full"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              style={{ scrollSnapAlign: "start", backgroundColor: BACKDROP }}
             >
-              <styled.div
-                width="full"
-                height="full"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                style={{ backgroundColor: BACKDROP }}
-              >
-                <styled.img
-                  src={src}
-                  alt=""
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: "100%",
-                    width: "auto",
-                    height: "auto",
-                    objectFit: "contain",
-                  }}
-                />
-              </styled.div>
-            </Carousel.Item>
+              <styled.img
+                src={src}
+                alt=""
+                // Native image drag would otherwise capture the pointer and
+                // stop the track from scrolling under a mouse drag.
+                draggable={false}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  width: "auto",
+                  height: "auto",
+                  objectFit: "contain",
+                  userSelect: "none",
+                  WebkitUserSelect: "none",
+                }}
+              />
+            </styled.div>
           ))}
-        </Carousel.ItemGroup>
+        </styled.div>
 
         <styled.div
           position="absolute"
@@ -149,19 +168,18 @@ function ImageCarousel({
         </styled.div>
       </styled.div>
 
-      <Carousel.IndicatorGroup
-        style={{
-          display: "flex",
-          gap: "6px",
-          justifyContent: "center",
-          paddingTop: "8px",
-        }}
+      <styled.div
+        display="flex"
+        justifyContent="center"
+        style={{ gap: "6px", paddingTop: "8px" }}
       >
         {images.map((src, index) => (
-          <Carousel.Indicator
+          <styled.button
             key={src}
-            index={index}
+            type="button"
             aria-label={`Go to image ${index + 1}`}
+            aria-current={index === page}
+            onClick={() => goTo(index)}
             style={{
               width: index === page ? "16px" : "6px",
               height: "6px",
@@ -174,7 +192,20 @@ function ImageCarousel({
             }}
           />
         ))}
-      </Carousel.IndicatorGroup>
-    </Carousel.Root>
+      </styled.div>
+
+      <style jsx global>{`
+        .postimages__track {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          /* Horizontal gestures scroll the track; vertical ones stay with the
+             page so the feed still scrolls under a swipe. */
+          touch-action: pan-y;
+        }
+        .postimages__track::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+    </styled.div>
   );
 }
