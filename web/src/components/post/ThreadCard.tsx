@@ -23,6 +23,7 @@ import {
 } from "../ui/icons/MessageSquare";
 
 import { PollCard } from "../poll/PollCard";
+import { PostImages } from "./PostImages/PostImages";
 import { ReplyChips } from "../thread/ReplyChips/ReplyChips";
 import { usePostReplyChip } from "../thread/ReplyChips/usePostReplyChip";
 import { ActionPill } from "./ActionPill";
@@ -77,13 +78,9 @@ export const ThreadReferenceCard = memo(
     const isAdmin = hasPermission(session, Permission.ADMINISTRATOR);
     const showReviewState = isInReview && isAdmin;
 
-    const getFirstImageFromBody = (body: string | undefined): string | null => {
-      if (!body) return null;
-      const imgMatch = body.match(/<img[^>]+src=["']([^"']+)["']/i);
-      return imgMatch?.[1] ?? null;
-    };
-
-    const firstImageUrl = getFirstImageFromBody(thread.body);
+    const bodyImages = [
+      ...(thread.body ?? "").matchAll(/<img[^>]+src=["']([^"']+)["']/gi),
+    ].map((m) => m[1] as string);
 
     const meta = thread.meta as Record<string, unknown> | undefined;
     const isPoll = meta?.["is_poll"] === true;
@@ -230,28 +227,18 @@ export const ThreadReferenceCard = memo(
                 href={permalink}
               />
 
-              {firstImageUrl && (
-                <Link href={permalink} style={{ textDecoration: "none" }}>
-                  <styled.div
-                    mt="2"
-                    borderRadius="lg"
-                    overflow="hidden"
-                    style={{
-                      height: "140px",
-                      width: "100%",
-                    }}
-                  >
-                    <styled.img
-                      src={firstImageUrl}
-                      alt=""
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  </styled.div>
-                </Link>
+              {bodyImages.length > 0 && (
+                <styled.div mt="2" w="full">
+                  {/* Only a lone image links through to the thread — wrapping a
+                      carousel would swallow its swipes and indicator clicks. */}
+                  {bodyImages.length === 1 ? (
+                    <Link href={permalink} style={{ textDecoration: "none" }}>
+                      <PostImages images={bodyImages} />
+                    </Link>
+                  ) : (
+                    <PostImages images={bodyImages} />
+                  )}
+                </styled.div>
               )}
             </>
           )}

@@ -35,6 +35,7 @@ import { FormErrorText } from "@/components/ui/FormErrorText";
 import { HeadingInput } from "@/components/ui/heading-input";
 import { VisibilityBadge } from "@/components/visibility/VisibilityBadge";
 import { HStack, LStack, VStack, WStack, styled } from "@/styled-system/jsx";
+import { PostImages } from "@/components/post/PostImages/PostImages";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { getAvatarColor, getAuthorAvatarStyle } from "@/utils/avatar-colors";
 import { hasPermission } from "@/utils/permissions";
@@ -224,24 +225,8 @@ export function ThreadScreen(props: Props) {
             {/* Images from the post body. ExpandableText renders text only, so
                 they are pulled out and shown here. */}
             {!isPoll && !isEditing && bodyImages.length > 0 && (
-              <styled.div
-                display="flex"
-                flexDirection="column"
-                gap="2"
-                mb="4"
-                w="full"
-              >
-                {bodyImages.map((src) => (
-                  <styled.img
-                    key={src}
-                    src={src}
-                    alt=""
-                    w="full"
-                    h="auto"
-                    borderRadius="lg"
-                    style={{ objectFit: "cover" }}
-                  />
-                ))}
+              <styled.div mb="4" w="full">
+                <PostImages images={bodyImages} />
               </styled.div>
             )}
 
