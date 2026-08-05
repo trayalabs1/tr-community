@@ -11,6 +11,18 @@ type Props = {
   onCapture: (file: File) => void;
 };
 
+/**
+ * Longest edge of a captured photo. A phone's full sensor resolution needs tens
+ * of megabytes of canvas RGBA, which fails with "unable to complete previous
+ * operation due to low memory" in the app's webview. 1600px stays well clear of
+ * that and is still larger than the square the feed renders images into.
+ *
+ * The upload path compresses again to enforce the size ceiling; this bound exists
+ * so the capture itself never allocates enough to crash first.
+ */
+const CAPTURE_MAX_EDGE = 1600;
+const CAPTURE_QUALITY = 0.85;
+
 // Desktop browsers ignore <input capture>, so taking a photo there needs a real
 // camera stream. Mobile keeps using the input, which opens the native camera.
 export function CameraCaptureDialog({ isOpen, onOpenChange, onCapture }: Props) {
@@ -22,6 +34,11 @@ export function CameraCaptureDialog({ isOpen, onOpenChange, onCapture }: Props) 
   const stop = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    // Detach the stream too: stopping the tracks alone leaves the element holding
+    // its decode buffers, which matters on a memory-constrained webview.
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
     setReady(false);
   }, []);
 
@@ -35,7 +52,17 @@ export function CameraCaptureDialog({ isOpen, onOpenChange, onCapture }: Props) 
     setError(null);
 
     navigator.mediaDevices
-      ?.getUserMedia({ video: { facingMode: "environment" }, audio: false })
+      ?.getUserMedia({
+        // Ask for a modest stream. Left unconstrained a phone hands back its full
+        // sensor resolution, and a canvas that size needs tens of megabytes of
+        // RGBA — enough to fail with "low memory" inside the app's webview.
+        video: {
+          facingMode: "environment",
+          width: { ideal: CAPTURE_MAX_EDGE },
+          height: { ideal: CAPTURE_MAX_EDGE },
+        },
+        audio: false,
+      })
       .then((stream) => {
         // The dialog can close while getUserMedia is still resolving; without
         // this the camera light stays on with no way to switch it off.
@@ -67,21 +94,40 @@ export function CameraCaptureDialog({ isOpen, onOpenChange, onCapture }: Props) 
     const video = videoRef.current;
     if (!video) return;
 
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d")?.drawImage(video, 0, 0);
+    const sourceWidth = video.videoWidth;
+    const sourceHeight = video.videoHeight;
+    if (sourceWidth === 0 || sourceHeight === 0) return;
 
-    if (canvas.width === 0 || canvas.height === 0) return;
+    // The stream constraint is only a hint, so clamp again here. Scaling during
+    // drawImage means the canvas is allocated at the reduced size rather than the
+    // sensor's, which is what keeps the allocation small.
+    const scale = Math.min(
+      1,
+      CAPTURE_MAX_EDGE / Math.max(sourceWidth, sourceHeight),
+    );
+    const width = Math.round(sourceWidth * scale);
+    const height = Math.round(sourceHeight * scale);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.drawImage(video, 0, 0, width, height);
 
     canvas.toBlob(
       (blob) => {
+        // Drop the backing store as soon as the blob exists; on a webview the
+        // canvas is often the largest single allocation in play.
+        canvas.width = 0;
+        canvas.height = 0;
+
         if (!blob) return;
-        const file = new File(
-          [blob],
-          `photo-${canvas.width}x${canvas.height}.jpg`,
-          { type: "image/jpeg" },
-        );
+
+        const file = new File([blob], `photo-${width}x${height}.jpg`, {
+          type: "image/jpeg",
+        });
         // Close before handing the file over: onCapture starts an upload that
         // re-renders the composer, and unmounting this dialog from inside that
         // render is what leaves the camera stream running.
@@ -89,7 +135,7 @@ export function CameraCaptureDialog({ isOpen, onOpenChange, onCapture }: Props) 
         onCapture(file);
       },
       "image/jpeg",
-      0.92,
+      CAPTURE_QUALITY,
     );
   }
 
