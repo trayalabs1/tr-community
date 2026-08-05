@@ -72,15 +72,25 @@ export function CameraCaptureDialog({ isOpen, onOpenChange, onCapture }: Props) 
     canvas.height = video.videoHeight;
     canvas.getContext("2d")?.drawImage(video, 0, 0);
 
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      onCapture(
-        new File([blob], `photo-${canvas.width}x${canvas.height}.jpg`, {
-          type: "image/jpeg",
-        }),
-      );
-      onOpenChange(false);
-    }, "image/jpeg", 0.92);
+    if (canvas.width === 0 || canvas.height === 0) return;
+
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        const file = new File(
+          [blob],
+          `photo-${canvas.width}x${canvas.height}.jpg`,
+          { type: "image/jpeg" },
+        );
+        // Close before handing the file over: onCapture starts an upload that
+        // re-renders the composer, and unmounting this dialog from inside that
+        // render is what leaves the camera stream running.
+        onOpenChange(false);
+        onCapture(file);
+      },
+      "image/jpeg",
+      0.92,
+    );
   }
 
   return (

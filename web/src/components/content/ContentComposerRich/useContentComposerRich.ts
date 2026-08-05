@@ -525,6 +525,21 @@ export function useContentComposer(props: ContentComposerProps) {
     inputElement.type = "file";
   }
 
+  /**
+   * Upload files the caller already holds, with no input element involved.
+   * handleFileUpload resets its input by reassigning `type`, which throws when
+   * the FileList was set programmatically rather than chosen by the user, so a
+   * camera capture must not be pushed through that path.
+   */
+  async function handleFilesDirect(files: File[]) {
+    if (!editor) return;
+
+    const images = files.filter((file) => /image/i.test(file.type));
+    if (images.length === 0) return;
+
+    await handleFiles(editor.view, images);
+  }
+
   // -
   // Text formatting logic.
   // -
@@ -653,6 +668,7 @@ export function useContentComposer(props: ContentComposerProps) {
     getDragOverlayMessage,
     handlers: {
       handleFileUpload,
+      handleFilesDirect,
       handleDragOver,
       handleDragEnter,
       handleDragLeave,
