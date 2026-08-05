@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Account, Channel, Permission } from "@/api/openapi-schema";
+import { goBackToApp } from "@/lib/native/goBack";
 import { hasPermission } from "@/utils/permissions";
 import { ProfileIcon } from "@/components/ui/icons/Profile";
 import { ArrowLeftIcon } from "@/components/ui/icons/Arrow";
@@ -66,7 +67,7 @@ export function ChannelMobileHeader({
         >
           <styled.button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => goBackToApp(() => router.back())}
             display="flex"
             alignItems="center"
             justifyContent="center"
