@@ -6029,6 +6029,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"browser-image-compression@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "browser-image-compression@npm:2.0.2"
+  dependencies:
+    uzip: "npm:0.20201231.0"
+  checksum: 10c0/32be07f8849f2de501a71f6dd07e691c085fc7a2055456eb120fe5d765e3fcf7de00696915a8d614527d4df10f34c31526304b7d18aae036bb1c58d801e3fcbd
+  languageName: node
+  linkType: hard
+
 "browserslist@npm:4.24.4, browserslist@npm:^4.0.0, browserslist@npm:^4.24.0, browserslist@npm:^4.24.3":
   version: 4.24.4
   resolution: "browserslist@npm:4.24.4"
@@ -13937,6 +13946,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"uzip@npm:0.20201231.0":
+  version: 0.20201231.0
+  resolution: "uzip@npm:0.20201231.0"
+  checksum: 10c0/44b261b20ac7e4d71e7099d7a7c4885626044be61cd246e76cf548fa444a4a37c301d1a683679168bc29c91d2ec81d62b8c1c75217a26b37f6ce35223866c2d2
+  languageName: node
+  linkType: hard
+
 "validator@npm:^13.11.0":
   version: 13.12.0
   resolution: "validator@npm:13.12.0"
@@ -14166,6 +14182,7 @@ __metadata:
     "@typescript-eslint/parser": "npm:^8.46.2"
     "@use-gesture/react": "npm:^10.3.1"
     babel-plugin-react-compiler: "npm:^1.0.0"
+    browser-image-compression: "npm:^2.0.2"
     chroma-js: "npm:^3.1.2"
     date-fns: "npm:^4.1.0"
     dompurify: "npm:^3.2.6"
