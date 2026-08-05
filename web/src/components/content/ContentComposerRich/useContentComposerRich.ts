@@ -15,6 +15,7 @@ import { Asset } from "src/api/openapi-schema";
 import { handle } from "@/api/client";
 import { css } from "@/styled-system/css";
 import { getAssetURL } from "@/utils/asset";
+import { compressImage } from "@/utils/compress-image";
 
 import { ContentComposerProps } from "../composer-props";
 import {
@@ -407,7 +408,11 @@ export function useContentComposer(props: ContentComposerProps) {
     const assets: Asset[] = [];
     const insertPos = selection.$head.pos;
 
-    for (const f of files) {
+    // Every upload route lands here — camera, gallery, file picker and
+    // drag-and-drop — so the size ceiling is enforced in one place.
+    const compressed = await Promise.all(files.map(compressImage));
+
+    for (const f of compressed) {
       uploadCounterRef.current += 1;
       const uploadId = `upload-${Date.now()}-${uploadCounterRef.current}`;
 
