@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Account, Channel, Permission } from "@/api/openapi-schema";
-import { goBackToApp } from "@/lib/native/goBack";
+import { closeWebView } from "@/lib/native/goBack";
 import { useIsScrolledDown } from "@/lib/react-utility/useScrollDirection";
 import { hasPermission } from "@/utils/permissions";
 import { ProfileIcon } from "@/components/ui/icons/Profile";
@@ -35,7 +34,6 @@ export function ChannelMobileHeader({
   onCategoryChange,
   hasUnreadNotifications = false,
 }: ChannelMobileHeaderProps) {
-  const router = useRouter();
   const canManagePosts = hasPermission(session, Permission.MANAGE_POSTS);
   const isScrolledDown = useIsScrolledDown();
 
@@ -69,7 +67,7 @@ export function ChannelMobileHeader({
         >
           <styled.button
             type="button"
-            onClick={() => goBackToApp(() => router.back())}
+            onClick={closeWebView}
             display="flex"
             alignItems="center"
             justifyContent="center"
