@@ -1,5 +1,4 @@
 import { BubbleMenu, EditorContent } from "@tiptap/react";
-import { useEffect, useRef, useState } from "react";
 
 import { EditIcon } from "@/components/ui/icons/Edit";
 import { MediaStackIcon } from "@/components/ui/icons/Media";
@@ -12,10 +11,8 @@ import { ContentComposerProps } from "../composer-props";
 
 import "./styles.css";
 
-import { CameraCaptureDialog } from "./CameraCaptureDialog";
 import { EditorMenu } from "./EditorMenu";
 import { LinkPasteMenu } from "./LinkPasteMenu";
-import { MediaUploadSheet } from "./MediaUploadSheet";
 import { useContentComposer } from "./useContentComposerRich";
 
 declare module "@tiptap/core" {
@@ -38,50 +35,6 @@ export function ContentComposerRich(props: ContentComposerProps) {
     handlers,
     format,
   } = useContentComposer(props);
-
-  const [isMediaSheetOpen, setMediaSheetOpen] = useState(false);
-  const [isCameraOpen, setCameraOpen] = useState(false);
-  // Resolved after mount: reading matchMedia during render would disagree with
-  // the server-rendered markup and trip a hydration error.
-  const [isTouchDevice, setTouchDevice] = useState(false);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
-  const filesInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    // Touch capability or a touch-shaped UA. Either is enough to prefer the OS
-    // camera app, and getting this wrong on a phone is expensive: the in-page
-    // getUserMedia fallback allocates far more memory than the webview allows.
-    const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
-    const touchCapable = navigator.maxTouchPoints > 0 || "ontouchstart" in window;
-    const mobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(
-      navigator.userAgent,
-    );
-    setTouchDevice(coarsePointer || touchCapable || mobileUA);
-  }, []);
-
-  // Prefer <input capture>, which hands off to the OS camera app: the photo
-  // arrives as a file the browser never had to decode. The in-page getUserMedia
-  // dialog is a desktop-only fallback, because desktop browsers ignore the
-  // capture attribute and would otherwise just open a file browser.
-  function handleTakePhoto() {
-    const supportsCaptureAttribute = "capture" in document.createElement("input");
-
-    if (supportsCaptureAttribute && isTouchDevice) {
-      cameraInputRef.current?.click();
-      return;
-    }
-
-    setCameraOpen(true);
-  }
-
-  // Upload the captured photo directly. Assigning it to the hidden input and
-  // reusing handleFileUpload crashed the page: that handler clears its input by
-  // reassigning `type`, which throws a DOMException when the FileList was set
-  // programmatically instead of chosen by the user.
-  function handleCameraCapture(file: File) {
-    void handlers.handleFilesDirect([file]);
-  }
 
   return (
     <LStack
@@ -118,9 +71,8 @@ export function ContentComposerRich(props: ContentComposerProps) {
       </div>
       {editor && props.hideTools && (
         <HStack w="full" justifyContent="flex-end" flexShrink="0" mt="auto">
-          <styled.button
-            type="button"
-            onClick={() => setMediaSheetOpen(true)}
+          <styled.label
+            htmlFor={`composer-image-${uniqueID}`}
             display="flex"
             alignItems="center"
             justifyContent="center"
@@ -131,52 +83,17 @@ export function ContentComposerRich(props: ContentComposerProps) {
             bg="bg.composerAction"
             color="fg.composerAction"
             cursor="pointer"
-            border="none"
             title="Add an image"
-            aria-label="Add an image"
           >
             <MediaStackIcon width="5" height="5" />
-          </styled.button>
-
-          {/* One input per source: the OS picker is configured by the accept
-              and capture attributes, so each entry needs its own element. */}
+          </styled.label>
           <styled.input
-            ref={galleryInputRef}
+            id={`composer-image-${uniqueID}`}
             type="file"
             multiple
             display="none"
             accept="image/*"
             onChange={handlers.handleFileUpload}
-          />
-          <styled.input
-            ref={filesInputRef}
-            type="file"
-            multiple
-            display="none"
-            onChange={handlers.handleFileUpload}
-          />
-          <styled.input
-            ref={cameraInputRef}
-            type="file"
-            display="none"
-            accept="image/*"
-            capture="environment"
-            onChange={handlers.handleFileUpload}
-          />
-
-          <MediaUploadSheet
-            isOpen={isMediaSheetOpen}
-            onOpenChange={setMediaSheetOpen}
-            showGallery={isTouchDevice}
-            onUploadGallery={() => galleryInputRef.current?.click()}
-            onChooseFromFiles={() => filesInputRef.current?.click()}
-            onTakePhoto={handleTakePhoto}
-          />
-
-          <CameraCaptureDialog
-            isOpen={isCameraOpen}
-            onOpenChange={setCameraOpen}
-            onCapture={handleCameraCapture}
           />
         </HStack>
       )}
