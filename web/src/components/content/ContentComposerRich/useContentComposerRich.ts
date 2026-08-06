@@ -15,7 +15,6 @@ import { Asset } from "src/api/openapi-schema";
 import { handle } from "@/api/client";
 import { css } from "@/styled-system/css";
 import { getAssetURL } from "@/utils/asset";
-import { compressImage } from "@/utils/compress-image";
 
 import { ContentComposerProps } from "../composer-props";
 import {
@@ -408,11 +407,7 @@ export function useContentComposer(props: ContentComposerProps) {
     const assets: Asset[] = [];
     const insertPos = selection.$head.pos;
 
-    // Every upload route lands here — camera, gallery, file picker and
-    // drag-and-drop — so the size ceiling is enforced in one place.
-    const compressed = await Promise.all(files.map(compressImage));
-
-    for (const f of compressed) {
+    for (const f of files) {
       uploadCounterRef.current += 1;
       const uploadId = `upload-${Date.now()}-${uploadCounterRef.current}`;
 
@@ -528,21 +523,6 @@ export function useContentComposer(props: ContentComposerProps) {
     inputElement.value = "";
     inputElement.type = "text";
     inputElement.type = "file";
-  }
-
-  /**
-   * Upload files the caller already holds, with no input element involved.
-   * handleFileUpload resets its input by reassigning `type`, which throws when
-   * the FileList was set programmatically rather than chosen by the user, so a
-   * camera capture must not be pushed through that path.
-   */
-  async function handleFilesDirect(files: File[]) {
-    if (!editor) return;
-
-    const images = files.filter((file) => /image/i.test(file.type));
-    if (images.length === 0) return;
-
-    await handleFiles(editor.view, images);
   }
 
   // -
@@ -673,7 +653,6 @@ export function useContentComposer(props: ContentComposerProps) {
     getDragOverlayMessage,
     handlers: {
       handleFileUpload,
-      handleFilesDirect,
       handleDragOver,
       handleDragEnter,
       handleDragLeave,
