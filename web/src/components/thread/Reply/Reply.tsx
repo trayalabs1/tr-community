@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Controller, ControllerProps } from "react-hook-form";
 
 import { Reply as ReplyType, Thread } from "@/api/openapi-schema";
+import { useSession } from "@/auth";
 import { ContentComposer } from "@/components/content/ContentComposer/ContentComposer";
 import { CohortBadge } from "@/components/category/CohortBadge";
 import { MemberBadge } from "@/components/member/MemberBadge/MemberBadge";
@@ -9,10 +10,10 @@ import { CancelAction } from "@/components/site/Action/Cancel";
 import { SaveAction } from "@/components/site/Action/Save";
 import { Timestamp } from "@/components/site/Timestamp";
 import { ReplyIcon } from "@/components/ui/icons/Reply";
-import { CardBox, HStack, WStack, styled } from "@/styled-system/jsx";
+import { HStack, VStack, WStack, styled } from "@/styled-system/jsx";
 import { hstack } from "@/styled-system/patterns";
+import { getAvatarColor, getAuthorAvatarStyle } from "@/utils/avatar-colors";
 
-import { Byline } from "../../content/Byline";
 import { PostReviewBadge } from "../PostReviewBadge";
 import { ReactList } from "../ReactList/ReactList";
 import { ReplyMenu } from "../ReplyMenu/ReplyMenu";
@@ -22,6 +23,7 @@ import { useFragmentScroll } from "./useFragmentScroll";
 import { Form, Props, useReply } from "./useReply";
 
 export function Reply(props: Props) {
+  const session = useSession();
   const {
     isEmpty,
     isEditing,
@@ -39,21 +41,21 @@ export function Reply(props: Props) {
   const isInReview = reply.visibility === "review";
 
   return (
-    <CardBox
+    <styled.div
       id={reply.id}
+      width="full"
       data-targeted={isTargeted || undefined}
       _target={{
-        scrollMarginTop: {
-          base: "0",
-          md: "20",
-        },
+        scrollMarginTop: { base: "0", md: "20" },
         animation: "target-pulse",
       }}
       css={{
-        "&[data-targeted]": {
-          animation: "target-pulse",
-        },
-        backgroundColor: isInReview ? "bg.warning/30" : undefined,
+        "&[data-targeted]": { animation: "target-pulse" },
+      }}
+      style={{
+        backgroundColor: isInReview ? "#fff7ed" : "#f7f7f7",
+        borderRadius: "12px",
+        padding: "12px",
       }}
     >
       <styled.form
@@ -62,46 +64,55 @@ export function Reply(props: Props) {
         gap="2"
         onSubmit={handlers.handleSave}
       >
-        <WStack>
-          <Byline
-            href={`#${reply.id}`}
-            author={reply.author}
-            time={new Date(reply.createdAt)}
-            updated={new Date(reply.updatedAt)}
-            absolute
-            more={
-              reply.cohort_channel ? (
-                <CohortBadge channel={reply.cohort_channel} />
-              ) : undefined
-            }
-          />
+        {/* Comment header */}
+        <HStack gap="1.5" alignItems="start" width="full">
+          <Link href={`/m/${reply.author.handle}`} style={{ textDecoration: "none" }}>
+            <styled.div
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              flexShrink="0"
+              rounded="full"
+              fontWeight="semibold"
+              style={{
+                width: "22px",
+                height: "22px",
+                fontSize: "10.4px",
+                ...getAuthorAvatarStyle(reply.author.handle, session?.handle),
+              }}
+            >
+              {(reply.author.name?.charAt(0) || reply.author.handle.charAt(0)).toUpperCase()}
+            </styled.div>
+          </Link>
 
-          {isEditing ? (
-            <HStack>
-              <>
-                <CancelAction
-                  type="button"
-                  onClick={handlers.handleDiscardChanges}
+          <VStack alignItems="start" gap="0.5" flex="1" minW="0">
+            <HStack gap="2" alignItems="center">
+              <Link href={`/m/${reply.author.handle}`} style={{ textDecoration: "none" }}>
+                <styled.span
+                  fontWeight="bold"
+                  style={{ fontSize: "14px", lineHeight: "20px", color: "#404040" }}
                 >
-                  Discard
-                </CancelAction>
-                <SaveAction type="submit" disabled={isEmpty}>
-                  {isEditingInReview ? "Accept" : "Save"}
-                </SaveAction>
-              </>
+                  {reply.author.name || `@${reply.author.handle}`}
+                </styled.span>
+              </Link>
+              {reply.cohort_channel && <CohortBadge channel={reply.cohort_channel} />}
             </HStack>
-          ) : (
+            <styled.span style={{ fontSize: "10px", lineHeight: "12px", color: "#5c5c5c", letterSpacing: "0.4px" }}>
+              <Timestamp created={reply.createdAt} />
+            </styled.span>
+          </VStack>
+
+          {isEditing && (
             <HStack>
-              <ReplyToButton thread={thread} reply={reply} />
-              <ReplyMenu
-                thread={thread}
-                reply={reply}
-                currentPage={currentPage}
-                onEdit={handlers.handleSetEditing}
-              />
+              <CancelAction type="button" onClick={handlers.handleDiscardChanges}>
+                Discard
+              </CancelAction>
+              <SaveAction type="submit" disabled={isEmpty}>
+                {isEditingInReview ? "Accept" : "Save"}
+              </SaveAction>
             </HStack>
           )}
-        </WStack>
+        </HStack>
 
         {reply.reply_to && <InReplyTo to={reply.reply_to} thread={thread} />}
 
@@ -115,27 +126,39 @@ export function Reply(props: Props) {
         />
       </styled.form>
 
-      <WStack>
-        <ReactList
-          initialSession={initialSession}
-          thread={thread}
-          reply={reply}
-          currentPage={currentPage}
-        />
+      {!isEditing && (
+        <WStack alignItems="center" mt="2">
+          <ReplyToButton thread={thread} reply={reply} />
 
-        {isInReview && (
-          <PostReviewBadge
-            isModerator={canManageReplies}
-            postId={reply.id}
-            onAccept={handlers.handleAcceptReply}
-            onEditAndAccept={handlers.handleSetEditingInReview}
-            onDelete={handlers.handleConfirmDelete}
-            isConfirmingDelete={isConfirmingDelete}
-            onCancelDelete={handlers.handleCancelDelete}
-          />
-        )}
-      </WStack>
-    </CardBox>
+          <HStack gap="1" alignItems="center">
+            <ReactList
+              initialSession={initialSession}
+              thread={thread}
+              reply={reply}
+              currentPage={currentPage}
+            />
+            <ReplyMenu
+              thread={thread}
+              reply={reply}
+              currentPage={currentPage}
+              onEdit={handlers.handleSetEditing}
+            />
+          </HStack>
+        </WStack>
+      )}
+
+      {isInReview && (
+        <PostReviewBadge
+          isModerator={canManageReplies}
+          postId={reply.id}
+          onAccept={handlers.handleAcceptReply}
+          onEditAndAccept={handlers.handleSetEditingInReview}
+          onDelete={handlers.handleConfirmDelete}
+          isConfirmingDelete={isConfirmingDelete}
+          onCancelDelete={handlers.handleCancelDelete}
+        />
+      )}
+    </styled.div>
   );
 }
 

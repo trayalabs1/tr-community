@@ -1,8 +1,8 @@
 "use client";
 
-import { css } from "@/styled-system/css";
-import { VStack, HStack } from "@/styled-system/jsx";
-import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { Check } from "lucide-react";
+
+import { VStack, HStack, styled } from "@/styled-system/jsx";
 import { usePollCard } from "./usePollCard";
 
 type Props = {
@@ -10,109 +10,134 @@ type Props = {
   optionDefs: Array<{ id: string; text: string }>;
 };
 
+const BORDER = "#dedede";
+const TEXT = "#404040";
+const MUTED = "#999999";
+
+function OptionRow({
+  label,
+  count,
+  checked,
+  onClick,
+}: {
+  label: string;
+  count?: number;
+  checked: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <styled.button
+      type="button"
+      onClick={onClick}
+      display="flex"
+      alignItems="center"
+      gap="2"
+      w="full"
+      bg="white"
+      cursor={onClick ? "pointer" : "default"}
+      style={{
+        border: `1px solid ${BORDER}`,
+        borderRadius: "12px",
+        padding: "12px 16px",
+      }}
+    >
+      <styled.span
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        flexShrink="0"
+        style={{
+          width: "16px",
+          height: "16px",
+          borderRadius: "4px",
+          border: `1.5px solid ${checked ? TEXT : BORDER}`,
+          backgroundColor: checked ? TEXT : "transparent",
+        }}
+      >
+        {checked && <Check size={11} color="white" strokeWidth={3} />}
+      </styled.span>
+      <styled.span
+        flex="1"
+        textAlign="left"
+        style={{
+          color: TEXT,
+          fontSize: "14px",
+          fontWeight: 500,
+          lineHeight: "20px",
+        }}
+      >
+        {label}
+      </styled.span>
+      {count !== undefined && (
+        <styled.span
+          style={{
+            color: TEXT,
+            fontSize: "14px",
+            fontWeight: 500,
+            lineHeight: "20px",
+          }}
+        >
+          {count}
+        </styled.span>
+      )}
+    </styled.button>
+  );
+}
+
 export function PollCard({ threadMark, optionDefs }: Props) {
   const { status, vote } = usePollCard(threadMark);
 
   const hasVoted = status != null && status.user_vote != null;
-  const totalVotes = status?.total_votes ?? 0;
-
-  if (!hasVoted) {
-    return (
-      <VStack gap="2" w="full" alignItems="start">
-        {optionDefs.map((opt) => (
-          <button
-            key={opt.id}
-            type="button"
-            onClick={() => vote(opt.id)}
-            className={css({
-              w: "full",
-              p: "3",
-              borderRadius: "md",
-              borderWidth: "thin",
-              borderStyle: "solid",
-              borderColor: "border.default",
-              textAlign: "left",
-              cursor: "pointer",
-              fontSize: "sm",
-              color: "fg.default",
-              bg: "bg.default",
-              _hover: { borderColor: "fg.muted" },
-            })}
-          >
-            {opt.text}
-          </button>
-        ))}
-      </VStack>
-    );
-  }
-
-  const options = status!.options;
 
   return (
-    <VStack gap="2" w="full" alignItems="start">
-      {options.map((opt) => {
-        const pct = totalVotes > 0 ? (opt.votes / totalVotes) * 100 : 0;
-        const isSelected = status!.user_vote === opt.id;
+    <VStack gap="6" w="full" alignItems="start">
+      <HStack gap="1.5" alignItems="center">
+        <styled.span
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          flexShrink="0"
+          style={{
+            width: "18px",
+            height: "18px",
+            borderRadius: "1000px",
+            backgroundColor: "#b5b5b5",
+          }}
+        >
+          <Check size={11} color="white" strokeWidth={3} />
+        </styled.span>
+        <styled.span
+          style={{
+            color: MUTED,
+            fontSize: "12px",
+            fontWeight: 600,
+            lineHeight: "16px",
+            letterSpacing: "0.24px",
+          }}
+        >
+          Select an option
+        </styled.span>
+      </HStack>
 
-        return (
-          <div
-            key={opt.id}
-            className={css({
-              w: "full",
-              borderRadius: "md",
-              borderWidth: "thin",
-              borderStyle: "solid",
-              borderColor: "border.default",
-              overflow: "hidden",
-              position: "relative",
-            })}
-            style={
-              isSelected
-                ? { borderColor: TRAYA_COLORS.primary }
-                : undefined
-            }
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                height: "100%",
-                width: `${pct}%`,
-                background: isSelected
-                  ? TRAYA_COLORS.tertiary
-                  : "var(--colors-bg-muted)",
-                transition: "width 0.3s ease",
-              }}
-            />
-            <HStack
-              justify="space-between"
-              px="3"
-              py="2"
-              position="relative"
-              style={{ zIndex: 1 }}
-            >
-              <span
-                className={css({ fontSize: "sm", color: "fg.default" })}
-                style={isSelected ? { fontWeight: 600 } : undefined}
-              >
-                {opt.text}
-              </span>
-              <span
-                className={css({ fontSize: "sm", color: "fg.muted" })}
-              >
-                {opt.votes}
-              </span>
-            </HStack>
-          </div>
-        );
-      })}
-
-      <p
-        className={css({ fontSize: "xs", color: "fg.muted", mt: "1" })}
-      >
-        {totalVotes} {totalVotes === 1 ? "vote" : "votes"}
-      </p>
+      <VStack gap="3" w="full" alignItems="start">
+        {hasVoted
+          ? status!.options.map((opt) => (
+              <OptionRow
+                key={opt.id}
+                label={opt.text}
+                count={opt.votes}
+                checked={status!.user_vote === opt.id}
+              />
+            ))
+          : optionDefs.map((opt) => (
+              <OptionRow
+                key={opt.id}
+                label={opt.text}
+                checked={false}
+                onClick={() => vote(opt.id)}
+              />
+            ))}
+      </VStack>
     </VStack>
   );
 }

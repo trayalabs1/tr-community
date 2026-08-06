@@ -1,8 +1,8 @@
-import { ModalDrawer } from "src/components/site/Modaldrawer/Modaldrawer";
-
 import { ChannelListOKResponse } from "@/api/openapi-schema";
 import { ComposeForm } from "@/screens/compose/components/ComposeForm/ComposeForm";
 import { OpenChangeEvent } from "@/utils/useDisclosure";
+
+import { ComposerOverlay } from "./ComposerOverlay";
 
 export type ThreadCreateModalProps = {
   isOpen: boolean;
@@ -20,7 +20,7 @@ export function ThreadCreateModal({
   initialChannelList,
 }: ThreadCreateModalProps) {
   return (
-    <ModalDrawer
+    <ComposerOverlay
       isOpen={isOpen}
       onClose={onClose}
       onOpenChange={onOpenChange}
@@ -31,6 +31,6 @@ export function ThreadCreateModal({
         onSuccess={onClose}
         skipDraftNavigation={true}
       />
-    </ModalDrawer>
+    </ComposerOverlay>
   );
 }

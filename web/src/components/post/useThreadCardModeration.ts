@@ -7,11 +7,13 @@ import { useConfirmation } from "@/components/site/useConfirmation";
 import { useFeedMutations } from "@/lib/feed/mutation";
 import { withUndo } from "@/lib/thread/undo";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
+import { useReportContext } from "@/lib/report/useReportContext";
 
 export function useThreadCardModeration(thread: ThreadReference) {
   const router = useRouter();
   const { updateThread, deleteThread, revalidate } = useFeedMutations(undefined, undefined, undefined, router);
   const { trackAdminApproved } = useEventTracking();
+  const { resolveReport } = useReportContext();
   const [isDismissing, setIsDismissing] = useState(false);
 
   const {
@@ -45,15 +47,8 @@ export function useThreadCardModeration(thread: ThreadReference) {
 
   async function handleDelete() {
     await handle(async () => {
-      await withUndo({
-        message: "Thread deleted",
-        duration: 5000,
-        toastId: `thread-${thread.id}`,
-        action: async () => {
-          await deleteThread(thread.id);
-        },
-        onUndo: () => {},
-      });
+      await deleteThread(thread.id);
+      await resolveReport();
     });
   }
 
@@ -87,6 +82,7 @@ export function useThreadCardModeration(thread: ThreadReference) {
     handlers: {
       handleAcceptThread,
       handleEditAndAccept,
+      handleDelete,
       handleConfirmDelete,
       handleCancelDelete,
       handleDismissThread,

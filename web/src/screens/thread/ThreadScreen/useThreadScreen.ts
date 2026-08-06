@@ -18,7 +18,6 @@ import { useConfirmation } from "@/components/site/useConfirmation";
 import { useBeacon } from "@/lib/beacon/useBeacon";
 import { useReportContext } from "@/lib/report/useReportContext";
 import { useThreadMutations } from "@/lib/thread/mutation";
-import { withUndo } from "@/lib/thread/undo";
 import { hasPermission } from "@/utils/permissions";
 
 export type Props = {
@@ -187,21 +186,13 @@ export function useThreadScreen({
   async function handleDeleteThread() {
     await handle(
       async () => {
-        await withUndo({
-          message: "Thread deleted",
-          duration: 5000,
-          toastId: `thread-${thread.id}`,
-          action: async () => {
-            await deleteReply(thread.id);
-            await resolveReport();
-            if (reportId) {
-              router.push(`/reports`);
-            } else {
-              router.push("/");
-            }
-          },
-          onUndo: () => {},
-        });
+        await deleteReply(thread.id);
+        await resolveReport();
+        if (reportId) {
+          router.push(`/reports`);
+        } else {
+          router.push("/");
+        }
       },
       {
         cleanup: async () => {

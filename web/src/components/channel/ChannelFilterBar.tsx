@@ -26,6 +26,8 @@ interface ChannelFilterBarProps {
   excludeBAH?: boolean;
   onExcludeBAHChange?: (exclude: boolean) => void;
   promptNudges?: PromptItem[];
+  hideComposer?: boolean;
+  rightSlot?: React.ReactNode;
 }
 
 export function ChannelFilterBar({
@@ -40,6 +42,8 @@ export function ChannelFilterBar({
   excludeBAH = false,
   onExcludeBAHChange,
   promptNudges,
+  hideComposer = false,
+  rightSlot,
 }: ChannelFilterBarProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [hasDateFilter, setHasDateFilter] = useState(false);
@@ -84,9 +88,10 @@ export function ChannelFilterBar({
 
   return (
     <VStack alignItems="start" gap="3" width="full">
-      {/* Filter and Create Post Button Row - Filters only for admins */}
-      {canManagePosts && (
+      {/* Filter and Create Post Button Row - Filters only for admins; rightSlot (e.g. Settings) may render independently */}
+      {(canManagePosts || rightSlot) && (
         <HStack alignItems="center" gap="2" width="full">
+          {canManagePosts && (
           <styled.button
             onClick={() => setShowFilters(!showFilters)}
             display="flex"
@@ -125,6 +130,7 @@ export function ChannelFilterBar({
               </styled.div>
             )}
           </styled.button>
+          )}
 
           {hasActiveFilters && (
             <styled.button
@@ -155,6 +161,12 @@ export function ChannelFilterBar({
               <styled.span>Clear</styled.span>
             </styled.button>
           )}
+
+          {rightSlot && (
+            <styled.div marginLeft="auto" display="flex" alignItems="center">
+              {rightSlot}
+            </styled.div>
+          )}
         </HStack>
       )}
 
@@ -172,22 +184,24 @@ export function ChannelFilterBar({
       )}
 
       {/* Sticky: users posted today + Create Post CTA */}
-      <styled.div
-        position="sticky"
-        top="0"
-        // zIndex="sticky"
-        bg="white"
-        width="full"
-      >
-        <VStack alignItems="start" gap="1" width="full">
-          <UsersPostedToday signedIn={Boolean(session)} channelID={channelID} />
-          <ThreadCreateTrigger
-            channelID={channelID}
-            channelName={channelName}
-            promptNudges={promptNudges}
-          />
-        </VStack>
-      </styled.div>
+      {!hideComposer && (
+        <styled.div
+          position="sticky"
+          top="0"
+          // zIndex="sticky"
+          bg="white"
+          width="full"
+        >
+          <VStack alignItems="start" gap="1" width="full">
+            <UsersPostedToday signedIn={Boolean(session)} channelID={channelID} />
+            <ThreadCreateTrigger
+              channelID={channelID}
+              channelName={channelName}
+              promptNudges={promptNudges}
+            />
+          </VStack>
+        </styled.div>
+      )}
 
       {/* Expanded Filter View */}
       {showFilters && (

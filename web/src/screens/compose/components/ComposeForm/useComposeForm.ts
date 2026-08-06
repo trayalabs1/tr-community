@@ -26,9 +26,24 @@ export type Props = {
   skipDraftNavigation?: boolean;
 };
 
+export const BODY_REQUIRED_ERROR = "Please write something before posting.";
+
+// The body is HTML from the rich text editor, so an empty body is markup such
+// as <p></p> rather than an empty string.
+export function isBodyEmpty(body: string | undefined): boolean {
+  if (!body) {
+    return true;
+  }
+
+  return body.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim() === "";
+}
+
 export const FormShapeSchema = z.object({
   title: z.string().optional(),
-  body: z.string().optional(),
+  body: z
+    .string()
+    .optional()
+    .refine((v) => !isBodyEmpty(v), { message: BODY_REQUIRED_ERROR }),
   category: z.string().optional(),
   tags: z.string().array().optional(),
   url: z.string().optional(),
@@ -58,6 +73,7 @@ export function useComposeForm({
 
   const form = useForm<FormShape>({
     resolver: zodResolver(FormShapeSchema),
+    mode: "onChange",
     reValidateMode: "onChange",
     defaultValues: initialDraft
       ? {
@@ -75,6 +91,11 @@ export function useComposeForm({
   });
 
   const saveDraft = async (data: FormShape) => {
+    if (isBodyEmpty(data.body)) {
+      form.setError("body", { message: BODY_REQUIRED_ERROR });
+      return;
+    }
+
     const payload: ThreadInitialProps = {
       ...data,
 
@@ -105,8 +126,8 @@ export function useComposeForm({
   };
 
   const publish = async ({ body = "", category, tags, url }: FormShape, isPoll: boolean) => {
-    if (!isPoll && !body.trim()) {
-      form.setError("body", { message: "Body is required" });
+    if (!isPoll && isBodyEmpty(body)) {
+      form.setError("body", { message: BODY_REQUIRED_ERROR });
       return;
     }
 

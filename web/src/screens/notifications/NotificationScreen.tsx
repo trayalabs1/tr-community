@@ -6,13 +6,13 @@ import {
   NotificationListResult,
   NotificationStatus,
 } from "@/api/openapi-schema";
-import { NotificationCardList } from "@/components/notifications/NotificationCardList";
+import { NotificationItem } from "@/components/notifications/item";
+import { NotificationList } from "@/components/notifications/NotificationList";
 import { useNotifications } from "@/components/notifications/useNotifications";
-import { HeaderWithBackArrow } from "@/components/site/Header";
+import { CenteredBackHeader } from "@/components/site/Header";
 import { UnreadyBanner } from "@/components/site/Unready";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { HStack, LStack, WStack, styled } from "@/styled-system/jsx";
+import { styled } from "@/styled-system/jsx";
 
 type Props = {
   initialData: NotificationListResult;
@@ -30,16 +30,19 @@ export function useNotificationScreen(props: Props) {
       }
     },
   });
-  const { ready, data, error, handlers } = useNotifications({
+  const result = useNotifications({
     initialData: props.initialData,
     status,
   });
-  if (!ready) {
+
+  if (!result.ready) {
     return {
       ready: false as const,
-      error,
+      error: result.error,
     };
   }
+
+  const { data, handlers } = result;
 
   function handleToggleStatus() {
     setStatus(
@@ -49,13 +52,21 @@ export function useNotificationScreen(props: Props) {
     );
   }
 
+  async function handleOpen(notification: NotificationItem) {
+    if (notification.isRead) {
+      return;
+    }
+
+    await handlers.handleMarkAs(notification.id, NotificationStatus.read);
+  }
+
   return {
     ready: true as const,
     data,
     status,
     handlers: {
       handleToggleStatus,
-      handleMarkAs: handlers.handleMarkAs,
+      handleOpen,
       handleMarkAllAsRead: handlers.handleMarkAllAsRead,
     },
   };
@@ -63,50 +74,66 @@ export function useNotificationScreen(props: Props) {
 
 export function NotificationScreen(props: Props) {
   const { ready, error, data, status, handlers } = useNotificationScreen(props);
+
   if (!ready) {
     return <UnreadyBanner error={error} />;
   }
 
-  const { notifications } = data;
+  const { notifications, unreads } = data;
 
   const showingArchived = status === NotificationStatus.read;
 
-  const hasUnreadNotifications = data.unreads > 0;
-
   return (
-    <LStack>
-      <HeaderWithBackArrow
-        title="Notifications"
-        mobileOnly
-        isSticky
-      />
+    <styled.div display="flex" flexDirection="column" w="full" h="full">
+      <CenteredBackHeader title="Notifications" />
 
-      <LStack px="4">
-        <WStack justifyContent="space-between" alignItems="flex-start">
-          <LStack>
-            <HStack alignItems="center" gap="2" justifyContent="space-between" width="full">
-              <Switch
-                size="sm"
-                checked={showingArchived}
-                onClick={handlers.handleToggleStatus}
-              >
-                Archived
-              </Switch>
-              { hasUnreadNotifications && (
-                <styled.span fontSize="sm" color="fg.muted" cursor="pointer" onClick={handlers.handleMarkAllAsRead}>
-                  Mark all as read
-                </styled.span>
-              )}
-            </HStack>
-          </LStack>
+      <styled.div
+        flex="1"
+        display="flex"
+        flexDirection="column"
+        gap="4"
+        w="full"
+        maxW="2xl"
+        mx="auto"
+        p="4"
+        bg="bg.notificationPage"
+      >
+        <styled.div
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          gap="2"
+          w="full"
+        >
+          <Switch
+            size="sm"
+            checked={showingArchived}
+            onClick={handlers.handleToggleStatus}
+          >
+            Archived
+          </Switch>
 
-        </WStack>
+          {unreads > 0 && (
+            <styled.button
+              type="button"
+              onClick={handlers.handleMarkAllAsRead}
+              fontSize="sm"
+              fontWeight="medium"
+              color="fg.muted"
+              bg="transparent"
+              border="none"
+              cursor="pointer"
+            >
+              Mark all as read
+            </styled.button>
+          )}
+        </styled.div>
 
-        <NotificationCardList
+        <NotificationList
           notifications={notifications}
-          onMove={handlers.handleMarkAs}
+          onOpen={handlers.handleOpen}
         />
-      </LStack>
-    </LStack>
+      </styled.div>
+    </styled.div>
   );
 }

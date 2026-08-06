@@ -57,9 +57,29 @@ function hashCode(str: string): number {
   return Math.abs(hash);
 }
 
+// The logged-in user's own avatar is always this colour, so "you" reads the
+// same in the header, the composer, and your own profile. Other authors keep
+// their hashed colour so they stay distinguishable in a feed.
+export const SELF_AVATAR_COLOR = "#FFDD81";
+
 export function getAvatarColor(handle: string): string {
   const hash = hashCode(handle.toLowerCase());
   const index = hash % IWANTHUE_COLORS.length;
   const rgb = IWANTHUE_COLORS[index] ?? [149, 114, 207];
   return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+}
+
+// Avatar colours for an author who may or may not be the logged-in user. Pass
+// the viewer's own handle so "you" reads the same wherever it appears.
+export function getAuthorAvatarStyle(
+  handle: string,
+  selfHandle?: string,
+): { background: string; color: string } {
+  const isSelf =
+    Boolean(selfHandle) &&
+    handle.toLowerCase() === selfHandle?.toLowerCase();
+
+  return isSelf
+    ? { background: SELF_AVATAR_COLOR, color: "#404040" }
+    : { background: getAvatarColor(handle), color: "#ffffff" };
 }

@@ -3056,11 +3056,11 @@ const tokens = {
     "variable": "var(--radii-l3)"
   },
   "fonts.body": {
-    "value": "var(--fonts-inter)",
+    "value": "var(--fonts-nunito)",
     "variable": "var(--fonts-body)"
   },
   "fonts.heading": {
-    "value": "var(--fonts-inter-display)",
+    "value": "var(--fonts-nunito)",
     "variable": "var(--fonts-heading)"
   },
   "blurs.frosted": {
@@ -3347,6 +3347,58 @@ const tokens = {
     "value": "var(--colors-bg-search-input)",
     "variable": "var(--colors-bg-search-input)"
   },
+  "colors.bg.searchHeader": {
+    "value": "var(--colors-bg-search-header)",
+    "variable": "var(--colors-bg-search-header)"
+  },
+  "colors.bg.searchPanel": {
+    "value": "var(--colors-bg-search-panel)",
+    "variable": "var(--colors-bg-search-panel)"
+  },
+  "colors.bg.notificationPage": {
+    "value": "var(--colors-bg-notification-page)",
+    "variable": "var(--colors-bg-notification-page)"
+  },
+  "colors.bg.notificationRead": {
+    "value": "var(--colors-bg-notification-read)",
+    "variable": "var(--colors-bg-notification-read)"
+  },
+  "colors.bg.notificationUnread": {
+    "value": "var(--colors-bg-notification-unread)",
+    "variable": "var(--colors-bg-notification-unread)"
+  },
+  "colors.bg.savedPage": {
+    "value": "var(--colors-bg-saved-page)",
+    "variable": "var(--colors-bg-saved-page)"
+  },
+  "colors.bg.profileStats": {
+    "value": "var(--colors-bg-profile-stats)",
+    "variable": "var(--colors-bg-profile-stats)"
+  },
+  "colors.bg.composerPage": {
+    "value": "var(--colors-bg-composer-page)",
+    "variable": "var(--colors-bg-composer-page)"
+  },
+  "colors.bg.surfaceWhite": {
+    "value": "var(--colors-bg-surface-white)",
+    "variable": "var(--colors-bg-surface-white)"
+  },
+  "colors.bg.composerAction": {
+    "value": "var(--colors-bg-composer-action)",
+    "variable": "var(--colors-bg-composer-action)"
+  },
+  "colors.bg.composerDraft": {
+    "value": "var(--colors-bg-composer-draft)",
+    "variable": "var(--colors-bg-composer-draft)"
+  },
+  "colors.bg.composerSubmit": {
+    "value": "var(--colors-bg-composer-submit)",
+    "variable": "var(--colors-bg-composer-submit)"
+  },
+  "colors.bg.composerSubmitDisabled": {
+    "value": "var(--colors-bg-composer-submit-disabled)",
+    "variable": "var(--colors-bg-composer-submit-disabled)"
+  },
   "colors.fg.default": {
     "value": "var(--colors-fg-default)",
     "variable": "var(--colors-fg-default)"
@@ -3394,6 +3446,10 @@ const tokens = {
   "colors.fg.accent": {
     "value": "var(--colors-fg-accent)",
     "variable": "var(--colors-fg-accent)"
+  },
+  "colors.fg.composerAction": {
+    "value": "var(--colors-fg-composer-action)",
+    "variable": "var(--colors-fg-composer-action)"
   },
   "colors.border": {
     "value": "var(--colors-border)",
@@ -4186,6 +4242,58 @@ const tokens = {
   "colors.colorPalette.searchInput": {
     "value": "var(--colors-color-palette-search-input)",
     "variable": "var(--colors-color-palette-search-input)"
+  },
+  "colors.colorPalette.searchHeader": {
+    "value": "var(--colors-color-palette-search-header)",
+    "variable": "var(--colors-color-palette-search-header)"
+  },
+  "colors.colorPalette.searchPanel": {
+    "value": "var(--colors-color-palette-search-panel)",
+    "variable": "var(--colors-color-palette-search-panel)"
+  },
+  "colors.colorPalette.notificationPage": {
+    "value": "var(--colors-color-palette-notification-page)",
+    "variable": "var(--colors-color-palette-notification-page)"
+  },
+  "colors.colorPalette.notificationRead": {
+    "value": "var(--colors-color-palette-notification-read)",
+    "variable": "var(--colors-color-palette-notification-read)"
+  },
+  "colors.colorPalette.notificationUnread": {
+    "value": "var(--colors-color-palette-notification-unread)",
+    "variable": "var(--colors-color-palette-notification-unread)"
+  },
+  "colors.colorPalette.savedPage": {
+    "value": "var(--colors-color-palette-saved-page)",
+    "variable": "var(--colors-color-palette-saved-page)"
+  },
+  "colors.colorPalette.profileStats": {
+    "value": "var(--colors-color-palette-profile-stats)",
+    "variable": "var(--colors-color-palette-profile-stats)"
+  },
+  "colors.colorPalette.composerPage": {
+    "value": "var(--colors-color-palette-composer-page)",
+    "variable": "var(--colors-color-palette-composer-page)"
+  },
+  "colors.colorPalette.surfaceWhite": {
+    "value": "var(--colors-color-palette-surface-white)",
+    "variable": "var(--colors-color-palette-surface-white)"
+  },
+  "colors.colorPalette.composerAction": {
+    "value": "var(--colors-color-palette-composer-action)",
+    "variable": "var(--colors-color-palette-composer-action)"
+  },
+  "colors.colorPalette.composerDraft": {
+    "value": "var(--colors-color-palette-composer-draft)",
+    "variable": "var(--colors-color-palette-composer-draft)"
+  },
+  "colors.colorPalette.composerSubmit": {
+    "value": "var(--colors-color-palette-composer-submit)",
+    "variable": "var(--colors-color-palette-composer-submit)"
+  },
+  "colors.colorPalette.composerSubmitDisabled": {
+    "value": "var(--colors-color-palette-composer-submit-disabled)",
+    "variable": "var(--colors-color-palette-composer-submit-disabled)"
   },
   "colors.colorPalette.outline": {
     "value": "var(--colors-color-palette-outline)",

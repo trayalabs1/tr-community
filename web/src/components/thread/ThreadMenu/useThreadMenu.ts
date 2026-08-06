@@ -11,7 +11,6 @@ import { useConfirmation } from "@/components/site/useConfirmation";
 import { useFeedMutations } from "@/lib/feed/mutation";
 import { useReportContext } from "@/lib/report/useReportContext";
 import { canDeletePost, canEditPost } from "@/lib/thread/permissions";
-import { withUndo } from "@/lib/thread/undo";
 import { useShare } from "@/utils/client";
 import { hasPermission } from "@/utils/permissions";
 import { useCopyToClipboard } from "@/utils/useCopyToClipboard";
@@ -24,6 +23,12 @@ export type Props = {
   movingEnabled?: boolean;
   onPinChange?: (pinned: boolean) => Promise<void>;
   channelID?: string;
+  /**
+   * When provided, the Delete menu item calls this instead of rendering its own
+   * confirmation sheet — lets a parent (e.g. ThreadCard) own the sheet so it
+   * lives outside this menu's portal.
+   */
+  onRequestDelete?: () => void;
 };
 
 export function useThreadMenu({
@@ -80,20 +85,12 @@ export function useThreadMenu({
 
   async function handleDelete() {
     await handle(async () => {
-      await withUndo({
-        message: "Thread deleted",
-        duration: 5000,
-        toastId: `thread-${thread.id}`,
-        action: async () => {
-          await deleteThread(thread.id);
-          await resolveReport();
+      await deleteThread(thread.id);
+      await resolveReport();
 
-          if (isOnThreadPage) {
-            router.push("/");
-          }
-        },
-        onUndo: () => {},
-      });
+      if (isOnThreadPage) {
+        router.push("/");
+      }
     });
   }
 
@@ -140,6 +137,7 @@ export function useThreadMenu({
       handleCopyLink,
       handleShare,
       handleEdit,
+      handleDelete,
       handleConfirmDelete,
       handleCancelDelete,
       handlePinThread,

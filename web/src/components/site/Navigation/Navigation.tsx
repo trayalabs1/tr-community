@@ -11,7 +11,6 @@ import styles from "./navigation.module.css";
 
 import { ContextPane } from "./ContextPane";
 import { DesktopCommandBar } from "./DesktopCommandBar";
-import { MobileCommandBar } from "./MobileCommandBar/MobileCommandBar";
 import { NavigationPane } from "./NavigationPane/NavigationPane";
 import { getServerSidebarState } from "./NavigationPane/server";
 
@@ -80,8 +79,6 @@ export async function Navigation({
           {/* MobileCommandBar is now rendered outside */}
         </Box>
       </Box>
-
-      <MobileCommandBar />
     </Box>
   );
 }
