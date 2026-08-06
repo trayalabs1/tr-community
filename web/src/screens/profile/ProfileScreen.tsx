@@ -127,7 +127,7 @@ export function ProfileScreen(props: Props) {
                   fontWeight="medium"
                   color="fg.default"
                 >
-                  {profile.name}
+                  @{profile.handle}
                 </styled.p>
               )}
             </HStack>

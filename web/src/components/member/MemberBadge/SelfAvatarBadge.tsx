@@ -12,9 +12,9 @@ type Props = {
 };
 
 export function SelfAvatarBadge({ account, asLink = true }: Props) {
-  const initial = (
-    account.name?.charAt(0) || account.handle.charAt(0)
-  ).toUpperCase();
+  // Keyed off the handle, matching every other avatar and the colour, which is
+  // also derived from the handle.
+  const initial = account.handle.charAt(0).toUpperCase();
 
   const avatar = (
     <styled.div

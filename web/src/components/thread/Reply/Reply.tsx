@@ -81,7 +81,7 @@ export function Reply(props: Props) {
                 ...getAuthorAvatarStyle(reply.author.handle, session?.handle),
               }}
             >
-              {(reply.author.name?.charAt(0) || reply.author.handle.charAt(0)).toUpperCase()}
+              {reply.author.handle.charAt(0).toUpperCase()}
             </styled.div>
           </Link>
 
@@ -92,7 +92,7 @@ export function Reply(props: Props) {
                   fontWeight="bold"
                   style={{ fontSize: "14px", lineHeight: "20px", color: "#404040" }}
                 >
-                  {reply.author.name || `@${reply.author.handle}`}
+                  @{reply.author.handle}
                 </styled.span>
               </Link>
               {reply.cohort_channel && <CohortBadge channel={reply.cohort_channel} />}
