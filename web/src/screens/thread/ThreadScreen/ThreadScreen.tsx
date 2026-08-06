@@ -173,7 +173,7 @@ export function ThreadScreen(props: Props) {
                     flexShrink: 0,
                   }}
                 >
-                  {(thread.author.name?.charAt(0) || thread.author.handle.charAt(0)).toUpperCase()}
+                  {thread.author.handle.charAt(0).toUpperCase()}
                 </styled.div>
               </Link>
 
@@ -187,7 +187,7 @@ export function ThreadScreen(props: Props) {
                       color: "#404040",
                     }}
                   >
-                    {thread.author.name || `@${thread.author.handle}`}
+                    @{thread.author.handle}
                   </styled.span>
                 </Link>
                 <styled.span style={{ fontSize: "12px", lineHeight: "16px", color: "#999999", letterSpacing: "0.24px" }}>

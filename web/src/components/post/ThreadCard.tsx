@@ -154,7 +154,7 @@ export const ThreadReferenceCard = memo(
                     cursor: "pointer",
                   }}
                 >
-                  {thread.author.name || `@${thread.author.handle}`}
+                  @{thread.author.handle}
                 </styled.p>
               </Link>
               <styled.p
