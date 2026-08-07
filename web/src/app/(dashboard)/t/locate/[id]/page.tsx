@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
 
 import { PostLocationKind } from "@/api/openapi-schema";
+import { channelList } from "@/api/openapi-server/channels";
 import { postLocationGet } from "@/api/openapi-server/posts";
+import { threadGet } from "@/api/openapi-server/threads";
 import { WEB_ADDRESS } from "@/config";
+import { hasChannelAccess } from "@/lib/post/locateAccess";
 
 export type Props = {
   params: Promise<{
@@ -13,11 +16,41 @@ export type Props = {
   }>;
 };
 
+// Returns null when the post is missing, its thread is unreadable, or it lives
+// in a channel the viewer isn't a member of. Kept separate from the page body
+// so redirect()'s control-flow throw isn't caught here.
+async function locatePost(id: string) {
+  try {
+    const { data: location } = await postLocationGet({ id });
+    if (!location?.slug) return null;
+
+    const [{ data: thread }, { data: channels }] = await Promise.all([
+      threadGet(location.slug),
+      channelList(),
+    ]);
+
+    if (!hasChannelAccess(thread?.channel_id, channels?.channels ?? [])) {
+      return null;
+    }
+
+    return location;
+  } catch {
+    return null;
+  }
+}
+
 export default async function LocatePage(props: Props) {
   const { id } = await props.params;
   const searchParams = await props.searchParams;
 
-  const { data } = await postLocationGet({ id });
+  // Resolve the post and confirm the viewer can see its channel before sending
+  // them onward — /t/[slug] has no guard of its own, so an unreachable post
+  // would render an error screen. Deep links arrive from notifications and
+  // marketing banners, where the feed is a better landing than an error.
+  const data = await locatePost(id);
+  if (!data) {
+    redirect("/channels");
+  }
 
   const url = new URL(`/t/${data.slug}`, WEB_ADDRESS);
 
