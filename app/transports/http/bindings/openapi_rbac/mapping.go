@@ -746,6 +746,14 @@ func (m *Mapping) AdminReplyQueueDismiss() (bool, *rbac.Permission) {
 	return true, &rbac.PermissionAdministrator
 }
 
+func (m *Mapping) AdminReplyList() (bool, *rbac.Permission) {
+	return true, &rbac.PermissionAdministrator
+}
+
+func (m *Mapping) AdminAccountList() (bool, *rbac.Permission) {
+	return true, &rbac.PermissionAdministrator
+}
+
 func (m *Mapping) AdminAnalyticsGet() (bool, *rbac.Permission) {
 	return true, &rbac.PermissionAdministrator
 }
