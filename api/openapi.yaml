@@ -458,6 +458,55 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "204": { $ref: "#/components/responses/NoContent" }
 
+  /admin/admins:
+    get:
+      operationId: AdminAccountList
+      description: |
+        List all accounts considered administrators, for use in admin-facing
+        filter controls. Requires ADMINISTRATOR permission.
+      tags: [admin]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "200": { $ref: "#/components/responses/AdminAccountListOK" }
+
+  /admin/admin-replies:
+    get:
+      operationId: AdminReplyList
+      description: |
+        List replies authored by administrators, optionally filtered to a single
+        admin and a reply-date range. Used by the Queue screen's "Admin Replies"
+        tab to audit which posts a given admin has responded to. The date range
+        filters on the reply's own creation time, not the thread's.
+        Requires ADMINISTRATOR permission.
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/PaginationQuery"
+        - name: replied_by
+          in: query
+          description: |
+            Only return replies authored by this account. When omitted, replies
+            from all administrators are returned.
+          schema: { $ref: "#/components/schemas/Identifier" }
+        - name: created_after
+          in: query
+          description: Only return replies created at or after this time.
+          schema:
+            type: string
+            format: date-time
+        - name: created_before
+          in: query
+          description: Only return replies created at or before this time.
+          schema:
+            type: string
+            format: date-time
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "200": { $ref: "#/components/responses/AdminReplyListOK" }
+
   /admin/analytics:
     get:
       operationId: AdminAnalyticsGet
@@ -4365,6 +4414,20 @@ components:
           schema:
             $ref: "#/components/schemas/ReplyQueueListResult"
 
+    AdminReplyListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PaginatedReplyList"
+
+    AdminAccountListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AdminAccountListResult"
+
     AdminAnalyticsGetOK:
       description: OK
       content:
@@ -6599,6 +6662,14 @@ components:
     PublicProfileList:
       type: array
       items: { $ref: "#/components/schemas/PublicProfile" }
+
+    AdminAccountListResult:
+      type: object
+      required: [admins]
+      properties:
+        admins:
+          type: array
+          items: { $ref: "#/components/schemas/ProfileReference" }
 
     ProfileFollowersList:
       type: array
