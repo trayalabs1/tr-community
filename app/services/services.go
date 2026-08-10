@@ -9,6 +9,7 @@ import (
 	"github.com/Southclaws/storyden/app/services/account/account_suspension"
 	"github.com/Southclaws/storyden/app/services/account/register"
 	"github.com/Southclaws/storyden/app/services/account/username"
+	"github.com/Southclaws/storyden/app/services/admin/admin_reply_manager"
 	"github.com/Southclaws/storyden/app/services/admin/reply_queue_manager"
 	"github.com/Southclaws/storyden/app/services/admin/settings_manager"
 	"github.com/Southclaws/storyden/app/services/asset"
@@ -96,5 +97,6 @@ func Build() fx.Option {
 		fx.Provide(account_auth.New, account_email.New),
 		fx.Provide(settings_manager.New),
 		fx.Provide(reply_queue_manager.New),
+		fx.Provide(admin_reply_manager.New),
 	)
 }

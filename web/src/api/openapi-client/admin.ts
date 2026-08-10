@@ -16,10 +16,13 @@ import { fetcher } from "../client";
 import type {
   AccountGetOKResponse,
   AdminAccessKeyListOKResponse,
+  AdminAccountListOKResponse,
   AdminAnalyticsGetOKResponse,
   AdminAnalyticsGetParams,
   AdminRegenerateTempHandlesOKResponse,
   AdminRegenerateTempHandlesParams,
+  AdminReplyListOKResponse,
+  AdminReplyListParams,
   AdminReplyQueueListOKResponse,
   AdminReplyQueueListParams,
   AdminSettingsGetOKResponse,
@@ -731,6 +734,117 @@ export const useAdminReplyQueueDismiss = <
   const swrFn = getAdminReplyQueueDismissMutationFetcher(replyQueueId);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * List all accounts considered administrators, for use in admin-facing
+filter controls. Requires ADMINISTRATOR permission.
+
+ */
+export const adminAccountList = () => {
+  return fetcher<AdminAccountListOKResponse>({
+    url: `/admin/admins`,
+    method: "GET",
+  });
+};
+
+export const getAdminAccountListKey = () => [`/admin/admins`] as const;
+
+export type AdminAccountListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminAccountList>>
+>;
+export type AdminAccountListQueryError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | InternalServerErrorResponse;
+
+export const useAdminAccountList = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | InternalServerErrorResponse,
+>(options?: {
+  swr?: SWRConfiguration<
+    Awaited<ReturnType<typeof adminAccountList>>,
+    TError
+  > & { swrKey?: Key; enabled?: boolean };
+}) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ?? (() => (isEnabled ? getAdminAccountListKey() : null));
+  const swrFn = () => adminAccountList();
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * List replies authored by administrators, optionally filtered to a single
+admin and a reply-date range. Used by the Queue screen's "Admin Replies"
+tab to audit which posts a given admin has responded to. The date range
+filters on the reply's own creation time, not the thread's.
+Requires ADMINISTRATOR permission.
+
+ */
+export const adminReplyList = (params?: AdminReplyListParams) => {
+  return fetcher<AdminReplyListOKResponse>({
+    url: `/admin/admin-replies`,
+    method: "GET",
+    params,
+  });
+};
+
+export const getAdminReplyListKey = (params?: AdminReplyListParams) =>
+  [`/admin/admin-replies`, ...(params ? [params] : [])] as const;
+
+export type AdminReplyListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminReplyList>>
+>;
+export type AdminReplyListQueryError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | InternalServerErrorResponse;
+
+export const useAdminReplyList = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | InternalServerErrorResponse,
+>(
+  params?: AdminReplyListParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof adminReplyList>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getAdminReplyListKey(params) : null));
+  const swrFn = () => adminReplyList(params);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
 
   return {
     swrKey,
