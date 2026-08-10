@@ -113,7 +113,7 @@ export function useQuickShare({ initialCategory, channelID }: Props) {
             : title
           : title;
 
-        if (!title) {
+        if (!title && !hasImage(parsed)) {
           throw new Error("Cannot post an empty thread.");
         }
 
@@ -185,6 +185,12 @@ function getFirstURL(html: Document) {
   return href;
 }
 
+// An image-only post carries no text to derive a title from, so the text
+// requirement is waived when the body has at least one image.
+function hasImage(html: Document) {
+  return html.querySelector("body img") !== null;
+}
+
 function splitTitleBody(html: Document) {
   const bodyEl = html.querySelector("body");
 
@@ -194,6 +200,10 @@ function splitTitleBody(html: Document) {
   const firstChild = bodyEl?.querySelector("p")?.childNodes[0] as Node;
 
   if (!firstChild) {
+    if (hasImage(html)) {
+      return { title: "", body: bodyEl?.getHTML() ?? "", isFallback: false };
+    }
+
     throw new Error("Not enough text content to post a new thread.");
   }
 
@@ -240,6 +250,10 @@ function splitTitleBody(html: Document) {
 
   // We want something of substance to post a new thread. This may bug out tho.
   if (!title) {
+    if (hasImage(html)) {
+      return { title: "", body: bodyEl?.getHTML() ?? "", isFallback: false };
+    }
+
     throw new Error("Not enough text content to post a new thread.");
   }
 

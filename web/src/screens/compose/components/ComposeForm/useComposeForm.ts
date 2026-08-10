@@ -29,10 +29,15 @@ export type Props = {
 export const BODY_REQUIRED_ERROR = "Please write something before posting.";
 
 // The body is HTML from the rich text editor, so an empty body is markup such
-// as <p></p> rather than an empty string.
+// as <p></p> rather than an empty string. An embedded image counts as content in
+// its own right, so an image-only body is not empty even though it has no text.
 export function isBodyEmpty(body: string | undefined): boolean {
   if (!body) {
     return true;
+  }
+
+  if (/<img[\s>]/i.test(body)) {
+    return false;
   }
 
   return body.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim() === "";
