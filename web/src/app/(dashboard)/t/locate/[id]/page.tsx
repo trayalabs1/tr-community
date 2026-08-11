@@ -16,9 +16,10 @@ export type Props = {
   }>;
 };
 
-// Returns null when the post is missing, its thread is unreadable, or it lives
-// in a channel the viewer isn't a member of. Kept separate from the page body
-// so redirect()'s control-flow throw isn't caught here.
+// Returns null when the post is missing, its thread is unreadable, or the viewer
+// can reach neither its home channel nor any channel it's been shared into. Kept
+// separate from the page body so redirect()'s control-flow throw isn't caught
+// here.
 async function locatePost(id: string) {
   try {
     const { data: location } = await postLocationGet({ id });
@@ -29,7 +30,14 @@ async function locatePost(id: string) {
       channelList(),
     ]);
 
-    if (!hasChannelAccess(thread?.channel_id, channels?.channels ?? [])) {
+    const accessible = channels?.channels ?? [];
+    if (
+      !hasChannelAccess(
+        thread?.channel_id,
+        accessible,
+        thread?.shared_to_channel_ids,
+      )
+    ) {
       return null;
     }
 

@@ -248,7 +248,45 @@ func (d *Querier) Get(ctx context.Context, threadID post.ID, pageParams paginati
 	p.Tags = tags
 	p.Assets = assets
 
+	sharedTo, err := d.getSharedToChannelIDs(ctx, threadResult)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+	p.SharedToChannelIDs = sharedTo
+
 	return p, nil
+}
+
+// getSharedToChannelIDs resolves the channels a thread has been shared into by
+// looking up the shares that reference it. Shares cannot themselves be shared,
+// so a share row resolves to nothing and the query is skipped.
+func (d *Querier) getSharedToChannelIDs(ctx context.Context, p *ent.Post) ([]xid.ID, error) {
+	if p.ReferencePostID != nil {
+		return nil, nil
+	}
+
+	shares, err := d.db.Post.Query().
+		Where(
+			ent_post.ReferencePostIDEQ(p.ID),
+			ent_post.DeletedAtIsNil(),
+		).
+		Select(ent_post.FieldChannelID).
+		All(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	seen := make(map[xid.ID]struct{}, len(shares))
+	ids := make([]xid.ID, 0, len(shares))
+	for _, s := range shares {
+		if _, ok := seen[s.ChannelID]; ok {
+			continue
+		}
+		seen[s.ChannelID] = struct{}{}
+		ids = append(ids, s.ChannelID)
+	}
+
+	return ids, nil
 }
 
 // decorateReplyCohorts attaches each reply author's most-recent channel
