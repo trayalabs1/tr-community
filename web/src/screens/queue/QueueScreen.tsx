@@ -10,6 +10,7 @@ import { useChannelList } from "@/api/openapi-client/channels";
 import { useNodeList } from "@/api/openapi-client/nodes";
 import { useThreadList } from "@/api/openapi-client/threads";
 import { Visibility, ThreadReference, ReplyQueueEntry } from "@/api/openapi-schema";
+import { AdminRepliesPanel } from "@/components/queue/AdminRepliesPanel";
 import { BulkActionsPanel } from "@/components/queue/BulkActionsPanel";
 import { PendingReplyThreadList } from "@/components/queue/PendingReplyThreadList";
 import { QueueNodeList } from "@/components/queue/QueueNodeList";
@@ -24,9 +25,25 @@ import { MembersIcon } from "@/components/ui/icons/Members";
 import { useSession } from "@/auth";
 
 type ContentType = "threads" | "nodes" | "all";
-type QueueTab = "pending_review" | "pending_reply" | "pending_reply_to_reply" | "bulk_actions";
+type QueueTab = "pending_review" | "pending_reply" | "pending_reply_to_reply" | "bulk_actions" | "admin_replies";
 
 const SELECTED_CHANNELS_STORAGE_PREFIX = "queue.selectedChannelIds:";
+
+const QUEUE_TABS = [
+  "pending_review",
+  "pending_reply",
+  "pending_reply_to_reply",
+  "bulk_actions",
+  "admin_replies",
+] as const;
+
+const QUEUE_TAB_LABELS: Record<QueueTab, string> = {
+  pending_review: "Pending Review",
+  pending_reply: "Pending Reply",
+  pending_reply_to_reply: "Pending Reply to Reply",
+  bulk_actions: "Bulk Actions",
+  admin_replies: "Admin Replies",
+};
 
 function storageKey(accountId: string) {
   return `${SELECTED_CHANNELS_STORAGE_PREFIX}${accountId}`;
@@ -319,7 +336,7 @@ export function QueueScreen() {
           <Heading as="h1" size="2xl">
             Submission Queue
           </Heading>
-          {activeTab !== "bulk_actions" && (
+          {activeTab !== "bulk_actions" && activeTab !== "admin_replies" && (
             <styled.button
               onClick={() => setIsFiltersOpen(!isFiltersOpen)}
               display="flex"
@@ -346,7 +363,7 @@ export function QueueScreen() {
 
         {/* Tabs */}
         <HStack gap="0" width="full" style={{ borderBottom: "1px solid var(--colors-border-default)" }}>
-          {(["pending_review", "pending_reply", "pending_reply_to_reply", "bulk_actions"] as const).map((tab) => (
+          {QUEUE_TABS.map((tab) => (
             <styled.button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -363,14 +380,14 @@ export function QueueScreen() {
                 color: activeTab === tab ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
               }}
             >
-              {tab === "pending_review" ? "Pending Review" : tab === "pending_reply" ? "Pending Reply" : tab === "pending_reply_to_reply" ? "Pending Reply to Reply" : "Bulk Actions"}
+              {QUEUE_TAB_LABELS[tab]}
             </styled.button>
           ))}
         </HStack>
       </VStack>
 
       {/* Filters Panel */}
-      {isFiltersOpen && (
+      {isFiltersOpen && activeTab !== "admin_replies" && (
         <VStack
           alignItems="start"
           gap="4"
@@ -622,6 +639,8 @@ export function QueueScreen() {
 
       {/* Bulk Actions Tab */}
       {activeTab === "bulk_actions" && <BulkActionsPanel />}
+
+      {activeTab === "admin_replies" && <AdminRepliesPanel />}
 
       {/* Pending Review Tab */}
       {activeTab === "pending_review" && <VStack gap="8" width="full">

@@ -10,10 +10,13 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
 import type {
   AccountGetOKResponse,
   AdminAccessKeyListOKResponse,
+  AdminAccountListOKResponse,
   AdminAnalyticsGetOKResponse,
   AdminAnalyticsGetParams,
   AdminRegenerateTempHandlesOKResponse,
   AdminRegenerateTempHandlesParams,
+  AdminReplyListOKResponse,
+  AdminReplyListParams,
   AdminReplyQueueListOKResponse,
   AdminReplyQueueListParams,
   AdminSettingsGetOKResponse,
@@ -400,6 +403,69 @@ export const adminReplyQueueDismiss = async (
     {
       ...options,
       method: "DELETE",
+    },
+  );
+};
+
+/**
+ * List all accounts considered administrators, for use in admin-facing
+filter controls. Requires ADMINISTRATOR permission.
+
+ */
+export type adminAccountListResponse = {
+  data: AdminAccountListOKResponse;
+  status: number;
+};
+
+export const getAdminAccountListUrl = () => {
+  return `/admin/admins`;
+};
+
+export const adminAccountList = async (
+  options?: RequestInit,
+): Promise<adminAccountListResponse> => {
+  return fetcher<Promise<adminAccountListResponse>>(getAdminAccountListUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * List replies authored by administrators, optionally filtered to a single
+admin and a reply-date range. Used by the Queue screen's "Admin Replies"
+tab to audit which posts a given admin has responded to. The date range
+filters on the reply's own creation time, not the thread's.
+Requires ADMINISTRATOR permission.
+
+ */
+export type adminReplyListResponse = {
+  data: AdminReplyListOKResponse;
+  status: number;
+};
+
+export const getAdminReplyListUrl = (params?: AdminReplyListParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/admin/admin-replies?${normalizedParams.toString()}`
+    : `/admin/admin-replies`;
+};
+
+export const adminReplyList = async (
+  params?: AdminReplyListParams,
+  options?: RequestInit,
+): Promise<adminReplyListResponse> => {
+  return fetcher<Promise<adminReplyListResponse>>(
+    getAdminReplyListUrl(params),
+    {
+      ...options,
+      method: "GET",
     },
   );
 };
