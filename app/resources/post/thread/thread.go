@@ -52,6 +52,11 @@ type Thread struct {
 	// Used so a shared card can name the source channel without a separate
 	// membership-gated lookup.
 	Channel opt.Optional[channel.Channel]
+
+	// SharedToChannelIDs lists the channels this thread has been shared into,
+	// resolved from the shares that reference it. A viewer who can reach any of
+	// these channels can reach the thread, which is what deep-link gating needs.
+	SharedToChannelIDs []xid.ID
 }
 
 type ThreadRef struct {

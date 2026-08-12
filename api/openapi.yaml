@@ -7280,6 +7280,17 @@ components:
             Present when this thread is a share: the id of the referenced
             original thread. Clients fetch the referenced thread's content
             separately (via ThreadGet) to render the shared card.
+        shared_to_channel_ids:
+          type: array
+          items: { $ref: "#/components/schemas/Identifier" }
+          description: |
+            Channels this thread has been shared into, resolved from the shares
+            that reference it. A thread is reachable by members of its home
+            channel or of any channel listed here, so deep-link gating can
+            allow a viewer who only shares a destination channel with it.
+            Empty for a share row itself, since shares cannot be re-shared.
+            Only populated on single-thread reads; list endpoints omit it to
+            avoid a per-row lookup across a page of threads.
         last_reply_at:
           type: string
           format: date-time

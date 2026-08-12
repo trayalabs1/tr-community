@@ -37,5 +37,14 @@ separately (via ThreadGet) to render the shared card.
  */
   reference_post_id?: Identifier;
   reply_status: ReplyStatus;
+  /** Channels this thread has been shared into, resolved from the shares
+that reference it. A thread is reachable by members of its home
+channel or of any channel listed here, so deep-link gating can
+allow a viewer who only shares a destination channel with it.
+Empty for a share row itself, since shares cannot be re-shared.
+Only populated on single-thread reads; list endpoints omit it to
+avoid a per-row lookup across a page of threads.
+ */
+  shared_to_channel_ids?: Identifier[];
   tags: TagReferenceList;
 }
