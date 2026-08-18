@@ -328,6 +328,12 @@ export function QueueScreen() {
     ? pendingReplyThreads.filter((t) => t.channel_id && selectedChannelIds.has(t.channel_id))
     : pendingReplyThreads;
 
+  const tabCounts: Partial<Record<QueueTab, number>> = {
+    pending_review: (threadData?.threads?.length || 0) + (nodeData?.nodes?.length || 0),
+    pending_reply: pendingReplyThreads.length,
+    pending_reply_to_reply: replyQueueEntries.length,
+  };
+
   return (
     <LStack gap="6" p="4">
       {/* Header */}
@@ -363,26 +369,48 @@ export function QueueScreen() {
 
         {/* Tabs */}
         <HStack gap="0" width="full" style={{ borderBottom: "1px solid var(--colors-border-default)" }}>
-          {QUEUE_TABS.map((tab) => (
-            <styled.button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              fontSize="sm"
-              cursor="pointer"
-              px="4"
-              py="2"
-              style={{
-                background: "none",
-                border: "none",
-                borderBottom: activeTab === tab ? "2px solid var(--colors-fg-default)" : "2px solid transparent",
-                marginBottom: "-1px",
-                fontWeight: activeTab === tab ? "600" : "400",
-                color: activeTab === tab ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
-              }}
-            >
-              {QUEUE_TAB_LABELS[tab]}
-            </styled.button>
-          ))}
+          {QUEUE_TABS.map((tab) => {
+            const count = tabCounts[tab];
+            return (
+              <styled.button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                fontSize="sm"
+                cursor="pointer"
+                px="4"
+                py="2"
+                display="flex"
+                alignItems="center"
+                gap="1.5"
+                style={{
+                  background: "none",
+                  border: "none",
+                  borderBottom: activeTab === tab ? "2px solid var(--colors-fg-default)" : "2px solid transparent",
+                  marginBottom: "-1px",
+                  fontWeight: activeTab === tab ? "600" : "400",
+                  color: activeTab === tab ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
+                }}
+              >
+                {QUEUE_TAB_LABELS[tab]}
+                {!!count && (
+                  <styled.span
+                    fontSize="xs"
+                    px="1.5"
+                    style={{
+                      fontWeight: "600",
+                      minWidth: "1.25rem",
+                      textAlign: "center",
+                      borderRadius: "999px",
+                      backgroundColor: activeTab === tab ? "var(--colors-fg-default)" : "var(--colors-bg-muted)",
+                      color: activeTab === tab ? "var(--colors-bg-default)" : "var(--colors-fg-muted)",
+                    }}
+                  >
+                    {count}
+                  </styled.span>
+                )}
+              </styled.button>
+            );
+          })}
         </HStack>
       </VStack>
 
