@@ -194,6 +194,19 @@ type Config struct {
 	MoEngageAuthKey string `envconfig:"MOENGAGE_AUTH_KEY"`
 
 	// -
+	// Queue summary
+	// -
+
+	// The Slack incoming webhook URL to post the daily pending-queue summary to. When unset, the summary job does not run.
+	SlackQueueSummaryWebhookURL string `envconfig:"SLACK_QUEUE_SUMMARY_WEBHOOK_URL"`
+	// The time of day (24-hour `HH:MM`, in the `SLACK_QUEUE_SUMMARY_TIMEZONE` timezone) at which the daily pending-queue summary is posted to Slack.
+	SlackQueueSummaryTime string `default:"23:55" envconfig:"SLACK_QUEUE_SUMMARY_TIME"`
+	// The IANA timezone name used to interpret `SLACK_QUEUE_SUMMARY_TIME`.
+	SlackQueueSummaryTimezone string `default:"Asia/Kolkata" envconfig:"SLACK_QUEUE_SUMMARY_TIMEZONE"`
+	// Development/testing override. When set (e.g. `10s`), the summary is posted on this fixed repeating interval instead of once a day at `SLACK_QUEUE_SUMMARY_TIME`. Leave unset in production.
+	SlackQueueSummaryInterval time.Duration `envconfig:"SLACK_QUEUE_SUMMARY_INTERVAL"`
+
+	// -
 	// Authentication
 	// -
 
