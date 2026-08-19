@@ -113,7 +113,6 @@ type OperationPermissions interface {
 	ChannelThreadUpdate() (bool, *rbac.Permission)
 	ChannelThreadDelete() (bool, *rbac.Permission)
 	ChannelReplyCreate() (bool, *rbac.Permission)
-	ChannelRankingRecalculate() (bool, *rbac.Permission)
 	ChannelScoreUnscored() (bool, *rbac.Permission)
 	CategoryCreate() (bool, *rbac.Permission)
 	CategoryList() (bool, *rbac.Permission)
@@ -409,8 +408,6 @@ func GetOperationPermission(optable OperationPermissions, op string) (bool, *rba
 		return optable.ChannelThreadDelete()
 	case "ChannelReplyCreate":
 		return optable.ChannelReplyCreate()
-	case "ChannelRankingRecalculate":
-		return optable.ChannelRankingRecalculate()
 	case "ChannelScoreUnscored":
 		return optable.ChannelScoreUnscored()
 	case "CategoryCreate":
