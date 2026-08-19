@@ -42,9 +42,10 @@ const (
 )
 
 // isPrescoredCategory reports whether a post category bypasses AI sentiment
-// scoring and instead receives a fixed neutral tag + 95–105 rank score at
-// creation. New prescored categories should be added here and to the
-// rehydrator/ranker/AI-reviewer filters.
+// scoring and instead receives a fixed neutral tag with a deterministic v4
+// rank_score (computed via ScoringResult.CalculateRankScore) at creation. New
+// prescored categories should be added here and to the rehydrator/AI-reviewer
+// filters.
 func isPrescoredCategory(category string) bool {
 	switch category {
 	case "BAH", "feedback":
