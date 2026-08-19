@@ -29,11 +29,13 @@ type PostSentiment struct {
 	SentimentTag *string `json:"sentiment_tag,omitempty"`
 	// Positivity score from 0-100
 	PositivityScore *int `json:"positivity_score,omitempty"`
-	// Primary topic from allowed list
-	PrimaryTopic *string `json:"primary_topic,omitempty"`
+	// Category from the v4 allowed list
+	Category *string `json:"category,omitempty"`
+	// Feed value score from 0-100 (usefulness/discussion potential)
+	FeedValueScore *int `json:"feed_value_score,omitempty"`
 	// Status of sentiment scoring: unscored, scored, failed
 	ScoringStatus postsentiment.ScoringStatus `json:"scoring_status,omitempty"`
-	// Composite ranking score for feed ordering
+	// v4 content_score: positivity + feed_value + quality + category_boost, computed once at classification time
 	RankScore float64 `json:"rank_score,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PostSentimentQuery when eager-loading is set.
@@ -68,9 +70,9 @@ func (*PostSentiment) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case postsentiment.FieldRankScore:
 			values[i] = new(sql.NullFloat64)
-		case postsentiment.FieldPositivityScore:
+		case postsentiment.FieldPositivityScore, postsentiment.FieldFeedValueScore:
 			values[i] = new(sql.NullInt64)
-		case postsentiment.FieldSentimentTag, postsentiment.FieldPrimaryTopic, postsentiment.FieldScoringStatus:
+		case postsentiment.FieldSentimentTag, postsentiment.FieldCategory, postsentiment.FieldScoringStatus:
 			values[i] = new(sql.NullString)
 		case postsentiment.FieldCreatedAt, postsentiment.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -129,12 +131,19 @@ func (_m *PostSentiment) assignValues(columns []string, values []any) error {
 				_m.PositivityScore = new(int)
 				*_m.PositivityScore = int(value.Int64)
 			}
-		case postsentiment.FieldPrimaryTopic:
+		case postsentiment.FieldCategory:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field primary_topic", values[i])
+				return fmt.Errorf("unexpected type %T for field category", values[i])
 			} else if value.Valid {
-				_m.PrimaryTopic = new(string)
-				*_m.PrimaryTopic = value.String
+				_m.Category = new(string)
+				*_m.Category = value.String
+			}
+		case postsentiment.FieldFeedValueScore:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field feed_value_score", values[i])
+			} else if value.Valid {
+				_m.FeedValueScore = new(int)
+				*_m.FeedValueScore = int(value.Int64)
 			}
 		case postsentiment.FieldScoringStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -208,9 +217,14 @@ func (_m *PostSentiment) String() string {
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
-	if v := _m.PrimaryTopic; v != nil {
-		builder.WriteString("primary_topic=")
+	if v := _m.Category; v != nil {
+		builder.WriteString("category=")
 		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.FeedValueScore; v != nil {
+		builder.WriteString("feed_value_score=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
 	builder.WriteString("scoring_status=")
