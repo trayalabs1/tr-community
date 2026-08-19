@@ -218,7 +218,7 @@ func mustSetSentiment(t *testing.T, db *ent.Client, ctx context.Context, postID 
 	if err == nil && existing != nil {
 		_, err = db.PostSentiment.UpdateOneID(existing.ID).
 			SetSentimentTag(tag).
-			SetPrimaryTopic(topic).
+			SetCategory(topic).
 			SetScoringStatus(ent_post_sentiment.ScoringStatusScored).
 			SetUpdatedAt(time.Now()).
 			Save(ctx)
@@ -229,7 +229,7 @@ func mustSetSentiment(t *testing.T, db *ent.Client, ctx context.Context, postID 
 	_, err = db.PostSentiment.Create().
 		SetPostID(pid).
 		SetSentimentTag(tag).
-		SetPrimaryTopic(topic).
+		SetCategory(topic).
 		SetScoringStatus(ent_post_sentiment.ScoringStatusScored).
 		Save(ctx)
 	require.NoError(t, err)

@@ -34,12 +34,12 @@ type Thread struct {
 	Pinned      int
 	LastReplyAt opt.Optional[time.Time]
 
-	ReadStatus  opt.Optional[post.ReadStatus]
-	ReplyStatus post.ReplyStatus
-	Replies     pagination.Result[*reply.Reply]
+	ReadStatus   opt.Optional[post.ReadStatus]
+	ReplyStatus  post.ReplyStatus
+	Replies      pagination.Result[*reply.Reply]
 	PostCategory opt.Optional[category.Category]
-	Tags        tag_ref.Tags
-	Related     datagraph.ItemList
+	Tags         tag_ref.Tags
+	Related      datagraph.ItemList
 
 	SentimentTag opt.Optional[string]
 	Category     opt.Optional[string]
