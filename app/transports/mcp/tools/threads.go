@@ -435,7 +435,7 @@ func mapThread(t *thread.Thread) map[string]any {
 		"content":    t.Content.Plaintext(),
 		"visibility": t.Visibility.String(),
 		"author":     t.Author.Handle,
-		"category":   t.Category.OrZero().Name,
+		"category":   t.PostCategory.OrZero().Name,
 		"tags":       dt.Map(t.Tags, func(tag *tag_ref.Tag) string { return tag.Name.String() }),
 	}
 
@@ -452,7 +452,7 @@ func mapThreadSummary(t *thread.Thread) map[string]any {
 		"title":    t.Title,
 		"excerpt":  t.Short,
 		"author":   t.Author.Handle,
-		"category": t.Category.OrZero().Name,
+		"category": t.PostCategory.OrZero().Name,
 	}
 
 	return result

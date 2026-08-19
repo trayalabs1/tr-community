@@ -60,7 +60,7 @@ func (s *service) Personalized(ctx context.Context, channelID xid.ID) (*Personal
 		threads[i] = entry.Thread
 		groups[i] = PersonalizedSimilarGroup{ForThreadID: entry.Thread.ID, Threads: []*thread.Thread{}}
 
-		if entry.SentimentTag == "" || entry.PrimaryTopic == "" {
+		if entry.SentimentTag == "" || entry.Category == "" {
 			continue
 		}
 
@@ -71,7 +71,7 @@ func (s *service) Personalized(ctx context.Context, channelID xid.ID) (*Personal
 				entry.Thread.ID,
 				accountID,
 				entry.SentimentTag,
-				entry.PrimaryTopic,
+				entry.Category,
 				personalizedSimilarLimit,
 				accountIDOpt,
 			)
