@@ -236,7 +236,8 @@ func (c Category) Boost(sentiment SentimentTag) float64 {
 type ScoringResult struct {
 	SentimentTag    SentimentTag `json:"sentiment_tag" jsonschema:"enum=positive,enum=neutral,enum=negative,description=The overall sentiment of the post"`
 	PositivityScore int          `json:"positivity_score" jsonschema:"minimum=0,maximum=100,description=A score from 0-100 indicating how positive the content is"`
-	PrimaryTopic    Category     `json:"primary_topic" jsonschema:"enum=RESULTS & PROGRESS,enum=TIPS & EXPERIENCES,enum=HAIRFALL CONCERNS,enum=HOW TO USE,enum=DANDRUFF & SCALP,enum=HAIR REGROWTH,enum=PRODUCTS & TREATMENT,enum=SIDE EFFECTS,enum=DIET & LIFESTYLE,enum=CHALLENGES,enum=NA,description=The category of the post"`
+	FeedValueScore  int          `json:"feed_value_score" jsonschema:"minimum=0,maximum=100,description=A score from 0-100 indicating how valuable the post is to the community"`
+	Category        Category     `json:"category" jsonschema:"enum=RESULTS & PROGRESS,enum=TIPS & EXPERIENCES,enum=HAIRFALL CONCERNS,enum=HOW TO USE,enum=DANDRUFF & SCALP,enum=HAIR REGROWTH,enum=PRODUCTS & TREATMENT,enum=SIDE EFFECTS,enum=DIET & LIFESTYLE,enum=CHALLENGES,enum=NA,description=The primary category of the post"`
 }
 
 func (r *ScoringResult) Validate() {
@@ -246,10 +247,46 @@ func (r *ScoringResult) Validate() {
 	if r.PositivityScore > 100 {
 		r.PositivityScore = 100
 	}
+	if r.FeedValueScore < 0 {
+		r.FeedValueScore = 0
+	}
+	if r.FeedValueScore > 100 {
+		r.FeedValueScore = 100
+	}
 }
 
-func (r *ScoringResult) CalculateRankScore() float64 {
-	return float64(r.PositivityScore) + r.PrimaryTopic.Boost(r.SentimentTag)
+const (
+	weightPositivity = 1.0
+	weightFeedValue  = 1.5
+	weightQuality    = 1.0
+	weightCategory   = 1.0
+)
+
+func qualityScore(bodyLength int) float64 {
+	switch {
+	case bodyLength <= 100:
+		return 25
+	case bodyLength <= 300:
+		return 50
+	case bodyLength <= 500:
+		return 75
+	default:
+		return 100
+	}
+}
+
+func SentimentMultiplier(tag SentimentTag) float64 {
+	if tag == SentimentNegative {
+		return 0.1
+	}
+	return 1.0
+}
+
+func (r *ScoringResult) CalculateRankScore(bodyLength int) float64 {
+	return weightPositivity*float64(r.PositivityScore) +
+		weightFeedValue*float64(r.FeedValueScore) +
+		weightQuality*qualityScore(bodyLength) +
+		weightCategory*r.Category.Boost(r.SentimentTag)
 }
 
 type Scorer struct {
@@ -311,8 +348,9 @@ func (s *Scorer) Score(ctx context.Context, input ScoreInput) (*ScoringResult, e
 		slog.String("title", input.Title),
 		slog.String("sentiment_tag", string(result.SentimentTag)),
 		slog.Int("positivity_score", result.PositivityScore),
-		slog.String("primary_topic", string(result.PrimaryTopic)),
-		slog.Float64("rank_score", result.CalculateRankScore()),
+		slog.Int("feed_value_score", result.FeedValueScore),
+		slog.String("category", string(result.Category)),
+		slog.Float64("rank_score", result.CalculateRankScore(len(input.Body))),
 	)
 
 	return result, nil
