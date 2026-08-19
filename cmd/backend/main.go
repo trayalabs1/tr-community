@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"time"
+	_ "time/tzdata" // embed the IANA timezone database, since the runtime image has no OS tzdata installed
 
 	"github.com/joho/godotenv"
 	_ "github.com/joho/godotenv/autoload"
