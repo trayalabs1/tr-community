@@ -30,7 +30,6 @@ import type {
   ChannelScoreUnscoredParams,
   ChannelThreadGetParams,
   ChannelThreadListParams,
-  RankingRecalculateOKResponse,
   ReplyCreateBody,
   ReplyCreateOKResponse,
   ScoreUnscoredOKResponse,
@@ -804,35 +803,6 @@ export const channelReplyCreate = async (
       method: "POST",
       headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(replyCreateBody),
-    },
-  );
-};
-
-/**
- * Triggers a synchronous recalculation of rank_score for all posts in
-the channel that have been scored. Returns the number of posts updated
-and the duration of the operation.
-
- * @summary Recalculate rank scores for all scored posts in a channel.
- */
-export type channelRankingRecalculateResponse = {
-  data: RankingRecalculateOKResponse;
-  status: number;
-};
-
-export const getChannelRankingRecalculateUrl = (channelID: string) => {
-  return `/channels/${channelID}/ranking/recalculate`;
-};
-
-export const channelRankingRecalculate = async (
-  channelID: string,
-  options?: RequestInit,
-): Promise<channelRankingRecalculateResponse> => {
-  return fetcher<Promise<channelRankingRecalculateResponse>>(
-    getChannelRankingRecalculateUrl(channelID),
-    {
-      ...options,
-      method: "POST",
     },
   );
 };

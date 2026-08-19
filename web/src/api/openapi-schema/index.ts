@@ -518,8 +518,6 @@ export * from "./publicProfileList";
 export * from "./publicProfileListResult";
 export * from "./publicProfileListResultAllOf";
 export * from "./quickReplyChips";
-export * from "./rankingRecalculateOKResponse";
-export * from "./rankingRecalculateResult";
 export * from "./react";
 export * from "./reactEmoji";
 export * from "./reactInitialProps";
