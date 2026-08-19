@@ -60,14 +60,15 @@ func (c *sentimentConsumer) scorePost(ctx context.Context, postID post.ID) error
 		return fault.Wrap(err, fctx.With(ctx))
 	}
 
-	rankScore := result.CalculateRankScore()
+	rankScore := result.CalculateRankScore(len(p.Body))
 
 	err = c.db.PostSentiment.
 		Create().
 		SetPostID(xid.ID(postID)).
 		SetSentimentTag(string(result.SentimentTag)).
 		SetPositivityScore(result.PositivityScore).
-		SetPrimaryTopic(string(result.PrimaryTopic)).
+		SetFeedValueScore(result.FeedValueScore).
+		SetCategory(string(result.Category)).
 		SetScoringStatus(ent_post_sentiment.ScoringStatusScored).
 		SetRankScore(rankScore).
 		OnConflictColumns(ent_post_sentiment.FieldPostID).
@@ -76,6 +77,15 @@ func (c *sentimentConsumer) scorePost(ctx context.Context, postID post.ID) error
 	if err != nil {
 		return fault.Wrap(err, fctx.With(ctx))
 	}
+
+	c.logger.Info("sentiment scoring persisted",
+		slog.String("post_id", postID.String()),
+		slog.String("sentiment_tag", string(result.SentimentTag)),
+		slog.Int("positivity_score", result.PositivityScore),
+		slog.Int("feed_value_score", result.FeedValueScore),
+		slog.String("category", string(result.Category)),
+		slog.Float64("rank_score", rankScore),
+	)
 
 	return nil
 }
