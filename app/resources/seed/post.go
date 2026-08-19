@@ -67,7 +67,7 @@ The code aims to be simple and accessible for either experienced software engine
 Storyden is still in development so please give the repository a watch if you're interested!
 `)),
 		},
-		Title:    "Welcome to Storyden!",
+		Title:        "Welcome to Storyden!",
 		PostCategory: opt.New(Category_01_General),
 		Replies: pagination.Result[*reply.Reply]{
 			Items: []*reply.Reply{
@@ -177,7 +177,7 @@ Storyden is still in development so please give the repository a watch if you're
 	If I've missed anything, post in this thread and I'll add it here 😃
 	`)),
 		},
-		Title:    "How to contribute",
+		Title:        "How to contribute",
 		PostCategory: opt.New(Category_01_General),
 		Replies: pagination.Result[*reply.Reply]{
 			Items: []*reply.Reply{
@@ -209,7 +209,7 @@ Storyden is still in development so please give the repository a watch if you're
 	
 	Try to break storyden with large amounts of text, hacky strings, etc! GO!`)),
 		},
-		Title:    "The lorem ipsum thread",
+		Title:        "The lorem ipsum thread",
 		PostCategory: opt.New(Category_01_General),
 		Replies: pagination.Result[*reply.Reply]{
 			Items: []*reply.Reply{
