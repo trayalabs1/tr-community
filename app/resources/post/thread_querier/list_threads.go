@@ -81,13 +81,13 @@ func (d *Querier) List(
 	}
 
 	if queryOptions.useSentimentRanking {
-		// engagement weights: likes ×2, replies ×0.5 — see docs/superpowers/specs/2026-08-19-feed-ranking-v4-design.md
+		// engagement_bonus (likes ×2, replies ×0.5) is intentionally omitted here —
+		// the per-row correlated subqueries were measured to add significant
+		// per-request latency at scale (see feed-ranking-v4 benchmark). Engagement
+		// will be reintroduced via a periodic job writing into a stored column
+		// rather than computed live in this query.
 		finalScoreExpr := `(
 			COALESCE(%[1]s, 0)
-			+ (
-				COALESCE((SELECT COUNT(*) * 2 FROM like_posts lp WHERE lp.post_id = %[2]s), 0)
-				+ COALESCE((SELECT COUNT(*) * 0.5 FROM posts r WHERE r.root_post_id = %[2]s AND r.deleted_at IS NULL), 0)
-			)
 		)
 		* EXP(-EXTRACT(EPOCH FROM (NOW() - %[3]s)) / 86400.0)
 		* (CASE WHEN EXISTS (
