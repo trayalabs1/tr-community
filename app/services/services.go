@@ -46,6 +46,7 @@ import (
 	"github.com/Southclaws/storyden/app/services/search/search_indexer"
 	"github.com/Southclaws/storyden/app/services/semdex/semdexer"
 	"github.com/Southclaws/storyden/app/services/sentiment"
+	"github.com/Southclaws/storyden/app/services/sentiment/ranker_job"
 	"github.com/Southclaws/storyden/app/services/system/instance_info"
 	"github.com/Southclaws/storyden/app/services/tag/autotagger"
 	"github.com/Southclaws/storyden/app/services/thread"
@@ -84,6 +85,7 @@ func Build() fx.Option {
 		notify_job.Build(),
 		mention_job.Build(),
 		sentiment.Build(),
+		ranker_job.Build(),
 		beacon_listener.Build(),
 		generative.Build(),
 		semdexer.Build(),

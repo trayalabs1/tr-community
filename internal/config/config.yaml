@@ -295,6 +295,30 @@
       description: |-
         Development/testing override. When set (e.g. `10s`), the summary is posted on this fixed repeating interval instead of once a day at `SLACK_QUEUE_SUMMARY_TIME`. Leave unset in production.
 
+- section: Rank score engagement job
+  description: |-
+    Daily job that folds likes/replies from the last 24 hours into each post's stored rank_score, since feed ranking no longer computes engagement live at read time. Runs unconditionally; only the schedule is configurable.
+  fields:
+    - env: "RANKER_JOB_TIME"
+      name: RankerJobTime
+      type: string
+      default: "06:30"
+      description: |-
+        The time of day (24-hour `HH:MM`, in the `RANKER_JOB_TIMEZONE` timezone) at which the daily rank_score engagement job runs.
+
+    - env: "RANKER_JOB_TIMEZONE"
+      name: RankerJobTimezone
+      type: string
+      default: "Asia/Kolkata"
+      description: |-
+        The IANA timezone name used to interpret `RANKER_JOB_TIME`.
+
+    - env: "RANKER_JOB_INTERVAL"
+      name: RankerJobInterval
+      type: time.Duration
+      description: |-
+        Development/testing override. When set (e.g. `10s`), the job runs on this fixed repeating interval instead of once a day at `RANKER_JOB_TIME`. Leave unset in production.
+
 - section: Authentication
   description: |-
     Authentication providers configuration. These are all optional, you can choose to enable any combination of them to allow members of your community to sign up and sign in using a third party provider.
