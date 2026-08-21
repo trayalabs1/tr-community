@@ -1040,7 +1040,7 @@ func init() {
 	// postsentiment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	postsentiment.UpdateDefaultUpdatedAt = postsentimentDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// postsentimentDescRankScore is the schema descriptor for rank_score field.
-	postsentimentDescRankScore := postsentimentFields[5].Descriptor()
+	postsentimentDescRankScore := postsentimentFields[6].Descriptor()
 	// postsentiment.DefaultRankScore holds the default value on creation for the rank_score field.
 	postsentiment.DefaultRankScore = postsentimentDescRankScore.Default.(float64)
 	// postsentimentDescID is the schema descriptor for id field.

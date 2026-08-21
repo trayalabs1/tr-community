@@ -32,10 +32,15 @@ func (PostSentiment) Fields() []ent.Field {
 			Nillable().
 			Comment("Positivity score from 0-100"),
 
-		field.String("primary_topic").
+		field.String("category").
 			Optional().
 			Nillable().
-			Comment("Primary topic from allowed list"),
+			Comment("Category from the v4 allowed list"),
+
+		field.Int("feed_value_score").
+			Optional().
+			Nillable().
+			Comment("Feed value score from 0-100 (usefulness/discussion potential)"),
 
 		field.Enum("scoring_status").
 			Values("unscored", "scored", "failed").
@@ -44,7 +49,7 @@ func (PostSentiment) Fields() []ent.Field {
 
 		field.Float("rank_score").
 			Default(0).
-			Comment("Composite ranking score for feed ordering"),
+			Comment("v4 content_score: positivity + feed_value + quality + category_boost, computed once at classification time"),
 	}
 }
 

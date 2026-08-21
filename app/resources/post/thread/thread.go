@@ -34,15 +34,15 @@ type Thread struct {
 	Pinned      int
 	LastReplyAt opt.Optional[time.Time]
 
-	ReadStatus  opt.Optional[post.ReadStatus]
-	ReplyStatus post.ReplyStatus
-	Replies     pagination.Result[*reply.Reply]
-	Category    opt.Optional[category.Category]
-	Tags        tag_ref.Tags
-	Related     datagraph.ItemList
+	ReadStatus   opt.Optional[post.ReadStatus]
+	ReplyStatus  post.ReplyStatus
+	Replies      pagination.Result[*reply.Reply]
+	PostCategory opt.Optional[category.Category]
+	Tags         tag_ref.Tags
+	Related      datagraph.ItemList
 
 	SentimentTag opt.Optional[string]
-	PrimaryTopic opt.Optional[string]
+	Category     opt.Optional[string]
 
 	// ReferencePostID, when set, marks this thread as a share featuring the
 	// referenced thread. The client fetches the referenced thread separately.
@@ -78,7 +78,7 @@ func (t *Thread) GetCreated() time.Time   { return t.CreatedAt }
 func (t *Thread) GetUpdated() time.Time   { return t.UpdatedAt }
 func (t *Thread) GetAuthor() xid.ID       { return xid.ID(t.Author.ID) }
 func (t *Thread) GetCategory() xid.ID {
-	if cat, ok := t.Category.Get(); ok {
+	if cat, ok := t.PostCategory.Get(); ok {
 		return xid.ID(cat.ID)
 	}
 	return xid.NilID()
@@ -98,8 +98,8 @@ func mapSentiment(m *ent.Post) (opt.Optional[string], opt.Optional[string]) {
 		return opt.NewEmpty[string](), opt.NewEmpty[string]()
 	}
 	tag := opt.NewPtr(s.SentimentTag)
-	topic := opt.NewPtr(s.PrimaryTopic)
-	return tag, topic
+	sentimentCategory := opt.NewPtr(s.Category)
+	return tag, sentimentCategory
 }
 
 func Map(m *ent.Post) (*Thread, error) {
@@ -130,7 +130,7 @@ func Map(m *ent.Post) (*Thread, error) {
 		return post.ID(*m.RootPostID)
 	}()
 
-	sentimentTag, primaryTopic := mapSentiment(m)
+	sentimentTag, sentimentCategory := mapSentiment(m)
 
 	return &Thread{
 		Post: post.Post{
@@ -156,10 +156,10 @@ func Map(m *ent.Post) (*Thread, error) {
 		Pinned:      m.PinnedRank,
 		LastReplyAt: opt.New(m.LastReplyAt),
 
-		Category:        category,
+		PostCategory:    category,
 		Tags:            tags,
 		SentimentTag:    sentimentTag,
-		PrimaryTopic:    primaryTopic,
+		Category:        sentimentCategory,
 		ReferencePostID: mapReferencePostID(m),
 		Channel:         mapChannel(m),
 	}, nil
@@ -228,7 +228,7 @@ func Mapper(
 			return post.ID(*m.RootPostID)
 		}()
 
-		sentimentTag, primaryTopic := mapSentiment(m)
+		sentimentTag, sentimentCategory := mapSentiment(m)
 
 		return &Thread{
 			Post: post.Post{
@@ -259,9 +259,9 @@ func Mapper(
 
 			ReadStatus:      rr.Status(m.ID),
 			ReplyStatus:     rs.Status(m.ID),
-			Category:        category,
+			PostCategory:    category,
 			SentimentTag:    sentimentTag,
-			PrimaryTopic:    primaryTopic,
+			Category:        sentimentCategory,
 			ReferencePostID: mapReferencePostID(m),
 			Channel:         mapChannel(m),
 		}, nil
@@ -327,7 +327,7 @@ func ItemRef(t *ent.Post) (datagraph.Item, error) {
 
 		Title: t.Title,
 		Slug:  t.Slug,
-		Category: opt.New(category.Category{
+		PostCategory: opt.New(category.Category{
 			ID: category.CategoryID(t.CategoryID),
 		}),
 		Short:           t.Short,

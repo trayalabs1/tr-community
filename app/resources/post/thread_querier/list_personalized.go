@@ -28,7 +28,7 @@ import (
 type SelfRecentThread struct {
 	Thread       *thread.Thread
 	SentimentTag string
-	PrimaryTopic string
+	Category     string
 }
 
 func (d *Querier) ListSelfRecent(
@@ -76,8 +76,8 @@ func (d *Querier) ListSelfRecent(
 			if p.Edges.Sentiment.SentimentTag != nil {
 				entry.SentimentTag = *p.Edges.Sentiment.SentimentTag
 			}
-			if p.Edges.Sentiment.PrimaryTopic != nil {
-				entry.PrimaryTopic = *p.Edges.Sentiment.PrimaryTopic
+			if p.Edges.Sentiment.Category != nil {
+				entry.Category = *p.Edges.Sentiment.Category
 			}
 		}
 		out = append(out, entry)
@@ -91,11 +91,11 @@ func (d *Querier) ListSimilarFor(
 	excludeThreadID post.ID,
 	excludeAccountID account.AccountID,
 	sentimentTag string,
-	primaryTopic string,
+	category string,
 	limit int,
 	requesterAccountID opt.Optional[account.AccountID],
 ) ([]*thread.Thread, error) {
-	if sentimentTag == "" || primaryTopic == "" || sentimentTag == "negative" {
+	if sentimentTag == "" || category == "" || sentimentTag == "negative" {
 		return []*thread.Thread{}, nil
 	}
 	if limit <= 0 {
@@ -112,7 +112,7 @@ func (d *Querier) ListSimilarFor(
 			ent_post.VisibilityEQ(ent_post.VisibilityPublished),
 			ent_post.HasSentimentWith(
 				ent_post_sentiment.SentimentTagEQ(sentimentTag),
-				ent_post_sentiment.PrimaryTopicEQ(primaryTopic),
+				ent_post_sentiment.CategoryEQ(category),
 			),
 		).
 		WithCategory().

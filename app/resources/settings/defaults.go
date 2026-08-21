@@ -34,5 +34,16 @@ var DefaultSettings = Settings{
 			ThreadBodyLengthMax: opt.New(60000),
 			ReplyBodyLengthMax:  opt.New(10000),
 		}),
+		FeedRanking: opt.New(FeedRankingServiceSettings{
+			WPositivity:            opt.New(1.0),
+			WFeedValue:             opt.New(1.5),
+			WQuality:               opt.New(1.0),
+			WCategory:              opt.New(1.0),
+			FreshnessHalflifeHours: opt.New(24.0),
+			FormatMultiplier:       opt.New(2.5),
+			SentimentMultiplier:    opt.New(0.1),
+			LikeWeight:             opt.New(2.0),
+			ReplyWeight:            opt.New(0.5),
+		}),
 	}),
 }
