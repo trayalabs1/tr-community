@@ -5302,6 +5302,8 @@ components:
       properties:
         moderation:
           $ref: "#/components/schemas/ModerationServiceSettings"
+        feed_ranking:
+          $ref: "#/components/schemas/FeedRankingServiceSettings"
 
     ModerationServiceSettings:
       type: object
@@ -5329,6 +5331,71 @@ components:
             any posts that contain them.
           items:
             type: string
+
+    FeedRankingServiceSettings:
+      type: object
+      description: |
+        Weights used by the v4 feed ranking formula. w_positivity, w_feed_value,
+        w_quality, and w_category feed into a post's rank_score at LLM
+        classification time and only affect newly-scored posts.
+        freshness_halflife_hours, format_multiplier, and sentiment_multiplier
+        are applied live at feed-read time. like_weight and reply_weight are
+        applied by the daily job that folds engagement into rank_score.
+      properties:
+        w_positivity:
+          type: number
+          format: double
+          description: |
+            Weight applied to a post's LLM-derived positivity_score (0-100)
+            when computing rank_score.
+        w_feed_value:
+          type: number
+          format: double
+          description: |
+            Weight applied to a post's LLM-derived feed_value_score (0-100)
+            when computing rank_score.
+        w_quality:
+          type: number
+          format: double
+          description: |
+            Weight applied to the body-length-derived quality_score (25-100)
+            when computing rank_score.
+        w_category:
+          type: number
+          format: double
+          description: |
+            Weight applied to the category boost (only nonzero for positive
+            sentiment) when computing rank_score.
+        freshness_halflife_hours:
+          type: number
+          format: double
+          description: |
+            The number of hours over which a post's freshness multiplier
+            decays. Applied live at feed-read time.
+        format_multiplier:
+          type: number
+          format: double
+          description: |
+            Multiplier applied at feed-read time to posts that have at least
+            one image asset attached.
+        sentiment_multiplier:
+          type: number
+          format: double
+          description: |
+            Multiplier applied at feed-read time to posts with negative
+            sentiment.
+        like_weight:
+          type: number
+          format: double
+          description: |
+            Weight applied per like by the daily engagement job that folds
+            likes/replies from the last 24 hours into rank_score.
+        reply_weight:
+          type: number
+          format: double
+          description: |
+            Weight applied per reply by the daily engagement job that folds
+            likes/replies from the last 24 hours into rank_score.
 
     AuditEvent:
       type: object

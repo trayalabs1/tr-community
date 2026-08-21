@@ -85,16 +85,51 @@ func (a *Admin) AdminSettingsUpdate(ctx context.Context, request openapi.AdminSe
 	}
 
 	var services opt.Optional[settings.ServiceSettings]
-	if request.Body.Services != nil && request.Body.Services.Moderation != nil {
-		moderation := request.Body.Services.Moderation
-		services = opt.New(settings.ServiceSettings{
-			Moderation: opt.New(settings.ModerationServiceSettings{
+	if request.Body.Services != nil {
+		var svc settings.ServiceSettings
+
+		if moderation := request.Body.Services.Moderation; moderation != nil {
+			svc.Moderation = opt.New(settings.ModerationServiceSettings{
 				ThreadBodyLengthMax: opt.NewPtr(moderation.ThreadBodyLengthMax),
 				ReplyBodyLengthMax:  opt.NewPtr(moderation.ReplyBodyLengthMax),
 				WordBlockList:       opt.NewPtr(moderation.WordBlockList),
 				WordReportList:      opt.NewPtr(moderation.WordReportList),
-			}),
-		})
+			})
+		}
+
+		if feedRanking := request.Body.Services.FeedRanking; feedRanking != nil {
+			// mergo.Merge (used by Settings.Merge) replaces nested
+			// opt.Optional[struct] values wholesale rather than merging their
+			// fields, so any field omitted here would otherwise be reset to
+			// empty. Merge against the current stored value field-by-field
+			// first, so a partial update only changes the fields it sent.
+			current, err := a.settingsManager.Get(ctx)
+			if err != nil {
+				return nil, fault.Wrap(err, fctx.With(ctx))
+			}
+			existing := current.Services.OrZero().FeedRanking.OrZero()
+
+			ptrOrExisting := func(ptr *float64, existing opt.Optional[float64]) opt.Optional[float64] {
+				if ptr != nil {
+					return opt.New(*ptr)
+				}
+				return existing
+			}
+
+			svc.FeedRanking = opt.New(settings.FeedRankingServiceSettings{
+				WPositivity:            ptrOrExisting(feedRanking.WPositivity, existing.WPositivity),
+				WFeedValue:             ptrOrExisting(feedRanking.WFeedValue, existing.WFeedValue),
+				WQuality:               ptrOrExisting(feedRanking.WQuality, existing.WQuality),
+				WCategory:              ptrOrExisting(feedRanking.WCategory, existing.WCategory),
+				FreshnessHalflifeHours: ptrOrExisting(feedRanking.FreshnessHalflifeHours, existing.FreshnessHalflifeHours),
+				FormatMultiplier:       ptrOrExisting(feedRanking.FormatMultiplier, existing.FormatMultiplier),
+				SentimentMultiplier:    ptrOrExisting(feedRanking.SentimentMultiplier, existing.SentimentMultiplier),
+				LikeWeight:             ptrOrExisting(feedRanking.LikeWeight, existing.LikeWeight),
+				ReplyWeight:            ptrOrExisting(feedRanking.ReplyWeight, existing.ReplyWeight),
+			})
+		}
+
+		services = opt.New(svc)
 	}
 
 	settings, err := a.settingsManager.Set(ctx, settings.Settings{
@@ -366,7 +401,8 @@ func serialiseSettings(in *settings.Settings) openapi.AdminSettingsProps {
 
 func serialiseServiceSettings(in settings.ServiceSettings) openapi.AdminSettingsServiceProps {
 	return openapi.AdminSettingsServiceProps{
-		Moderation: opt.Map(in.Moderation, serialiseModerationSettings).Ptr(),
+		Moderation:  opt.Map(in.Moderation, serialiseModerationSettings).Ptr(),
+		FeedRanking: opt.Map(in.FeedRanking, serialiseFeedRankingSettings).Ptr(),
 	}
 }
 
@@ -376,6 +412,20 @@ func serialiseModerationSettings(in settings.ModerationServiceSettings) openapi.
 		ReplyBodyLengthMax:  in.ReplyBodyLengthMax.Ptr(),
 		WordBlockList:       in.WordBlockList.Ptr(),
 		WordReportList:      in.WordReportList.Ptr(),
+	}
+}
+
+func serialiseFeedRankingSettings(in settings.FeedRankingServiceSettings) openapi.FeedRankingServiceSettings {
+	return openapi.FeedRankingServiceSettings{
+		WPositivity:            in.WPositivity.Ptr(),
+		WFeedValue:             in.WFeedValue.Ptr(),
+		WQuality:               in.WQuality.Ptr(),
+		WCategory:              in.WCategory.Ptr(),
+		FreshnessHalflifeHours: in.FreshnessHalflifeHours.Ptr(),
+		FormatMultiplier:       in.FormatMultiplier.Ptr(),
+		SentimentMultiplier:    in.SentimentMultiplier.Ptr(),
+		LikeWeight:             in.LikeWeight.Ptr(),
+		ReplyWeight:            in.ReplyWeight.Ptr(),
 	}
 }
 

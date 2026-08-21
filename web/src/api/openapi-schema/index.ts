@@ -288,6 +288,7 @@ export * from "./eventSlug";
 export * from "./eventTimeRange";
 export * from "./eventUpdateBody";
 export * from "./eventUpdateOKResponse";
+export * from "./feedRankingServiceSettings";
 export * from "./forbiddenResponse";
 export * from "./getInfoOKResponse";
 export * from "./getSpec200";

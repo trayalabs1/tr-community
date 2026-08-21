@@ -60,7 +60,7 @@ func (c *sentimentConsumer) scorePost(ctx context.Context, postID post.ID) error
 		return fault.Wrap(err, fctx.With(ctx))
 	}
 
-	rankScore := result.CalculateRankScore(len(p.Body))
+	rankScore := result.CalculateRankScore(len(p.Body), c.scorer.Weights(ctx))
 
 	err = c.db.PostSentiment.
 		Create().

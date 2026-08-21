@@ -30,8 +30,8 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/link"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
-	ent_react "github.com/Southclaws/storyden/internal/ent/react"
 	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
+	ent_react "github.com/Southclaws/storyden/internal/ent/react"
 	ent_tag "github.com/Southclaws/storyden/internal/ent/tag"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/kv"
 )
@@ -92,21 +92,34 @@ func (d *Querier) List(
 		// engagement_bonus (likes ×2, replies ×0.5) is intentionally omitted here —
 		// the per-row correlated subqueries were measured to add significant
 		// per-request latency at scale (see feed-ranking-v4 benchmark). Engagement
-		// will be reintroduced via a periodic job writing into a stored column
-		// rather than computed live in this query.
-		finalScoreExpr := `(
-			COALESCE(%[1]s, 0)
+		// is instead folded into the stored rank_score by a periodic job
+		// (app/services/sentiment/ranker_job).
+		weights, err := d.settings.Get(ctx)
+		if err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
+		}
+		feedRanking := weights.Services.OrZero().FeedRanking.OrZero()
+
+		freshnessHalflifeSeconds := feedRanking.FreshnessHalflifeHours.Or(24.0) * 3600.0
+		formatMultiplier := feedRanking.FormatMultiplier.Or(2.5)
+		sentimentMultiplier := feedRanking.SentimentMultiplier.Or(0.1)
+
+		// Weight values below are admin-controlled float64s from settings, never
+		// user input, so interpolating them as numeric literals (matching the
+		// rest of this expression's existing style) carries no injection risk.
+		finalScoreExpr := fmt.Sprintf(`(
+			COALESCE(%%[1]s, 0)
 		)
-		* EXP(-EXTRACT(EPOCH FROM (NOW() - %[3]s)) / 86400.0)
+		* EXP(-EXTRACT(EPOCH FROM (NOW() - %%[3]s)) / %g)
 		* (CASE WHEN EXISTS (
 			SELECT 1 FROM post_assets pa
 			JOIN assets a ON a.id = pa.asset_id
-			WHERE pa.post_id = %[2]s AND a.mime_type LIKE 'image/%%'
-		) THEN 2.5 ELSE 1.0 END)
-		* (CASE %[4]s
-			WHEN 'negative' THEN 0.1
+			WHERE pa.post_id = %%[2]s AND a.mime_type LIKE 'image/%%%%'
+		) THEN %g ELSE 1.0 END)
+		* (CASE %%[4]s
+			WHEN 'negative' THEN %g
 			ELSE 1.0
-		END)`
+		END)`, freshnessHalflifeSeconds, formatMultiplier, sentimentMultiplier)
 
 		if queryOptions.ignorePinned {
 			query.Modify(func(s *sql.Selector) {

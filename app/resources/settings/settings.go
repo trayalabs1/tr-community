@@ -57,7 +57,8 @@ type Settings struct {
 }
 
 type ServiceSettings struct {
-	Moderation opt.Optional[ModerationServiceSettings]
+	Moderation  opt.Optional[ModerationServiceSettings]
+	FeedRanking opt.Optional[FeedRankingServiceSettings]
 }
 
 type ModerationServiceSettings struct {
@@ -65,6 +66,26 @@ type ModerationServiceSettings struct {
 	ReplyBodyLengthMax  opt.Optional[int]
 	WordBlockList       opt.Optional[[]string]
 	WordReportList      opt.Optional[[]string]
+}
+
+// FeedRankingServiceSettings holds the weights used by the v4 feed ranking
+// formula. WPositivity/WFeedValue/WQuality/WCategory feed into rank_score at
+// LLM classification time and only affect newly-scored posts.
+// FreshnessHalflifeHours/FormatMultiplier/SentimentMultiplier are applied
+// live at feed-read time. LikeWeight/ReplyWeight are applied by the daily
+// ranker_job that folds engagement into rank_score.
+type FeedRankingServiceSettings struct {
+	WPositivity opt.Optional[float64]
+	WFeedValue  opt.Optional[float64]
+	WQuality    opt.Optional[float64]
+	WCategory   opt.Optional[float64]
+
+	FreshnessHalflifeHours opt.Optional[float64]
+	FormatMultiplier       opt.Optional[float64]
+	SentimentMultiplier    opt.Optional[float64]
+
+	LikeWeight  opt.Optional[float64]
+	ReplyWeight opt.Optional[float64]
 }
 
 // Merge will combine "updated" into "s" while overwriting any new values.

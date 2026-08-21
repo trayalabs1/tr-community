@@ -9,6 +9,7 @@ import (
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
 
+	"github.com/Southclaws/storyden/app/resources/settings"
 	"github.com/Southclaws/storyden/internal/infrastructure/ai"
 )
 
@@ -256,11 +257,47 @@ func (r *ScoringResult) Validate() {
 }
 
 const (
-	weightPositivity = 1.0
-	weightFeedValue  = 1.5
-	weightQuality    = 1.0
-	weightCategory   = 1.0
+	DefaultWeightPositivity = 1.0
+	DefaultWeightFeedValue  = 1.5
+	DefaultWeightQuality    = 1.0
+	DefaultWeightCategory   = 1.0
 )
+
+// Weights holds the admin-configurable multipliers used by CalculateRankScore.
+// Use DefaultWeights() when no admin-configured value is available.
+type Weights struct {
+	Positivity float64
+	FeedValue  float64
+	Quality    float64
+	Category   float64
+}
+
+func DefaultWeights() Weights {
+	return Weights{
+		Positivity: DefaultWeightPositivity,
+		FeedValue:  DefaultWeightFeedValue,
+		Quality:    DefaultWeightQuality,
+		Category:   DefaultWeightCategory,
+	}
+}
+
+// LoadWeights reads the current admin-configured content_score weights,
+// falling back to DefaultWeights() for any value that hasn't been set.
+func LoadWeights(ctx context.Context, repo *settings.SettingsRepository) (Weights, error) {
+	s, err := repo.Get(ctx)
+	if err != nil {
+		return Weights{}, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	fr := s.Services.OrZero().FeedRanking.OrZero()
+
+	return Weights{
+		Positivity: fr.WPositivity.Or(DefaultWeightPositivity),
+		FeedValue:  fr.WFeedValue.Or(DefaultWeightFeedValue),
+		Quality:    fr.WQuality.Or(DefaultWeightQuality),
+		Category:   fr.WCategory.Or(DefaultWeightCategory),
+	}, nil
+}
 
 func qualityScore(bodyLength int) float64 {
 	switch {
@@ -282,22 +319,34 @@ func SentimentMultiplier(tag SentimentTag) float64 {
 	return 1.0
 }
 
-func (r *ScoringResult) CalculateRankScore(bodyLength int) float64 {
-	return weightPositivity*float64(r.PositivityScore) +
-		weightFeedValue*float64(r.FeedValueScore) +
-		weightQuality*qualityScore(bodyLength) +
-		weightCategory*r.Category.Boost(r.SentimentTag)
+func (r *ScoringResult) CalculateRankScore(bodyLength int, w Weights) float64 {
+	return w.Positivity*float64(r.PositivityScore) +
+		w.FeedValue*float64(r.FeedValueScore) +
+		w.Quality*qualityScore(bodyLength) +
+		w.Category*r.Category.Boost(r.SentimentTag)
 }
 
 type Scorer struct {
 	logger   *slog.Logger
 	prompter ai.Prompter
+	settings *settings.SettingsRepository
 }
 
-func New(logger *slog.Logger, prompter ai.Prompter) *Scorer {
+// Weights loads the current admin-configured content_score weights, falling
+// back to DefaultWeights() if the settings lookup fails.
+func (s *Scorer) Weights(ctx context.Context) Weights {
+	w, err := LoadWeights(ctx, s.settings)
+	if err != nil {
+		return DefaultWeights()
+	}
+	return w
+}
+
+func New(logger *slog.Logger, prompter ai.Prompter, settingsRepo *settings.SettingsRepository) *Scorer {
 	return &Scorer{
 		logger:   logger,
 		prompter: prompter,
+		settings: settingsRepo,
 	}
 }
 
@@ -344,13 +393,15 @@ func (s *Scorer) Score(ctx context.Context, input ScoreInput) (*ScoringResult, e
 
 	result.Validate()
 
+	weights := s.Weights(ctx)
+
 	s.logger.Info("sentiment scoring response",
 		slog.String("title", input.Title),
 		slog.String("sentiment_tag", string(result.SentimentTag)),
 		slog.Int("positivity_score", result.PositivityScore),
 		slog.Int("feed_value_score", result.FeedValueScore),
 		slog.String("category", string(result.Category)),
-		slog.Float64("rank_score", result.CalculateRankScore(len(input.Body))),
+		slog.Float64("rank_score", result.CalculateRankScore(len(input.Body), weights)),
 	)
 
 	return result, nil
