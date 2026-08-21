@@ -20,6 +20,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/post/thread_cache"
 	"github.com/Southclaws/storyden/app/resources/post/thread_querier"
 	"github.com/Southclaws/storyden/app/resources/post/thread_writer"
+	"github.com/Southclaws/storyden/app/resources/settings"
 	"github.com/Southclaws/storyden/app/resources/tag/tag_ref"
 	"github.com/Southclaws/storyden/app/resources/tag/tag_writer"
 	"github.com/Southclaws/storyden/app/resources/visibility"
@@ -72,12 +73,12 @@ type Service interface {
 }
 
 type Partial struct {
-	Title      opt.Optional[string]
-	Content    opt.Optional[datagraph.Content]
-	Category   opt.Optional[xid.ID]
-	Tags       opt.Optional[tag_ref.Names]
-	Visibility opt.Optional[visibility.Visibility]
-	URL        opt.Optional[url.URL]
+	Title       opt.Optional[string]
+	Content     opt.Optional[datagraph.Content]
+	Category    opt.Optional[xid.ID]
+	Tags        opt.Optional[tag_ref.Names]
+	Visibility  opt.Optional[visibility.Visibility]
+	URL         opt.Optional[url.URL]
 	Meta        opt.Optional[map[string]any]
 	ChannelID   opt.Optional[xid.ID]
 	Pinned      opt.Optional[int]
@@ -119,6 +120,7 @@ type service struct {
 	cache          *thread_cache.Cache
 	cacheStore     cache.Store
 	systemReporter *system_report.Manager
+	settings       *settings.SettingsRepository
 }
 
 func New(
@@ -138,6 +140,7 @@ func New(
 	cache *thread_cache.Cache,
 	cacheStore cache.Store,
 	systemReporter *system_report.Manager,
+	settingsRepo *settings.SettingsRepository,
 ) Service {
 	return &service{
 		ins:    ins.Build(),
@@ -156,5 +159,6 @@ func New(
 		cache:          cache,
 		cacheStore:     cacheStore,
 		systemReporter: systemReporter,
+		settings:       settingsRepo,
 	}
 }

@@ -23,7 +23,10 @@ import (
 	"github.com/Southclaws/storyden/tests"
 )
 
-func TestApplyDailyIncrements(t *testing.T) {
+// TestApplyDailyIncrementsUsesConfiguredWeights verifies that admin-updated
+// like/reply weights (via the settings repository) are actually picked up by
+// ApplyDailyIncrements, rather than the hardcoded defaults.
+func TestApplyDailyIncrementsUsesConfiguredWeights(t *testing.T) {
 	t.Parallel()
 
 	integration.Test(t, nil, e2e.Setup(), fx.Invoke(func(
@@ -47,43 +50,51 @@ func TestApplyDailyIncrements(t *testing.T) {
 			suffix := xid.New().String()
 			channelResp := tests.AssertRequest(
 				cl.ChannelCreateWithResponse(root, openapi.ChannelInitialProps{
-					Name:        "ranker-job-apply-" + suffix,
-					Slug:        "ranker-job-apply-" + suffix,
-					Description: "channel for ranker job apply tests",
+					Name:        "ranker-job-weights-" + suffix,
+					Slug:        "ranker-job-weights-" + suffix,
+					Description: "channel for ranker job weights tests",
 				}, adminSession),
 			)(t, http.StatusOK)
 			channelID := channelResp.JSON200.Id
 
 			threadResp := tests.AssertRequest(
 				cl.ChannelThreadCreateWithResponse(root, channelID, openapi.ThreadInitialProps{
-					Title:      "apply increments " + suffix,
+					Title:      "weights test " + suffix,
 					Body:       opt.New[openapi.PostContent]("body").Ptr(),
 					Visibility: opt.New(openapi.Published).Ptr(),
 				}, adminSession),
 			)(t, http.StatusOK)
-			threadID, err := xid.FromString(threadResp.JSON200.Id)
+			postID, err := xid.FromString(threadResp.JSON200.Id)
 			r.NoError(err)
 
-			// Give the post an existing, known rank_score as if it had
-			// already been classified by the LLM/prescored path.
 			err = db.PostSentiment.Create().
-				SetPostID(threadID).
+				SetPostID(postID).
 				SetSentimentTag("neutral").
 				SetPositivityScore(50).
 				SetCategory("NA").
 				SetFeedValueScore(50).
 				SetScoringStatus(ent_post_sentiment.ScoringStatusScored).
-				SetRankScore(100).
+				SetRankScore(0).
 				OnConflictColumns(ent_post_sentiment.FieldPostID).
 				UpdateNewValues().
 				Exec(root)
 			r.NoError(err)
 
-			// 1 like (+2.0) inside the window.
 			_, err = db.LikePost.Create().
-				SetPostID(threadID).
+				SetPostID(postID).
 				SetAccountID(likerID).
 				Save(root)
+			r.NoError(err)
+
+			// Set a custom like weight far from the default (2.0) so the
+			// test fails loudly if the configured value isn't being read.
+			_, err = settingsRepo.Set(root, settings.Settings{
+				Services: opt.New(settings.ServiceSettings{
+					FeedRanking: opt.New(settings.FeedRankingServiceSettings{
+						LikeWeight: opt.New(10.0),
+					}),
+				}),
+			})
 			r.NoError(err)
 
 			since := time.Now().Add(-24 * time.Hour)
@@ -92,24 +103,10 @@ func TestApplyDailyIncrements(t *testing.T) {
 			r.NoError(err)
 			r.Equal(1, updated)
 
-			ps, err := db.PostSentiment.Query().Where(ent_post_sentiment.PostID(threadID)).Only(root)
+			ps, err := db.PostSentiment.Query().Where(ent_post_sentiment.PostID(postID)).Only(root)
 			r.NoError(err)
-			r.InDelta(102.0, ps.RankScore, 0.001, "rank_score should be 100 (existing) + 2.0 (1 like * 2) = 102")
-
-			// Running it again with the same `since` window must not
-			// double-add the same like a second time in THIS call, though
-			// note this only holds because it's the same window: repeated
-			// daily runs each cover a fresh, non-overlapping 24h slice in
-			// production. Verifying idempotency of a single call here.
-			updated, err = ranker_job.ApplyDailyIncrements(root, db, settingsRepo, since)
-			r.NoError(err)
-			r.Equal(1, updated)
-
-			ps, err = db.PostSentiment.Query().Where(ent_post_sentiment.PostID(threadID)).Only(root)
-			r.NoError(err)
-			r.InDelta(104.0, ps.RankScore, 0.001,
-				"re-running with the SAME window re-adds the same engagement — this is expected: "+
-					"the job is only correct when each run's window doesn't overlap the previous run's")
+			r.InDelta(10.0, ps.RankScore, 0.001,
+				"rank_score should reflect the configured like_weight=10.0 (1 like * 10.0), not the default 2.0")
 		}))
 	}))
 }

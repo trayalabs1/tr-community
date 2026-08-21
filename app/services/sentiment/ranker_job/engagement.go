@@ -8,22 +8,54 @@ import (
 	"github.com/Southclaws/fault/fctx"
 	"github.com/rs/xid"
 
+	"github.com/Southclaws/storyden/app/resources/settings"
 	"github.com/Southclaws/storyden/internal/ent"
 	"github.com/Southclaws/storyden/internal/ent/likepost"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
 )
 
 const (
-	likeWeight  = 2.0
-	replyWeight = 0.5
+	DefaultLikeWeight  = 2.0
+	DefaultReplyWeight = 0.5
 )
+
+// EngagementWeights holds the admin-configurable per-like/per-reply weights
+// used by GetDailyIncrements.
+type EngagementWeights struct {
+	Like  float64
+	Reply float64
+}
+
+func DefaultEngagementWeights() EngagementWeights {
+	return EngagementWeights{
+		Like:  DefaultLikeWeight,
+		Reply: DefaultReplyWeight,
+	}
+}
+
+// LoadEngagementWeights reads the current admin-configured like/reply
+// weights, falling back to DefaultEngagementWeights() for any value that
+// hasn't been set.
+func LoadEngagementWeights(ctx context.Context, repo *settings.SettingsRepository) (EngagementWeights, error) {
+	s, err := repo.Get(ctx)
+	if err != nil {
+		return EngagementWeights{}, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	fr := s.Services.OrZero().FeedRanking.OrZero()
+
+	return EngagementWeights{
+		Like:  fr.LikeWeight.Or(DefaultLikeWeight),
+		Reply: fr.ReplyWeight.Or(DefaultReplyWeight),
+	}, nil
+}
 
 // GetDailyIncrements returns, per post, the rank_score delta owed for likes
 // and replies created at or after `since` — the same weights the live v4
-// ranking formula would have applied (likes ×2, replies ×0.5), computed once
-// per day instead of live per feed read. Only posts with at least one new
-// like or reply in the window appear in the result.
-func GetDailyIncrements(ctx context.Context, db *ent.Client, since time.Time) (map[xid.ID]float64, error) {
+// ranking formula would have applied, computed once per day instead of live
+// per feed read. Only posts with at least one new like or reply in the
+// window appear in the result.
+func GetDailyIncrements(ctx context.Context, db *ent.Client, since time.Time, w EngagementWeights) (map[xid.ID]float64, error) {
 	deltas := make(map[xid.ID]float64)
 
 	var likeCounts []struct {
@@ -40,7 +72,7 @@ func GetDailyIncrements(ctx context.Context, db *ent.Client, since time.Time) (m
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 	for _, lc := range likeCounts {
-		deltas[lc.PostID] += float64(lc.Count) * likeWeight
+		deltas[lc.PostID] += float64(lc.Count) * w.Like
 	}
 
 	var replyCounts []struct {
@@ -61,7 +93,7 @@ func GetDailyIncrements(ctx context.Context, db *ent.Client, since time.Time) (m
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 	for _, rc := range replyCounts {
-		deltas[rc.RootPostID] += float64(rc.Count) * replyWeight
+		deltas[rc.RootPostID] += float64(rc.Count) * w.Reply
 	}
 
 	return deltas, nil

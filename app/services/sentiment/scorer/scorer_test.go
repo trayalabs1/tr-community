@@ -125,7 +125,26 @@ func TestScoringResultCalculateRankScore(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, tt.result.CalculateRankScore(tt.bodyLength))
+			assert.Equal(t, tt.want, tt.result.CalculateRankScore(tt.bodyLength, DefaultWeights()))
 		})
 	}
+}
+
+func TestScoringResultCalculateRankScoreCustomWeights(t *testing.T) {
+	result := ScoringResult{
+		SentimentTag:    SentimentPositive,
+		PositivityScore: 90,
+		FeedValueScore:  80,
+		Category:        CategoryResultsProgress,
+	}
+
+	weights := Weights{
+		Positivity: 2.0,
+		FeedValue:  0.0,
+		Quality:    0.0,
+		Category:   0.5,
+	}
+
+	// 2.0*90 + 0.0*80 + 0.0*quality + 0.5*100(boost) = 180 + 0 + 0 + 50 = 230
+	assert.Equal(t, 230.0, result.CalculateRankScore(50, weights))
 }

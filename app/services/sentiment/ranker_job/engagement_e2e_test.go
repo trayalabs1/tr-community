@@ -124,7 +124,7 @@ func TestGetDailyIncrements(t *testing.T) {
 				Exec(root)
 			r.NoError(err)
 
-			deltas, err := ranker_job.GetDailyIncrements(root, db, since)
+			deltas, err := ranker_job.GetDailyIncrements(root, db, since, ranker_job.DefaultEngagementWeights())
 			r.NoError(err)
 
 			r.InDelta(6.0+1.0, deltas[withinWindow], 0.001, "withinWindow should get 3 likes*2 + 2 replies*0.5 = 7.0")

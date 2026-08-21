@@ -7,6 +7,7 @@ import (
 
 	"go.uber.org/fx"
 
+	"github.com/Southclaws/storyden/app/resources/settings"
 	"github.com/Southclaws/storyden/internal/config"
 	"github.com/Southclaws/storyden/internal/ent"
 	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
@@ -18,7 +19,7 @@ func Build() fx.Option {
 	)
 }
 
-func run(lc fx.Lifecycle, logger *slog.Logger, cfg config.Config, db *ent.Client) {
+func run(lc fx.Lifecycle, logger *slog.Logger, cfg config.Config, db *ent.Client, settingsRepo *settings.SettingsRepository) {
 	loc, err := time.LoadLocation(cfg.RankerJobTimezone)
 	if err != nil {
 		logger.Error("invalid RANKER_JOB_TIMEZONE, rank_score engagement job disabled", slog.String("error", err.Error()))
@@ -47,7 +48,7 @@ func run(lc fx.Lifecycle, logger *slog.Logger, cfg config.Config, db *ent.Client
 
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
-			go loop(logger, db, nextWake, stop)
+			go loop(logger, db, settingsRepo, nextWake, stop)
 			return nil
 		},
 		OnStop: func(context.Context) error {
@@ -60,6 +61,7 @@ func run(lc fx.Lifecycle, logger *slog.Logger, cfg config.Config, db *ent.Client
 func loop(
 	logger *slog.Logger,
 	db *ent.Client,
+	settingsRepo *settings.SettingsRepository,
 	nextWake func(now time.Time) time.Time,
 	stop <-chan struct{},
 ) {
@@ -81,7 +83,7 @@ func loop(
 
 		since := start.Add(-24 * time.Hour)
 
-		updated, err := ApplyDailyIncrements(fireCtx, db, since)
+		updated, err := ApplyDailyIncrements(fireCtx, db, settingsRepo, since)
 		if err != nil {
 			logger.Error("rank_score engagement job finished: failed to apply increments",
 				slog.String("error", err.Error()),
@@ -101,8 +103,13 @@ func loop(
 // ApplyDailyIncrements computes each post's engagement_bonus delta from
 // likes/replies created since `since` and adds it onto that post's stored
 // rank_score. Returns the number of posts updated.
-func ApplyDailyIncrements(ctx context.Context, db *ent.Client, since time.Time) (int, error) {
-	deltas, err := GetDailyIncrements(ctx, db, since)
+func ApplyDailyIncrements(ctx context.Context, db *ent.Client, settingsRepo *settings.SettingsRepository, since time.Time) (int, error) {
+	weights, err := LoadEngagementWeights(ctx, settingsRepo)
+	if err != nil {
+		weights = DefaultEngagementWeights()
+	}
+
+	deltas, err := GetDailyIncrements(ctx, db, since, weights)
 	if err != nil {
 		return 0, err
 	}

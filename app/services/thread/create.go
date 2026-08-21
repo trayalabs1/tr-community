@@ -276,7 +276,12 @@ func (s *service) assignPrescoredSentiment(ctx context.Context, postID post.ID) 
 		return fault.Wrap(err, fctx.With(ctx))
 	}
 
-	rankScore := result.CalculateRankScore(len(p.Body))
+	weights, err := scorer.LoadWeights(ctx, s.settings)
+	if err != nil {
+		weights = scorer.DefaultWeights()
+	}
+
+	rankScore := result.CalculateRankScore(len(p.Body), weights)
 
 	err = s.db.PostSentiment.
 		Create().
