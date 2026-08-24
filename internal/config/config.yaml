@@ -538,6 +538,18 @@
 
         This is a full URL with `redis://` as the scheme. You can set the username and password using the URL format, for example: `redis://<username>:<password>@<host>:<port>`.
 
+    - env: "FEED_CACHE_DISABLE"
+      name: FeedCacheDisable
+      type: bool
+      default: "false"
+      description: |-
+        Development/testing override. When `true`, the channel feed's cached
+        ordered-sequence layer is bypassed entirely — every request rebuilds
+        the feed directly from the database, and nothing is written back to
+        the cache. Useful when iterating locally on ranking changes, since
+        the feed cache otherwise serves a stale sequence for up to 30 minutes.
+        Leave unset (`false`) in production.
+
 - section: Search features
   description: |-
     Configuration for search features. This is not required for Storyden to run, by default search uses a simple database-driven keyword search. However, for larger deployments and better search quality, it is recommended to configure a search provider.

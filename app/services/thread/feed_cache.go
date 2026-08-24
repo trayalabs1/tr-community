@@ -132,7 +132,10 @@ func (s *service) listCachedInterleaved(
 }
 
 // feedSequence returns the cached ordered ID sequence, rebuilding it inline on a
-// cache miss.
+// cache miss. When FEED_CACHE_DISABLE is set, the cache is bypassed entirely —
+// every call rebuilds from the database and nothing is read from or written to
+// cacheStore. Intended for local development, where a 30-minute-stale feed
+// sequence makes it hard to see ranking changes take effect.
 func (s *service) feedSequence(
 	ctx context.Context,
 	channelID xid.ID,
@@ -140,6 +143,10 @@ func (s *service) feedSequence(
 	moderator bool,
 	q []thread_querier.Query,
 ) ([]post.ID, error) {
+	if s.feedCacheDisable {
+		return s.buildFeedSequence(ctx, accountID, q)
+	}
+
 	key := feedSeqKey(channelID, moderator)
 
 	if cached, err := s.cacheStore.Get(ctx, key); err == nil && cached != "" {
