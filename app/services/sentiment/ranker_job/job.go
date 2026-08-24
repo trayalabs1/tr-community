@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+	"github.com/rs/xid"
 	"go.uber.org/fx"
 
 	"github.com/Southclaws/storyden/app/resources/settings"
@@ -114,20 +116,56 @@ func ApplyDailyIncrements(ctx context.Context, db *ent.Client, settingsRepo *set
 		return 0, err
 	}
 
+	ids := make([]xid.ID, 0, len(deltas))
 	for postID, delta := range deltas {
 		if delta == 0 {
 			continue
 		}
-
-		_, err := db.PostSentiment.
-			Update().
-			Where(ent_post_sentiment.PostIDEQ(postID)).
-			AddRankScore(delta).
-			Save(ctx)
-		if err != nil {
-			return 0, err
-		}
+		ids = append(ids, postID)
 	}
 
-	return len(deltas), nil
+	if len(ids) == 0 {
+		return 0, nil
+	}
+
+	err = bulkAddRankScore(ctx, db, deltas, ids)
+	if err != nil {
+		return 0, err
+	}
+
+	return len(ids), nil
+}
+
+// bulkAddRankScore applies every post's rank_score delta in a single
+// UPDATE statement instead of one round-trip per post, using a SQL CASE
+// expression to vary the increment per row:
+//
+//	UPDATE post_sentiments
+//	SET rank_score = rank_score + CASE post_id
+//		WHEN $1 THEN $2
+//		WHEN $3 THEN $4
+//		...
+//	END
+//	WHERE post_id IN ($1, $3, ...)
+func bulkAddRankScore(ctx context.Context, db *ent.Client, deltas map[xid.ID]float64, ids []xid.ID) error {
+	_, err := db.PostSentiment.
+		Update().
+		Where(ent_post_sentiment.PostIDIn(ids...)).
+		Modify(func(u *sql.UpdateBuilder) {
+			u.Set(ent_post_sentiment.FieldRankScore, sql.ExprFunc(func(b *sql.Builder) {
+				b.Ident(ent_post_sentiment.FieldRankScore)
+				b.WriteString(" + (CASE ")
+				b.Ident(ent_post_sentiment.FieldPostID)
+				for _, id := range ids {
+					b.WriteString(" WHEN ")
+					b.Arg(id)
+					b.WriteString(" THEN ")
+					b.Arg(deltas[id])
+				}
+				b.WriteString(" END)")
+			}))
+		}).
+		Save(ctx)
+
+	return err
 }
