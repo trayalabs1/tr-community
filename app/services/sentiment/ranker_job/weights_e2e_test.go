@@ -71,7 +71,7 @@ func TestApplyDailyIncrementsUsesConfiguredWeights(t *testing.T) {
 				SetPostID(postID).
 				SetSentimentTag("neutral").
 				SetPositivityScore(50).
-				SetCategory("NA").
+				SetPrimaryTopic("NA").
 				SetFeedValueScore(50).
 				SetScoringStatus(ent_post_sentiment.ScoringStatusScored).
 				SetRankScore(0).

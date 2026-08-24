@@ -27306,7 +27306,7 @@ type PostSentimentMutation struct {
 	sentiment_tag       *string
 	positivity_score    *int
 	addpositivity_score *int
-	category            *string
+	primary_topic       *string
 	feed_value_score    *int
 	addfeed_value_score *int
 	scoring_status      *postsentiment.ScoringStatus
@@ -27651,53 +27651,53 @@ func (m *PostSentimentMutation) ResetPositivityScore() {
 	delete(m.clearedFields, postsentiment.FieldPositivityScore)
 }
 
-// SetCategory sets the "category" field.
-func (m *PostSentimentMutation) SetCategory(s string) {
-	m.category = &s
+// SetPrimaryTopic sets the "primary_topic" field.
+func (m *PostSentimentMutation) SetPrimaryTopic(s string) {
+	m.primary_topic = &s
 }
 
-// Category returns the value of the "category" field in the mutation.
-func (m *PostSentimentMutation) Category() (r string, exists bool) {
-	v := m.category
+// PrimaryTopic returns the value of the "primary_topic" field in the mutation.
+func (m *PostSentimentMutation) PrimaryTopic() (r string, exists bool) {
+	v := m.primary_topic
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCategory returns the old "category" field's value of the PostSentiment entity.
+// OldPrimaryTopic returns the old "primary_topic" field's value of the PostSentiment entity.
 // If the PostSentiment object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PostSentimentMutation) OldCategory(ctx context.Context) (v *string, err error) {
+func (m *PostSentimentMutation) OldPrimaryTopic(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCategory is only allowed on UpdateOne operations")
+		return v, errors.New("OldPrimaryTopic is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCategory requires an ID field in the mutation")
+		return v, errors.New("OldPrimaryTopic requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCategory: %w", err)
+		return v, fmt.Errorf("querying old value for OldPrimaryTopic: %w", err)
 	}
-	return oldValue.Category, nil
+	return oldValue.PrimaryTopic, nil
 }
 
-// ClearCategory clears the value of the "category" field.
-func (m *PostSentimentMutation) ClearCategory() {
-	m.category = nil
-	m.clearedFields[postsentiment.FieldCategory] = struct{}{}
+// ClearPrimaryTopic clears the value of the "primary_topic" field.
+func (m *PostSentimentMutation) ClearPrimaryTopic() {
+	m.primary_topic = nil
+	m.clearedFields[postsentiment.FieldPrimaryTopic] = struct{}{}
 }
 
-// CategoryCleared returns if the "category" field was cleared in this mutation.
-func (m *PostSentimentMutation) CategoryCleared() bool {
-	_, ok := m.clearedFields[postsentiment.FieldCategory]
+// PrimaryTopicCleared returns if the "primary_topic" field was cleared in this mutation.
+func (m *PostSentimentMutation) PrimaryTopicCleared() bool {
+	_, ok := m.clearedFields[postsentiment.FieldPrimaryTopic]
 	return ok
 }
 
-// ResetCategory resets all changes to the "category" field.
-func (m *PostSentimentMutation) ResetCategory() {
-	m.category = nil
-	delete(m.clearedFields, postsentiment.FieldCategory)
+// ResetPrimaryTopic resets all changes to the "primary_topic" field.
+func (m *PostSentimentMutation) ResetPrimaryTopic() {
+	m.primary_topic = nil
+	delete(m.clearedFields, postsentiment.FieldPrimaryTopic)
 }
 
 // SetFeedValueScore sets the "feed_value_score" field.
@@ -27939,8 +27939,8 @@ func (m *PostSentimentMutation) Fields() []string {
 	if m.positivity_score != nil {
 		fields = append(fields, postsentiment.FieldPositivityScore)
 	}
-	if m.category != nil {
-		fields = append(fields, postsentiment.FieldCategory)
+	if m.primary_topic != nil {
+		fields = append(fields, postsentiment.FieldPrimaryTopic)
 	}
 	if m.feed_value_score != nil {
 		fields = append(fields, postsentiment.FieldFeedValueScore)
@@ -27969,8 +27969,8 @@ func (m *PostSentimentMutation) Field(name string) (ent.Value, bool) {
 		return m.SentimentTag()
 	case postsentiment.FieldPositivityScore:
 		return m.PositivityScore()
-	case postsentiment.FieldCategory:
-		return m.Category()
+	case postsentiment.FieldPrimaryTopic:
+		return m.PrimaryTopic()
 	case postsentiment.FieldFeedValueScore:
 		return m.FeedValueScore()
 	case postsentiment.FieldScoringStatus:
@@ -27996,8 +27996,8 @@ func (m *PostSentimentMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldSentimentTag(ctx)
 	case postsentiment.FieldPositivityScore:
 		return m.OldPositivityScore(ctx)
-	case postsentiment.FieldCategory:
-		return m.OldCategory(ctx)
+	case postsentiment.FieldPrimaryTopic:
+		return m.OldPrimaryTopic(ctx)
 	case postsentiment.FieldFeedValueScore:
 		return m.OldFeedValueScore(ctx)
 	case postsentiment.FieldScoringStatus:
@@ -28048,12 +28048,12 @@ func (m *PostSentimentMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPositivityScore(v)
 		return nil
-	case postsentiment.FieldCategory:
+	case postsentiment.FieldPrimaryTopic:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetCategory(v)
+		m.SetPrimaryTopic(v)
 		return nil
 	case postsentiment.FieldFeedValueScore:
 		v, ok := value.(int)
@@ -28151,8 +28151,8 @@ func (m *PostSentimentMutation) ClearedFields() []string {
 	if m.FieldCleared(postsentiment.FieldPositivityScore) {
 		fields = append(fields, postsentiment.FieldPositivityScore)
 	}
-	if m.FieldCleared(postsentiment.FieldCategory) {
-		fields = append(fields, postsentiment.FieldCategory)
+	if m.FieldCleared(postsentiment.FieldPrimaryTopic) {
+		fields = append(fields, postsentiment.FieldPrimaryTopic)
 	}
 	if m.FieldCleared(postsentiment.FieldFeedValueScore) {
 		fields = append(fields, postsentiment.FieldFeedValueScore)
@@ -28177,8 +28177,8 @@ func (m *PostSentimentMutation) ClearField(name string) error {
 	case postsentiment.FieldPositivityScore:
 		m.ClearPositivityScore()
 		return nil
-	case postsentiment.FieldCategory:
-		m.ClearCategory()
+	case postsentiment.FieldPrimaryTopic:
+		m.ClearPrimaryTopic()
 		return nil
 	case postsentiment.FieldFeedValueScore:
 		m.ClearFeedValueScore()
@@ -28206,8 +28206,8 @@ func (m *PostSentimentMutation) ResetField(name string) error {
 	case postsentiment.FieldPositivityScore:
 		m.ResetPositivityScore()
 		return nil
-	case postsentiment.FieldCategory:
-		m.ResetCategory()
+	case postsentiment.FieldPrimaryTopic:
+		m.ResetPrimaryTopic()
 		return nil
 	case postsentiment.FieldFeedValueScore:
 		m.ResetFeedValueScore()

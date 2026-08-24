@@ -30,7 +30,7 @@ type PostSentiment struct {
 	// Positivity score from 0-100
 	PositivityScore *int `json:"positivity_score,omitempty"`
 	// Category from the v4 allowed list
-	Category *string `json:"category,omitempty"`
+	PrimaryTopic *string `json:"primary_topic,omitempty"`
 	// Feed value score from 0-100 (usefulness/discussion potential)
 	FeedValueScore *int `json:"feed_value_score,omitempty"`
 	// Status of sentiment scoring: unscored, scored, failed
@@ -72,7 +72,7 @@ func (*PostSentiment) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case postsentiment.FieldPositivityScore, postsentiment.FieldFeedValueScore:
 			values[i] = new(sql.NullInt64)
-		case postsentiment.FieldSentimentTag, postsentiment.FieldCategory, postsentiment.FieldScoringStatus:
+		case postsentiment.FieldSentimentTag, postsentiment.FieldPrimaryTopic, postsentiment.FieldScoringStatus:
 			values[i] = new(sql.NullString)
 		case postsentiment.FieldCreatedAt, postsentiment.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -131,12 +131,12 @@ func (_m *PostSentiment) assignValues(columns []string, values []any) error {
 				_m.PositivityScore = new(int)
 				*_m.PositivityScore = int(value.Int64)
 			}
-		case postsentiment.FieldCategory:
+		case postsentiment.FieldPrimaryTopic:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field category", values[i])
+				return fmt.Errorf("unexpected type %T for field primary_topic", values[i])
 			} else if value.Valid {
-				_m.Category = new(string)
-				*_m.Category = value.String
+				_m.PrimaryTopic = new(string)
+				*_m.PrimaryTopic = value.String
 			}
 		case postsentiment.FieldFeedValueScore:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -217,8 +217,8 @@ func (_m *PostSentiment) String() string {
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
-	if v := _m.Category; v != nil {
-		builder.WriteString("category=")
+	if v := _m.PrimaryTopic; v != nil {
+		builder.WriteString("primary_topic=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")

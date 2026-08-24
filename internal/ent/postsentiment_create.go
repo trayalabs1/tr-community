@@ -87,16 +87,16 @@ func (_c *PostSentimentCreate) SetNillablePositivityScore(v *int) *PostSentiment
 	return _c
 }
 
-// SetCategory sets the "category" field.
-func (_c *PostSentimentCreate) SetCategory(v string) *PostSentimentCreate {
-	_c.mutation.SetCategory(v)
+// SetPrimaryTopic sets the "primary_topic" field.
+func (_c *PostSentimentCreate) SetPrimaryTopic(v string) *PostSentimentCreate {
+	_c.mutation.SetPrimaryTopic(v)
 	return _c
 }
 
-// SetNillableCategory sets the "category" field if the given value is not nil.
-func (_c *PostSentimentCreate) SetNillableCategory(v *string) *PostSentimentCreate {
+// SetNillablePrimaryTopic sets the "primary_topic" field if the given value is not nil.
+func (_c *PostSentimentCreate) SetNillablePrimaryTopic(v *string) *PostSentimentCreate {
 	if v != nil {
-		_c.SetCategory(*v)
+		_c.SetPrimaryTopic(*v)
 	}
 	return _c
 }
@@ -301,9 +301,9 @@ func (_c *PostSentimentCreate) createSpec() (*PostSentiment, *sqlgraph.CreateSpe
 		_spec.SetField(postsentiment.FieldPositivityScore, field.TypeInt, value)
 		_node.PositivityScore = &value
 	}
-	if value, ok := _c.mutation.Category(); ok {
-		_spec.SetField(postsentiment.FieldCategory, field.TypeString, value)
-		_node.Category = &value
+	if value, ok := _c.mutation.PrimaryTopic(); ok {
+		_spec.SetField(postsentiment.FieldPrimaryTopic, field.TypeString, value)
+		_node.PrimaryTopic = &value
 	}
 	if value, ok := _c.mutation.FeedValueScore(); ok {
 		_spec.SetField(postsentiment.FieldFeedValueScore, field.TypeInt, value)
@@ -452,21 +452,21 @@ func (u *PostSentimentUpsert) ClearPositivityScore() *PostSentimentUpsert {
 	return u
 }
 
-// SetCategory sets the "category" field.
-func (u *PostSentimentUpsert) SetCategory(v string) *PostSentimentUpsert {
-	u.Set(postsentiment.FieldCategory, v)
+// SetPrimaryTopic sets the "primary_topic" field.
+func (u *PostSentimentUpsert) SetPrimaryTopic(v string) *PostSentimentUpsert {
+	u.Set(postsentiment.FieldPrimaryTopic, v)
 	return u
 }
 
-// UpdateCategory sets the "category" field to the value that was provided on create.
-func (u *PostSentimentUpsert) UpdateCategory() *PostSentimentUpsert {
-	u.SetExcluded(postsentiment.FieldCategory)
+// UpdatePrimaryTopic sets the "primary_topic" field to the value that was provided on create.
+func (u *PostSentimentUpsert) UpdatePrimaryTopic() *PostSentimentUpsert {
+	u.SetExcluded(postsentiment.FieldPrimaryTopic)
 	return u
 }
 
-// ClearCategory clears the value of the "category" field.
-func (u *PostSentimentUpsert) ClearCategory() *PostSentimentUpsert {
-	u.SetNull(postsentiment.FieldCategory)
+// ClearPrimaryTopic clears the value of the "primary_topic" field.
+func (u *PostSentimentUpsert) ClearPrimaryTopic() *PostSentimentUpsert {
+	u.SetNull(postsentiment.FieldPrimaryTopic)
 	return u
 }
 
@@ -652,24 +652,24 @@ func (u *PostSentimentUpsertOne) ClearPositivityScore() *PostSentimentUpsertOne 
 	})
 }
 
-// SetCategory sets the "category" field.
-func (u *PostSentimentUpsertOne) SetCategory(v string) *PostSentimentUpsertOne {
+// SetPrimaryTopic sets the "primary_topic" field.
+func (u *PostSentimentUpsertOne) SetPrimaryTopic(v string) *PostSentimentUpsertOne {
 	return u.Update(func(s *PostSentimentUpsert) {
-		s.SetCategory(v)
+		s.SetPrimaryTopic(v)
 	})
 }
 
-// UpdateCategory sets the "category" field to the value that was provided on create.
-func (u *PostSentimentUpsertOne) UpdateCategory() *PostSentimentUpsertOne {
+// UpdatePrimaryTopic sets the "primary_topic" field to the value that was provided on create.
+func (u *PostSentimentUpsertOne) UpdatePrimaryTopic() *PostSentimentUpsertOne {
 	return u.Update(func(s *PostSentimentUpsert) {
-		s.UpdateCategory()
+		s.UpdatePrimaryTopic()
 	})
 }
 
-// ClearCategory clears the value of the "category" field.
-func (u *PostSentimentUpsertOne) ClearCategory() *PostSentimentUpsertOne {
+// ClearPrimaryTopic clears the value of the "primary_topic" field.
+func (u *PostSentimentUpsertOne) ClearPrimaryTopic() *PostSentimentUpsertOne {
 	return u.Update(func(s *PostSentimentUpsert) {
-		s.ClearCategory()
+		s.ClearPrimaryTopic()
 	})
 }
 
@@ -1031,24 +1031,24 @@ func (u *PostSentimentUpsertBulk) ClearPositivityScore() *PostSentimentUpsertBul
 	})
 }
 
-// SetCategory sets the "category" field.
-func (u *PostSentimentUpsertBulk) SetCategory(v string) *PostSentimentUpsertBulk {
+// SetPrimaryTopic sets the "primary_topic" field.
+func (u *PostSentimentUpsertBulk) SetPrimaryTopic(v string) *PostSentimentUpsertBulk {
 	return u.Update(func(s *PostSentimentUpsert) {
-		s.SetCategory(v)
+		s.SetPrimaryTopic(v)
 	})
 }
 
-// UpdateCategory sets the "category" field to the value that was provided on create.
-func (u *PostSentimentUpsertBulk) UpdateCategory() *PostSentimentUpsertBulk {
+// UpdatePrimaryTopic sets the "primary_topic" field to the value that was provided on create.
+func (u *PostSentimentUpsertBulk) UpdatePrimaryTopic() *PostSentimentUpsertBulk {
 	return u.Update(func(s *PostSentimentUpsert) {
-		s.UpdateCategory()
+		s.UpdatePrimaryTopic()
 	})
 }
 
-// ClearCategory clears the value of the "category" field.
-func (u *PostSentimentUpsertBulk) ClearCategory() *PostSentimentUpsertBulk {
+// ClearPrimaryTopic clears the value of the "primary_topic" field.
+func (u *PostSentimentUpsertBulk) ClearPrimaryTopic() *PostSentimentUpsertBulk {
 	return u.Update(func(s *PostSentimentUpsert) {
-		s.ClearCategory()
+		s.ClearPrimaryTopic()
 	})
 }
 

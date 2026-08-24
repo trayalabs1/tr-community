@@ -76,8 +76,8 @@ func (d *Querier) ListSelfRecent(
 			if p.Edges.Sentiment.SentimentTag != nil {
 				entry.SentimentTag = *p.Edges.Sentiment.SentimentTag
 			}
-			if p.Edges.Sentiment.Category != nil {
-				entry.Category = *p.Edges.Sentiment.Category
+			if p.Edges.Sentiment.PrimaryTopic != nil {
+				entry.Category = *p.Edges.Sentiment.PrimaryTopic
 			}
 		}
 		out = append(out, entry)
@@ -112,7 +112,7 @@ func (d *Querier) ListSimilarFor(
 			ent_post.VisibilityEQ(ent_post.VisibilityPublished),
 			ent_post.HasSentimentWith(
 				ent_post_sentiment.SentimentTagEQ(sentimentTag),
-				ent_post_sentiment.CategoryEQ(category),
+				ent_post_sentiment.PrimaryTopicEQ(category),
 			),
 		).
 		WithCategory().

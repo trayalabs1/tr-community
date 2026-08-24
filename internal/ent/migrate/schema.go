@@ -1078,7 +1078,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "sentiment_tag", Type: field.TypeString, Nullable: true},
 		{Name: "positivity_score", Type: field.TypeInt, Nullable: true},
-		{Name: "category", Type: field.TypeString, Nullable: true},
+		{Name: "primary_topic", Type: field.TypeString, Nullable: true},
 		{Name: "feed_value_score", Type: field.TypeInt, Nullable: true},
 		{Name: "scoring_status", Type: field.TypeEnum, Enums: []string{"unscored", "scored", "failed"}, Default: "unscored"},
 		{Name: "rank_score", Type: field.TypeFloat64, Default: 0},
