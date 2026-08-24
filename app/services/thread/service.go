@@ -29,6 +29,7 @@ import (
 	"github.com/Southclaws/storyden/app/services/moderation"
 	"github.com/Southclaws/storyden/app/services/report/system_report"
 	"github.com/Southclaws/storyden/app/services/semdex"
+	"github.com/Southclaws/storyden/internal/config"
 	"github.com/Southclaws/storyden/internal/ent"
 	"github.com/Southclaws/storyden/internal/infrastructure/cache"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/spanner"
@@ -107,25 +108,27 @@ type service struct {
 	ins    spanner.Instrumentation
 	logger *slog.Logger
 
-	db             *ent.Client
-	accountQuery   *account_querier.Querier
-	threadQuerier  *thread_querier.Querier
-	threadWriter   *thread_writer.Writer
-	tagWriter      *tag_writer.Writer
-	fetcher        *fetcher.Fetcher
-	recommender    semdex.Recommender
-	bus            *pubsub.Bus
-	mentioner      *mentioner.Mentioner
-	cpm            *moderation.Manager
-	cache          *thread_cache.Cache
-	cacheStore     cache.Store
-	systemReporter *system_report.Manager
-	settings       *settings.SettingsRepository
+	db               *ent.Client
+	accountQuery     *account_querier.Querier
+	threadQuerier    *thread_querier.Querier
+	threadWriter     *thread_writer.Writer
+	tagWriter        *tag_writer.Writer
+	fetcher          *fetcher.Fetcher
+	recommender      semdex.Recommender
+	bus              *pubsub.Bus
+	mentioner        *mentioner.Mentioner
+	cpm              *moderation.Manager
+	cache            *thread_cache.Cache
+	cacheStore       cache.Store
+	systemReporter   *system_report.Manager
+	settings         *settings.SettingsRepository
+	feedCacheDisable bool
 }
 
 func New(
 	ins spanner.Builder,
 	logger *slog.Logger,
+	cfg config.Config,
 
 	db *ent.Client,
 	accountQuery *account_querier.Querier,
@@ -146,19 +149,20 @@ func New(
 		ins:    ins.Build(),
 		logger: logger,
 
-		db:             db,
-		accountQuery:   accountQuery,
-		threadQuerier:  threadQuerier,
-		threadWriter:   threadWriter,
-		tagWriter:      tagWriter,
-		fetcher:        fetcher,
-		recommender:    recommender,
-		bus:            bus,
-		mentioner:      mentioner,
-		cpm:            cpm,
-		cache:          cache,
-		cacheStore:     cacheStore,
-		systemReporter: systemReporter,
-		settings:       settingsRepo,
+		db:               db,
+		accountQuery:     accountQuery,
+		threadQuerier:    threadQuerier,
+		threadWriter:     threadWriter,
+		tagWriter:        tagWriter,
+		fetcher:          fetcher,
+		recommender:      recommender,
+		bus:              bus,
+		mentioner:        mentioner,
+		cpm:              cpm,
+		cache:            cache,
+		cacheStore:       cacheStore,
+		systemReporter:   systemReporter,
+		settings:         settingsRepo,
+		feedCacheDisable: cfg.FeedCacheDisable,
 	}
 }
