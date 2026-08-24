@@ -11,6 +11,7 @@ import { AnalyticsScreen } from "./AnalyticsScreen/AnalyticsScreen";
 import { AuditLogSettingsScreen } from "./AuditLogSettingsScreen/AuditLogSettingsScreen";
 import { AuthenticationSettingsScreen } from "./AuthenticationSettingsScreen";
 import { BrandSettingsScreen } from "./BrandSettingsScreen";
+import { FeedRankingSettingsScreen } from "./FeedRankingSettingsScreen";
 import { InterfaceSettingsScreen } from "./InterfaceSettingsScreen";
 import { ModerationSettingsScreen } from "./ModerationSettingsScreen";
 
@@ -48,6 +49,7 @@ export function AdminScreen() {
       <Tabs.List>
         <Tabs.Trigger value="brand">Brand</Tabs.Trigger>
         <Tabs.Trigger value="moderation">Moderation</Tabs.Trigger>
+        <Tabs.Trigger value="feed_ranking">Feed Ranking</Tabs.Trigger>
         <Tabs.Trigger value="audit">Audit Log</Tabs.Trigger>
         <Tabs.Trigger value="interface">Interface</Tabs.Trigger>
         <Tabs.Trigger value="authentication">Authentication</Tabs.Trigger>
@@ -62,6 +64,10 @@ export function AdminScreen() {
 
       <Tabs.Content value="moderation">
         <ModerationSettingsScreen />
+      </Tabs.Content>
+
+      <Tabs.Content value="feed_ranking">
+        <FeedRankingSettingsScreen />
       </Tabs.Content>
 
       <Tabs.Content value="audit">

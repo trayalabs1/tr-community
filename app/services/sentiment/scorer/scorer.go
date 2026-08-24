@@ -9,46 +9,168 @@ import (
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
 
+	"github.com/Southclaws/storyden/app/resources/settings"
 	"github.com/Southclaws/storyden/internal/infrastructure/ai"
 )
 
 var SentimentPrompt = template.Must(template.New("sentiment").Parse(`
-You are a sentiment analysis system for Traya, a hair loss treatment company's community forum. Analyze the following post and classify it.
+You are a sentiment, content-value, and category classification system for Traya, a hair loss treatment company's community forum.
 
-CLASSIFICATION RULES:
+Analyze the following post and return exactly four fields:
 
-Sentiment Tag:
+1. sentiment_tag
+2. positivity_score
+3. feed_value_score
+4. category
+
+==================================================
+SENTIMENT TAG
+==================================================
+
+Pick exactly one:
+
 - "positive": Posts expressing satisfaction, progress, hope, success stories, gratitude, or encouragement
 - "neutral": Posts asking questions, sharing information objectively, or discussing without strong emotion
 - "negative": Posts expressing frustration, disappointment, complaints, or dissatisfaction
 
-Positivity Score (0-100):
-- 0-20: Very negative (complaints, anger, giving up)
-- 21-40: Somewhat negative (frustration, doubt, minor complaints)
-- 41-60: Neutral (questions, factual information, balanced discussion)
-- 61-80: Somewhat positive (hope, mild progress, cautious optimism)
-- 81-100: Very positive (success stories, strong progress, enthusiasm)
+If a sentence contains contradictory phrases, classify based on the overall intent.
 
-Primary Topic - Pick exactly one from this list:
-- "usage_regimen": How to use minoxidil, oil, shampoo, tablets, timing, frequency
-- "results_timeline": When results will show, how long it takes
-- "hairfall_shedding": Hair fall increase, shedding, breakage, regrowth concerns
-- "side_effects_safety": Itching, dandruff, acne, nausea, allergy, safety concerns
-- "order_delivery_refill": Order delay, missing item, cancel, refund, refill
-- "build_a_habit": App logging, streak, coins, redeem, habit tracking
-- "diet_lifestyle_compatibility": Diet plan, smoking, travel, pregnancy, periods, other meds
-- "product_effectiveness_trust": No improvement, waste of money, scam, doubt on effectiveness
-- "doctor_support_call": Missed calls, support complaints, doctor/coach issues
-- "progress_success_story": Visible progress, reduced hair fall, gratitude, encouragement, excitement, hopeful
-- "other": Greeting, unclear, untitled, irrelevant
+Detect sarcasm. Phrases such as "what a joke", "yeah right", or positive words following a negative setup should be treated as negative when the overall intent is negative.
 
-IMPORTANT INSTRUCTIONS:
-- If a sentence contains contradictory phrases (e.g., negative phrase + positive phrase), check the overall intent.
-- Detect sarcasm: phrases like "what a joke", "yeah right", or statements where positive words follow a negative setup should be treated as negative.
-- If a product is described as ineffective, misleading, or causing unintended results, classify as "negative" even if positive words are present.
-- Prioritize the user's intent over literal wording.
-- Apply the same rules regardless of language (English, Hindi, Hinglish, or any other language).
-- Recognize common Hindi/Hinglish sentiment words: "bakwas/bekar/faltu/bekaar" (negative), "mast/badhiya/zabardast" (positive), "thik hai/chalta hai" (neutral).
+If a product is described as ineffective, misleading, a scam, or causing unintended results, classify sentiment as negative even if positive words are present.
+
+Recognize common Hindi/Hinglish sentiment:
+- "bakwas", "bekar", "faltu", "bekaar" → negative
+- "mast", "badhiya", "zabardast" → positive
+- "thik hai", "chalta hai" → neutral
+
+==================================================
+POSITIVITY SCORE (0-100)
+==================================================
+
+- 0-20: Very negative — complaints, anger, giving up, severe dissatisfaction
+- 21-40: Somewhat negative — frustration, doubt, minor complaints, concern
+- 41-60: Neutral — questions, factual information, balanced discussion
+- 61-80: Somewhat positive — hope, mild progress, cautious optimism
+- 81-100: Very positive — success stories, strong progress, enthusiasm, strong gratitude
+
+==================================================
+FEED VALUE SCORE (0-100)
+==================================================
+
+Measure how valuable the post is to the broader Traya community.
+
+Consider BOTH:
+- usefulness/information value to other users
+- potential to generate meaningful discussion
+
+Do NOT simply equate positivity with feed value.
+
+0-20: Very low value
+- Very vague
+- Extremely short
+- Repetitive
+- Little or no useful information
+- Little discussion potential
+
+21-40: Low value
+- Some context but limited usefulness
+- Simple question with little detail
+- Personal update with limited learning
+- Low discussion potential
+
+41-60: Moderate value
+- Clear question or experience
+- Some useful context
+- Reasonably understandable
+- Some potential to help or engage other users
+
+61-80: High value
+- Specific experience
+- Useful details
+- Relatable problem
+- Clear question
+- Helpful observation
+- Strong potential for meaningful discussion
+
+81-100: Very high value
+- Highly useful to other users
+- Detailed experience
+- Actionable information
+- Strongly relatable
+- Generates meaningful discussion
+- Helps users understand treatment, progress, expectations, or common problems
+- Valuable success story or learning
+
+A positive post is not automatically high-value.
+A negative post is not automatically low-value.
+A question can have high feed value if it contains useful context and is likely to generate meaningful discussion.
+Do not use post length alone to determine feed value.
+
+==================================================
+CATEGORY
+==================================================
+If you are not highly confident, return "NA".
+
+Do not classify from keywords alone.
+If two categories are equally plausible, return "NA".
+Questions are not a separate category; classify them according to their clearly identifiable subject.
+
+Classify the post into ONE category based on its primary subject/intent. If unclear or multiple categories are equally plausible → "NA".
+
+1. "RESULTS & PROGRESS"
+   Meaningful treatment progress, improvement, results, or treatment journey.
+   Examples: visible improvement, before/after, reduced hairfall as progress, baby hairs as progress, increased density, positive outcomes, meaningful milestones.
+   Do not use: generic milestones, unclear results, primarily regrowth questions, product/treatment questions, scalp concerns.
+
+2. "TIPS & EXPERIENCES"
+   Useful personal tips, routines, recommendations, lessons, or experiences others can learn from.
+   Examples: hair-care tips, practical recommendations, "what worked for me", useful habits.
+   Do not use: pure progress updates, product-specific usage/experiences, diet-focused posts, generic opinions.
+
+3. "HAIRFALL CONCERNS"
+   Current or worsening hairfall, shedding, thinning, or concern about hair loss.
+   Examples: increased hairfall, excessive shedding, ongoing hairfall, thinning, "is this normal?"
+   Do not use: positive progress involving reduced hairfall, regrowth-focused posts, incidental hairfall mentions, primarily scalp concerns.
+
+4. "HOW TO USE"
+   How, when, how often, dosage, sequence, or manner of using a product/medicine/treatment.
+   Examples: application, timing, frequency, dosage, before/after usage.
+   Do not use: product opinions/effectiveness, side effects, generic hair-care tips.
+
+5. "DANDRUFF & SCALP"
+   Dandruff or scalp-related symptoms, conditions, or concerns.
+   Examples: dandruff, flakes, dryness, itching, irritation, oily scalp, buildup, scalp health.
+   Do not use: hairfall where scalp issues are incidental, product-focused questions, general hair-care advice.
+
+6. "HAIR REGROWTH"
+   Posts focused on new hair growth, regrowth, baby hairs, density, or expectations around growth.
+   Examples: when regrowth starts, new hair growth, baby hairs, expected growth, increasing thickness.
+   Do not use: overall progress stories, current hairfall concerns, incidental regrowth mentions.
+
+7. "PRODUCTS & TREATMENT"
+   Posts primarily discussing a product, medicine, treatment, or treatment protocol itself.
+   Examples: product/treatment effectiveness, comparisons, treatment experiences, why a product is included, whether treatment is necessary.
+   Do not use: usage questions → HOW TO USE; treatment-related reactions → SIDE EFFECTS; generic hairfall concerns.
+
+8. "SIDE EFFECTS"
+   Unwanted effects or symptoms believed to be caused by a treatment/product.
+   Examples: acne, irritation, reactions, treatment-related symptoms, questions about side effects.
+   Do not use: unrelated health problems, normal shedding unless framed as a side effect, usage questions.
+
+9. "DIET & LIFESTYLE"
+   Food, nutrition, exercise, stress, sleep, lifestyle, or daily habits related to hair/treatment.
+   Examples: diet, protein, nutrition, exercise, stress, sleep, smoking/alcohol, lifestyle factors.
+   Do not use: product/supplement-focused posts, general hair-care routines, incidental lifestyle mentions.
+
+10. "CHALLENGES"
+    Explicit Traya/community challenges, streaks, campaigns, or structured participation.
+    Examples: challenge completion, streak milestones, campaign participation.
+    Do not use: normal treatment milestones or progress.
+
+11. "NA"
+    Use when there is insufficient context or no clear category.
+    Examples: "Good", "Nice", "Same here", "Thank you Traya", "3rd kit", "3 months completed", "Hairfall", unclear questions, generic complaints, delivery/order/refund/payment/support/appointment issues, irrelevant posts, ambiguous posts, or keyword-only matches.
 
 POST CONTENT:
 
@@ -68,99 +190,55 @@ const (
 	SentimentNegative SentimentTag = "negative"
 )
 
-func (s SentimentTag) Weight() float64 {
-	switch s {
-	case SentimentPositive:
-		return 100
-	case SentimentNeutral:
-		return 50
-	case SentimentNegative:
+type Category string
+
+const (
+	CategoryResultsProgress   Category = "RESULTS & PROGRESS"
+	CategoryTipsExperiences   Category = "TIPS & EXPERIENCES"
+	CategoryHairfallConcerns  Category = "HAIRFALL CONCERNS"
+	CategoryHowToUse          Category = "HOW TO USE"
+	CategoryDandruffScalp     Category = "DANDRUFF & SCALP"
+	CategoryHairRegrowth      Category = "HAIR REGROWTH"
+	CategoryProductsTreatment Category = "PRODUCTS & TREATMENT"
+	CategorySideEffects       Category = "SIDE EFFECTS"
+	CategoryDietLifestyle     Category = "DIET & LIFESTYLE"
+	CategoryChallenges        Category = "CHALLENGES"
+	CategoryNA                Category = "NA"
+)
+
+func (c Category) Boost(sentiment SentimentTag) float64 {
+	if sentiment != SentimentPositive {
 		return 0
+	}
+	switch c {
+	case CategoryResultsProgress:
+		return 100
+	case CategoryTipsExperiences:
+		return 75
+	case CategoryHairfallConcerns:
+		return 20
+	case CategoryHairRegrowth:
+		return 20
+	case CategoryHowToUse:
+		return 15
+	case CategoryDandruffScalp:
+		return 15
+	case CategoryProductsTreatment:
+		return 15
+	case CategorySideEffects:
+		return 15
+	case CategoryDietLifestyle:
+		return 10
 	default:
 		return 0
 	}
 }
 
-type AllowedTopic string
-
-const (
-	TopicUsageRegimen              AllowedTopic = "usage_regimen"
-	TopicResultsTimeline           AllowedTopic = "results_timeline"
-	TopicHairfallShedding          AllowedTopic = "hairfall_shedding"
-	TopicSideEffectsSafety         AllowedTopic = "side_effects_safety"
-	TopicOrderDeliveryRefill       AllowedTopic = "order_delivery_refill"
-	TopicBuildAHabit               AllowedTopic = "build_a_habit"
-	TopicDietLifestyleCompat       AllowedTopic = "diet_lifestyle_compatibility"
-	TopicProductEffectivenessTrust AllowedTopic = "product_effectiveness_trust"
-	TopicDoctorSupportCall         AllowedTopic = "doctor_support_call"
-	TopicProgressSuccessStory      AllowedTopic = "progress_success_story"
-	TopicOther                     AllowedTopic = "other"
-)
-
-func (t AllowedTopic) Booster(sentiment SentimentTag) float64 {
-	switch t {
-	case TopicProgressSuccessStory:
-		switch sentiment {
-		case SentimentPositive:
-			return 20
-		case SentimentNeutral:
-			return 5
-		case SentimentNegative:
-			return -20
-		}
-	case TopicProductEffectivenessTrust:
-		switch sentiment {
-		case SentimentPositive:
-			return 10
-		case SentimentNeutral:
-			return 5
-		case SentimentNegative:
-			return -10
-		}
-	case TopicHairfallShedding:
-		switch sentiment {
-		case SentimentPositive:
-			return 0
-		case SentimentNeutral:
-			return 0
-		case SentimentNegative:
-			return -5
-		}
-	case TopicSideEffectsSafety:
-		switch sentiment {
-		case SentimentPositive:
-			return 0
-		case SentimentNeutral:
-			return 0
-		case SentimentNegative:
-			return -10
-		}
-	case TopicOrderDeliveryRefill:
-		switch sentiment {
-		case SentimentPositive:
-			return 0
-		case SentimentNeutral:
-			return -5
-		case SentimentNegative:
-			return -10
-		}
-	case TopicBuildAHabit:
-		switch sentiment {
-		case SentimentPositive:
-			return 15
-		case SentimentNeutral:
-			return 10
-		case SentimentNegative:
-			return 0
-		}
-	}
-	return 0
-}
-
 type ScoringResult struct {
 	SentimentTag    SentimentTag `json:"sentiment_tag" jsonschema:"enum=positive,enum=neutral,enum=negative,description=The overall sentiment of the post"`
 	PositivityScore int          `json:"positivity_score" jsonschema:"minimum=0,maximum=100,description=A score from 0-100 indicating how positive the content is"`
-	PrimaryTopic    AllowedTopic `json:"primary_topic" jsonschema:"enum=usage_regimen,enum=results_timeline,enum=hairfall_shedding,enum=side_effects_safety,enum=order_delivery_refill,enum=build_a_habit,enum=diet_lifestyle_compatibility,enum=product_effectiveness_trust,enum=doctor_support_call,enum=progress_success_story,enum=other,description=The primary topic of the post"`
+	FeedValueScore  int          `json:"feed_value_score" jsonschema:"minimum=0,maximum=100,description=A score from 0-100 indicating how valuable the post is to the community"`
+	Category        Category     `json:"category" jsonschema:"enum=RESULTS & PROGRESS,enum=TIPS & EXPERIENCES,enum=HAIRFALL CONCERNS,enum=HOW TO USE,enum=DANDRUFF & SCALP,enum=HAIR REGROWTH,enum=PRODUCTS & TREATMENT,enum=SIDE EFFECTS,enum=DIET & LIFESTYLE,enum=CHALLENGES,enum=NA,description=The primary category of the post"`
 }
 
 func (r *ScoringResult) Validate() {
@@ -170,21 +248,105 @@ func (r *ScoringResult) Validate() {
 	if r.PositivityScore > 100 {
 		r.PositivityScore = 100
 	}
+	if r.FeedValueScore < 0 {
+		r.FeedValueScore = 0
+	}
+	if r.FeedValueScore > 100 {
+		r.FeedValueScore = 100
+	}
 }
 
-func (r *ScoringResult) CalculateRankScore() float64 {
-	return r.SentimentTag.Weight() + float64(r.PositivityScore) + r.PrimaryTopic.Booster(r.SentimentTag)
+const (
+	DefaultWeightPositivity = 1.0
+	DefaultWeightFeedValue  = 1.5
+	DefaultWeightQuality    = 1.0
+	DefaultWeightCategory   = 1.0
+)
+
+// Weights holds the admin-configurable multipliers used by CalculateRankScore.
+// Use DefaultWeights() when no admin-configured value is available.
+type Weights struct {
+	Positivity float64
+	FeedValue  float64
+	Quality    float64
+	Category   float64
+}
+
+func DefaultWeights() Weights {
+	return Weights{
+		Positivity: DefaultWeightPositivity,
+		FeedValue:  DefaultWeightFeedValue,
+		Quality:    DefaultWeightQuality,
+		Category:   DefaultWeightCategory,
+	}
+}
+
+// LoadWeights reads the current admin-configured content_score weights,
+// falling back to DefaultWeights() for any value that hasn't been set.
+func LoadWeights(ctx context.Context, repo *settings.SettingsRepository) (Weights, error) {
+	s, err := repo.Get(ctx)
+	if err != nil {
+		return Weights{}, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	fr := s.Services.OrZero().FeedRanking.OrZero()
+
+	return Weights{
+		Positivity: fr.WPositivity.Or(DefaultWeightPositivity),
+		FeedValue:  fr.WFeedValue.Or(DefaultWeightFeedValue),
+		Quality:    fr.WQuality.Or(DefaultWeightQuality),
+		Category:   fr.WCategory.Or(DefaultWeightCategory),
+	}, nil
+}
+
+func qualityScore(bodyLength int) float64 {
+	switch {
+	case bodyLength <= 100:
+		return 25
+	case bodyLength <= 300:
+		return 50
+	case bodyLength <= 500:
+		return 75
+	default:
+		return 100
+	}
+}
+
+func SentimentMultiplier(tag SentimentTag) float64 {
+	if tag == SentimentNegative {
+		return 0.1
+	}
+	return 1.0
+}
+
+func (r *ScoringResult) CalculateRankScore(bodyLength int, w Weights) float64 {
+	return w.Positivity*float64(r.PositivityScore) +
+		w.FeedValue*float64(r.FeedValueScore) +
+		w.Quality*qualityScore(bodyLength) +
+		w.Category*r.Category.Boost(r.SentimentTag)
 }
 
 type Scorer struct {
 	logger   *slog.Logger
 	prompter ai.Prompter
+	settings *settings.SettingsRepository
 }
 
-func New(logger *slog.Logger, prompter ai.Prompter) *Scorer {
+// Weights loads the current admin-configured content_score weights, falling
+// back to DefaultWeights() if the settings lookup fails.
+func (s *Scorer) Weights(ctx context.Context) Weights {
+	w, err := LoadWeights(ctx, s.settings)
+	if err != nil {
+		return DefaultWeights()
+	}
+	return w
+}
+
+func New(logger *slog.Logger, prompter ai.Prompter, settingsRepo *settings.SettingsRepository) *Scorer {
 	return &Scorer{
 		logger:   logger,
 		prompter: prompter,
+		settings: settingsRepo,
 	}
 }
 
@@ -231,12 +393,15 @@ func (s *Scorer) Score(ctx context.Context, input ScoreInput) (*ScoringResult, e
 
 	result.Validate()
 
+	weights := s.Weights(ctx)
+
 	s.logger.Info("sentiment scoring response",
 		slog.String("title", input.Title),
 		slog.String("sentiment_tag", string(result.SentimentTag)),
 		slog.Int("positivity_score", result.PositivityScore),
-		slog.String("primary_topic", string(result.PrimaryTopic)),
-		slog.Float64("rank_score", result.CalculateRankScore()),
+		slog.Int("feed_value_score", result.FeedValueScore),
+		slog.String("category", string(result.Category)),
+		slog.Float64("rank_score", result.CalculateRankScore(len(input.Body), weights)),
 	)
 
 	return result, nil

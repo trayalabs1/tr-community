@@ -28,6 +28,8 @@ const (
 	FieldPositivityScore = "positivity_score"
 	// FieldPrimaryTopic holds the string denoting the primary_topic field in the database.
 	FieldPrimaryTopic = "primary_topic"
+	// FieldFeedValueScore holds the string denoting the feed_value_score field in the database.
+	FieldFeedValueScore = "feed_value_score"
 	// FieldScoringStatus holds the string denoting the scoring_status field in the database.
 	FieldScoringStatus = "scoring_status"
 	// FieldRankScore holds the string denoting the rank_score field in the database.
@@ -54,6 +56,7 @@ var Columns = []string{
 	FieldSentimentTag,
 	FieldPositivityScore,
 	FieldPrimaryTopic,
+	FieldFeedValueScore,
 	FieldScoringStatus,
 	FieldRankScore,
 }
@@ -146,6 +149,11 @@ func ByPositivityScore(opts ...sql.OrderTermOption) OrderOption {
 // ByPrimaryTopic orders the results by the primary_topic field.
 func ByPrimaryTopic(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPrimaryTopic, opts...).ToFunc()
+}
+
+// ByFeedValueScore orders the results by the feed_value_score field.
+func ByFeedValueScore(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFeedValueScore, opts...).ToFunc()
 }
 
 // ByScoringStatus orders the results by the scoring_status field.

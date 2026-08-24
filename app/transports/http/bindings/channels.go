@@ -1161,27 +1161,6 @@ func (c Channels) ChannelReplyCreate(ctx context.Context, request openapi.Channe
 	}, nil
 }
 
-func (c Channels) ChannelRankingRecalculate(ctx context.Context, request openapi.ChannelRankingRecalculateRequestObject) (openapi.ChannelRankingRecalculateResponseObject, error) {
-	if err := session.Authorise(ctx, nil, rbac.PermissionAdministrator); err != nil {
-		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.PermissionDenied))
-	}
-
-	channelID := xid.ID(openapi.ParseID(request.ChannelID))
-
-	result, err := c.ranker.RecalculateBulk(ctx, channelID)
-	if err != nil {
-		return nil, fault.Wrap(err, fctx.With(ctx))
-	}
-
-	return openapi.ChannelRankingRecalculate200JSONResponse{
-		RankingRecalculateOKJSONResponse: openapi.RankingRecalculateOKJSONResponse{
-			Success:      true,
-			PostsUpdated: result.PostsUpdated,
-			DurationMs:   result.DurationMs,
-		},
-	}, nil
-}
-
 func (c Channels) ChannelScoreUnscored(ctx context.Context, request openapi.ChannelScoreUnscoredRequestObject) (openapi.ChannelScoreUnscoredResponseObject, error) {
 	if err := session.Authorise(ctx, nil, rbac.PermissionAdministrator); err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.PermissionDenied))

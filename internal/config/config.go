@@ -207,6 +207,17 @@ type Config struct {
 	SlackQueueSummaryInterval time.Duration `envconfig:"SLACK_QUEUE_SUMMARY_INTERVAL"`
 
 	// -
+	// Rank score engagement job
+	// -
+
+	// The time of day (24-hour `HH:MM`, in the `RANKER_JOB_TIMEZONE` timezone) at which the daily rank_score engagement job runs.
+	RankerJobTime string `default:"06:30" envconfig:"RANKER_JOB_TIME"`
+	// The IANA timezone name used to interpret `RANKER_JOB_TIME`.
+	RankerJobTimezone string `default:"Asia/Kolkata" envconfig:"RANKER_JOB_TIMEZONE"`
+	// Development/testing override. When set (e.g. `10s`), the job runs on this fixed repeating interval instead of once a day at `RANKER_JOB_TIME`. Leave unset in production.
+	RankerJobInterval time.Duration `envconfig:"RANKER_JOB_INTERVAL"`
+
+	// -
 	// Authentication
 	// -
 
@@ -322,6 +333,15 @@ type Config struct {
 	   This is a full URL with `redis://` as the scheme. You can set the username and password using the URL format, for example: `redis://<username>:<password>@<host>:<port>`.
 	*/
 	RedisURL url.URL `default:"" envconfig:"REDIS_URL"`
+	/*
+	   Development/testing override. When `true`, the channel feed's cached
+	   ordered-sequence layer is bypassed entirely — every request rebuilds
+	   the feed directly from the database, and nothing is written back to
+	   the cache. Useful when iterating locally on ranking changes, since
+	   the feed cache otherwise serves a stale sequence for up to 30 minutes.
+	   Leave unset (`false`) in production.
+	*/
+	FeedCacheDisable bool `default:"false" envconfig:"FEED_CACHE_DISABLE"`
 
 	// -
 	// Search features

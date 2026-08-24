@@ -31,7 +31,7 @@ func quickReplyChipsFor(t *thread.Thread) *openapi.QuickReplyChips {
 	if !ok || tag != "positive" {
 		return nil
 	}
-	topic, ok := t.PrimaryTopic.Get()
+	topic, ok := t.Category.Get()
 	if !ok || topic != "progress_success_story" {
 		return nil
 	}

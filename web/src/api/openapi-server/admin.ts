@@ -30,7 +30,6 @@ import type {
   Identifier,
   ModerationActionCreateBody,
   NoContentResponse,
-  RankingRecalculateOKResponse,
   ScoreUnscoredOKResponse,
 } from "../openapi-schema";
 import { fetcher } from "../server";
@@ -501,35 +500,6 @@ export const adminAnalyticsGet = async (
     {
       ...options,
       method: "GET",
-    },
-  );
-};
-
-/**
- * Triggers a synchronous recalculation of rank_score for all posts in
-the channel that have been scored. Returns the number of posts updated
-and the duration of the operation.
-
- * @summary Recalculate rank scores for all scored posts in a channel.
- */
-export type channelRankingRecalculateResponse = {
-  data: RankingRecalculateOKResponse;
-  status: number;
-};
-
-export const getChannelRankingRecalculateUrl = (channelID: string) => {
-  return `/channels/${channelID}/ranking/recalculate`;
-};
-
-export const channelRankingRecalculate = async (
-  channelID: string,
-  options?: RequestInit,
-): Promise<channelRankingRecalculateResponse> => {
-  return fetcher<Promise<channelRankingRecalculateResponse>>(
-    getChannelRankingRecalculateUrl(channelID),
-    {
-      ...options,
-      method: "POST",
     },
   );
 };

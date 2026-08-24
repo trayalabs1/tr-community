@@ -20,6 +20,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/post/thread_cache"
 	"github.com/Southclaws/storyden/app/resources/post/thread_querier"
 	"github.com/Southclaws/storyden/app/resources/post/thread_writer"
+	"github.com/Southclaws/storyden/app/resources/settings"
 	"github.com/Southclaws/storyden/app/resources/tag/tag_ref"
 	"github.com/Southclaws/storyden/app/resources/tag/tag_writer"
 	"github.com/Southclaws/storyden/app/resources/visibility"
@@ -28,6 +29,7 @@ import (
 	"github.com/Southclaws/storyden/app/services/moderation"
 	"github.com/Southclaws/storyden/app/services/report/system_report"
 	"github.com/Southclaws/storyden/app/services/semdex"
+	"github.com/Southclaws/storyden/internal/config"
 	"github.com/Southclaws/storyden/internal/ent"
 	"github.com/Southclaws/storyden/internal/infrastructure/cache"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/spanner"
@@ -72,12 +74,12 @@ type Service interface {
 }
 
 type Partial struct {
-	Title      opt.Optional[string]
-	Content    opt.Optional[datagraph.Content]
-	Category   opt.Optional[xid.ID]
-	Tags       opt.Optional[tag_ref.Names]
-	Visibility opt.Optional[visibility.Visibility]
-	URL        opt.Optional[url.URL]
+	Title       opt.Optional[string]
+	Content     opt.Optional[datagraph.Content]
+	Category    opt.Optional[xid.ID]
+	Tags        opt.Optional[tag_ref.Names]
+	Visibility  opt.Optional[visibility.Visibility]
+	URL         opt.Optional[url.URL]
 	Meta        opt.Optional[map[string]any]
 	ChannelID   opt.Optional[xid.ID]
 	Pinned      opt.Optional[int]
@@ -106,24 +108,27 @@ type service struct {
 	ins    spanner.Instrumentation
 	logger *slog.Logger
 
-	db             *ent.Client
-	accountQuery   *account_querier.Querier
-	threadQuerier  *thread_querier.Querier
-	threadWriter   *thread_writer.Writer
-	tagWriter      *tag_writer.Writer
-	fetcher        *fetcher.Fetcher
-	recommender    semdex.Recommender
-	bus            *pubsub.Bus
-	mentioner      *mentioner.Mentioner
-	cpm            *moderation.Manager
-	cache          *thread_cache.Cache
-	cacheStore     cache.Store
-	systemReporter *system_report.Manager
+	db               *ent.Client
+	accountQuery     *account_querier.Querier
+	threadQuerier    *thread_querier.Querier
+	threadWriter     *thread_writer.Writer
+	tagWriter        *tag_writer.Writer
+	fetcher          *fetcher.Fetcher
+	recommender      semdex.Recommender
+	bus              *pubsub.Bus
+	mentioner        *mentioner.Mentioner
+	cpm              *moderation.Manager
+	cache            *thread_cache.Cache
+	cacheStore       cache.Store
+	systemReporter   *system_report.Manager
+	settings         *settings.SettingsRepository
+	feedCacheDisable bool
 }
 
 func New(
 	ins spanner.Builder,
 	logger *slog.Logger,
+	cfg config.Config,
 
 	db *ent.Client,
 	accountQuery *account_querier.Querier,
@@ -138,23 +143,26 @@ func New(
 	cache *thread_cache.Cache,
 	cacheStore cache.Store,
 	systemReporter *system_report.Manager,
+	settingsRepo *settings.SettingsRepository,
 ) Service {
 	return &service{
 		ins:    ins.Build(),
 		logger: logger,
 
-		db:             db,
-		accountQuery:   accountQuery,
-		threadQuerier:  threadQuerier,
-		threadWriter:   threadWriter,
-		tagWriter:      tagWriter,
-		fetcher:        fetcher,
-		recommender:    recommender,
-		bus:            bus,
-		mentioner:      mentioner,
-		cpm:            cpm,
-		cache:          cache,
-		cacheStore:     cacheStore,
-		systemReporter: systemReporter,
+		db:               db,
+		accountQuery:     accountQuery,
+		threadQuerier:    threadQuerier,
+		threadWriter:     threadWriter,
+		tagWriter:        tagWriter,
+		fetcher:          fetcher,
+		recommender:      recommender,
+		bus:              bus,
+		mentioner:        mentioner,
+		cpm:              cpm,
+		cache:            cache,
+		cacheStore:       cacheStore,
+		systemReporter:   systemReporter,
+		settings:         settingsRepo,
+		feedCacheDisable: cfg.FeedCacheDisable,
 	}
 }

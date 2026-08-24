@@ -86,6 +86,11 @@ func PrimaryTopic(v string) predicate.PostSentiment {
 	return predicate.PostSentiment(sql.FieldEQ(FieldPrimaryTopic, v))
 }
 
+// FeedValueScore applies equality check predicate on the "feed_value_score" field. It's identical to FeedValueScoreEQ.
+func FeedValueScore(v int) predicate.PostSentiment {
+	return predicate.PostSentiment(sql.FieldEQ(FieldFeedValueScore, v))
+}
+
 // RankScore applies equality check predicate on the "rank_score" field. It's identical to RankScoreEQ.
 func RankScore(v float64) predicate.PostSentiment {
 	return predicate.PostSentiment(sql.FieldEQ(FieldRankScore, v))
@@ -439,6 +444,56 @@ func PrimaryTopicEqualFold(v string) predicate.PostSentiment {
 // PrimaryTopicContainsFold applies the ContainsFold predicate on the "primary_topic" field.
 func PrimaryTopicContainsFold(v string) predicate.PostSentiment {
 	return predicate.PostSentiment(sql.FieldContainsFold(FieldPrimaryTopic, v))
+}
+
+// FeedValueScoreEQ applies the EQ predicate on the "feed_value_score" field.
+func FeedValueScoreEQ(v int) predicate.PostSentiment {
+	return predicate.PostSentiment(sql.FieldEQ(FieldFeedValueScore, v))
+}
+
+// FeedValueScoreNEQ applies the NEQ predicate on the "feed_value_score" field.
+func FeedValueScoreNEQ(v int) predicate.PostSentiment {
+	return predicate.PostSentiment(sql.FieldNEQ(FieldFeedValueScore, v))
+}
+
+// FeedValueScoreIn applies the In predicate on the "feed_value_score" field.
+func FeedValueScoreIn(vs ...int) predicate.PostSentiment {
+	return predicate.PostSentiment(sql.FieldIn(FieldFeedValueScore, vs...))
+}
+
+// FeedValueScoreNotIn applies the NotIn predicate on the "feed_value_score" field.
+func FeedValueScoreNotIn(vs ...int) predicate.PostSentiment {
+	return predicate.PostSentiment(sql.FieldNotIn(FieldFeedValueScore, vs...))
+}
+
+// FeedValueScoreGT applies the GT predicate on the "feed_value_score" field.
+func FeedValueScoreGT(v int) predicate.PostSentiment {
+	return predicate.PostSentiment(sql.FieldGT(FieldFeedValueScore, v))
+}
+
+// FeedValueScoreGTE applies the GTE predicate on the "feed_value_score" field.
+func FeedValueScoreGTE(v int) predicate.PostSentiment {
+	return predicate.PostSentiment(sql.FieldGTE(FieldFeedValueScore, v))
+}
+
+// FeedValueScoreLT applies the LT predicate on the "feed_value_score" field.
+func FeedValueScoreLT(v int) predicate.PostSentiment {
+	return predicate.PostSentiment(sql.FieldLT(FieldFeedValueScore, v))
+}
+
+// FeedValueScoreLTE applies the LTE predicate on the "feed_value_score" field.
+func FeedValueScoreLTE(v int) predicate.PostSentiment {
+	return predicate.PostSentiment(sql.FieldLTE(FieldFeedValueScore, v))
+}
+
+// FeedValueScoreIsNil applies the IsNil predicate on the "feed_value_score" field.
+func FeedValueScoreIsNil() predicate.PostSentiment {
+	return predicate.PostSentiment(sql.FieldIsNull(FieldFeedValueScore))
+}
+
+// FeedValueScoreNotNil applies the NotNil predicate on the "feed_value_score" field.
+func FeedValueScoreNotNil() predicate.PostSentiment {
+	return predicate.PostSentiment(sql.FieldNotNull(FieldFeedValueScore))
 }
 
 // ScoringStatusEQ applies the EQ predicate on the "scoring_status" field.

@@ -118,6 +118,33 @@ func (_u *PostSentimentUpdate) ClearPrimaryTopic() *PostSentimentUpdate {
 	return _u
 }
 
+// SetFeedValueScore sets the "feed_value_score" field.
+func (_u *PostSentimentUpdate) SetFeedValueScore(v int) *PostSentimentUpdate {
+	_u.mutation.ResetFeedValueScore()
+	_u.mutation.SetFeedValueScore(v)
+	return _u
+}
+
+// SetNillableFeedValueScore sets the "feed_value_score" field if the given value is not nil.
+func (_u *PostSentimentUpdate) SetNillableFeedValueScore(v *int) *PostSentimentUpdate {
+	if v != nil {
+		_u.SetFeedValueScore(*v)
+	}
+	return _u
+}
+
+// AddFeedValueScore adds value to the "feed_value_score" field.
+func (_u *PostSentimentUpdate) AddFeedValueScore(v int) *PostSentimentUpdate {
+	_u.mutation.AddFeedValueScore(v)
+	return _u
+}
+
+// ClearFeedValueScore clears the value of the "feed_value_score" field.
+func (_u *PostSentimentUpdate) ClearFeedValueScore() *PostSentimentUpdate {
+	_u.mutation.ClearFeedValueScore()
+	return _u
+}
+
 // SetScoringStatus sets the "scoring_status" field.
 func (_u *PostSentimentUpdate) SetScoringStatus(v postsentiment.ScoringStatus) *PostSentimentUpdate {
 	_u.mutation.SetScoringStatus(v)
@@ -259,6 +286,15 @@ func (_u *PostSentimentUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.PrimaryTopicCleared() {
 		_spec.ClearField(postsentiment.FieldPrimaryTopic, field.TypeString)
+	}
+	if value, ok := _u.mutation.FeedValueScore(); ok {
+		_spec.SetField(postsentiment.FieldFeedValueScore, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedFeedValueScore(); ok {
+		_spec.AddField(postsentiment.FieldFeedValueScore, field.TypeInt, value)
+	}
+	if _u.mutation.FeedValueScoreCleared() {
+		_spec.ClearField(postsentiment.FieldFeedValueScore, field.TypeInt)
 	}
 	if value, ok := _u.mutation.ScoringStatus(); ok {
 		_spec.SetField(postsentiment.FieldScoringStatus, field.TypeEnum, value)
@@ -404,6 +440,33 @@ func (_u *PostSentimentUpdateOne) SetNillablePrimaryTopic(v *string) *PostSentim
 // ClearPrimaryTopic clears the value of the "primary_topic" field.
 func (_u *PostSentimentUpdateOne) ClearPrimaryTopic() *PostSentimentUpdateOne {
 	_u.mutation.ClearPrimaryTopic()
+	return _u
+}
+
+// SetFeedValueScore sets the "feed_value_score" field.
+func (_u *PostSentimentUpdateOne) SetFeedValueScore(v int) *PostSentimentUpdateOne {
+	_u.mutation.ResetFeedValueScore()
+	_u.mutation.SetFeedValueScore(v)
+	return _u
+}
+
+// SetNillableFeedValueScore sets the "feed_value_score" field if the given value is not nil.
+func (_u *PostSentimentUpdateOne) SetNillableFeedValueScore(v *int) *PostSentimentUpdateOne {
+	if v != nil {
+		_u.SetFeedValueScore(*v)
+	}
+	return _u
+}
+
+// AddFeedValueScore adds value to the "feed_value_score" field.
+func (_u *PostSentimentUpdateOne) AddFeedValueScore(v int) *PostSentimentUpdateOne {
+	_u.mutation.AddFeedValueScore(v)
+	return _u
+}
+
+// ClearFeedValueScore clears the value of the "feed_value_score" field.
+func (_u *PostSentimentUpdateOne) ClearFeedValueScore() *PostSentimentUpdateOne {
+	_u.mutation.ClearFeedValueScore()
 	return _u
 }
 
@@ -578,6 +641,15 @@ func (_u *PostSentimentUpdateOne) sqlSave(ctx context.Context) (_node *PostSenti
 	}
 	if _u.mutation.PrimaryTopicCleared() {
 		_spec.ClearField(postsentiment.FieldPrimaryTopic, field.TypeString)
+	}
+	if value, ok := _u.mutation.FeedValueScore(); ok {
+		_spec.SetField(postsentiment.FieldFeedValueScore, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedFeedValueScore(); ok {
+		_spec.AddField(postsentiment.FieldFeedValueScore, field.TypeInt, value)
+	}
+	if _u.mutation.FeedValueScoreCleared() {
+		_spec.ClearField(postsentiment.FieldFeedValueScore, field.TypeInt)
 	}
 	if value, ok := _u.mutation.ScoringStatus(); ok {
 		_spec.SetField(postsentiment.FieldScoringStatus, field.TypeEnum, value)

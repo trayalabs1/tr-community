@@ -93,7 +93,7 @@ func TestChannelThreadFeedbackCooldownAndSentiment(t *testing.T) {
 
 			var firstFeedbackID string
 
-			t.Run("first feedback/progress stays published and gets neutral sentiment + 95-105 rank", func(t *testing.T) {
+			t.Run("first feedback/progress stays published and gets neutral sentiment + deterministic v4 rank", func(t *testing.T) {
 				resp, err := cl.ChannelThreadCreateWithResponse(root, channelAID, openapi.ThreadInitialProps{
 					Title:      "First feedback",
 					Body:       opt.New("<p>first</p>").Ptr(),
@@ -116,8 +116,10 @@ func TestChannelThreadFeedbackCooldownAndSentiment(t *testing.T) {
 				r.Equal("neutral", *ps.SentimentTag, "feedback must be tagged neutral like BAH")
 				r.Equal(ent_post_sentiment.ScoringStatusScored, ps.ScoringStatus,
 					"feedback sentiment must be marked Scored to bypass the AI scorer")
-				r.GreaterOrEqual(ps.RankScore, 95.0, "feedback rank must be in [95, 105]")
-				r.LessOrEqual(ps.RankScore, 105.0, "feedback rank must be in [95, 105]")
+				// v4 prescored formula: 1.0*PositivityScore(50) + 1.5*FeedValueScore(50) +
+				// 1.0*qualityScore(len("<p>first</p>")=13 chars -> <=100 bucket -> 25) +
+				// 1.0*CategoryNA.Boost(Neutral)(0) = 50 + 75 + 25 + 0 = 150.
+				r.Equal(150.0, ps.RankScore, "feedback rank must match deterministic v4 content_score formula")
 			})
 
 			t.Run("second feedback/progress within window goes to review (same author)", func(t *testing.T) {

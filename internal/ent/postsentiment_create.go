@@ -101,6 +101,20 @@ func (_c *PostSentimentCreate) SetNillablePrimaryTopic(v *string) *PostSentiment
 	return _c
 }
 
+// SetFeedValueScore sets the "feed_value_score" field.
+func (_c *PostSentimentCreate) SetFeedValueScore(v int) *PostSentimentCreate {
+	_c.mutation.SetFeedValueScore(v)
+	return _c
+}
+
+// SetNillableFeedValueScore sets the "feed_value_score" field if the given value is not nil.
+func (_c *PostSentimentCreate) SetNillableFeedValueScore(v *int) *PostSentimentCreate {
+	if v != nil {
+		_c.SetFeedValueScore(*v)
+	}
+	return _c
+}
+
 // SetScoringStatus sets the "scoring_status" field.
 func (_c *PostSentimentCreate) SetScoringStatus(v postsentiment.ScoringStatus) *PostSentimentCreate {
 	_c.mutation.SetScoringStatus(v)
@@ -291,6 +305,10 @@ func (_c *PostSentimentCreate) createSpec() (*PostSentiment, *sqlgraph.CreateSpe
 		_spec.SetField(postsentiment.FieldPrimaryTopic, field.TypeString, value)
 		_node.PrimaryTopic = &value
 	}
+	if value, ok := _c.mutation.FeedValueScore(); ok {
+		_spec.SetField(postsentiment.FieldFeedValueScore, field.TypeInt, value)
+		_node.FeedValueScore = &value
+	}
 	if value, ok := _c.mutation.ScoringStatus(); ok {
 		_spec.SetField(postsentiment.FieldScoringStatus, field.TypeEnum, value)
 		_node.ScoringStatus = value
@@ -449,6 +467,30 @@ func (u *PostSentimentUpsert) UpdatePrimaryTopic() *PostSentimentUpsert {
 // ClearPrimaryTopic clears the value of the "primary_topic" field.
 func (u *PostSentimentUpsert) ClearPrimaryTopic() *PostSentimentUpsert {
 	u.SetNull(postsentiment.FieldPrimaryTopic)
+	return u
+}
+
+// SetFeedValueScore sets the "feed_value_score" field.
+func (u *PostSentimentUpsert) SetFeedValueScore(v int) *PostSentimentUpsert {
+	u.Set(postsentiment.FieldFeedValueScore, v)
+	return u
+}
+
+// UpdateFeedValueScore sets the "feed_value_score" field to the value that was provided on create.
+func (u *PostSentimentUpsert) UpdateFeedValueScore() *PostSentimentUpsert {
+	u.SetExcluded(postsentiment.FieldFeedValueScore)
+	return u
+}
+
+// AddFeedValueScore adds v to the "feed_value_score" field.
+func (u *PostSentimentUpsert) AddFeedValueScore(v int) *PostSentimentUpsert {
+	u.Add(postsentiment.FieldFeedValueScore, v)
+	return u
+}
+
+// ClearFeedValueScore clears the value of the "feed_value_score" field.
+func (u *PostSentimentUpsert) ClearFeedValueScore() *PostSentimentUpsert {
+	u.SetNull(postsentiment.FieldFeedValueScore)
 	return u
 }
 
@@ -628,6 +670,34 @@ func (u *PostSentimentUpsertOne) UpdatePrimaryTopic() *PostSentimentUpsertOne {
 func (u *PostSentimentUpsertOne) ClearPrimaryTopic() *PostSentimentUpsertOne {
 	return u.Update(func(s *PostSentimentUpsert) {
 		s.ClearPrimaryTopic()
+	})
+}
+
+// SetFeedValueScore sets the "feed_value_score" field.
+func (u *PostSentimentUpsertOne) SetFeedValueScore(v int) *PostSentimentUpsertOne {
+	return u.Update(func(s *PostSentimentUpsert) {
+		s.SetFeedValueScore(v)
+	})
+}
+
+// AddFeedValueScore adds v to the "feed_value_score" field.
+func (u *PostSentimentUpsertOne) AddFeedValueScore(v int) *PostSentimentUpsertOne {
+	return u.Update(func(s *PostSentimentUpsert) {
+		s.AddFeedValueScore(v)
+	})
+}
+
+// UpdateFeedValueScore sets the "feed_value_score" field to the value that was provided on create.
+func (u *PostSentimentUpsertOne) UpdateFeedValueScore() *PostSentimentUpsertOne {
+	return u.Update(func(s *PostSentimentUpsert) {
+		s.UpdateFeedValueScore()
+	})
+}
+
+// ClearFeedValueScore clears the value of the "feed_value_score" field.
+func (u *PostSentimentUpsertOne) ClearFeedValueScore() *PostSentimentUpsertOne {
+	return u.Update(func(s *PostSentimentUpsert) {
+		s.ClearFeedValueScore()
 	})
 }
 
@@ -979,6 +1049,34 @@ func (u *PostSentimentUpsertBulk) UpdatePrimaryTopic() *PostSentimentUpsertBulk 
 func (u *PostSentimentUpsertBulk) ClearPrimaryTopic() *PostSentimentUpsertBulk {
 	return u.Update(func(s *PostSentimentUpsert) {
 		s.ClearPrimaryTopic()
+	})
+}
+
+// SetFeedValueScore sets the "feed_value_score" field.
+func (u *PostSentimentUpsertBulk) SetFeedValueScore(v int) *PostSentimentUpsertBulk {
+	return u.Update(func(s *PostSentimentUpsert) {
+		s.SetFeedValueScore(v)
+	})
+}
+
+// AddFeedValueScore adds v to the "feed_value_score" field.
+func (u *PostSentimentUpsertBulk) AddFeedValueScore(v int) *PostSentimentUpsertBulk {
+	return u.Update(func(s *PostSentimentUpsert) {
+		s.AddFeedValueScore(v)
+	})
+}
+
+// UpdateFeedValueScore sets the "feed_value_score" field to the value that was provided on create.
+func (u *PostSentimentUpsertBulk) UpdateFeedValueScore() *PostSentimentUpsertBulk {
+	return u.Update(func(s *PostSentimentUpsert) {
+		s.UpdateFeedValueScore()
+	})
+}
+
+// ClearFeedValueScore clears the value of the "feed_value_score" field.
+func (u *PostSentimentUpsertBulk) ClearFeedValueScore() *PostSentimentUpsertBulk {
+	return u.Update(func(s *PostSentimentUpsert) {
+		s.ClearFeedValueScore()
 	})
 }
 

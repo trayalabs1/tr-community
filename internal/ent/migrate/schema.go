@@ -1079,6 +1079,7 @@ var (
 		{Name: "sentiment_tag", Type: field.TypeString, Nullable: true},
 		{Name: "positivity_score", Type: field.TypeInt, Nullable: true},
 		{Name: "primary_topic", Type: field.TypeString, Nullable: true},
+		{Name: "feed_value_score", Type: field.TypeInt, Nullable: true},
 		{Name: "scoring_status", Type: field.TypeEnum, Enums: []string{"unscored", "scored", "failed"}, Default: "unscored"},
 		{Name: "rank_score", Type: field.TypeFloat64, Default: 0},
 		{Name: "post_id", Type: field.TypeString, Unique: true, Size: 20},
@@ -1091,7 +1092,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "post_sentiments_posts_sentiment",
-				Columns:    []*schema.Column{PostSentimentsColumns[8]},
+				Columns:    []*schema.Column{PostSentimentsColumns[9]},
 				RefColumns: []*schema.Column{PostsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -1100,12 +1101,12 @@ var (
 			{
 				Name:    "postsentiment_scoring_status",
 				Unique:  false,
-				Columns: []*schema.Column{PostSentimentsColumns[6]},
+				Columns: []*schema.Column{PostSentimentsColumns[7]},
 			},
 			{
 				Name:    "postsentiment_rank_score",
 				Unique:  false,
-				Columns: []*schema.Column{PostSentimentsColumns[7]},
+				Columns: []*schema.Column{PostSentimentsColumns[8]},
 			},
 			{
 				Name:    "postsentiment_sentiment_tag",

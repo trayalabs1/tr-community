@@ -3,7 +3,6 @@ package thread
 import (
 	"context"
 	"log/slog"
-	"math/rand/v2"
 	"strconv"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	"github.com/Southclaws/storyden/app/services/authentication/session"
 	"github.com/Southclaws/storyden/app/services/link/fetcher"
 	"github.com/Southclaws/storyden/app/services/moderation/checker"
+	"github.com/Southclaws/storyden/app/services/sentiment/scorer"
 	"github.com/Southclaws/storyden/internal/ent"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
 	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
@@ -36,15 +36,16 @@ const bahCooldownWindow = 12 * time.Hour
 const feedbackCooldownWindow = 12 * time.Hour
 
 const (
-	prescoredSentimentTag      = "neutral"
-	prescoredRankScoreMin      = 95
-	prescoredRankScoreRangeLen = 11 // 95..105 inclusive => 11 values
+	prescoredSentimentTag    = "neutral"
+	prescoredPositivityScore = 50
+	prescoredFeedValueScore  = 50
 )
 
 // isPrescoredCategory reports whether a post category bypasses AI sentiment
-// scoring and instead receives a fixed neutral tag + 95–105 rank score at
-// creation. New prescored categories should be added here and to the
-// rehydrator/ranker/AI-reviewer filters.
+// scoring and instead receives a fixed neutral tag with a deterministic v4
+// rank_score (computed via ScoringResult.CalculateRankScore) at creation. New
+// prescored categories should be added here and to the rehydrator/AI-reviewer
+// filters.
 func isPrescoredCategory(category string) bool {
 	switch category {
 	case "BAH", "feedback":
@@ -263,12 +264,32 @@ func (s *service) Create(ctx context.Context,
 }
 
 func (s *service) assignPrescoredSentiment(ctx context.Context, postID post.ID) error {
-	rankScore := float64(rand.IntN(prescoredRankScoreRangeLen) + prescoredRankScoreMin)
+	result := scorer.ScoringResult{
+		SentimentTag:    scorer.SentimentNeutral,
+		PositivityScore: prescoredPositivityScore,
+		FeedValueScore:  prescoredFeedValueScore,
+		Category:        scorer.CategoryNA,
+	}
 
-	err := s.db.PostSentiment.
+	p, err := s.db.Post.Query().Where(ent_post.IDEQ(xid.ID(postID))).Select(ent_post.FieldBody).Only(ctx)
+	if err != nil {
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+
+	weights, err := scorer.LoadWeights(ctx, s.settings)
+	if err != nil {
+		weights = scorer.DefaultWeights()
+	}
+
+	rankScore := result.CalculateRankScore(len(p.Body), weights)
+
+	err = s.db.PostSentiment.
 		Create().
 		SetPostID(xid.ID(postID)).
 		SetSentimentTag(prescoredSentimentTag).
+		SetPositivityScore(prescoredPositivityScore).
+		SetFeedValueScore(prescoredFeedValueScore).
+		SetPrimaryTopic(string(scorer.CategoryNA)).
 		SetScoringStatus(ent_post_sentiment.ScoringStatusScored).
 		SetRankScore(rankScore).
 		OnConflictColumns(ent_post_sentiment.FieldPostID).

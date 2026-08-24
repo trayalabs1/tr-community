@@ -379,6 +379,37 @@ The IANA timezone name used to interpret `SLACK_QUEUE_SUMMARY_TIME`.
 
 Development/testing override. When set (e.g. `10s`), the summary is posted on this fixed repeating interval instead of once a day at `SLACK_QUEUE_SUMMARY_TIME`. Leave unset in production.
 
+## Rank score engagement job
+
+Daily job that folds likes/replies from the last 24 hours into each post's stored rank_score, since feed ranking no longer computes engagement live at read time. Runs unconditionally; only the schedule is configurable.
+
+### `RANKER_JOB_TIME`
+
+<table>
+<tr><td>type</td><td>`string`</td></tr>
+<tr><td>default</td><td>`06:30`</td></tr>
+</table>
+
+The time of day (24-hour `HH:MM`, in the `RANKER_JOB_TIMEZONE` timezone) at which the daily rank_score engagement job runs.
+
+### `RANKER_JOB_TIMEZONE`
+
+<table>
+<tr><td>type</td><td>`string`</td></tr>
+<tr><td>default</td><td>`Asia/Kolkata`</td></tr>
+</table>
+
+The IANA timezone name used to interpret `RANKER_JOB_TIME`.
+
+### `RANKER_JOB_INTERVAL`
+
+<table>
+<tr><td>type</td><td>duration (e.g. 1h, 1m, 1s)</td></tr>
+<tr><td>default</td><td>none</td></tr>
+</table>
+
+Development/testing override. When set (e.g. `10s`), the job runs on this fixed repeating interval instead of once a day at `RANKER_JOB_TIME`. Leave unset in production.
+
 ## Authentication
 
 Authentication providers configuration. These are all optional, you can choose to enable any combination of them to allow members of your community to sign up and sign in using a third party provider.
@@ -680,6 +711,20 @@ This is necessary for deploying replica instances of Storyden that are backed by
 The Redis URL to connect to.
 
 This is a full URL with `redis://` as the scheme. You can set the username and password using the URL format, for example: `redis://<username>:<password>@<host>:<port>`.
+
+### `FEED_CACHE_DISABLE`
+
+<table>
+<tr><td>type</td><td>boolean (`true` or `false`, case sensitive)</td></tr>
+<tr><td>default</td><td>`false`</td></tr>
+</table>
+
+Development/testing override. When `true`, the channel feed's cached
+ordered-sequence layer is bypassed entirely — every request rebuilds
+the feed directly from the database, and nothing is written back to
+the cache. Useful when iterating locally on ranking changes, since
+the feed cache otherwise serves a stale sequence for up to 30 minutes.
+Leave unset (`false`) in production.
 
 ## Search features
 

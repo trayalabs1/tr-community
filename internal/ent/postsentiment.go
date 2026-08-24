@@ -29,11 +29,13 @@ type PostSentiment struct {
 	SentimentTag *string `json:"sentiment_tag,omitempty"`
 	// Positivity score from 0-100
 	PositivityScore *int `json:"positivity_score,omitempty"`
-	// Primary topic from allowed list
+	// Category from the v4 allowed list
 	PrimaryTopic *string `json:"primary_topic,omitempty"`
+	// Feed value score from 0-100 (usefulness/discussion potential)
+	FeedValueScore *int `json:"feed_value_score,omitempty"`
 	// Status of sentiment scoring: unscored, scored, failed
 	ScoringStatus postsentiment.ScoringStatus `json:"scoring_status,omitempty"`
-	// Composite ranking score for feed ordering
+	// v4 content_score: positivity + feed_value + quality + category_boost, computed once at classification time
 	RankScore float64 `json:"rank_score,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PostSentimentQuery when eager-loading is set.
@@ -68,7 +70,7 @@ func (*PostSentiment) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case postsentiment.FieldRankScore:
 			values[i] = new(sql.NullFloat64)
-		case postsentiment.FieldPositivityScore:
+		case postsentiment.FieldPositivityScore, postsentiment.FieldFeedValueScore:
 			values[i] = new(sql.NullInt64)
 		case postsentiment.FieldSentimentTag, postsentiment.FieldPrimaryTopic, postsentiment.FieldScoringStatus:
 			values[i] = new(sql.NullString)
@@ -135,6 +137,13 @@ func (_m *PostSentiment) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.PrimaryTopic = new(string)
 				*_m.PrimaryTopic = value.String
+			}
+		case postsentiment.FieldFeedValueScore:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field feed_value_score", values[i])
+			} else if value.Valid {
+				_m.FeedValueScore = new(int)
+				*_m.FeedValueScore = int(value.Int64)
 			}
 		case postsentiment.FieldScoringStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -211,6 +220,11 @@ func (_m *PostSentiment) String() string {
 	if v := _m.PrimaryTopic; v != nil {
 		builder.WriteString("primary_topic=")
 		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.FeedValueScore; v != nil {
+		builder.WriteString("feed_value_score=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
 	builder.WriteString("scoring_status=")

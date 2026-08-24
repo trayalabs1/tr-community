@@ -41,7 +41,6 @@ import type {
   InternalServerErrorResponse,
   NotFoundResponse,
   NotModifiedResponse,
-  RankingRecalculateOKResponse,
   ReplyCreateBody,
   ReplyCreateOKResponse,
   ScoreUnscoredOKResponse,
@@ -1713,76 +1712,6 @@ export const useChannelReplyCreate = <
     swrOptions?.swrKey ??
     getChannelReplyCreateMutationKey(channelID, threadMark);
   const swrFn = getChannelReplyCreateMutationFetcher(channelID, threadMark);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions);
-
-  return {
-    swrKey,
-    ...query,
-  };
-};
-/**
- * Triggers a synchronous recalculation of rank_score for all posts in
-the channel that have been scored. Returns the number of posts updated
-and the duration of the operation.
-
- * @summary Recalculate rank scores for all scored posts in a channel.
- */
-export const channelRankingRecalculate = (channelID: string) => {
-  return fetcher<RankingRecalculateOKResponse>({
-    url: `/channels/${channelID}/ranking/recalculate`,
-    method: "POST",
-  });
-};
-
-export const getChannelRankingRecalculateMutationFetcher = (
-  channelID: string,
-) => {
-  return (
-    _: Key,
-    __: { arg: Arguments },
-  ): Promise<RankingRecalculateOKResponse> => {
-    return channelRankingRecalculate(channelID);
-  };
-};
-export const getChannelRankingRecalculateMutationKey = (channelID: string) =>
-  [`/channels/${channelID}/ranking/recalculate`] as const;
-
-export type ChannelRankingRecalculateMutationResult = NonNullable<
-  Awaited<ReturnType<typeof channelRankingRecalculate>>
->;
-export type ChannelRankingRecalculateMutationError =
-  | UnauthorisedResponse
-  | ForbiddenResponse
-  | NotFoundResponse
-  | InternalServerErrorResponse;
-
-/**
- * @summary Recalculate rank scores for all scored posts in a channel.
- */
-export const useChannelRankingRecalculate = <
-  TError =
-    | UnauthorisedResponse
-    | ForbiddenResponse
-    | NotFoundResponse
-    | InternalServerErrorResponse,
->(
-  channelID: string,
-  options?: {
-    swr?: SWRMutationConfiguration<
-      Awaited<ReturnType<typeof channelRankingRecalculate>>,
-      TError,
-      Key,
-      Arguments,
-      Awaited<ReturnType<typeof channelRankingRecalculate>>
-    > & { swrKey?: string };
-  },
-) => {
-  const { swr: swrOptions } = options ?? {};
-
-  const swrKey =
-    swrOptions?.swrKey ?? getChannelRankingRecalculateMutationKey(channelID);
-  const swrFn = getChannelRankingRecalculateMutationFetcher(channelID);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
