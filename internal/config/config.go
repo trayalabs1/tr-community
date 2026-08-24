@@ -333,6 +333,15 @@ type Config struct {
 	   This is a full URL with `redis://` as the scheme. You can set the username and password using the URL format, for example: `redis://<username>:<password>@<host>:<port>`.
 	*/
 	RedisURL url.URL `default:"" envconfig:"REDIS_URL"`
+	/*
+	   Development/testing override. When `true`, the channel feed's cached
+	   ordered-sequence layer is bypassed entirely — every request rebuilds
+	   the feed directly from the database, and nothing is written back to
+	   the cache. Useful when iterating locally on ranking changes, since
+	   the feed cache otherwise serves a stale sequence for up to 30 minutes.
+	   Leave unset (`false`) in production.
+	*/
+	FeedCacheDisable bool `default:"false" envconfig:"FEED_CACHE_DISABLE"`
 
 	// -
 	// Search features
