@@ -32,7 +32,7 @@ func (PostSentiment) Fields() []ent.Field {
 			Nillable().
 			Comment("Positivity score from 0-100"),
 
-		field.String("category").
+		field.String("primary_topic").
 			Optional().
 			Nillable().
 			Comment("Category from the v4 allowed list"),

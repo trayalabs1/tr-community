@@ -70,7 +70,7 @@ func TestApplyDailyIncrements(t *testing.T) {
 				SetPostID(threadID).
 				SetSentimentTag("neutral").
 				SetPositivityScore(50).
-				SetCategory("NA").
+				SetPrimaryTopic("NA").
 				SetFeedValueScore(50).
 				SetScoringStatus(ent_post_sentiment.ScoringStatusScored).
 				SetRankScore(100).

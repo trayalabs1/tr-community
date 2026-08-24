@@ -83,7 +83,7 @@ func TestFeedRankingV4Ordering(t *testing.T) {
 					SetPostID(postID).
 					SetSentimentTag(tag).
 					SetPositivityScore(50).
-					SetCategory(string(category)).
+					SetPrimaryTopic(string(category)).
 					SetFeedValueScore(int(rankScore)).
 					SetScoringStatus(ent_post_sentiment.ScoringStatusScored).
 					SetRankScore(rankScore).

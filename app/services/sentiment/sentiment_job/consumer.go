@@ -68,7 +68,7 @@ func (c *sentimentConsumer) scorePost(ctx context.Context, postID post.ID) error
 		SetSentimentTag(string(result.SentimentTag)).
 		SetPositivityScore(result.PositivityScore).
 		SetFeedValueScore(result.FeedValueScore).
-		SetCategory(string(result.Category)).
+		SetPrimaryTopic(string(result.Category)).
 		SetScoringStatus(ent_post_sentiment.ScoringStatusScored).
 		SetRankScore(rankScore).
 		OnConflictColumns(ent_post_sentiment.FieldPostID).

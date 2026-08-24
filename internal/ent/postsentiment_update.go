@@ -98,23 +98,23 @@ func (_u *PostSentimentUpdate) ClearPositivityScore() *PostSentimentUpdate {
 	return _u
 }
 
-// SetCategory sets the "category" field.
-func (_u *PostSentimentUpdate) SetCategory(v string) *PostSentimentUpdate {
-	_u.mutation.SetCategory(v)
+// SetPrimaryTopic sets the "primary_topic" field.
+func (_u *PostSentimentUpdate) SetPrimaryTopic(v string) *PostSentimentUpdate {
+	_u.mutation.SetPrimaryTopic(v)
 	return _u
 }
 
-// SetNillableCategory sets the "category" field if the given value is not nil.
-func (_u *PostSentimentUpdate) SetNillableCategory(v *string) *PostSentimentUpdate {
+// SetNillablePrimaryTopic sets the "primary_topic" field if the given value is not nil.
+func (_u *PostSentimentUpdate) SetNillablePrimaryTopic(v *string) *PostSentimentUpdate {
 	if v != nil {
-		_u.SetCategory(*v)
+		_u.SetPrimaryTopic(*v)
 	}
 	return _u
 }
 
-// ClearCategory clears the value of the "category" field.
-func (_u *PostSentimentUpdate) ClearCategory() *PostSentimentUpdate {
-	_u.mutation.ClearCategory()
+// ClearPrimaryTopic clears the value of the "primary_topic" field.
+func (_u *PostSentimentUpdate) ClearPrimaryTopic() *PostSentimentUpdate {
+	_u.mutation.ClearPrimaryTopic()
 	return _u
 }
 
@@ -281,11 +281,11 @@ func (_u *PostSentimentUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if _u.mutation.PositivityScoreCleared() {
 		_spec.ClearField(postsentiment.FieldPositivityScore, field.TypeInt)
 	}
-	if value, ok := _u.mutation.Category(); ok {
-		_spec.SetField(postsentiment.FieldCategory, field.TypeString, value)
+	if value, ok := _u.mutation.PrimaryTopic(); ok {
+		_spec.SetField(postsentiment.FieldPrimaryTopic, field.TypeString, value)
 	}
-	if _u.mutation.CategoryCleared() {
-		_spec.ClearField(postsentiment.FieldCategory, field.TypeString)
+	if _u.mutation.PrimaryTopicCleared() {
+		_spec.ClearField(postsentiment.FieldPrimaryTopic, field.TypeString)
 	}
 	if value, ok := _u.mutation.FeedValueScore(); ok {
 		_spec.SetField(postsentiment.FieldFeedValueScore, field.TypeInt, value)
@@ -423,23 +423,23 @@ func (_u *PostSentimentUpdateOne) ClearPositivityScore() *PostSentimentUpdateOne
 	return _u
 }
 
-// SetCategory sets the "category" field.
-func (_u *PostSentimentUpdateOne) SetCategory(v string) *PostSentimentUpdateOne {
-	_u.mutation.SetCategory(v)
+// SetPrimaryTopic sets the "primary_topic" field.
+func (_u *PostSentimentUpdateOne) SetPrimaryTopic(v string) *PostSentimentUpdateOne {
+	_u.mutation.SetPrimaryTopic(v)
 	return _u
 }
 
-// SetNillableCategory sets the "category" field if the given value is not nil.
-func (_u *PostSentimentUpdateOne) SetNillableCategory(v *string) *PostSentimentUpdateOne {
+// SetNillablePrimaryTopic sets the "primary_topic" field if the given value is not nil.
+func (_u *PostSentimentUpdateOne) SetNillablePrimaryTopic(v *string) *PostSentimentUpdateOne {
 	if v != nil {
-		_u.SetCategory(*v)
+		_u.SetPrimaryTopic(*v)
 	}
 	return _u
 }
 
-// ClearCategory clears the value of the "category" field.
-func (_u *PostSentimentUpdateOne) ClearCategory() *PostSentimentUpdateOne {
-	_u.mutation.ClearCategory()
+// ClearPrimaryTopic clears the value of the "primary_topic" field.
+func (_u *PostSentimentUpdateOne) ClearPrimaryTopic() *PostSentimentUpdateOne {
+	_u.mutation.ClearPrimaryTopic()
 	return _u
 }
 
@@ -636,11 +636,11 @@ func (_u *PostSentimentUpdateOne) sqlSave(ctx context.Context) (_node *PostSenti
 	if _u.mutation.PositivityScoreCleared() {
 		_spec.ClearField(postsentiment.FieldPositivityScore, field.TypeInt)
 	}
-	if value, ok := _u.mutation.Category(); ok {
-		_spec.SetField(postsentiment.FieldCategory, field.TypeString, value)
+	if value, ok := _u.mutation.PrimaryTopic(); ok {
+		_spec.SetField(postsentiment.FieldPrimaryTopic, field.TypeString, value)
 	}
-	if _u.mutation.CategoryCleared() {
-		_spec.ClearField(postsentiment.FieldCategory, field.TypeString)
+	if _u.mutation.PrimaryTopicCleared() {
+		_spec.ClearField(postsentiment.FieldPrimaryTopic, field.TypeString)
 	}
 	if value, ok := _u.mutation.FeedValueScore(); ok {
 		_spec.SetField(postsentiment.FieldFeedValueScore, field.TypeInt, value)
