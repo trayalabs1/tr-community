@@ -80,6 +80,45 @@ func TestRenamePrimaryTopicToCategoryConvertsAddDropToRename(t *testing.T) {
 	assert.True(t, foundUnrelated, "unrelated AddColumn on the same table must be preserved")
 }
 
+// TestRenamePrimaryTopicToCategoryHandlesReverseRename verifies the hook is
+// direction-agnostic: if the code's Ent schema is ever reverted back to
+// `primary_topic`, the resulting "add column primary_topic, drop column
+// category" pair is converted into a rename back to primary_topic too, not
+// left to fall back on Ent's lossy default drop+recreate. This makes
+// reverting the primary_topic->category rename itself safe, symmetric with
+// the forward migration.
+func TestRenamePrimaryTopicToCategoryHandlesReverseRename(t *testing.T) {
+	oldCol := &atlas_schema.Column{Name: "category", Type: &atlas_schema.ColumnType{Raw: "varchar(255)"}}
+	newCol := &atlas_schema.Column{Name: "primary_topic", Type: &atlas_schema.ColumnType{Raw: "varchar(255)"}}
+	table := &atlas_schema.Table{Name: "post_sentiments"}
+
+	rawChanges := []atlas_schema.Change{
+		&atlas_schema.ModifyTable{
+			T: table,
+			Changes: []atlas_schema.Change{
+				&atlas_schema.AddColumn{C: newCol},
+				&atlas_schema.DropColumn{C: oldCol},
+			},
+		},
+	}
+
+	hook := renamePostSentimentPrimaryTopicToCategory()
+	differ := hook(stubDiffer{changes: rawChanges})
+
+	got, err := differ.Diff(nil, nil)
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+
+	mt, ok := got[0].(*atlas_schema.ModifyTable)
+	require.True(t, ok, "expected a ModifyTable change")
+	require.Len(t, mt.Changes, 1, "add+drop pair must collapse into one rename")
+
+	rename, ok := mt.Changes[0].(*atlas_schema.RenameColumn)
+	require.True(t, ok, "expected a RenameColumn change in place of the add+drop pair")
+	assert.Equal(t, oldCol, rename.From)
+	assert.Equal(t, newCol, rename.To)
+}
+
 // TestRenamePrimaryTopicToCategoryNoOpAfterRename verifies the hook does
 // nothing (and errors on nothing) once the rename has already happened — the
 // idempotency guarantee that lets it stay in the migration hook list

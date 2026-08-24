@@ -311,11 +311,11 @@ func migrateReplyVisibility() schema.ApplyHook {
 }
 
 // renamePostSentimentPrimaryTopicToCategory converts what Ent's structural
-// schema diff would otherwise plan as "drop column primary_topic, add column
-// category" on post_sentiments into an in-place column rename, so existing
-// category data survives the migration instead of being dropped and recreated
-// empty. Ent's differ is purely name-based (it matches columns by name between
-// the current DB and the desired schema), so a renamed field always looks like
+// schema diff would otherwise plan as "drop column X, add column Y" on
+// post_sentiments into an in-place column rename, so existing column data
+// survives the migration instead of being dropped and recreated empty. Ent's
+// differ is purely name-based (it matches columns by name between the
+// current DB and the desired schema), so a renamed field always looks like
 // an unrelated drop+add pair — it never synthesizes atlas's RenameColumn on
 // its own. This hook detects that specific pair for this one table/field and
 // substitutes the rename before the plan is turned into SQL, since Atlas's own
@@ -323,20 +323,29 @@ func migrateReplyVisibility() schema.ApplyHook {
 // both Postgres and SQLite — the gap is purely that Ent's diff never asks for
 // one.
 //
+// Direction-agnostic by design: it matches the add+drop pair regardless of
+// which of {primary_topic, category} is being added and which is being
+// dropped. This makes the migration safe in both directions — the forward
+// rename to `category`, and a future code revert of that rename back to
+// `primary_topic` — without needing a second hook or a manual step when
+// reverting. Whichever way the Ent schema in code changes, the live column is
+// renamed in place instead of dropped and recreated.
+//
 // This is a WithDiffHook, not a WithApplyHook: by the time an ApplyHook runs,
 // the plan's SQL has already been rendered from the add/drop pair, too late to
 // turn it into a single rename statement.
 //
 // Idempotent by construction: once the column has been renamed, the live DB
-// has `category` and no `primary_topic`, matching the desired schema exactly,
-// so this pair is never diffed again on subsequent boots — no manual
-// "run once" guard needed.
+// matches the desired schema exactly, so this pair is never diffed again on
+// subsequent boots — no manual "run once" guard needed.
 func renamePostSentimentPrimaryTopicToCategory() schema.DiffHook {
 	const (
-		table     = "post_sentiments"
-		oldColumn = "primary_topic"
-		newColumn = "category"
+		table   = "post_sentiments"
+		columnA = "primary_topic"
+		columnB = "category"
 	)
+
+	isTracked := func(name string) bool { return name == columnA || name == columnB }
 
 	return func(next schema.Differ) schema.Differ {
 		return schema.DiffFunc(func(current, desired *atlas_schema.Schema) ([]atlas_schema.Change, error) {
@@ -358,17 +367,17 @@ func renamePostSentimentPrimaryTopicToCategory() schema.DiffHook {
 				for i, tc := range m.Changes {
 					switch v := tc.(type) {
 					case *atlas_schema.AddColumn:
-						if v.C.Name == newColumn {
+						if isTracked(v.C.Name) {
 							addIdx, addColumn = i, v.C
 						}
 					case *atlas_schema.DropColumn:
-						if v.C.Name == oldColumn {
+						if isTracked(v.C.Name) {
 							dropIdx, dropColumn = i, v.C
 						}
 					}
 				}
 
-				if addIdx == -1 || dropIdx == -1 {
+				if addIdx == -1 || dropIdx == -1 || addColumn.Name == dropColumn.Name {
 					continue
 				}
 
