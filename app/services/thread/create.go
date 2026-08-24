@@ -289,7 +289,7 @@ func (s *service) assignPrescoredSentiment(ctx context.Context, postID post.ID) 
 		SetSentimentTag(prescoredSentimentTag).
 		SetPositivityScore(prescoredPositivityScore).
 		SetFeedValueScore(prescoredFeedValueScore).
-		SetCategory(string(scorer.CategoryNA)).
+		SetPrimaryTopic(string(scorer.CategoryNA)).
 		SetScoringStatus(ent_post_sentiment.ScoringStatusScored).
 		SetRankScore(rankScore).
 		OnConflictColumns(ent_post_sentiment.FieldPostID).

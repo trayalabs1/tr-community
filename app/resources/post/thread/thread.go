@@ -98,7 +98,7 @@ func mapSentiment(m *ent.Post) (opt.Optional[string], opt.Optional[string]) {
 		return opt.NewEmpty[string](), opt.NewEmpty[string]()
 	}
 	tag := opt.NewPtr(s.SentimentTag)
-	sentimentCategory := opt.NewPtr(s.Category)
+	sentimentCategory := opt.NewPtr(s.PrimaryTopic)
 	return tag, sentimentCategory
 }
 
