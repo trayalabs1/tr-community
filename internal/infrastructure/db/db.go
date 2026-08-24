@@ -132,6 +132,7 @@ func newEntClient(lc fx.Lifecycle, tf tracing.Factory, cfg config.Config, db *sq
 				ctx,
 				schema.WithDropIndex(true),
 				schema.WithDropColumn(true),
+				schema.WithDiffHook(renamePostSentimentPrimaryTopicToCategory()),
 				schema.WithApplyHook(populateLastReplyAt()),
 				schema.WithApplyHook(migrateReplyVisibility()),
 				schema.WithApplyHook(createPostCategoryIndex()),
@@ -305,6 +306,86 @@ func migrateReplyVisibility() schema.ApplyHook {
 			}
 
 			return nil
+		})
+	}
+}
+
+// renamePostSentimentPrimaryTopicToCategory converts what Ent's structural
+// schema diff would otherwise plan as "drop column primary_topic, add column
+// category" on post_sentiments into an in-place column rename, so existing
+// category data survives the migration instead of being dropped and recreated
+// empty. Ent's differ is purely name-based (it matches columns by name between
+// the current DB and the desired schema), so a renamed field always looks like
+// an unrelated drop+add pair — it never synthesizes atlas's RenameColumn on
+// its own. This hook detects that specific pair for this one table/field and
+// substitutes the rename before the plan is turned into SQL, since Atlas's own
+// executors already handle *schema.RenameColumn correctly (and losslessly) for
+// both Postgres and SQLite — the gap is purely that Ent's diff never asks for
+// one.
+//
+// This is a WithDiffHook, not a WithApplyHook: by the time an ApplyHook runs,
+// the plan's SQL has already been rendered from the add/drop pair, too late to
+// turn it into a single rename statement.
+//
+// Idempotent by construction: once the column has been renamed, the live DB
+// has `category` and no `primary_topic`, matching the desired schema exactly,
+// so this pair is never diffed again on subsequent boots — no manual
+// "run once" guard needed.
+func renamePostSentimentPrimaryTopicToCategory() schema.DiffHook {
+	const (
+		table     = "post_sentiments"
+		oldColumn = "primary_topic"
+		newColumn = "category"
+	)
+
+	return func(next schema.Differ) schema.Differ {
+		return schema.DiffFunc(func(current, desired *atlas_schema.Schema) ([]atlas_schema.Change, error) {
+			changes, err := next.Diff(current, desired)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, c := range changes {
+				m, ok := c.(*atlas_schema.ModifyTable)
+				if !ok || m.T.Name != table {
+					continue
+				}
+
+				var (
+					addIdx, dropIdx       = -1, -1
+					addColumn, dropColumn *atlas_schema.Column
+				)
+				for i, tc := range m.Changes {
+					switch v := tc.(type) {
+					case *atlas_schema.AddColumn:
+						if v.C.Name == newColumn {
+							addIdx, addColumn = i, v.C
+						}
+					case *atlas_schema.DropColumn:
+						if v.C.Name == oldColumn {
+							dropIdx, dropColumn = i, v.C
+						}
+					}
+				}
+
+				if addIdx == -1 || dropIdx == -1 {
+					continue
+				}
+
+				// Remove the add+drop pair and replace with a single rename,
+				// preserving the rest of this table's changes untouched.
+				filtered := make([]atlas_schema.Change, 0, len(m.Changes)-1)
+				for i, tc := range m.Changes {
+					if i == addIdx || i == dropIdx {
+						continue
+					}
+					filtered = append(filtered, tc)
+				}
+				filtered = append(filtered, &atlas_schema.RenameColumn{From: dropColumn, To: addColumn})
+				m.Changes = filtered
+			}
+
+			return changes, nil
 		})
 	}
 }
