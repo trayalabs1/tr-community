@@ -1852,6 +1852,17 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: primary_topics
+          description: |
+            Show only posts whose AI-classified primary topic matches one of
+            these values (e.g. "HAIRFALL CONCERNS", "PRODUCTS & TREATMENT").
+            Multiple instances filter by any of the values.
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         default: { $ref: "#/components/responses/InternalServerError" }
         "401": { $ref: "#/components/responses/Unauthorised" }

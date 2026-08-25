@@ -66,4 +66,11 @@ will be ignored, only the value containing "null" will be considered.
    * Exclude posts with post_category feedback from results.
    */
   exclude_feedback?: boolean;
+  /**
+ * Show only posts whose AI-classified primary topic matches one of
+these values (e.g. "HAIRFALL CONCERNS", "PRODUCTS & TREATMENT").
+Multiple instances filter by any of the values.
+
+ */
+  primary_topics?: string[];
 };
