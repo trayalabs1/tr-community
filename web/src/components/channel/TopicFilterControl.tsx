@@ -83,7 +83,7 @@ export function TopicFilterControl({ selectedPrimaryTopic, onPrimaryTopicChange 
           </Select.Trigger>
         </Select.Control>
         <Select.Positioner>
-          <Select.Content>
+          <Select.Content maxHeight="[18rem]" overflowY="auto">
             {topicCollection.items.map((item) => (
               <Select.Item key={item.value} item={item}>
                 <Select.ItemText>{item.label}</Select.ItemText>
