@@ -235,6 +235,17 @@ func HasSentiments(sentiments []string) Query {
 	}
 }
 
+func HasPrimaryTopics(topics []string) Query {
+	return func(q *threadListOptions) {
+		if len(topics) == 0 {
+			return
+		}
+		q.q.Where(ent_post.HasSentimentWith(
+			ent_post_sentiment.PrimaryTopicIn(topics...),
+		))
+	}
+}
+
 func HasUpdatedDateBefore(t time.Time) Query {
 	return func(q *threadListOptions) {
 		q.q.Where(ent_post.UpdatedAtLT(t))
