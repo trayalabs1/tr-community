@@ -52,6 +52,9 @@ export function TopicFilterControl({ selectedPrimaryTopic, onPrimaryTopicChange 
         value={[selectedPrimaryTopic ?? ALL_TOPICS_VALUE]}
         positioning={{ sameWidth: false }}
         onValueChange={handleTopicChange}
+        width="auto"
+        gap="0"
+        flexShrink="0"
       >
         <Select.Control>
           <Select.Trigger asChild>
