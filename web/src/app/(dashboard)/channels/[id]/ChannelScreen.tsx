@@ -250,10 +250,12 @@ export function ChannelScreen(props: Props) {
       <VStack
         alignItems="start"
         gap="4"
-        width="full"
         mx={{ base: "-4", md: "0" }}
-        w={{ base: "auto", md: "full" }}
         bg={{ base: "[#f0f0f0]", md: "transparent" }}
+        css={{
+          width: "[calc(100% + 2rem)]",
+          md: { width: "full" },
+        }}
       >
 
         {!hasInitiallyLoaded ? (
