@@ -59,13 +59,16 @@ export function TopicFilterControl({ selectedPrimaryTopic, onPrimaryTopicChange 
               type="button"
               display="flex"
               alignItems="center"
+              justifyContent="center"
               gap="1"
+              flexShrink="0"
               cursor="pointer"
               style={{
                 backgroundColor: "#2c2c2a",
                 color: "white",
                 border: "none",
                 padding: "0.375rem 0.75rem",
+                width: "5rem",
                 borderRadius: "9999px",
                 fontWeight: "500",
                 fontSize: "14px",
