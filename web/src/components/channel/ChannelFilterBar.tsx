@@ -1,13 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { createListCollection, type SelectValueChangeDetails } from "@ark-ui/react";
+import { useState } from "react";
 import { Filter, X } from "lucide-react";
 import { today, getLocalTimeZone, type DateValue } from "@internationalized/date";
 import { DateRangePicker } from "@/components/ui/date-picker";
-import { CheckIcon } from "@/components/ui/icons/Check";
-import { SelectIcon } from "@/components/ui/icons/Select";
-import * as Select from "@/components/ui/select";
 
 import { Category, Permission } from "@/api/openapi-schema";
 import { HStack, VStack, styled } from "@/styled-system/jsx";
@@ -17,9 +13,7 @@ import { useSession } from "@/auth";
 import { UsersPostedToday } from "@/components/feed/QuickShare/UsersPostedToday";
 import { PromptItem } from "@/components/feed/PromptNudge/prompts";
 import { ThreadCreateTrigger } from "@/components/thread/ThreadCreate/ThreadCreateTrigger";
-import { PRIMARY_TOPICS } from "@/lib/feed/primaryTopic";
-
-const ALL_TOPICS_VALUE = "__all";
+import { TopicFilterControl } from "@/components/channel/TopicFilterControl";
 
 interface ChannelFilterBarProps {
   channelID: string;
@@ -61,26 +55,6 @@ export function ChannelFilterBar({
   const session = useSession();
   const canManagePosts = hasPermission(session, Permission.MANAGE_POSTS);
   const todayVal = today(getLocalTimeZone());
-
-  const topicCollection = useMemo(
-    () =>
-      createListCollection({
-        items: [
-          { label: "All", value: ALL_TOPICS_VALUE },
-          ...PRIMARY_TOPICS,
-        ],
-      }),
-    [],
-  );
-
-  const handleTopicChange = ({ value }: SelectValueChangeDetails) => {
-    const [selected] = value;
-    if (!selected || selected === ALL_TOPICS_VALUE) {
-      onPrimaryTopicChange(null);
-      return;
-    }
-    onPrimaryTopicChange(selected);
-  };
 
   const hasActiveFilters =
     selectedCategorySlug || selectedPrimaryTopic || selectedVisibility || hasDateFilter || excludeBAH;
@@ -315,32 +289,10 @@ export function ChannelFilterBar({
             >
               Topic
             </styled.label>
-            <Select.Root
-              size="sm"
-              collection={topicCollection}
-              value={[selectedPrimaryTopic ?? ALL_TOPICS_VALUE]}
-              positioning={{ sameWidth: false }}
-              onValueChange={handleTopicChange}
-            >
-              <Select.Control>
-                <Select.Trigger>
-                  <Select.ValueText placeholder="All" />
-                  <SelectIcon />
-                </Select.Trigger>
-              </Select.Control>
-              <Select.Positioner>
-                <Select.Content>
-                  {topicCollection.items.map((item) => (
-                    <Select.Item key={item.value} item={item}>
-                      <Select.ItemText>{item.label}</Select.ItemText>
-                      <Select.ItemIndicator>
-                        <CheckIcon />
-                      </Select.ItemIndicator>
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Positioner>
-            </Select.Root>
+            <TopicFilterControl
+              selectedPrimaryTopic={selectedPrimaryTopic}
+              onPrimaryTopicChange={onPrimaryTopicChange}
+            />
           </VStack>
 
           {/* Status Section */}
