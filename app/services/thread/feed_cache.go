@@ -46,7 +46,8 @@ func isCacheableFeed(opts Params) bool {
 		!opts.ExcludeFeedback &&
 		!opts.BAHOnly &&
 		len(opts.PostCategories) == 0 &&
-		len(opts.Sentiments) == 0
+		len(opts.Sentiments) == 0 &&
+		len(opts.PrimaryTopics) == 0
 }
 
 func isModerator(ctx context.Context, accountID opt.Optional[account.AccountID]) bool {

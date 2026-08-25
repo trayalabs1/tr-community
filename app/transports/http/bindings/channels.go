@@ -828,6 +828,7 @@ func (c Channels) ChannelThreadList(ctx context.Context, request openapi.Channel
 		InterleaveShares:    true,
 		ExcludeBAH:          request.Params.ExcludeBah != nil && *request.Params.ExcludeBah,
 		ExcludeFeedback:     request.Params.ExcludeFeedback != nil && *request.Params.ExcludeFeedback,
+		PrimaryTopics:       opt.NewPtr(request.Params.PrimaryTopics).Or(nil),
 	})
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))

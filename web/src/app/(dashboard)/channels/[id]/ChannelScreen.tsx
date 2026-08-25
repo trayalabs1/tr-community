@@ -33,6 +33,7 @@ export function ChannelScreen(props: Props) {
   const permissions = useChannelPermissions(props.channel.id);
   const promptNudges = parsePromptNudges(props.channel.meta);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
+  const [selectedPrimaryTopic, setSelectedPrimaryTopic] = useState<string | null>(null);
   const [selectedVisibility, setSelectedVisibility] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<{ createdAfter?: string; createdBefore?: string }>({});
   const [excludeBAH, setExcludeBAH] = useState(false);
@@ -53,6 +54,9 @@ export function ChannelScreen(props: Props) {
   };
   if (selectedCategorySlug) {
     threadParams['categories'] = [selectedCategorySlug];
+  }
+  if (selectedPrimaryTopic) {
+    threadParams['primary_topics'] = [selectedPrimaryTopic];
   }
   if (selectedVisibility) {
     threadParams['visibility'] = [selectedVisibility];
@@ -79,6 +83,7 @@ export function ChannelScreen(props: Props) {
 
   const hasActiveFilters =
     !!selectedCategorySlug ||
+    !!selectedPrimaryTopic ||
     !!selectedVisibility ||
     !!dateRange.createdAfter ||
     !!dateRange.createdBefore ||
@@ -99,7 +104,7 @@ export function ChannelScreen(props: Props) {
     setCurrentPage(1);
     setAllThreads([]);
     setHasInitiallyLoaded(false);
-  }, [selectedCategorySlug, selectedVisibility, dateRange, excludeBAH]);
+  }, [selectedCategorySlug, selectedPrimaryTopic, selectedVisibility, dateRange, excludeBAH]);
 
   useEffect(() => {
     const pageNum = threads?.current_page;
@@ -176,6 +181,8 @@ export function ChannelScreen(props: Props) {
         categories={categories?.categories || []}
         selectedCategorySlug={selectedCategorySlug}
         onCategoryChange={setSelectedCategorySlug}
+        selectedPrimaryTopic={selectedPrimaryTopic}
+        onPrimaryTopicChange={setSelectedPrimaryTopic}
         hasUnreadNotifications={props.hasUnreadNotifications}
       />
 
@@ -188,8 +195,10 @@ export function ChannelScreen(props: Props) {
           channelName={props.channel.name}
           categories={categories?.categories || []}
           selectedCategorySlug={selectedCategorySlug}
+          selectedPrimaryTopic={selectedPrimaryTopic}
           selectedVisibility={selectedVisibility}
           onCategoryChange={setSelectedCategorySlug}
+          onPrimaryTopicChange={setSelectedPrimaryTopic}
           onVisibilityChange={setSelectedVisibility}
           onDateRangeChange={setDateRange}
           excludeBAH={excludeBAH}
@@ -212,10 +221,12 @@ export function ChannelScreen(props: Props) {
       <VStack
         alignItems="start"
         gap="4"
-        width="full"
         mx={{ base: "-4", md: "0" }}
-        w={{ base: "auto", md: "full" }}
         bg={{ base: "[#f0f0f0]", md: "transparent" }}
+        css={{
+          width: "[calc(100% + 2rem)]",
+          md: { width: "full" },
+        }}
       >
 
         {!hasInitiallyLoaded ? (
