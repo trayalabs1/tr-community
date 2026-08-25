@@ -36,6 +36,7 @@ type Params struct {
 	BAHOnly             bool
 	PostCategories      []string
 	Sentiments          []string
+	PrimaryTopics       []string
 	InterleaveShares    bool
 }
 
@@ -85,6 +86,9 @@ func (s *service) List(ctx context.Context,
 	}
 	if len(opts.Sentiments) > 0 {
 		q = append(q, thread_querier.HasSentiments(opts.Sentiments))
+	}
+	if len(opts.PrimaryTopics) > 0 {
+		q = append(q, thread_querier.HasPrimaryTopics(opts.PrimaryTopics))
 	}
 
 	vq := func() thread_querier.Query {

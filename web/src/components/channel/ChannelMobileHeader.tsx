@@ -23,6 +23,8 @@ type ChannelMobileHeaderProps = {
   categories: any[];
   selectedCategorySlug: string | null;
   onCategoryChange: (slug: string | null) => void;
+  selectedPrimaryTopic: string | null;
+  onPrimaryTopicChange: (topic: string | null) => void;
   hasUnreadNotifications?: boolean;
 };
 
@@ -32,6 +34,8 @@ export function ChannelMobileHeader({
   categories,
   selectedCategorySlug,
   onCategoryChange,
+  selectedPrimaryTopic,
+  onPrimaryTopicChange,
   hasUnreadNotifications = false,
 }: ChannelMobileHeaderProps) {
   const canManagePosts = hasPermission(session, Permission.MANAGE_POSTS);
@@ -135,7 +139,10 @@ export function ChannelMobileHeader({
         px="4"
       >
         <Collapsible isCollapsed={isScrolledDown} expandedPadding="12px 0">
-          <FeedFilterChips />
+          <FeedFilterChips
+            selectedPrimaryTopic={selectedPrimaryTopic}
+            onPrimaryTopicChange={onPrimaryTopicChange}
+          />
         </Collapsible>
       </styled.div>
     </VStack>

@@ -13,14 +13,17 @@ import { useSession } from "@/auth";
 import { UsersPostedToday } from "@/components/feed/QuickShare/UsersPostedToday";
 import { PromptItem } from "@/components/feed/PromptNudge/prompts";
 import { ThreadCreateTrigger } from "@/components/thread/ThreadCreate/ThreadCreateTrigger";
+import { TopicFilterControl } from "@/components/channel/TopicFilterControl";
 
 interface ChannelFilterBarProps {
   channelID: string;
   channelName?: string;
   categories: Category[] | undefined;
   selectedCategorySlug: string | null;
+  selectedPrimaryTopic: string | null;
   selectedVisibility: string | null;
   onCategoryChange: (slug: string | null) => void;
+  onPrimaryTopicChange: (topic: string | null) => void;
   onVisibilityChange: (visibility: string | null) => void;
   onDateRangeChange?: (range: { createdAfter?: string; createdBefore?: string }) => void;
   excludeBAH?: boolean;
@@ -35,8 +38,10 @@ export function ChannelFilterBar({
   channelName,
   categories,
   selectedCategorySlug,
+  selectedPrimaryTopic,
   selectedVisibility,
   onCategoryChange,
+  onPrimaryTopicChange,
   onVisibilityChange,
   onDateRangeChange,
   excludeBAH = false,
@@ -51,11 +56,19 @@ export function ChannelFilterBar({
   const canManagePosts = hasPermission(session, Permission.MANAGE_POSTS);
   const todayVal = today(getLocalTimeZone());
 
-  const hasActiveFilters = selectedCategorySlug || selectedVisibility || hasDateFilter || excludeBAH;
-  const activeFilterCount = [selectedCategorySlug, selectedVisibility, hasDateFilter, excludeBAH].filter(Boolean).length;
+  const hasActiveFilters =
+    selectedCategorySlug || selectedPrimaryTopic || selectedVisibility || hasDateFilter || excludeBAH;
+  const activeFilterCount = [
+    selectedCategorySlug,
+    selectedPrimaryTopic,
+    selectedVisibility,
+    hasDateFilter,
+    excludeBAH,
+  ].filter(Boolean).length;
 
   const clearFilters = () => {
     onCategoryChange(null);
+    onPrimaryTopicChange(null);
     onVisibilityChange(null);
     onDateRangeChange?.({ createdAfter: undefined, createdBefore: undefined });
     setHasDateFilter(false);
@@ -88,10 +101,8 @@ export function ChannelFilterBar({
 
   return (
     <VStack alignItems="start" gap="3" width="full">
-      {/* Filter and Create Post Button Row - Filters only for admins; rightSlot (e.g. Settings) may render independently */}
-      {(canManagePosts || rightSlot) && (
-        <HStack alignItems="center" gap="2" width="full">
-          {canManagePosts && (
+      {/* Filter and Create Post Button Row - Topic filters are visible to everyone; rightSlot (e.g. Settings) may render independently */}
+      <HStack alignItems="center" gap="2" width="full">
           <styled.button
             onClick={() => setShowFilters(!showFilters)}
             display="flex"
@@ -130,7 +141,6 @@ export function ChannelFilterBar({
               </styled.div>
             )}
           </styled.button>
-          )}
 
           {hasActiveFilters && (
             <styled.button
@@ -167,21 +177,18 @@ export function ChannelFilterBar({
               {rightSlot}
             </styled.div>
           )}
-        </HStack>
-      )}
+      </HStack>
 
       {/* Divider - only shown when filters visible */}
-      {canManagePosts && (
-        <styled.div
-          style={{
-            height: "1px",
-            backgroundColor: "#e5e5e5",
-            marginLeft: "-1rem",
-            marginRight: "-1rem",
-            width: "calc(100% + 2rem)",
-          }}
-        />
-      )}
+      <styled.div
+        style={{
+          height: "1px",
+          backgroundColor: "#e5e5e5",
+          marginLeft: "-1rem",
+          marginRight: "-1rem",
+          width: "calc(100% + 2rem)",
+        }}
+      />
 
       {/* Sticky: users posted today + Create Post CTA */}
       {!hideComposer && (
@@ -217,7 +224,7 @@ export function ChannelFilterBar({
             animation: "slideDown 0.2s ease-out",
           }}
         >
-          {/* Topic Section */}
+          {/* Category Section */}
           {categories && categories.length > 0 && (
             <VStack alignItems="start" gap="2" width="full">
               <styled.label
@@ -227,7 +234,7 @@ export function ChannelFilterBar({
                 textTransform="uppercase"
                 style={{ letterSpacing: "0.05em" }}
               >
-                Topic
+                Category
               </styled.label>
               <HStack gap="2" flexWrap="wrap">
                 <styled.button
@@ -270,6 +277,25 @@ export function ChannelFilterBar({
               </HStack>
             </VStack>
           )}
+
+          {/* Topic Section (AI-classified primary topic) */}
+          <VStack alignItems="start" gap="2" width="full">
+            <styled.label
+              fontSize="xs"
+              fontWeight="semibold"
+              color="fg.muted"
+              textTransform="uppercase"
+              style={{ letterSpacing: "0.05em" }}
+            >
+              Topic
+            </styled.label>
+            <HStack gap="2" flexWrap="wrap">
+              <TopicFilterControl
+                selectedPrimaryTopic={selectedPrimaryTopic}
+                onPrimaryTopicChange={onPrimaryTopicChange}
+              />
+            </HStack>
+          </VStack>
 
           {/* Status Section */}
           {canManagePosts && (
