@@ -7,7 +7,7 @@ import { X } from "lucide-react";
 import { CheckIcon } from "@/components/ui/icons/Check";
 import { ChevronDownIcon } from "@/components/ui/icons/Chevron";
 import * as Select from "@/components/ui/select";
-import { HStack, styled } from "@/styled-system/jsx";
+import { styled } from "@/styled-system/jsx";
 import { PRIMARY_TOPICS } from "@/lib/feed/primaryTopic";
 
 const ALL_TOPICS_VALUE = "__all";
@@ -45,7 +45,7 @@ export function TopicFilterControl({ selectedPrimaryTopic, onPrimaryTopicChange 
   const selectedTopicLabel = PRIMARY_TOPICS.find((t) => t.value === selectedPrimaryTopic)?.label;
 
   return (
-    <HStack gap="2" flexWrap="wrap">
+    <>
       <Select.Root
         size="sm"
         collection={topicCollection}
@@ -100,6 +100,7 @@ export function TopicFilterControl({ selectedPrimaryTopic, onPrimaryTopicChange 
           display="flex"
           alignItems="center"
           gap="1"
+          flexShrink="0"
           cursor="pointer"
           style={{
             backgroundColor: "#ECECEC",
@@ -109,12 +110,13 @@ export function TopicFilterControl({ selectedPrimaryTopic, onPrimaryTopicChange 
             borderRadius: "9999px",
             fontWeight: "500",
             fontSize: "14px",
+            whiteSpace: "nowrap",
           }}
         >
           {selectedTopicLabel}
           <X size={14} strokeWidth={2} />
         </styled.button>
       )}
-    </HStack>
+    </>
   );
 }

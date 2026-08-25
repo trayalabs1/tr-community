@@ -289,10 +289,12 @@ export function ChannelFilterBar({
             >
               Topic
             </styled.label>
-            <TopicFilterControl
-              selectedPrimaryTopic={selectedPrimaryTopic}
-              onPrimaryTopicChange={onPrimaryTopicChange}
-            />
+            <HStack gap="2" flexWrap="wrap">
+              <TopicFilterControl
+                selectedPrimaryTopic={selectedPrimaryTopic}
+                onPrimaryTopicChange={onPrimaryTopicChange}
+              />
+            </HStack>
           </VStack>
 
           {/* Status Section */}
