@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { createListCollection, type SelectValueChangeDetails } from "@ark-ui/react";
 import { Filter, X } from "lucide-react";
 import { today, getLocalTimeZone, type DateValue } from "@internationalized/date";
 import { DateRangePicker } from "@/components/ui/date-picker";
+import { CheckIcon } from "@/components/ui/icons/Check";
+import { SelectIcon } from "@/components/ui/icons/Select";
+import * as Select from "@/components/ui/select";
 
 import { Category, Permission } from "@/api/openapi-schema";
 import { HStack, VStack, styled } from "@/styled-system/jsx";
@@ -14,6 +18,8 @@ import { UsersPostedToday } from "@/components/feed/QuickShare/UsersPostedToday"
 import { PromptItem } from "@/components/feed/PromptNudge/prompts";
 import { ThreadCreateTrigger } from "@/components/thread/ThreadCreate/ThreadCreateTrigger";
 import { PRIMARY_TOPICS } from "@/lib/feed/primaryTopic";
+
+const ALL_TOPICS_VALUE = "__all";
 
 interface ChannelFilterBarProps {
   channelID: string;
@@ -55,6 +61,26 @@ export function ChannelFilterBar({
   const session = useSession();
   const canManagePosts = hasPermission(session, Permission.MANAGE_POSTS);
   const todayVal = today(getLocalTimeZone());
+
+  const topicCollection = useMemo(
+    () =>
+      createListCollection({
+        items: [
+          { label: "All", value: ALL_TOPICS_VALUE },
+          ...PRIMARY_TOPICS,
+        ],
+      }),
+    [],
+  );
+
+  const handleTopicChange = ({ value }: SelectValueChangeDetails) => {
+    const [selected] = value;
+    if (!selected || selected === ALL_TOPICS_VALUE) {
+      onPrimaryTopicChange(null);
+      return;
+    }
+    onPrimaryTopicChange(selected);
+  };
 
   const hasActiveFilters =
     selectedCategorySlug || selectedPrimaryTopic || selectedVisibility || hasDateFilter || excludeBAH;
@@ -289,45 +315,32 @@ export function ChannelFilterBar({
             >
               Topic
             </styled.label>
-            <HStack gap="2" flexWrap="wrap">
-              <styled.button
-                onClick={() => onPrimaryTopicChange(null)}
-                fontSize="sm"
-                cursor="pointer"
-                transition="all"
-                style={{
-                  backgroundColor: selectedPrimaryTopic === null ? TRAYA_COLORS.primary : TRAYA_COLORS.tertiary,
-                  color: selectedPrimaryTopic === null ? "white" : TRAYA_COLORS.primary,
-                  border: "none",
-                  padding: "0.375rem 0.75rem",
-                  borderRadius: "9999px",
-                  fontWeight: "500",
-                  fontSize: "14px",
-                }}
-              >
-                All
-              </styled.button>
-              {PRIMARY_TOPICS.map((topic) => (
-                <styled.button
-                  key={topic.value}
-                  onClick={() => onPrimaryTopicChange(topic.value)}
-                  fontSize="sm"
-                  cursor="pointer"
-                  transition="all"
-                  style={{
-                    backgroundColor: selectedPrimaryTopic === topic.value ? TRAYA_COLORS.primary : TRAYA_COLORS.tertiary,
-                    color: selectedPrimaryTopic === topic.value ? "white" : TRAYA_COLORS.primary,
-                    border: "none",
-                    padding: "0.375rem 0.75rem",
-                    borderRadius: "9999px",
-                    fontWeight: "500",
-                    fontSize: "14px",
-                  }}
-                >
-                  {topic.label}
-                </styled.button>
-              ))}
-            </HStack>
+            <Select.Root
+              size="sm"
+              collection={topicCollection}
+              value={[selectedPrimaryTopic ?? ALL_TOPICS_VALUE]}
+              positioning={{ sameWidth: false }}
+              onValueChange={handleTopicChange}
+            >
+              <Select.Control>
+                <Select.Trigger>
+                  <Select.ValueText placeholder="All" />
+                  <SelectIcon />
+                </Select.Trigger>
+              </Select.Control>
+              <Select.Positioner>
+                <Select.Content>
+                  {topicCollection.items.map((item) => (
+                    <Select.Item key={item.value} item={item}>
+                      <Select.ItemText>{item.label}</Select.ItemText>
+                      <Select.ItemIndicator>
+                        <CheckIcon />
+                      </Select.ItemIndicator>
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Positioner>
+            </Select.Root>
           </VStack>
 
           {/* Status Section */}
