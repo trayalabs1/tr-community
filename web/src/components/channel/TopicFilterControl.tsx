@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import { createListCollection, type SelectValueChangeDetails } from "@ark-ui/react";
 import { X } from "lucide-react";
 
-import { CheckIcon } from "@/components/ui/icons/Check";
 import { ChevronDownIcon } from "@/components/ui/icons/Chevron";
 import * as Select from "@/components/ui/select";
 import { styled } from "@/styled-system/jsx";
@@ -83,13 +82,30 @@ export function TopicFilterControl({ selectedPrimaryTopic, onPrimaryTopicChange 
           </Select.Trigger>
         </Select.Control>
         <Select.Positioner>
-          <Select.Content>
-            {topicCollection.items.map((item) => (
-              <Select.Item key={item.value} item={item}>
+          <Select.Content
+            padding="0"
+            borderRadius="l3"
+            overflow="hidden"
+            style={{ minWidth: "10rem" }}
+          >
+            {topicCollection.items.map((item, index) => (
+              <Select.Item
+                key={item.value}
+                item={item}
+                borderRadius="[0]"
+                style={{
+                  padding: "0.875rem 1.25rem",
+                  fontSize: "16px",
+                  color: "#404040",
+                  borderBottom:
+                    index < topicCollection.items.length - 1 ? "1px solid #ECECEC" : "none",
+                }}
+                css={{
+                  "&[data-state=checked]": { fontWeight: "semibold", color: "[#1a1a1a]" },
+                  "&:hover, &[data-highlighted]": { background: "[#F7F7F7]" },
+                }}
+              >
                 <Select.ItemText>{item.label}</Select.ItemText>
-                <Select.ItemIndicator>
-                  <CheckIcon />
-                </Select.ItemIndicator>
               </Select.Item>
             ))}
           </Select.Content>
