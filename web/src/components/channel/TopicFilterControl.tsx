@@ -77,7 +77,7 @@ export function TopicFilterControl({ selectedPrimaryTopic, onPrimaryTopicChange 
               }}
             >
               All
-              <ChevronDownIcon width="4" height="4" />
+              <ChevronDownIcon width="4" height="4" color="white" />
             </styled.button>
           </Select.Trigger>
         </Select.Control>
