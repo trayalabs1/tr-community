@@ -5,7 +5,7 @@ import { channelList } from "@/api/openapi-server/channels";
 import { postLocationGet } from "@/api/openapi-server/posts";
 import { threadGet } from "@/api/openapi-server/threads";
 import { WEB_ADDRESS } from "@/config";
-import { hasChannelAccess } from "@/lib/post/locateAccess";
+import { resolveAccessibleChannelID } from "@/lib/post/locateAccess";
 
 export type Props = {
   params: Promise<{
@@ -31,17 +31,16 @@ async function locatePost(id: string) {
     ]);
 
     const accessible = channels?.channels ?? [];
-    if (
-      !hasChannelAccess(
-        thread?.channel_id,
-        accessible,
-        thread?.shared_to_channel_ids,
-      )
-    ) {
+    const channelID = resolveAccessibleChannelID(
+      thread?.channel_id,
+      accessible,
+      thread?.shared_to_channel_ids,
+    );
+    if (!channelID) {
       return null;
     }
 
-    return location;
+    return { ...location, channelID };
   } catch {
     return null;
   }
@@ -60,7 +59,18 @@ export default async function LocatePage(props: Props) {
     redirect("/channels");
   }
 
-  const url = new URL(`/t/${data.slug}`, WEB_ADDRESS);
+  // Route through the channel-scoped thread page (not /t/[slug]) so it
+  // carries channelID, and mark the origin with from=locate — the back
+  // button then returns the viewer to their channel feed instead of falling
+  // through to the WebView's native-app-exit fallback, which is what happens
+  // when there's no real page behind this one in browser history. Threads
+  // reached by clicking within the feed itself don't set this, so their back
+  // button keeps using real browser history (preserves scroll/filter state).
+  const url = new URL(
+    `/channels/${data.channelID}/threads/${data.slug}`,
+    WEB_ADDRESS,
+  );
+  url.searchParams.set("from", "locate");
 
   // we pass through any parameters from the original call to the final URL
   Object.entries(searchParams).forEach(([key, value]) => {

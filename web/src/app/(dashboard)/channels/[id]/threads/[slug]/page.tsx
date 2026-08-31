@@ -19,6 +19,7 @@ const QuerySchema = z.object({
     .string()
     .transform((v) => parseInt(v, 10))
     .optional(),
+  from: z.string().optional(),
 });
 
 type Query = z.infer<typeof QuerySchema>;
@@ -27,7 +28,7 @@ export default async function Page(props: Props) {
   const { id: channelID, slug } = await props.params;
   const searchParams = await props.searchParams;
 
-  const { page } = QuerySchema.parse(searchParams);
+  const { page, from } = QuerySchema.parse(searchParams);
 
   const { data: thread } = await threadGet(slug, {
     page: page?.toString(),
@@ -45,6 +46,7 @@ export default async function Page(props: Props) {
       thread={thread}
       channelID={channelID}
       channelName={channel.name}
+      backToChannelFeed={from === "locate"}
     />
   );
 }
