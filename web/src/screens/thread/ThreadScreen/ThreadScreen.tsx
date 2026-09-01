@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Controller, ControllerProps } from "react-hook-form";
 import { match } from "ts-pattern";
 
@@ -43,6 +44,7 @@ import { hasPermission } from "@/utils/permissions";
 import { Form, Props, useThreadScreen } from "./useThreadScreen";
 
 export function ThreadScreen(props: Props) {
+  const router = useRouter();
   const {
     ready,
     error,
@@ -86,6 +88,11 @@ export function ThreadScreen(props: Props) {
           title=""
           mobileOnly
           isSticky
+          onBack={
+            props.backToChannelFeed && props.channelID
+              ? () => router.push(`/channels/${props.channelID}`)
+              : undefined
+          }
         />
 
         {/* Content Wrapper */}
