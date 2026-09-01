@@ -60,7 +60,7 @@ export default async function LocatePage(props: Props) {
   }
 
   // Route through the channel-scoped thread page (not /t/[slug]) so it
-  // carries channelID, and mark the origin with from=locate — the back
+  // carries channelID, and mark the origin with from=deeplink — the back
   // button then returns the viewer to their channel feed instead of falling
   // through to the WebView's native-app-exit fallback, which is what happens
   // when there's no real page behind this one in browser history. Threads
@@ -70,7 +70,7 @@ export default async function LocatePage(props: Props) {
     `/channels/${data.channelID}/threads/${data.slug}`,
     WEB_ADDRESS,
   );
-  url.searchParams.set("from", "locate");
+  url.searchParams.set("from", "deeplink");
 
   // we pass through any parameters from the original call to the final URL
   Object.entries(searchParams).forEach(([key, value]) => {
