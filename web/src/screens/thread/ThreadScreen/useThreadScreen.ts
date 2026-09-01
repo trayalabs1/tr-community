@@ -27,6 +27,7 @@ export type Props = {
   thread: ThreadGetResponse;
   channelID?: string;
   channelName?: string;
+  backToChannelFeed?: boolean;
 };
 
 export const FormSchema = z.object({
