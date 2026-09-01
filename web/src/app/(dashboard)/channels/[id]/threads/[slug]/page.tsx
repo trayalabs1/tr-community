@@ -46,7 +46,7 @@ export default async function Page(props: Props) {
       thread={thread}
       channelID={channelID}
       channelName={channel.name}
-      backToChannelFeed={from === "locate"}
+      backToChannelFeed={from === "deeplink"}
     />
   );
 }
