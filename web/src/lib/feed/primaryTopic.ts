@@ -3,7 +3,6 @@
 // topic aren't a filterable topic, they just show up under "All".
 export const PRIMARY_TOPICS: { label: string; value: string }[] = [
   { label: "Results & Progress", value: "RESULTS & PROGRESS" },
-  { label: "Tips & Experiences", value: "TIPS & EXPERIENCES" },
   { label: "Hairfall Concerns", value: "HAIRFALL CONCERNS" },
   { label: "How To Use", value: "HOW TO USE" },
   { label: "Dandruff & Scalp", value: "DANDRUFF & SCALP" },
@@ -12,4 +11,5 @@ export const PRIMARY_TOPICS: { label: string; value: string }[] = [
   { label: "Side Effects", value: "SIDE EFFECTS" },
   { label: "Diet & Lifestyle", value: "DIET & LIFESTYLE" },
   { label: "Challenges", value: "CHALLENGES" },
+  { label: "Tips & Experiences", value: "TIPS & EXPERIENCES" },
 ];
