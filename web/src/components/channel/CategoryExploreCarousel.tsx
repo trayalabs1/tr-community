@@ -4,6 +4,7 @@ import { Check, X } from "lucide-react";
 
 import { HStack, VStack, styled } from "@/styled-system/jsx";
 import { PRIMARY_TOPICS } from "@/lib/feed/primaryTopic";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 const TOPIC_IMAGE_URLS: Record<string, string> = {
   "RESULTS & PROGRESS": "https://cdn.shopify.com/s/files/1/0100/1622/7394/files/results_progress.png?v=1788353080",
@@ -19,16 +20,28 @@ const TOPIC_IMAGE_URLS: Record<string, string> = {
 };
 
 interface CategoryExploreCarouselProps {
+  channelID?: string;
   selectedPrimaryTopic: string | null;
   onPrimaryTopicChange: (topic: string | null) => void;
 }
 
 export function CategoryExploreCarousel({
+  channelID,
   selectedPrimaryTopic,
   onPrimaryTopicChange,
 }: CategoryExploreCarouselProps) {
-  const handleSelect = (value: string) => {
-    onPrimaryTopicChange(selectedPrimaryTopic === value ? null : value);
+  const { trackEvent } = useEventTracking();
+
+  const handleSelect = (topic: { label: string; value: string }) => {
+    const isDeselecting = selectedPrimaryTopic === topic.value;
+
+    trackEvent("community_component_clicked", {
+      component_name: "feed_category_filter",
+      category_selected: isDeselecting ? null : topic.label,
+      channel_id: channelID,
+    });
+
+    onPrimaryTopicChange(isDeselecting ? null : topic.value);
   };
 
   const selectedTopicLabel = PRIMARY_TOPICS.find((t) => t.value === selectedPrimaryTopic)?.label;
@@ -40,7 +53,7 @@ export function CategoryExploreCarousel({
       width="full"
       backgroundColor="white"
       px={{ base: "4", md: "0" }}
-      pt={{ base: "7", md: "0" }}
+      pt={{ base: "3", md: "0" }}
       pb={{ base: "3", md: "0" }}
     >
       <HStack alignItems="center" gap="2" width="full">
@@ -92,8 +105,9 @@ export function CategoryExploreCarousel({
               <styled.button
                 key={topic.value}
                 type="button"
-                onClick={() => handleSelect(topic.value)}
+                onClick={() => handleSelect(topic)}
                 aria-pressed={isSelected}
+                aria-label={topic.label}
                 position="relative"
                 flexShrink="0"
                 cursor="pointer"
@@ -104,7 +118,7 @@ export function CategoryExploreCarousel({
                   overflow: "hidden",
                   border: isSelected ? "2px solid #2c2c2a" : "none",
                   padding: "0",
-                  background: `linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.65) 100%), url(${imageURL}) center/cover no-repeat`,
+                  background: `url(${imageURL}) center/cover no-repeat`,
                 }}
               >
                 {isSelected && (
@@ -123,19 +137,6 @@ export function CategoryExploreCarousel({
                     <Check size={12} color="white" strokeWidth={3} />
                   </styled.div>
                 )}
-
-                <styled.p
-                  position="absolute"
-                  bottom="2"
-                  left="2"
-                  right="2"
-                  textAlign="left"
-                  color="white"
-                  fontWeight="semibold"
-                  style={{ fontSize: "13px", lineHeight: "16px", margin: "0" }}
-                >
-                  {topic.label}
-                </styled.p>
               </styled.button>
             );
           })}

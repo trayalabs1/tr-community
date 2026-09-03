@@ -14,6 +14,9 @@ export const EVENTS = {
   community_post_clicked: { optional: ["channel_id", "post_type"] },
   community_create_post_clicked: { optional: ["channel_id", "source"] },
   community_share_experience_prompt_clicked: { optional: ["channel_id"] },
+  community_component_clicked: {
+    optional: ["component_name", "category_selected", "channel_id"],
+  },
   community_submit_for_review: {
     optional: ["post_length", "has_attachments", "has_mentions", "channel_id"],
   },
