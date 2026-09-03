@@ -14,9 +14,9 @@ import {
 import { Account, Channel, ThreadReference } from "@/api/openapi-schema";
 import { ChannelMobileHeader } from "@/components/channel/ChannelMobileHeader";
 import { ChannelFilterBar } from "@/components/channel/ChannelFilterBar";
+import { CategoryExploreCarousel } from "@/components/channel/CategoryExploreCarousel";
 import { parsePromptNudges } from "@/components/feed/PromptNudge/prompts";
 import { ThreadReferenceCard } from "@/components/post/ThreadCard";
-import { ShareExperiencePrompt } from "@/components/thread/ThreadCreate/ShareExperiencePrompt";
 import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { HStack, LStack, VStack, styled } from "@/styled-system/jsx";
@@ -287,8 +287,12 @@ export function ChannelScreen(props: Props) {
                     thread={thread}
                     channelID={props.channel.id}
                   />
-                  {index === 6 && (
-                    <ShareExperiencePrompt channelID={props.channel.id} />
+                  {index === 4 && (
+                    <CategoryExploreCarousel
+                      channelID={props.channel.id}
+                      selectedPrimaryTopic={selectedPrimaryTopic}
+                      onPrimaryTopicChange={setSelectedPrimaryTopic}
+                    />
                   )}
                 </Fragment>
               ))}
