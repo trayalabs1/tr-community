@@ -316,8 +316,9 @@ export function ChannelScreen(props: Props) {
                     thread={thread}
                     channelID={props.channel.id}
                   />
-                  {index === 6 && (
+                  {index === 4 && (
                     <CategoryExploreCarousel
+                      channelID={props.channel.id}
                       selectedPrimaryTopic={selectedPrimaryTopic}
                       onPrimaryTopicChange={setSelectedPrimaryTopic}
                     />
