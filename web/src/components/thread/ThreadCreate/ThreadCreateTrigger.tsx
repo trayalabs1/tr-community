@@ -28,7 +28,8 @@ export function ThreadCreateTrigger({
   const promptSheet = useDisclosure();
   const { trackEvent } = useEventTracking();
   const session = useSession();
-  const placeholder = "What's in your mind?";
+  const name = session?.name || session?.handle;
+  const placeholder = name ? `Type your questions, ${name}` : "Type your questions";
   const [picked, setPicked] = useState<
     { prompt: PromptItem; index: number } | undefined
   >(undefined);
