@@ -256,6 +256,17 @@ Either:
 
 The collector endpoint for sending OTEL data.
 
+### `OTEL_EXPORTER_OTLP_HEADERS`
+
+<table>
+<tr><td>type</td><td>`string`</td></tr>
+<tr><td>default</td><td>(empty string)</td></tr>
+</table>
+
+Extra HTTP headers to send with every OTLP export request, as comma-separated `key=value` pairs, e.g. `Authorization=Basic <token>`.
+
+Required by some OTLP collectors (including Last9) for authentication. Only used when `OTEL_PROVIDER` is set to `otlp`.
+
 ### `SENTRY_DSN`
 
 <table>

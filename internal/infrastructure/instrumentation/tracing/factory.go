@@ -82,6 +82,10 @@ func newExporter(ctx context.Context,
 			otlptracehttp.WithEndpointURL(endpoint),
 		}
 
+		if headers := parseOTLPHeaders(cfg.OTELHeaders); len(headers) > 0 {
+			opts = append(opts, otlptracehttp.WithHeaders(headers))
+		}
+
 		if cfg.OTELEndpoint.Scheme != "https" {
 			opts = append(opts, otlptracehttp.WithInsecure())
 		}
