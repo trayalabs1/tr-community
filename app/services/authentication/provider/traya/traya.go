@@ -19,6 +19,7 @@ import (
 	"github.com/Southclaws/fault/fmsg"
 	"github.com/Southclaws/fault/ftag"
 	"github.com/rs/xid"
+	"go.uber.org/fx"
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/account/account_querier"
@@ -29,6 +30,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/channel_membership"
 	"github.com/Southclaws/storyden/app/services/account/register"
 	"github.com/Southclaws/storyden/internal/config"
+	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/tracing"
 )
 
 var (
@@ -56,6 +58,8 @@ type Provider struct {
 const trayaExplorersChannelSlug = "traya-explorers"
 
 func New(
+	lc fx.Lifecycle,
+	tf tracing.Factory,
 	logger *slog.Logger,
 	cfg config.Config,
 	authRepo authentication.Repository,
@@ -76,7 +80,7 @@ func New(
 		register:       register,
 		channelRepo:    channelRepo,
 		membershipRepo: membershipRepo,
-		httpClient:     &http.Client{},
+		httpClient:     &http.Client{Transport: tracing.InstrumentedTransport(lc, tf, "traya-auth", nil)},
 	}
 }
 

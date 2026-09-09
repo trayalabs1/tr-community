@@ -20,11 +20,13 @@ import (
 	"github.com/Southclaws/fault/fctx"
 	"github.com/Southclaws/fault/fmsg"
 	"github.com/Southclaws/opt"
+	"github.com/XSAM/otelsql"
 	_ "github.com/glebarez/go-sqlite"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 
@@ -44,18 +46,26 @@ func Build() fx.Option {
 	)
 }
 
-func newSQL(cfg config.Config) (*sql.DB, *sqlx.DB, error) {
+func newSQL(lc fx.Lifecycle, tf tracing.Factory, cfg config.Config) (*sql.DB, *sqlx.DB, error) {
 	driver, path, err := getDriver(cfg.DatabaseURL)
 	if err != nil {
 		return nil, nil, fault.Wrap(err)
 	}
 
-	d, err := sql.Open(driver, path)
+	instrumentedDriver, err := otelsql.Register(driver,
+		otelsql.WithTracerProvider(tf.BuildProvider(lc, "sql")),
+		otelsql.WithAttributes(semconv.DBSystemKey.String(driver)),
+	)
+	if err != nil {
+		return nil, nil, fault.Wrap(err, fmsg.With("failed to instrument database driver"))
+	}
+
+	d, err := sql.Open(instrumentedDriver, path)
 	if err != nil {
 		return nil, nil, fault.Wrap(err, fmsg.With("failed to connect to database"))
 	}
 
-	x, err := sqlx.Connect(driver, path)
+	x, err := sqlx.Connect(instrumentedDriver, path)
 	if err != nil {
 		return nil, nil, fault.Wrap(err, fmsg.With("failed to connect to database"))
 	}

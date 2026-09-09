@@ -11,6 +11,7 @@ import (
 
 	"github.com/Southclaws/storyden/internal/config"
 	"github.com/Southclaws/storyden/internal/ent"
+	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/tracing"
 )
 
 func Build() fx.Option {
@@ -19,7 +20,7 @@ func Build() fx.Option {
 	)
 }
 
-func run(lc fx.Lifecycle, logger *slog.Logger, cfg config.Config, db *ent.Client) {
+func run(lc fx.Lifecycle, tf tracing.Factory, logger *slog.Logger, cfg config.Config, db *ent.Client) {
 	if cfg.SlackQueueSummaryWebhookURL == "" {
 		return
 	}
@@ -63,7 +64,10 @@ func run(lc fx.Lifecycle, logger *slog.Logger, cfg config.Config, db *ent.Client
 		}
 	}
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: tracing.InstrumentedTransport(lc, tf, "slack.webhook", nil),
+	}
 
 	stop := make(chan struct{})
 
