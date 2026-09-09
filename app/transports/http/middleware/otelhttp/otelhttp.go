@@ -20,5 +20,8 @@ func New() *Middleware {
 func (m *Middleware) WithTracing(tp trace.TracerProvider) func(http.Handler) http.Handler {
 	return otelhttp.NewMiddleware("http.server",
 		otelhttp.WithTracerProvider(tp),
+		otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
+			return r.Method
+		}),
 	)
 }
