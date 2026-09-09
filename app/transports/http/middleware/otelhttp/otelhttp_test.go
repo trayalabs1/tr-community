@@ -32,4 +32,8 @@ func TestMiddleware_WithTracing_createsSpanForRequest(t *testing.T) {
 	if len(spans) != 1 {
 		t.Fatalf("expected 1 span to be recorded, got %d", len(spans))
 	}
+
+	if got := spans[0].Name(); got != http.MethodGet {
+		t.Fatalf("expected span name %q, got %q", http.MethodGet, got)
+	}
 }
