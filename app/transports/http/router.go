@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/fx"
 
 	"github.com/Southclaws/storyden/app/transports/http/middleware/chaos"
@@ -11,6 +12,7 @@ import (
 	"github.com/Southclaws/storyden/app/transports/http/middleware/headers"
 	"github.com/Southclaws/storyden/app/transports/http/middleware/limiter"
 	"github.com/Southclaws/storyden/app/transports/http/middleware/origin"
+	"github.com/Southclaws/storyden/app/transports/http/middleware/otelhttp"
 	"github.com/Southclaws/storyden/app/transports/http/middleware/reqlog"
 	"github.com/Southclaws/storyden/app/transports/http/middleware/session_cookie"
 	"github.com/Southclaws/storyden/internal/config"
@@ -34,9 +36,11 @@ func MountOpenAPI(
 	cj *session_cookie.Jar,
 	rl *limiter.Middleware,
 	cm *chaos.Middleware,
+	ot *otelhttp.Middleware,
 ) {
 	lc.Append(fx.StartHook(func() {
 		applied := httpserver.Apply(router,
+			ot.WithTracing(otel.GetTracerProvider()),
 			co.WithCORS(),
 			lo.WithLogger(),
 			fe.WithFrontendProxy(),

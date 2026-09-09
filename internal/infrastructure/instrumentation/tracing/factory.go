@@ -118,6 +118,8 @@ func (f factory) Build(lc fx.Lifecycle, serviceName string) Tracer {
 
 	tp := trace.NewTracerProvider(opts...)
 
+	otel.SetTracerProvider(tp)
+
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
 			if err := tp.Shutdown(ctx); err != nil {
