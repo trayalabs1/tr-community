@@ -13,14 +13,26 @@ import (
 
 	"github.com/Southclaws/storyden/internal/boot_time"
 	"github.com/Southclaws/storyden/internal/config"
+	"github.com/Southclaws/storyden/internal/infrastructure/httpserver/routename"
 )
 
 func Instrument(handler http.Handler) http.Handler {
-	return otelhttp.NewHandler(handler, "storyden",
+	instrumented := otelhttp.NewHandler(handler, "storyden",
 		otelhttp.WithFilter(func(r *http.Request) bool {
 			return r.URL.Path != "/healthz"
 		}),
+		otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
+			if route, ok := routename.Get(r.Context()); ok {
+				return route
+			}
+
+			return operation
+		}),
 	)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		instrumented.ServeHTTP(w, r.WithContext(routename.NewContext(r.Context())))
+	})
 }
 
 func NewServer(lc fx.Lifecycle, logger *slog.Logger, cfg config.Config, router *http.ServeMux) *http.Server {
