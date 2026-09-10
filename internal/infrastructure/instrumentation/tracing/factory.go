@@ -6,40 +6,18 @@ import (
 
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fmsg"
-	"github.com/getsentry/sentry-go"
-	sentryotel "github.com/getsentry/sentry-go/otel"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.uber.org/fx"
 
 	"github.com/Southclaws/storyden/internal/config"
 )
 
-type factory struct {
-	provider string
-	opts     []trace.TracerProviderOption
-}
+type factory struct{}
 
 func Build() fx.Option {
 	return fx.Provide(newExporter, newTracerFactory)
-}
-
-func newTracerFactory(ctx context.Context,
-	cfg config.Config,
-	logger *slog.Logger,
-	opts []trace.TracerProviderOption,
-) (Factory, error) {
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		logger.Error("otel error", slog.String("error", err.Error()))
-	}))
-
-	return factory{
-		provider: cfg.OTELProvider,
-		opts:     opts,
-	}, nil
 }
 
 func newExporter(ctx context.Context,
@@ -48,29 +26,7 @@ func newExporter(ctx context.Context,
 ) ([]trace.TracerProviderOption, error) {
 	switch cfg.OTELProvider {
 	case "sentry":
-
-		if cfg.SentryDSN == "" {
-			if cfg.OTELEndpoint.String() != "" {
-				return nil, fault.New("OTEL_EXPORTER_OTLP_ENDPOINT is set but sentry DSN is required instead when using the sentry provider")
-			}
-			return nil, fault.New("sentry DSN is required when using the sentry provider")
-		}
-
-		err := sentry.Init(sentry.ClientOptions{
-			Dsn:              cfg.SentryDSN,
-			EnableTracing:    true,
-			TracesSampleRate: 1.0,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		spanProc := sentryotel.NewSentrySpanProcessor()
-
-		// for some reason, sentry is a "span processor" not a "span exporter".
-		return []trace.TracerProviderOption{
-			trace.WithSpanProcessor(spanProc),
-		}, nil
+		return nil, fault.New("the sentry OTEL_PROVIDER has been removed, use 'otlp' with OTEL_EXPORTER_OTLP_ENDPOINT pointed at the collector")
 
 	case "otlp":
 		endpoint := cfg.OTELEndpoint.String()
@@ -109,28 +65,10 @@ func newExporter(ctx context.Context,
 	}
 }
 
-// Build constructs a new tracer for use within a system component.
-func (f factory) Build(lc fx.Lifecycle, serviceName string) Tracer {
-	opts := append(f.opts, trace.WithResource(resource.NewWithAttributes(
-		semconv.SchemaURL,
-		semconv.ServiceName(serviceName),
-	)))
+func newTracerFactory() (Factory, error) {
+	return factory{}, nil
+}
 
-	tp := trace.NewTracerProvider(opts...)
-
-	otel.SetTracerProvider(tp)
-
-	lc.Append(fx.Hook{
-		OnStop: func(ctx context.Context) error {
-			if err := tp.Shutdown(ctx); err != nil {
-				return fault.Wrap(err)
-			}
-
-			return nil
-		},
-	})
-
-	tracer := tp.Tracer("storyden")
-
-	return tracer
+func (f factory) Build(lc fx.Lifecycle, scopeName string) Tracer {
+	return otel.Tracer(scopeName)
 }
