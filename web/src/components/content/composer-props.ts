@@ -16,4 +16,7 @@ export type ContentComposerProps = {
   // Suppresses the floating ComposerTools toolbar for surfaces that provide
   // their own controls.
   hideTools?: boolean;
+
+  // Focuses the editor as soon as it mounts.
+  autoFocus?: boolean;
 };
