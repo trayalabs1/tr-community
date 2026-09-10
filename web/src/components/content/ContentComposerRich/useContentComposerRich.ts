@@ -150,6 +150,7 @@ export function useContentComposer(props: ContentComposerProps) {
 
   const editor = useEditor({
     immediatelyRender: false,
+    autofocus: props.autoFocus ? "end" : false,
     editorProps: {
       attributes: {
         "data-editor-id": uniqueID,

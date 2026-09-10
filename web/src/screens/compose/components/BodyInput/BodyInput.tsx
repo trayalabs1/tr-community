@@ -1,4 +1,4 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useRef } from "react";
 import { Controller } from "react-hook-form";
 
 import { Asset } from "src/api/openapi-schema";
@@ -14,8 +14,19 @@ type Props = {
   onAssetUpload: (asset: Asset) => void;
 };
 
+// Roughly 7 lines of body text at the editor's line height, plus the box's
+// own padding.
+const BOX_HEIGHT = "[196px]";
+
 export function BodyInput({ onAssetUpload }: PropsWithChildren<Props>) {
   const { control, error } = useBodyInput();
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  function focusEditor() {
+    boxRef.current
+      ?.querySelector<HTMLElement>(".ProseMirror, textarea")
+      ?.focus();
+  }
 
   return (
     <styled.div
@@ -26,17 +37,20 @@ export function BodyInput({ onAssetUpload }: PropsWithChildren<Props>) {
       flexShrink="0"
     >
       <styled.div
+        ref={boxRef}
+        onClick={focusEditor}
         display="flex"
         flexDirection="column"
         w="full"
-        h="auto"
-        minH="[50dvh]"
+        h={BOX_HEIGHT}
+        overflowY="auto"
         p="3"
         bg="bg.surfaceWhite"
         borderRadius="2xl"
         borderWidth="thin"
         borderStyle="solid"
         borderColor={error ? "border.destructive" : "border.default"}
+        cursor="text"
       >
         <FormControl h="auto" flex="1" display="flex" flexDir="column">
           <Controller
@@ -47,6 +61,7 @@ export function BodyInput({ onAssetUpload }: PropsWithChildren<Props>) {
                 initialValue={formState.defaultValues?.["body"]}
                 placeholder="Write your heart out....."
                 hideTools
+                autoFocus
               />
             )}
             control={control}
