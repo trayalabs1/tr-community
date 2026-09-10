@@ -51,8 +51,6 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.10
 	github.com/gen2brain/avif v0.6.0
 	github.com/gen2brain/heic v0.7.1
-	github.com/getsentry/sentry-go v0.35.3
-	github.com/getsentry/sentry-go/otel v0.35.3
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/golang-cz/devslog v0.0.15
 	github.com/golang-jwt/jwt/v5 v5.3.0

@@ -244,7 +244,6 @@ Configuration for monitoring via OpenTelemetry-compatible software.
 
 Either:
 - `otlp` for any standard OpenTelemetry collector.
-- `sentry` for Sentry (which is OpenTelemetry-compatible, however requires its own specific configuration.)
 - `logger` for local logging to the console. This is only really useful for Storyden developers and is very noisy.
 
 ### `OTEL_EXPORTER_OTLP_ENDPOINT`
@@ -267,14 +266,41 @@ Extra HTTP headers to send with every OTLP export request, as comma-separated `k
 
 Required by some OTLP collectors (including Last9) for authentication. Only used when `OTEL_PROVIDER` is set to `otlp`.
 
-### `SENTRY_DSN`
+### `SERVICE_NAME`
+
+<table>
+<tr><td>type</td><td>`string`</td></tr>
+<tr><td>default</td><td>`storyden`</td></tr>
+</table>
+
+The `service.name` resource attribute reported on all telemetry.
+
+### `DEPLOYMENT_ENVIRONMENT`
 
 <table>
 <tr><td>type</td><td>`string`</td></tr>
 <tr><td>default</td><td>(empty string)</td></tr>
 </table>
 
-When `OTEL_PROVIDER` is set to `sentry`, this is the DSN for the Sentry project.
+The `deployment.environment.name` resource attribute reported on all telemetry.
+
+### `OTEL_TRACES_SAMPLER_ARG`
+
+<table>
+<tr><td>type</td><td>float (e.g. `1.0`, `1.5`)</td></tr>
+<tr><td>default</td><td>`1.0`</td></tr>
+</table>
+
+Head sampling ratio between 0.0 and 1.0. Defaults to 1.0 because tail sampling is performed at the collector.
+
+### `OTEL_METRIC_EXPORT_INTERVAL`
+
+<table>
+<tr><td>type</td><td>duration (e.g. 1h, 1m, 1s)</td></tr>
+<tr><td>default</td><td>`60s`</td></tr>
+</table>
+
+How often metrics are exported to the collector.
 
 ## Email
 

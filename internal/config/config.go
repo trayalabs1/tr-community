@@ -144,7 +144,6 @@ type Config struct {
 	/*
 	   Either:
 	   - `otlp` for any standard OpenTelemetry collector.
-	   - `sentry` for Sentry (which is OpenTelemetry-compatible, however requires its own specific configuration.)
 	   - `logger` for local logging to the console. This is only really useful for Storyden developers and is very noisy.
 	*/
 	OTELProvider string `default:"" envconfig:"OTEL_PROVIDER"`
@@ -156,8 +155,14 @@ type Config struct {
 	   Required by some OTLP collectors (including Last9) for authentication. Only used when `OTEL_PROVIDER` is set to `otlp`.
 	*/
 	OTELHeaders string `default:"" envconfig:"OTEL_EXPORTER_OTLP_HEADERS"`
-	// When `OTEL_PROVIDER` is set to `sentry`, this is the DSN for the Sentry project.
-	SentryDSN string `default:"" envconfig:"SENTRY_DSN"`
+	// The `service.name` resource attribute reported on all telemetry.
+	ServiceName string `default:"storyden" envconfig:"SERVICE_NAME"`
+	// The `deployment.environment.name` resource attribute reported on all telemetry.
+	DeploymentEnvironment string `default:"" envconfig:"DEPLOYMENT_ENVIRONMENT"`
+	// Head sampling ratio between 0.0 and 1.0. Defaults to 1.0 because tail sampling is performed at the collector.
+	OTELTracesSamplerArg float64 `default:"1.0" envconfig:"OTEL_TRACES_SAMPLER_ARG"`
+	// How often metrics are exported to the collector.
+	OTELMetricExportInterval time.Duration `default:"60s" envconfig:"OTEL_METRIC_EXPORT_INTERVAL"`
 
 	// -
 	// Email
