@@ -5,12 +5,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+
+	"github.com/Southclaws/storyden/app/transports/http/middleware/otelroute"
 )
 
 func TestHandlerAdoptsInboundTraceParent(t *testing.T) {
@@ -54,4 +57,32 @@ func TestHandlerSkipsHealthz(t *testing.T) {
 	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/healthz", nil))
 
 	a.Empty(exporter.GetSpans())
+}
+
+func TestInstrumentComposedWithOtelrouteExportsRouteTemplatedSpanName(t *testing.T) {
+	a := assert.New(t)
+
+	exporter := tracetest.NewInMemoryExporter()
+	otel.SetTracerProvider(sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter)))
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+
+	router := echo.New()
+	router.Use(otelroute.Middleware())
+	router.GET("/the/route/:template", func(c echo.Context) error {
+		return c.NoContent(http.StatusOK)
+	})
+
+	mux := http.NewServeMux()
+	mux.Handle("/", router)
+
+	handler := Instrument(mux)
+
+	req := httptest.NewRequest(http.MethodGet, "/the/route/some-value", nil)
+	handler.ServeHTTP(httptest.NewRecorder(), req)
+
+	spans := exporter.GetSpans()
+	require.Len(t, spans, 1)
+
+	a.Equal("GET /the/route/:template", spans[0].Name)
+	a.NotEqual("storyden", spans[0].Name)
 }

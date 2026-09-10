@@ -4,6 +4,8 @@ import (
 	"github.com/labstack/echo/v4"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/Southclaws/storyden/internal/infrastructure/httpserver/routename"
 )
 
 func Middleware() echo.MiddlewareFunc {
@@ -13,6 +15,8 @@ func Middleware() echo.MiddlewareFunc {
 			if route == "" {
 				return next(c)
 			}
+
+			routename.Set(c.Request().Context(), c.Request().Method+" "+route)
 
 			span := trace.SpanFromContext(c.Request().Context())
 			if span.IsRecording() {

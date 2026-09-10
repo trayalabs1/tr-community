@@ -91,6 +91,49 @@ func TestNewRegistersPropagator(t *testing.T) {
 	)
 }
 
+func TestSamplerRatioClampsZeroValueToOne(t *testing.T) {
+	a := assert.New(t)
+
+	a.Equal(1.0, samplerRatio(0))
+	a.Equal(1.0, samplerRatio(-1))
+}
+
+func TestSamplerRatioLeavesExplicitValueUnchanged(t *testing.T) {
+	a := assert.New(t)
+
+	a.Equal(0.5, samplerRatio(0.5))
+	a.Equal(1.0, samplerRatio(1.0))
+}
+
+func TestNewWithZeroValuedConfigStillSamplesSpans(t *testing.T) {
+	a := assert.New(t)
+	lc := fxtest.NewLifecycle(t)
+
+	exporter := tracetest.NewInMemoryExporter()
+
+	cfg := config.Config{
+		ServiceName:           "storyden-test",
+		DeploymentEnvironment: "test",
+	}
+
+	p, err := New(
+		context.Background(),
+		lc,
+		cfg,
+		slog.Default(),
+		newResource(cfg),
+		[]sdktrace.TracerProviderOption{sdktrace.WithSyncer(exporter)},
+	)
+	require.NoError(t, err)
+
+	_, span := p.Tracer.Tracer("scope-under-test").Start(context.Background(), "unit")
+	span.End()
+
+	spans := exporter.GetSpans()
+	require.Len(t, spans, 1)
+	a.True(spans[0].SpanContext.IsSampled())
+}
+
 func TestNewSkipsMeterProviderWhenNotOTLP(t *testing.T) {
 	a := assert.New(t)
 	lc := fxtest.NewLifecycle(t)

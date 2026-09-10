@@ -76,7 +76,7 @@ func New(
 	opts = append(opts,
 		sdktrace.WithResource(res),
 		sdktrace.WithSampler(sdktrace.ParentBased(
-			sdktrace.TraceIDRatioBased(cfg.OTELTracesSamplerArg),
+			sdktrace.TraceIDRatioBased(samplerRatio(cfg.OTELTracesSamplerArg)),
 		)),
 	)
 
@@ -116,6 +116,14 @@ func New(
 	})
 
 	return providers, nil
+}
+
+func samplerRatio(ratio float64) float64 {
+	if ratio <= 0 {
+		return 1.0
+	}
+
+	return ratio
 }
 
 func newMeterProvider(ctx context.Context, cfg config.Config, res *resource.Resource) (*sdkmetric.MeterProvider, error) {
