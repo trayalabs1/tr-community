@@ -8,15 +8,24 @@ import (
 	"os"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.uber.org/fx"
 
 	"github.com/Southclaws/storyden/internal/boot_time"
 	"github.com/Southclaws/storyden/internal/config"
 )
 
+func Instrument(handler http.Handler) http.Handler {
+	return otelhttp.NewHandler(handler, "storyden",
+		otelhttp.WithFilter(func(r *http.Request) bool {
+			return r.URL.Path != "/healthz"
+		}),
+	)
+}
+
 func NewServer(lc fx.Lifecycle, logger *slog.Logger, cfg config.Config, router *http.ServeMux) *http.Server {
 	server := &http.Server{
-		Handler: router,
+		Handler: Instrument(router),
 		Addr:    cfg.ListenAddr,
 	}
 

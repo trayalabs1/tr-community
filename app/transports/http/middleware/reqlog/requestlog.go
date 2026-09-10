@@ -7,19 +7,22 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/Southclaws/fault"
+	"github.com/Southclaws/fault/fctx"
+	"github.com/Southclaws/fault/fmsg"
+	"go.opentelemetry.io/otel/codes"
+	otel_trace "go.opentelemetry.io/otel/trace"
+
 	"github.com/Southclaws/storyden/app/transports/http/middleware/origin"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/kv"
-	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/spanner"
 )
 
 type Middleware struct {
-	ins spanner.Instrumentation
+	logger *slog.Logger
 }
 
-func New(ins spanner.Builder) *Middleware {
-	return &Middleware{
-		ins: ins.Build(),
-	}
+func New(logger *slog.Logger) *Middleware {
+	return &Middleware{logger: logger}
 }
 
 type withStatus struct {
@@ -41,29 +44,35 @@ func (m *Middleware) WithLogger() func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 
-			origin := origin.GetOrigin(r.Context())
+			ctx := r.Context()
+			span := otel_trace.SpanFromContext(ctx)
+			spanContext := span.SpanContext()
 
-			// log entries should be in the form "GET /a/b/c".
 			title := r.Method + " " + r.URL.Path
 
-			wr := &withStatus{ResponseWriter: w}
-
-			ctx, span := m.ins.InstrumentNamed(r.Context(), title,
-				kv.String("http.request.header.origin", origin),
+			attrs := kv.Attrs{
+				kv.String("http.request.header.origin", origin.GetOrigin(ctx)),
 				kv.String("client.address", r.RemoteAddr),
 				kv.String("http.request.method", r.Method),
 				kv.String("url.query", r.URL.Query().Encode()),
 				kv.Int("http.request.body.size", int(r.ContentLength)),
+			}
+
+			span.SetAttributes(attrs.ToAttributes()...)
+			ctx = fctx.WithMeta(ctx, attrs.ToFault()...)
+
+			logger := m.logger.With(attrs.ToSlog()...).With(
+				slog.String("trace_id", spanContext.TraceID().String()),
+				slog.String("span_id", spanContext.SpanID().String()),
 			)
-			defer span.End()
+
+			wr := &withStatus{ResponseWriter: w}
 
 			defer func() {
-				span.Annotate(
+				span.SetAttributes(kv.Attrs{
 					kv.Duration("duration", time.Since(start)),
 					kv.Int("http.response.status_code", wr.statusCode),
-				)
-
-				logger := span.Logger()
+				}.ToAttributes()...)
 
 				logger.Info(title)
 
@@ -71,18 +80,22 @@ func (m *Middleware) WithLogger() func(http.Handler) http.Handler {
 					err := func(v any) error {
 						if e, ok := v.(error); ok {
 							return e
-						} else {
-							return fmt.Errorf("%v", v)
 						}
+						return fmt.Errorf("%v", v)
 					}(recovery)
 
-					trace := debug.Stack()
-
+					stack := debug.Stack()
 					errorlog := title + ": " + err.Error()
 
-					logger.Error(errorlog,
-						slog.String("error", span.Wrap(err, errorlog, kv.String("trace", string(trace))).Error()),
+					span.SetStatus(codes.Error, errorlog)
+					span.RecordError(err)
+
+					wrapped := fault.Wrap(err,
+						fctx.With(fctx.WithMeta(ctx, "trace", string(stack))),
+						fmsg.With(errorlog),
 					)
+
+					logger.Error(errorlog, slog.String("error", wrapped.Error()))
 
 					w.WriteHeader(http.StatusInternalServerError)
 					return
