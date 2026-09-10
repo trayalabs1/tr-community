@@ -12,6 +12,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/Southclaws/storyden/internal/config"
+	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/otelinit"
 )
 
 type factory struct{}
@@ -65,7 +66,7 @@ func newExporter(ctx context.Context,
 	}
 }
 
-func newTracerFactory() (Factory, error) {
+func newTracerFactory(_ *otelinit.Providers) (Factory, error) {
 	return factory{}, nil
 }
 
