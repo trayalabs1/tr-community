@@ -19,7 +19,7 @@ import (
 )
 
 func newHttpTestServer(lc fx.Lifecycle, l *slog.Logger, cfg config.Config, router *http.ServeMux) *httptest.Server {
-	server := httptest.NewServer(router)
+	server := httptest.NewServer(httpserver.Instrument(router))
 
 	lc.Append(fx.Hook{
 		OnStop: func(_ context.Context) error {
