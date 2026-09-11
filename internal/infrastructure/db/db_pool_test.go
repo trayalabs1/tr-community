@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/fx/fxtest"
 
 	"github.com/Southclaws/storyden/internal/config"
+	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/tracing"
 )
 
 func TestNewSQLAppliesPoolSettings(t *testing.T) {
@@ -18,7 +20,7 @@ func TestNewSQLAppliesPoolSettings(t *testing.T) {
 		DatabaseConnMaxIdleTime: 5 * time.Minute,
 	}
 
-	d, x, err := newSQL(cfg)
+	d, x, err := newSQL(fxtest.NewLifecycle(t), tracing.NewNoop(), cfg)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = d.Close(); _ = x.Close() })
 
