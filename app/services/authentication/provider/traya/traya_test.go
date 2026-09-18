@@ -395,6 +395,40 @@ func TestIsOlderThanNDays(t *testing.T) {
 	}
 }
 
+func TestIsMaleLeadExplorersEligible(t *testing.T) {
+	now := time.Now().UTC()
+	dateOnly := "2006-01-02"
+
+	tests := []struct {
+		name   string
+		caseID string
+		days   int
+		want   bool
+	}{
+		{name: "caseId 2 at D8 is eligible", caseID: "2abc", days: 8, want: true},
+		{name: "caseId 3 at D8 is eligible", caseID: "3xyz", days: 8, want: true},
+		{name: "caseId 2 at D7 is not eligible", caseID: "2abc", days: 7, want: false},
+		{name: "caseId 4 at D8 is not eligible", caseID: "4abc", days: 8, want: false},
+		{name: "caseId 4 at D15 is eligible", caseID: "4abc", days: 15, want: true},
+		{name: "caseId 1 at D15 is eligible", caseID: "1abc", days: 15, want: true},
+		{name: "caseId 2 at D20 remains eligible", caseID: "2abc", days: 20, want: true},
+		{name: "caseId 9 is never eligible", caseID: "9abc", days: 100, want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dateStr := now.AddDate(0, 0, -tt.days).Format(dateOnly)
+			got, err := isMaleLeadExplorersEligible(tt.caseID, dateStr)
+			if err != nil {
+				t.Fatalf("isMaleLeadExplorersEligible(%q, %q) returned error: %v", tt.caseID, dateStr, err)
+			}
+			if got != tt.want {
+				t.Errorf("isMaleLeadExplorersEligible(%q, %q) = %v, want %v", tt.caseID, dateStr, got, tt.want)
+			}
+		})
+	}
+}
+
 func keys(m map[string]bool) []string {
 	out := make([]string, 0, len(m))
 	for k := range m {
