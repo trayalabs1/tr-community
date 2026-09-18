@@ -441,8 +441,8 @@ func (p *Provider) ensureChannelMemberships(ctx context.Context, accountID accou
 	}
 
 	leadOlderThan15Days := false
-	if normalizedGender == "male" && customerType == "lead" && hasCaseIDPrefix(caseID, "0", "1", "2", "3", "4", "5") {
-		older, err := isOlderThanNDays(firstFilledFormDate, 15)
+	if normalizedGender == "male" && customerType == "lead" {
+		older, err := isMaleLeadExplorersEligible(caseID, firstFilledFormDate)
 		if err != nil {
 			p.logger.Warn("failed to parse firstFilledFormDate",
 				slog.String("date", firstFilledFormDate),
@@ -596,6 +596,19 @@ func hasCaseIDPrefix(caseID string, prefixes ...string) bool {
 		}
 	}
 	return false
+}
+
+func isMaleLeadExplorersEligible(caseID string, firstFilledFormDate string) (bool, error) {
+	if !hasCaseIDPrefix(caseID, "0", "1", "2", "3", "4", "5") {
+		return false, nil
+	}
+
+	minDays := 15
+	if hasCaseIDPrefix(caseID, "2", "3") {
+		minDays = 8
+	}
+
+	return isOlderThanNDays(firstFilledFormDate, minDays)
 }
 
 func isRunningKitEligible(runningKitStartDate string, latestOrderDate string) (bool, error) {
