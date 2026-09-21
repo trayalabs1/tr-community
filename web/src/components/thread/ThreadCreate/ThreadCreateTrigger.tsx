@@ -67,7 +67,7 @@ export function ThreadCreateTrigger({
         cursor="pointer"
         style={{
           background: "white",
-          border: "1px solid white",
+          border: "1px solid #ADD6C2",
           borderRadius: "14px",
           padding: "14px 16px",
           boxShadow: "0px 4px 6px rgba(0,0,0,0.12)",
@@ -92,7 +92,7 @@ export function ThreadCreateTrigger({
           size={20}
           style={{
             flexShrink: 0,
-            color: "var(--colors-fg-default)",
+            color: "#787878",
           }}
         />
       </styled.button>
