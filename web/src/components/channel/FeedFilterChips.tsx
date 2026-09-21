@@ -44,9 +44,9 @@ export function FeedFilterChips({ selectedPrimaryTopic, onPrimaryTopicChange }: 
           <styled.span
             style={{
               ...chipBase,
-              backgroundColor: "#ECECEC",
+              backgroundColor: "white",
               color: "#404040",
-              border: "1px solid transparent",
+              border: "1px solid #dedede",
             }}
           >
             <Send size={16} />
@@ -58,9 +58,9 @@ export function FeedFilterChips({ selectedPrimaryTopic, onPrimaryTopicChange }: 
           <styled.span
             style={{
               ...chipBase,
-              backgroundColor: "#ECECEC",
+              backgroundColor: "white",
               color: "#404040",
-              border: "1px solid transparent",
+              border: "1px solid #dedede",
             }}
           >
             <BookmarkIcon width="4" height="4" />
