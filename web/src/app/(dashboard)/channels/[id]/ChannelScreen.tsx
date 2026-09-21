@@ -215,7 +215,7 @@ export function ChannelScreen(props: Props) {
         hasUnreadNotifications={props.hasUnreadNotifications}
       />
 
-      <LStack gap="6" p="4">
+      <LStack gap="6" p="4" pt={{ base: "0", md: "4" }}>
 
       {/* Admin Filter Bar (visibility / date / streak) + Settings on the same row — desktop only; mobile uses FeedFilterChips */}
       <styled.div width="full" display={{ base: "none", md: "block" }}>
@@ -250,12 +250,7 @@ export function ChannelScreen(props: Props) {
       <VStack
         alignItems="start"
         gap="4"
-        mx={{ base: "-4", md: "0" }}
-        bg={{ base: "[#f0f0f0]", md: "transparent" }}
-        css={{
-          width: "[calc(100% + 2rem)]",
-          md: { width: "full" },
-        }}
+        width="full"
       >
 
         {!hasInitiallyLoaded ? (
