@@ -18,6 +18,7 @@ type Props = {
 const ACCENT = "#329866";
 const ACCENT_TINT = "#DCF4E8";
 const ICON_TINT = "#B2E6CD";
+const PANEL_BG = "#F0F0F0";
 
 export function PromptNudge({ prompts, onPick }: Props) {
   const [expanded, setExpanded] = useState(false);
@@ -37,8 +38,8 @@ export function PromptNudge({ prompts, onPick }: Props) {
       rounded="xl"
       overflow="hidden"
       style={{
-        background: expanded ? "#FFFFFF" : ACCENT_TINT,
-        border: `1px solid ${expanded ? ACCENT_TINT : "transparent"}`,
+        background: expanded ? PANEL_BG : ACCENT_TINT,
+        border: `1px solid ${expanded ? PANEL_BG : "transparent"}`,
       }}
     >
       <styled.button
