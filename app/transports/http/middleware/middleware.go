@@ -8,6 +8,7 @@ import (
 	"github.com/Southclaws/storyden/app/transports/http/middleware/headers"
 	"github.com/Southclaws/storyden/app/transports/http/middleware/limiter"
 	"github.com/Southclaws/storyden/app/transports/http/middleware/origin"
+	"github.com/Southclaws/storyden/app/transports/http/middleware/otelhttp"
 	"github.com/Southclaws/storyden/app/transports/http/middleware/reqlog"
 	"github.com/Southclaws/storyden/app/transports/http/middleware/session_cookie"
 )
@@ -21,5 +22,6 @@ func Build() fx.Option {
 		session_cookie.New,
 		limiter.New,
 		chaos.New,
+		otelhttp.New,
 	)
 }
