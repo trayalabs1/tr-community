@@ -135,7 +135,7 @@ export function ChannelMobileHeader({
       <styled.div
         display={canManagePosts ? { base: "block", md: "none" } : "block"}
         width="full"
-        bg="white"
+        bg="[#F0F0F0]"
         px="4"
       >
         <Collapsible isCollapsed={isScrolledDown} expandedPadding="12px 0">
