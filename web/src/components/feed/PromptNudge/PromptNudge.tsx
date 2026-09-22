@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { useState } from "react";
 
 import { AddIcon } from "@/components/ui/icons/Add";
@@ -16,8 +16,9 @@ type Props = {
 };
 
 const ACCENT = "#329866";
-const ACCENT_TINT = "#DCF4E8";
 const ICON_TINT = "#B2E6CD";
+const PANEL_BG = "#F0F0F0";
+const MUTED_TEXT = "#787878";
 
 export function PromptNudge({ prompts, onPick }: Props) {
   const [expanded, setExpanded] = useState(false);
@@ -37,8 +38,8 @@ export function PromptNudge({ prompts, onPick }: Props) {
       rounded="xl"
       overflow="hidden"
       style={{
-        background: expanded ? "#FFFFFF" : ACCENT_TINT,
-        border: `1px solid ${expanded ? ACCENT_TINT : "transparent"}`,
+        background: PANEL_BG,
+        border: `1px solid ${PANEL_BG}`,
       }}
     >
       <styled.button
@@ -54,12 +55,12 @@ export function PromptNudge({ prompts, onPick }: Props) {
         aria-expanded={expanded}
         onClick={() => setExpanded((v) => !v)}
         style={{
-          background: expanded ? ACCENT : "transparent",
-          color: expanded ? "#FFFFFF" : ACCENT,
+          background: "transparent",
+          color: MUTED_TEXT,
         }}
       >
         <HStack gap="2" alignItems="center">
-          <Sparkles size={16} />
+          <HelpCircle size={16} />
           <styled.span fontSize="sm" fontWeight="bold">
             Not sure what to post?
           </styled.span>
@@ -100,7 +101,7 @@ export function PromptNudge({ prompts, onPick }: Props) {
                       rounded="lg"
                       cursor="pointer"
                       textAlign="left"
-                      css={{ _hover: { background: `[${ACCENT_TINT}]` } }}
+                      css={{ _hover: { background: "white" } }}
                       onClick={() => handlePick(prompt, index)}
                     >
                       <styled.span
