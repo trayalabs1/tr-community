@@ -9,7 +9,10 @@ import (
 	"github.com/Southclaws/fault/fctx"
 	"github.com/Southclaws/fault/fmsg"
 	"github.com/Southclaws/fault/ftag"
+	"go.uber.org/fx"
+
 	"github.com/Southclaws/storyden/app/resources/datagraph"
+	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/tracing"
 )
 
 var errFailedToScrape = fault.New("failed to scrape")
@@ -27,10 +30,14 @@ type WebContent struct {
 	Content     datagraph.Content
 }
 
-type webScraper struct{}
+type webScraper struct {
+	httpClient *http.Client
+}
 
-func New() Scraper {
-	return &webScraper{}
+func New(lc fx.Lifecycle, tf tracing.Factory) Scraper {
+	return &webScraper{
+		httpClient: &http.Client{Transport: tracing.InstrumentedTransport(lc, tf, "link-scraper", nil)},
+	}
 }
 
 func (s *webScraper) Scrape(ctx context.Context, addr url.URL) (*WebContent, error) {
@@ -61,7 +68,7 @@ func (s *webScraper) Scrape(ctx context.Context, addr url.URL) (*WebContent, err
 	req.Header.Add("Upgrade-Insecure-Requests", "1")
 	req.Header.Add("User-Agent", `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36`)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}

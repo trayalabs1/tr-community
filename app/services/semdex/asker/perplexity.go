@@ -14,9 +14,11 @@ import (
 	"github.com/Southclaws/opt"
 	"github.com/openai/openai-go/packages/ssestream"
 	"github.com/rs/xid"
+	"go.uber.org/fx"
 
 	"github.com/Southclaws/storyden/app/services/semdex"
 	"github.com/Southclaws/storyden/internal/config"
+	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/tracing"
 )
 
 const (
@@ -44,12 +46,12 @@ type Perplexity struct {
 	searcher    semdex.Searcher
 }
 
-func newPerplexityAsker(cfg config.Config, searcher semdex.Searcher) (*Perplexity, error) {
+func newPerplexityAsker(lc fx.Lifecycle, tf tracing.Factory, cfg config.Config, searcher semdex.Searcher) (*Perplexity, error) {
 	s := &Perplexity{
 		apiKey:      cfg.PerplexityAPIKey,
 		endpoint:    DefaultEndpoint,
 		model:       Llama_3_1SonarSmall_128kOnline,
-		httpClient:  &http.Client{},
+		httpClient:  &http.Client{Transport: tracing.InstrumentedTransport(lc, tf, "perplexity", nil)},
 		httpTimeout: DefautTimeout,
 		searcher:    searcher,
 	}

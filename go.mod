@@ -38,6 +38,7 @@ require (
 	github.com/Southclaws/swirl v1.0.1
 	github.com/ThreeDotsLabs/watermill v1.5.1
 	github.com/ThreeDotsLabs/watermill-amqp/v3 v3.0.2
+	github.com/XSAM/otelsql v0.38.0
 	github.com/alitto/pond/v2 v2.5.0
 	github.com/blevesearch/bleve/v2 v2.5.5
 	github.com/bwmarrin/discordgo v0.29.0
@@ -78,6 +79,7 @@ require (
 	github.com/pinecone-io/go-pinecone/v4 v4.1.4
 	github.com/puzpuzpuz/xsync/v4 v4.2.0
 	github.com/redis/rueidis v1.0.66
+	github.com/redis/rueidis/rueidisotel v1.0.66
 	github.com/rs/cors v1.11.1
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/sendgrid/sendgrid-go v3.16.1+incompatible
@@ -86,6 +88,7 @@ require (
 	github.com/twilio/twilio-go v1.28.3
 	github.com/weaviate/weaviate v1.33.0
 	github.com/weaviate/weaviate-go-client/v5 v5.5.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0
 	go.opentelemetry.io/otel v1.38.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.38.0
 	go.opentelemetry.io/otel/sdk v1.38.0
@@ -236,7 +239,6 @@ require (
 	go.etcd.io/bbolt v1.4.3 // indirect
 	go.mongodb.org/mongo-driver v1.17.3 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.38.0 // indirect
 	go.opentelemetry.io/otel/metric v1.38.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.1 // indirect

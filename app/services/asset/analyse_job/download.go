@@ -3,7 +3,6 @@ package analyse_job
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
@@ -22,11 +21,7 @@ func (c *analyseConsumer) downloadAsset(ctx context.Context, src string, fillrul
 		return fault.Wrap(err, fctx.With(ctx))
 	}
 
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	resp, err := client.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fault.Wrap(err, fctx.With(ctx))
 	}

@@ -17,6 +17,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/Southclaws/storyden/internal/config"
+	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/tracing"
 )
 
 const defaultPlatform = "web"
@@ -45,7 +46,7 @@ func Build() fx.Option {
 	return fx.Provide(newClient)
 }
 
-func newClient(cfg config.Config, logger *slog.Logger) (Sender, error) {
+func newClient(lc fx.Lifecycle, tf tracing.Factory, cfg config.Config, logger *slog.Logger) (Sender, error) {
 	if cfg.MoEngageAppKey == "" || cfg.MoEngageAuthKey == "" {
 		return nil, nil
 	}
@@ -53,8 +54,11 @@ func newClient(cfg config.Config, logger *slog.Logger) (Sender, error) {
 	auth := base64.StdEncoding.EncodeToString([]byte(cfg.MoEngageAppKey + ":" + cfg.MoEngageAuthKey))
 
 	return &Client{
-		logger:     logger.With(slog.String("client", "moengage")),
-		httpClient: &http.Client{Timeout: 10 * time.Second},
+		logger: logger.With(slog.String("client", "moengage")),
+		httpClient: &http.Client{
+			Timeout:   10 * time.Second,
+			Transport: tracing.InstrumentedTransport(lc, tf, "moengage", nil),
+		},
 		url:        fmt.Sprintf("https://api-03.moengage.com/v1/event/%s", cfg.MoEngageAppKey),
 		authHeader: "Basic " + auth,
 	}, nil

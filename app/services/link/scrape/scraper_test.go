@@ -7,11 +7,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/fx/fxtest"
+
+	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/tracing"
 )
 
 func Test_scraper_Scrape(t *testing.T) {
 	ctx := context.Background()
-	sc := New()
+	sc := New(fxtest.NewLifecycle(t), tracing.NewNoop())
 
 	u, _ := url.Parse("https://ogp.me/")
 

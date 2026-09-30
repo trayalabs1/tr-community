@@ -9,6 +9,7 @@ import (
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
 	"github.com/Southclaws/fault/ftag"
+	"go.uber.org/fx"
 
 	"github.com/Southclaws/storyden/app/resources/pagination"
 	"github.com/Southclaws/storyden/app/resources/question"
@@ -16,16 +17,19 @@ import (
 	"github.com/Southclaws/storyden/app/services/semdex"
 	"github.com/Southclaws/storyden/internal/config"
 	"github.com/Southclaws/storyden/internal/infrastructure/ai"
+	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/tracing"
 )
 
 func New(
+	lc fx.Lifecycle,
+	tf tracing.Factory,
 	cfg config.Config,
 	logger *slog.Logger,
 	searcher semdex.Searcher,
 	prompter ai.Prompter,
 	questions *question.Repository,
 ) (semdex.Asker, error) {
-	asker, err := newAsker(cfg, searcher, prompter)
+	asker, err := newAsker(lc, tf, cfg, searcher, prompter)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +41,7 @@ func New(
 	)
 }
 
-func newAsker(cfg config.Config, searcher semdex.Searcher, prompter ai.Prompter) (semdex.Asker, error) {
+func newAsker(lc fx.Lifecycle, tf tracing.Factory, cfg config.Config, searcher semdex.Searcher, prompter ai.Prompter) (semdex.Asker, error) {
 	if cfg.SemdexProvider != "" && cfg.LanguageModelProvider == "" {
 		return nil, fault.New("semdex requires a language model provider to be enabled")
 	}
@@ -50,7 +54,7 @@ func newAsker(cfg config.Config, searcher semdex.Searcher, prompter ai.Prompter)
 		// This means that if you wish to use Perplexity, you must also provide
 		// a language model provider such as OpenAI along with an API key. Keep
 		// this in mind when considering the cost of your Storyden installation.
-		return newPerplexityAsker(cfg, searcher)
+		return newPerplexityAsker(lc, tf, cfg, searcher)
 
 	default:
 		return &defaultAsker{
