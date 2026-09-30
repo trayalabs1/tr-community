@@ -8,15 +8,41 @@ import (
 	"os"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.uber.org/fx"
 
 	"github.com/Southclaws/storyden/internal/boot_time"
 	"github.com/Southclaws/storyden/internal/config"
 )
 
+func Instrument(handler http.Handler) http.Handler {
+	return otelhttp.NewHandler(handler, "storyden",
+		otelhttp.WithFilter(func(r *http.Request) bool {
+			return r.URL.Path != "/healthz"
+		}),
+		otelhttp.WithSpanNameFormatter(routeSpanName),
+	)
+}
+
+func routeSpanName(operation string, r *http.Request) string {
+	labeler, ok := otelhttp.LabelerFromContext(r.Context())
+	if !ok {
+		return operation
+	}
+
+	for _, attr := range labeler.Get() {
+		if attr.Key == semconv.HTTPRouteKey {
+			return r.Method + " " + attr.Value.AsString()
+		}
+	}
+
+	return operation
+}
+
 func NewServer(lc fx.Lifecycle, logger *slog.Logger, cfg config.Config, router *http.ServeMux) *http.Server {
 	server := &http.Server{
-		Handler: router,
+		Handler: Instrument(router),
 		Addr:    cfg.ListenAddr,
 	}
 
