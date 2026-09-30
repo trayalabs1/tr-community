@@ -18,7 +18,7 @@ func TestNewSQLAppliesPoolSettings(t *testing.T) {
 		DatabaseConnMaxIdleTime: 5 * time.Minute,
 	}
 
-	d, x, err := newSQL(cfg)
+	d, x, err := newSQL(nil, cfg)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = d.Close(); _ = x.Close() })
 

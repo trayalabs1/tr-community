@@ -31,6 +31,7 @@ import (
 	"github.com/Southclaws/storyden/internal/config"
 	"github.com/Southclaws/storyden/internal/ent"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
+	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/otelinit"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/tracing"
 )
 
@@ -44,7 +45,7 @@ func Build() fx.Option {
 	)
 }
 
-func newSQL(cfg config.Config) (*sql.DB, *sqlx.DB, error) {
+func newSQL(_ *otelinit.Providers, cfg config.Config) (*sql.DB, *sqlx.DB, error) {
 	driver, path, err := getDriver(cfg.DatabaseURL)
 	if err != nil {
 		return nil, nil, fault.Wrap(err)
@@ -65,6 +66,10 @@ func newSQL(cfg config.Config) (*sql.DB, *sqlx.DB, error) {
 		h.SetMaxIdleConns(cfg.DatabaseMaxIdleConns)
 		h.SetConnMaxLifetime(cfg.DatabaseConnMaxLifetime)
 		h.SetConnMaxIdleTime(cfg.DatabaseConnMaxIdleTime)
+	}
+
+	if err := registerPoolMetrics(d); err != nil {
+		return nil, nil, fault.Wrap(err, fmsg.With("failed to register database pool metrics"))
 	}
 
 	return d, x, nil
