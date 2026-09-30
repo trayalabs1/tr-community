@@ -82,6 +82,10 @@ func newExporter(ctx context.Context,
 			otlptracehttp.WithEndpointURL(endpoint),
 		}
 
+		if headers := parseOTLPHeaders(cfg.OTELHeaders); len(headers) > 0 {
+			opts = append(opts, otlptracehttp.WithHeaders(headers))
+		}
+
 		if cfg.OTELEndpoint.Scheme != "https" {
 			opts = append(opts, otlptracehttp.WithInsecure())
 		}
@@ -113,6 +117,8 @@ func (f factory) Build(lc fx.Lifecycle, serviceName string) Tracer {
 	)))
 
 	tp := trace.NewTracerProvider(opts...)
+
+	otel.SetTracerProvider(tp)
 
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {

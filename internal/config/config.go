@@ -150,6 +150,12 @@ type Config struct {
 	OTELProvider string `default:"" envconfig:"OTEL_PROVIDER"`
 	// The collector endpoint for sending OTEL data.
 	OTELEndpoint url.URL `default:"" envconfig:"OTEL_EXPORTER_OTLP_ENDPOINT"`
+	/*
+	   Extra HTTP headers to send with every OTLP export request, as comma-separated `key=value` pairs, e.g. `Authorization=Basic <token>`.
+
+	   Required by some OTLP collectors (including Last9) for authentication. Only used when `OTEL_PROVIDER` is set to `otlp`.
+	*/
+	OTELHeaders string `default:"" envconfig:"OTEL_EXPORTER_OTLP_HEADERS"`
 	// When `OTEL_PROVIDER` is set to `sentry`, this is the DSN for the Sentry project.
 	SentryDSN string `default:"" envconfig:"SENTRY_DSN"`
 
