@@ -244,6 +244,20 @@ export function QueueScreen() {
     replyQueueLoadedPages.current = new Set();
   }, []);
 
+  const applyPendingReplyRange = useCallback(
+    (createdAfter: string, createdBefore: string) => {
+      if (
+        createdAfter === pendingReplyRange.createdAfter &&
+        createdBefore === pendingReplyRange.createdBefore
+      ) {
+        return;
+      }
+      setPendingReplyRange({ createdAfter, createdBefore });
+      resetPagination();
+    },
+    [pendingReplyRange, resetPagination],
+  );
+
   const handlePendingReplyDateChange = useCallback(({ value }: { value: DateValue[] }) => {
     const [start, end] = value;
 
@@ -253,8 +267,7 @@ export function QueueScreen() {
       s.setHours(0, 0, 0, 0);
       const e = todayVal.toDate(tz);
       e.setHours(23, 59, 59, 999);
-      setPendingReplyRange({ createdAfter: s.toISOString(), createdBefore: e.toISOString() });
-      resetPagination();
+      applyPendingReplyRange(s.toISOString(), e.toISOString());
       return;
     }
 
@@ -267,12 +280,8 @@ export function QueueScreen() {
     startDate.setHours(0, 0, 0, 0);
     const endOfDay = new Date(effectiveEnd.add({ days: 1 }).toDate(getLocalTimeZone()).getTime() - 1);
 
-    setPendingReplyRange({
-      createdAfter: startDate.toISOString(),
-      createdBefore: endOfDay.toISOString(),
-    });
-    resetPagination();
-  }, [todayVal, resetPagination]);
+    applyPendingReplyRange(startDate.toISOString(), endOfDay.toISOString());
+  }, [todayVal, applyPendingReplyRange]);
 
   const isInitialLoading =
     activeTab === "pending_review" ? isThreadsLoading && isNodesLoading :
