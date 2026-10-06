@@ -284,6 +284,12 @@ func HasChannel(channelID xid.ID) Query {
 	}
 }
 
+func HasChannels(channelIDs []xid.ID) Query {
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.ChannelIDIn(channelIDs...))
+	}
+}
+
 func HasStatus(status ...visibility.Visibility) Query {
 	pv := dt.Map(status, func(v visibility.Visibility) ent_post.Visibility { return ent_post.Visibility(v.String()) })
 	return func(q *threadListOptions) {
