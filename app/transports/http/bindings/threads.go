@@ -228,6 +228,9 @@ func (i *Threads) ThreadList(ctx context.Context, request openapi.ThreadListRequ
 	createdBefore := opt.NewPtr(request.Params.CreatedBefore)
 	noReplies := opt.NewPtr(request.Params.NoReplies)
 	noLikes := opt.NewPtr(request.Params.NoLikes)
+	channelIDs := dt.Map(opt.NewPtr(request.Params.ChannelIds).Or(nil), func(i openapi.Identifier) xid.ID {
+		return openapi.ParseID(i)
+	})
 
 	page = max(0, page-1)
 	result, err := i.thread_svc.List(ctx, page, pageSize, thread_service.Params{
@@ -244,6 +247,7 @@ func (i *Threads) ThreadList(ctx context.Context, request openapi.ThreadListRequ
 		ExcludeBAH:      request.Params.ExcludeBah != nil && *request.Params.ExcludeBah,
 		ExcludeFeedback: request.Params.ExcludeFeedback != nil && *request.Params.ExcludeFeedback,
 		BAHOnly:         request.Params.BahOnly != nil && *request.Params.BahOnly,
+		ChannelIDs:      channelIDs,
 		PostCategories:  opt.NewPtr(request.Params.PostCategories).Or(nil),
 		Sentiments:      opt.NewPtr(request.Params.Sentiments).Or(nil),
 	})

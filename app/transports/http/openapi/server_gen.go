@@ -5488,6 +5488,11 @@ type ThreadListParams struct {
 	// Sentiments Show only posts whose AI sentiment tag matches one of these values
 	// (positive, neutral, negative). Multiple instances filter by any.
 	Sentiments *[]string `form:"sentiments,omitempty" json:"sentiments,omitempty"`
+
+	// ChannelIds Show only threads in these channels. Multiple instances of this
+	// parameter filter by any of the channels. If not provided, threads
+	// from all channels are returned.
+	ChannelIds *[]Identifier `form:"channel_ids,omitempty" json:"channel_ids,omitempty"`
 }
 
 // ReplyCreateManyJSONBody defines parameters for ReplyCreateMany.
@@ -18444,6 +18449,22 @@ func NewThreadListRequest(server string, params *ThreadListParams) (*http.Reques
 		if params.Sentiments != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "sentiments", runtime.ParamLocationQuery, *params.Sentiments); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ChannelIds != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "channel_ids", runtime.ParamLocationQuery, *params.ChannelIds); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -36109,6 +36130,13 @@ func (w *ServerInterfaceWrapper) ThreadList(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter sentiments: %s", err))
 	}
 
+	// ------------- Optional query parameter "channel_ids" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "channel_ids", ctx.QueryParams(), &params.ChannelIds)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter channel_ids: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.ThreadList(ctx, params)
 	return err
@@ -50890,27 +50918,28 @@ var swaggerSpec = []string{
 	"cW8dSpkzKjq8FlqNbXgptiLb7ZXvvqZ5kTHXkxf4GXKnUsdX5NeT3zELyvF80/sZTnQ9pJPKEoJ0HdFc",
 	"s94hljRiLAO0iF3W5QftubiSRJt2rGkxQzq5toMPvYiJ1NjTq19dytSqtsyqOcwh8WgPLpGI16w/7tvV",
 	"9sKOvumTj77EiwttqEiZdjEHK6WpWHpEH1eTBT6uuk+NF7J6EkKX45WDuN7MuN2Xn5wRzYQ93MJYQbzl",
-	"uzFlfs56RLDCKJrbf4yp/VGLDWj+5LCGjl/bTfUJ6sGTVOC9otQy2uFKJ6IaidJ35Lm+SYXq7jKqjL/r",
-	"TqUn7DYq6RSptwN3zQ2GRX7bDOrgKOgetjYXtlhzd1xd9Sh5R9MJsSeHGOgFowlNhKO+a3UyhRJQQDdS",
-	"VsTAD+VCQHwJWmVnfDRiiCnp3jWly0QolkLVcvlrf6GTM3tWoxbyG7rGY83P9rbxF2yWL3ELDto2PoiV",
-	"8I/q74cb2Nsrm+dSmwguF3fp2m7sVjUVHv1on1ztOR/P0sNlrHef39K3Hr/p3prWr9DkkYR9QWOsHrBv",
-	"0Wa2rAVyh6RFNRDSsKPXtmSAZ++5je+o3bwkrtDPIXBY+QRgNj2Cn9ZDeDRuyILqRASLrOz9XfoIfPdv",
-	"TdYKBOukDpKnkztmlbDfq3FTueTnnaxUVsZu4ZuoxLOW7EcNatQOhWvlTHXs09GjXS8aOulc+/i14xme",
-	"kc5VuRIGM5nnkZexQQic26fuS8K3PNV2DYevNP9mxdNQyYVm6uiXf/5x98fqAbM7VMWRwA082n2jB3Np",
-	"KuBlddv9d2nYAfe7m6q4WenLc7tImPRQGlX12++Bzs1EPqXaCk1LG2tbUKD4jtT12tc2G8YBcUtARQV5",
-	"3CxDIyXzYURovIB91eSnGR2s6NQOImMD1Agj7hkiiumQKcIFOA8x+x9z3OydzKferUQUyxnVjAwLnmeQ",
-	"IFmqbnoiFdiWiukSGATH/cYNSeV0yg2ZUD1pAAf5u1vyVnwQw76awSynXNRifwRP9/fG/vDZ+NYOWVhj",
-	"2m8wrqhfAwOy6dz3vh3RNGVaX9+yZZAEsJYmEIvfr67OIyD8shrA47UQHDNkgAgztWZ8iX16M6AzPrgh",
-	"M2ommJEhlt5JoYksDCDcOZoOLSPAkwExechIKuc+9boePAYQSOyAuJkb+zpjCpyJNCcjRk2hXG7YLC/G",
-	"3HdgK1R+9MuRXSSICLeX9aiaOXiIAfTYo+R4FydMXAjvrrWLUNJnOjjvJtBn3SN7kk254Nqo8mNSKUZ8",
-	"XLifaGYMAGRHsTw7pmauC0iAA2zsKA8Mtp1pM2GGp/E0GPyvWVJZpmMXEBr+96vRxJqRXzRTvkyk8rj7",
-	"Ud3LfFGJmHNTgt95aJTypzVj382xo80KcF6I6MSYSeujT312tqWdXbjPO412yKUhrg8+r5SbxmNCDcX6",
-	"ILyVSOnVj4ZFrv71gZ/VmAquKWYCl0DGGddpgRm+aOTYb8n5UFG1LNvVx2HUGgKIJYngLkHFi1Laz7Hc",
-	"AVmgX41P1E33XqpiGkfj/dudFlGzlbF5RsPhjvSCkhp5/f685zkjxSyXNMM9yORCwP9iJoRusEd1Tf9v",
-	"mQbd1B2erVuJkcIG/oeW7ZD9n+csxV11oEmbZ40G1EWgaxrAg8T0VQZGMVZh/6x2jZcy5TQnQylvre5W",
-	"/Sxxu+mkjBWdTchr+JIeLr9HYNAbK5fjqayYhMcbj629ZLMi52Lcw8Pv5POUCjoGdNloOjaHsJCV0V+P",
-	"7aUM93hK0wm79rfr9YTRzJUOn9rfHNt1K5k3Xcvu+UH14bve0bsrOt42CJ656x19oNocBy/KlkHVh+/u",
-	"7u7+fwAAAP//lygUmGedAwA=",
+	"uzFlfs56RLDCKJrbf4yp/VGLDWj+5LCGw3+tlwc89EPDtkG6dr0OqCbCjK6nYTnJGRTjBfjpnn+hR30A",
+	"aBt8GHBmsBDHx4029DWC5tO1u9G5w3U3DTFoUU/SzvH6ZMugkKswiUpJShebFw5NmmZ3z1pl/F13Kj1h",
+	"71pJp8gKGDhtYDAs8ttm7AtHQfewNU2xE1159NeKbMk7mk6IPVLEQMscTWgiHPVdR5gpVMoCCJSykhh+",
+	"KBcCwnDQUTzjoxFD6E33rildJkKxFIq7y197vYec2UMcddrf0FwfS6O2d9e/YLN8iVtw0O76Qd6Ef1R/",
+	"P9zA3l4cnUttIlRh3KVru7FbtXl49KN9crU1fzxLD5ex3qR/S3t//KZ76+2/QpNHEh0Hxbp6wL5Fm9my",
+	"ZModkhZFU0jDjs7tkgGevYM7vqN2cya5ekgHVGLlE2D+9Ah+Wg9R5LghC6oTEQzXskV66UrxTdI1Wauj",
+	"rJM6SJ5OXqtVwn6v/lblkp93TldZQLyFb6JK2FqyHzWoUTvU95Uz1bFPR8d/vWjopHPt4/6PZ3hGOlfl",
+	"ShjMZJ5HztgGIXBun7ovCd/yVNs1HL4g/5sVT0MlF5qpo1/++cfdH6sHzO5QFW4DN/Bo940ezKWpYLzV",
+	"bfffpWEH3O9uquJmpS/P7SJh0kNpVNVvvwc6NxP5lGorNC1trG1BgeI7UtdrX9tsGIdXLgE8FuRxswyN",
+	"lMyHEaHxAvZVk59mELWiUzskkQ2ILIy4Z4gopkOmCBfgY8UiCUwFtHcyn3rvG1EsZ1QzMix4nkEeaam6",
+	"6YlUYFsqpkv8FBz3GzckldMpN2RC9aQBQ+XvbslbYVQM+2oGs5xyUQuREgIC3xsixRctWDtkYY1pv8G4",
+	"on4NWsqmc9/7dkTTlGl9fcuWQRLAWpqwPn6/ujqP+gWURRMe1obgmCED4JypNeNLiNibAZ3xwQ2ZUTPB",
+	"xBWx9E4KTWRhAAjQ0XRoGQGeDMDSQ0ZSOfcZ6vUYOwDUYgfEPe/Y1xlT4HOlORkxagrlUuhmeTHmvlFd",
+	"ofKjX47sIkFEuL2sBx/NwZEO2NAeTMh7VmHiQnivtl2Ekj4hxPk9gT7rrtyTbMoF10aVH5NKMeLjwv1E",
+	"M2MARzwKedoxNXNdQJ4gQIhH6XKw7UybCTM8jafBHImaJZXVTHYBPvW6soLCTGpGftFM+WqayuPuR3Uv",
+	"87U3Ys5NiRHoEWTKn9aMfTfHxj8r+IIh8BVDS62PPvVJ7JZ2duE+PTfaIZetuT74vFKVG48JpSbrg/BW",
+	"ImXwIxoWRUTWB35WYyq4ppgwXeI9Z1ynBSZCo5FjvyXnQ0XVsuzqH0ebawggliRCBQUVL8r8P8eqEGSB",
+	"fjWMUzfde6mKaZy04N/utIiarYzNMxoOd6QXlNTI6/fnPc8ZKWa5pBnuQSYXAv4XMyE0za0Z/YHfMg26",
+	"qTs8W7cSA6oN/A+d7aFIIs9ZirvqsKU2zxoNqAvU1/TJB4npizGMYqzC/lntGi9lymlOhlLeWt2t+lni",
+	"dtNJGSs6m5DX8CU9XH6PwKA3Vi7HU1kxCY83Hlt7yWZFzsW4h4ffyecpFXQMILzRdGwO0TMro78e20sZ",
+	"7vGUphN27W/X6wmjmauwPrW/ObbrVjJvupbd84Pqw3e9o3dXdLxtEDxz1zv6QLU5Dl6ULYOqD9/d3d39",
+	"/wAAAP//IXvDVY6eAwA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
