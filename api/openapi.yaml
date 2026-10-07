@@ -2245,6 +2245,16 @@ paths:
             type: array
             items:
               type: string
+        - name: channel_ids
+          description: |
+            Show only threads in these channels. Multiple instances of this
+            parameter filter by any of the channels. If not provided, threads
+            from all channels are returned.
+          required: false
+          in: query
+          schema:
+            type: array
+            items: { $ref: "#/components/schemas/Identifier" }
       responses:
         default: { $ref: "#/components/responses/InternalServerError" }
         "404": { $ref: "#/components/responses/NotFound" }

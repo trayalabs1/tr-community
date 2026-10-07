@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Filter } from "lucide-react";
+import { today, getLocalTimeZone, type DateValue } from "@internationalized/date";
+import { DateRangePicker } from "@/components/ui/date-picker";
+import { useAccountGet } from "@/api/openapi-client/accounts";
 import { useAdminReplyQueueList, adminReplyQueueDismiss } from "@/api/openapi-client/admin";
 import { useChannelList } from "@/api/openapi-client/channels";
 import { useNodeList } from "@/api/openapi-client/nodes";
@@ -26,6 +29,7 @@ type ContentType = "threads" | "nodes" | "all";
 type QueueTab = "pending_review" | "pending_reply" | "pending_reply_to_reply" | "bulk_actions" | "admin_replies";
 
 const SELECTED_CHANNELS_STORAGE_PREFIX = "queue.selectedChannelIds:";
+const PENDING_REPLY_MAX_LOOKBACK_DAYS = 90;
 
 const QUEUE_TABS = [
   "pending_review",
@@ -42,6 +46,17 @@ const QUEUE_TAB_LABELS: Record<QueueTab, string> = {
   bulk_actions: "Bulk Actions",
   admin_replies: "Admin Replies",
 };
+
+function formatDateRange(startISO: string, endISO: string) {
+  const fmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
+  const start = new Date(startISO);
+  const end = new Date(endISO);
+  const year = end.getFullYear();
+  if (start.toDateString() === end.toDateString()) {
+    return `${fmt.format(start)}, ${year}`;
+  }
+  return `${fmt.format(start)} – ${fmt.format(end)}, ${year}`;
+}
 
 function storageKey(accountId: string) {
   return `${SELECTED_CHANNELS_STORAGE_PREFIX}${accountId}`;
@@ -79,6 +94,7 @@ function pruneOtherAccountEntries(currentAccountId: string) {
 export function QueueScreen() {
   const session = useSession();
   const accountId = session?.id;
+  const { isLoading: isSessionLoading } = useAccountGet();
 
   const [activeTab, setActiveTab] = useState<QueueTab>("pending_review");
   const [selectedChannelIds, setSelectedChannelIds] = useState<Set<string>>(() => new Set());
@@ -111,16 +127,22 @@ export function QueueScreen() {
     } catch {}
   }, [accountId, loadedForAccount, selectedChannelIds]);
 
-  const toggleChannel = useCallback((id: string) => {
-    setSelectedChannelIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
+  const channelIdList = useMemo(() => Array.from(selectedChannelIds).sort(), [selectedChannelIds]);
+  const channelFilterReady = accountId ? loadedForAccount === accountId : !isSessionLoading;
 
-  const clearChannels = useCallback(() => setSelectedChannelIds(new Set()), []);
+  const todayVal = useMemo(() => today(getLocalTimeZone()), []);
+
+  const [pendingReplyRange, setPendingReplyRange] = useState<{
+    createdAfter: string;
+    createdBefore: string;
+  }>(() => {
+    const tz = getLocalTimeZone();
+    const start = todayVal.subtract({ days: 2 }).toDate(tz);
+    start.setHours(0, 0, 0, 0);
+    const end = todayVal.toDate(tz);
+    end.setHours(23, 59, 59, 999);
+    return { createdAfter: start.toISOString(), createdBefore: end.toISOString() };
+  });
 
   const [pendingReplyPage, setPendingReplyPage] = useState(1);
   const [allPendingReplyThreads, setAllPendingReplyThreads] = useState<ThreadReference[]>([]);
@@ -132,6 +154,27 @@ export function QueueScreen() {
   const [isReplyQueueLoadingMore, setIsReplyQueueLoadingMore] = useState(false);
   const replyQueueLoadedPages = useRef<Set<number>>(new Set());
 
+  const resetPendingReplyPagination = useCallback(() => {
+    setPendingReplyPage(1);
+    setAllPendingReplyThreads([]);
+    pendingReplyLoadedPages.current = new Set();
+  }, []);
+
+  const toggleChannel = useCallback((id: string) => {
+    setSelectedChannelIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    resetPendingReplyPagination();
+  }, [resetPendingReplyPagination]);
+
+  const clearChannels = useCallback(() => {
+    setSelectedChannelIds(new Set());
+    resetPendingReplyPagination();
+  }, [resetPendingReplyPagination]);
+
   const { data: channelData } = useChannelList({});
 
   const { data: nodeData, isValidating: isNodesLoading } = useNodeList({
@@ -139,21 +182,33 @@ export function QueueScreen() {
     format: "flat",
   });
 
-  const { data: threadData, isValidating: isThreadsLoading } = useThreadList({
-    visibility: [Visibility.review],
-    ...(excludeBAH && { exclude_bah: true }),
-    ...(excludeFeedback && { exclude_feedback: true }),
-  });
+  const { data: threadData, isValidating: isThreadsLoading } = useThreadList(
+    {
+      visibility: [Visibility.review],
+      ...(excludeBAH && { exclude_bah: true }),
+      ...(excludeFeedback && { exclude_feedback: true }),
+      ...(channelIdList.length > 0 && { channel_ids: channelIdList }),
+    },
+    { swr: { enabled: channelFilterReady } },
+  );
 
-  const { data: pendingReplyData, isValidating: isPendingReplyLoading } = useThreadList({
-    visibility: [Visibility.published],
-    no_replies: true,
-    ...(excludeBAH && { exclude_bah: true }),
-    ...(excludeFeedback && { exclude_feedback: true }),
-    page: String(pendingReplyPage),
-  });
+  const { data: pendingReplyData, isValidating: isPendingReplyLoading } = useThreadList(
+    {
+      visibility: [Visibility.published],
+      created_after: pendingReplyRange.createdAfter,
+      created_before: pendingReplyRange.createdBefore,
+      no_replies: true,
+      ...(excludeBAH && { exclude_bah: true }),
+      ...(excludeFeedback && { exclude_feedback: true }),
+      ...(channelIdList.length > 0 && { channel_ids: channelIdList }),
+      page: String(pendingReplyPage),
+    },
+    { swr: { enabled: channelFilterReady } },
+  );
 
   const { data: replyQueueData, mutate: mutateReplyQueue, isValidating: isReplyQueueLoading } = useAdminReplyQueueList({
+    created_after: pendingReplyRange.createdAfter,
+    created_before: pendingReplyRange.createdBefore,
     page: String(replyQueuePage),
   });
 
@@ -215,9 +270,71 @@ export function QueueScreen() {
     }
   }, [replyQueueData?.next_page]);
 
+  const resetPagination = useCallback(() => {
+    setPendingReplyPage(1);
+    setAllPendingReplyThreads([]);
+    pendingReplyLoadedPages.current = new Set();
+    setReplyQueuePage(1);
+    setAllReplyQueueEntries([]);
+    replyQueueLoadedPages.current = new Set();
+  }, []);
+
+  const applyPendingReplyRange = useCallback(
+    (createdAfter: string, createdBefore: string) => {
+      if (
+        createdAfter === pendingReplyRange.createdAfter &&
+        createdBefore === pendingReplyRange.createdBefore
+      ) {
+        return;
+      }
+      setPendingReplyRange({ createdAfter, createdBefore });
+      resetPagination();
+    },
+    [pendingReplyRange, resetPagination],
+  );
+
+  const [pendingRangeStart, setPendingRangeStart] = useState<DateValue | null>(null);
+
+  const isPendingReplyDateUnavailable = useCallback(
+    (date: DateValue) =>
+      pendingRangeStart !== null && Math.abs(date.compare(pendingRangeStart)) > 2,
+    [pendingRangeStart],
+  );
+
+  const handlePendingReplyOpenChange = useCallback(({ open }: { open: boolean }) => {
+    if (!open) setPendingRangeStart(null);
+  }, []);
+
+  const handlePendingReplyDateChange = useCallback(({ value }: { value: DateValue[] }) => {
+    const [start, end] = value;
+
+    setPendingRangeStart(start && !end ? start : null);
+
+    if (!start) {
+      const tz = getLocalTimeZone();
+      const s = todayVal.subtract({ days: 2 }).toDate(tz);
+      s.setHours(0, 0, 0, 0);
+      const e = todayVal.toDate(tz);
+      e.setHours(23, 59, 59, 999);
+      applyPendingReplyRange(s.toISOString(), e.toISOString());
+      return;
+    }
+
+    if (!end) return;
+
+    const [earlier, later] = start.compare(end) <= 0 ? [start, end] : [end, start];
+    const effectiveEnd = later.compare(earlier) > 2 ? earlier.add({ days: 2 }) : later;
+
+    const startDate = earlier.toDate(getLocalTimeZone());
+    startDate.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(effectiveEnd.add({ days: 1 }).toDate(getLocalTimeZone()).getTime() - 1);
+
+    applyPendingReplyRange(startDate.toISOString(), endOfDay.toISOString());
+  }, [todayVal, applyPendingReplyRange]);
+
   const isInitialLoading =
-    activeTab === "pending_review" ? isThreadsLoading && isNodesLoading :
-    activeTab === "pending_reply" ? isPendingReplyLoading && allPendingReplyThreads.length === 0 :
+    activeTab === "pending_review" ? !channelFilterReady || (isThreadsLoading && isNodesLoading) :
+    activeTab === "pending_reply" ? !channelFilterReady || (isPendingReplyLoading && allPendingReplyThreads.length === 0) :
     activeTab === "pending_reply_to_reply" ? isReplyQueueLoading && allReplyQueueEntries.length === 0 :
     false;
 
@@ -251,10 +368,6 @@ export function QueueScreen() {
       threads,
     }));
 
-  const filteredChannels = selectedChannelIds.size > 0
-    ? sortedChannels.filter(({ channel }) => channel?.id && selectedChannelIds.has(channel.id))
-    : sortedChannels;
-
   const shouldShowThreads = selectedContentType === "threads" || selectedContentType === "all";
   const shouldShowNodes = selectedContentType === "nodes" || selectedContentType === "all";
 
@@ -264,10 +377,6 @@ export function QueueScreen() {
   const allChannelOptions = [...channels].sort((a, b) =>
     (a.name || "").localeCompare(b.name || ""),
   );
-
-  const filteredPendingReplyThreads = selectedChannelIds.size > 0
-    ? pendingReplyThreads.filter((t) => t.channel_id && selectedChannelIds.has(t.channel_id))
-    : pendingReplyThreads;
 
   return (
     <LStack gap="6" p="4">
@@ -423,6 +532,27 @@ export function QueueScreen() {
             </VStack>
           )}
 
+          {(activeTab === "pending_reply" || activeTab === "pending_reply_to_reply") && (
+            <VStack alignItems="start" gap="2" width="full">
+              <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
+                Date Range
+              </styled.label>
+              <HStack gap="2" alignItems="center">
+                <DateRangePicker
+                  hideInputs={true}
+                  min={todayVal.subtract({ days: PENDING_REPLY_MAX_LOOKBACK_DAYS })}
+                  max={todayVal}
+                  onValueChange={handlePendingReplyDateChange}
+                  onOpenChange={handlePendingReplyOpenChange}
+                  isDateUnavailable={isPendingReplyDateUnavailable}
+                />
+                <styled.span fontSize="sm" color="fg.muted" fontWeight="medium">
+                  {formatDateRange(pendingReplyRange.createdAfter, pendingReplyRange.createdBefore)}
+                </styled.span>
+              </HStack>
+            </VStack>
+          )}
+
           <VStack alignItems="start" gap="2" width="full">
             <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
               Streak Posts
@@ -483,12 +613,12 @@ export function QueueScreen() {
               Threads Pending Reply
             </Heading>
             <styled.span fontSize="xs" color="fg.muted" fontWeight="semibold">
-              {filteredPendingReplyThreads.length} pending
+              {pendingReplyThreads.length} pending
             </styled.span>
           </HStack>
-          {shouldShowThreads && filteredPendingReplyThreads.length > 0 ? (
+          {shouldShowThreads && pendingReplyThreads.length > 0 ? (
             <>
-              <PendingReplyThreadList threads={filteredPendingReplyThreads} />
+              <PendingReplyThreadList threads={pendingReplyThreads} />
               {pendingReplyData?.next_page && (
                 <styled.div width="full" display="flex" justifyContent="center" py="4">
                   <Button
@@ -579,13 +709,13 @@ export function QueueScreen() {
                 Threads Pending Review
               </Heading>
               <styled.span fontSize="xs" color="fg.muted" fontWeight="semibold">
-                {filteredChannels.reduce((sum, { threads }) => sum + threads.length, 0)} pending
+                {sortedChannels.reduce((sum, { threads }) => sum + threads.length, 0)} pending
               </styled.span>
             </HStack>
 
-            {filteredChannels.length > 0 ? (
+            {sortedChannels.length > 0 ? (
               <VStack gap="4" width="full">
-                {filteredChannels.map(({ channel, threads }) => (
+                {sortedChannels.map(({ channel, threads }) => (
                   <VStack key={channel?.id || "unknown"} gap="3" width="full">
                     <HStack gap="3" alignItems="center">
                       {channel?.icon ? (

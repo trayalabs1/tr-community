@@ -9,6 +9,7 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
  */
 import type { AccountHandle } from "./accountHandle";
 import type { CategorySlugListQueryParameter } from "./categorySlugListQueryParameter";
+import type { Identifier } from "./identifier";
 import type { PaginationQueryParameter } from "./paginationQueryParameter";
 import type { SearchQueryParameter } from "./searchQueryParameter";
 import type { TagListIDs } from "./tagListIDs";
@@ -99,4 +100,11 @@ will be ignored, only the value containing "null" will be considered.
 
  */
   sentiments?: string[];
+  /**
+ * Show only threads in these channels. Multiple instances of this
+parameter filter by any of the channels. If not provided, threads
+from all channels are returned.
+
+ */
+  channel_ids?: Identifier[];
 };
