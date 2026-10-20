@@ -204,6 +204,15 @@
       description: |-
         The collector endpoint for sending OTEL data.
 
+    - env: "OTEL_EXPORTER_OTLP_HEADERS"
+      name: OTELHeaders
+      type: string
+      default: ""
+      description: |-
+        Extra HTTP headers to send with every OTLP export request, as comma-separated `key=value` pairs, e.g. `Authorization=Basic <token>`.
+
+        Required by some OTLP collectors (including Last9) for authentication. Only used when `OTEL_PROVIDER` is set to `otlp`.
+
     - env: "SENTRY_DSN"
       name: SentryDSN
       type: string
