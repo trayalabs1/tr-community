@@ -42,6 +42,7 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/fx"
 
+	"github.com/Southclaws/storyden/app/transports/http/middleware/otelroute"
 	"github.com/Southclaws/storyden/app/transports/http/openapi"
 )
 
@@ -228,6 +229,7 @@ func mount(
 func newRouter(logger *slog.Logger) *echo.Echo {
 	router := echo.New()
 	router.HTTPErrorHandler = openapi.HTTPErrorHandler(logger)
+	router.Use(otelroute.Middleware())
 
 	return router
 }

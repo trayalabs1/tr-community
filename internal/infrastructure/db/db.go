@@ -60,6 +60,14 @@ func newSQL(cfg config.Config) (*sql.DB, *sqlx.DB, error) {
 		return nil, nil, fault.Wrap(err, fmsg.With("failed to connect to database"))
 	}
 
+	if err := registerPoolMetrics(d, "ent"); err != nil {
+		return nil, nil, fault.Wrap(err, fmsg.With("failed to register database pool metrics"))
+	}
+
+	if err := registerPoolMetrics(x.DB, "sqlx"); err != nil {
+		return nil, nil, fault.Wrap(err, fmsg.With("failed to register database pool metrics"))
+	}
+
 	for _, h := range []*sql.DB{d, x.DB} {
 		h.SetMaxOpenConns(cfg.DatabaseMaxOpenConns)
 		h.SetMaxIdleConns(cfg.DatabaseMaxIdleConns)
