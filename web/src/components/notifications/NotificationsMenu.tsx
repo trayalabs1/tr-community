@@ -1,7 +1,9 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Portal } from "@ark-ui/react";
 import Link from "next/link";
 
+import { useSession } from "@/auth";
+import { Permission } from "@/api/openapi-schema";
 import { MemberAvatar } from "@/components/member/MemberBadge/MemberAvatar";
 import { Button } from "@/components/ui/button";
 import { ArchiveIcon } from "@/components/ui/icons/Archive";
@@ -11,6 +13,7 @@ import * as Menu from "@/components/ui/menu";
 import { Center, LStack, WStack, styled } from "@/styled-system/jsx";
 import { hstack } from "@/styled-system/patterns";
 import { deriveError } from "@/utils/error";
+import { hasPermission } from "@/utils/permissions";
 import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 import { NotificationsTrigger } from "./NotificationsTrigger";
@@ -18,14 +21,24 @@ import { NotificationItem } from "./item";
 import { Props, useNotifications } from "./useNotifications";
 
 export function NotificationsMenu(props: Props) {
-  const { ready, error, data, handlers } = useNotifications(props);
+  // For admins the list is only fetched once they first open the menu, so it
+  // is not requested on every page load (admins have long notification
+  // histories). It stays enabled afterwards so the SWR cache is reused and
+  // mark-as-read updates keep working. Other members fetch eagerly.
+  const session = useSession();
+  const lazy = hasPermission(session, Permission.ADMINISTRATOR);
+  const [opened, setOpened] = useState(false);
+  const { ready, error, data, handlers } = useNotifications({
+    ...props,
+    enabled: lazy ? opened : undefined,
+  });
   const { trackNotificationsClicked } = useEventTracking();
 
   const handleNotificationsClick = useCallback(() => {
     trackNotificationsClicked();
   }, [trackNotificationsClicked]);
 
-  if (!ready) {
+  if (!ready && (error || !lazy)) {
     return (
       <NotificationsTrigger
         hideLabel
@@ -37,12 +50,20 @@ export function NotificationsMenu(props: Props) {
     );
   }
 
-  const { unreads, notifications } = data;
+  const unreads = ready ? data.unreads : 0;
+  const notifications = ready ? data.notifications : [];
 
   const isEmpty = notifications.length === 0;
 
   return (
-    <Menu.Root closeOnSelect={false}>
+    <Menu.Root
+      closeOnSelect={false}
+      onOpenChange={(details) => {
+        if (details.open) {
+          setOpened(true);
+        }
+      }}
+    >
       <Menu.Trigger cursor="pointer" position="relative" asChild onClick={handleNotificationsClick}>
         <NotificationsTrigger
           hideLabel
@@ -76,7 +97,11 @@ export function NotificationsMenu(props: Props) {
 
               <Menu.Separator />
 
-              {isEmpty ? (
+              {!ready ? (
+                <Center w="full" py="4" color="fg.muted" fontSize="xs">
+                  Loading…
+                </Center>
+              ) : isEmpty ? (
                 <Center w="full" py="4" color="fg.muted" fontSize="xs">
                   You&apos;re all caught up!
                 </Center>
