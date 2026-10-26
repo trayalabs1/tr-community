@@ -2,6 +2,8 @@ package analytics
 
 import (
 	"context"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/Southclaws/fault"
@@ -40,10 +42,17 @@ func (q *Querier) GetReport(ctx context.Context, start, end time.Time) (*Report,
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
+	perAdmin, overall, err := q.threadsReplied(ctx, start, end)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
 	return &Report{
-		ChannelOnboardings: onboardings,
-		ChannelPosts:       posts,
-		AdminReplyTimes:    replyTimes,
+		ChannelOnboardings:  onboardings,
+		ChannelPosts:        posts,
+		AdminReplyTimes:     replyTimes,
+		AdminThreadsReplied: perAdmin,
+		ThreadsReplied:      overall,
 	}, nil
 }
 
@@ -160,4 +169,88 @@ func (q *Querier) adminReplyTimes(ctx context.Context, start, end time.Time) ([]
 		})
 	}
 	return stats, nil
+}
+
+// threadsReplied counts distinct threads that received a published admin reply
+// in the period. A reply made to another reply has reply_to_post_id set, a reply
+// made directly to the thread does not.
+func (q *Querier) threadsReplied(ctx context.Context, start, end time.Time) ([]AdminThreadsRepliedStat, ThreadsRepliedCounts, error) {
+	var rows []struct {
+		AccountID string  `json:"account_posts"`
+		RootID    string  `json:"root_post_id"`
+		ReplyToID *string `json:"reply_to_post_id"`
+	}
+	err := q.db.Post.Query().
+		Where(
+			ent_post.CreatedAtGTE(start),
+			ent_post.CreatedAtLTE(end),
+			ent_post.DeletedAtIsNil(),
+			ent_post.VisibilityEQ(ent_post.VisibilityPublished),
+			ent_post.RootPostIDNotNil(),
+			ent_post.HasAuthorWith(ent_account.AdminEQ(true)),
+		).
+		Select(ent_post.FieldAccountPosts, ent_post.FieldRootPostID, ent_post.FieldReplyToPostID).
+		Scan(ctx, &rows)
+	if err != nil {
+		return nil, ThreadsRepliedCounts{}, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	type sets struct{ all, direct, toReply map[string]struct{} }
+	newSets := func() *sets {
+		return &sets{map[string]struct{}{}, map[string]struct{}{}, map[string]struct{}{}}
+	}
+	add := func(s *sets, root string, isToReply bool) {
+		s.all[root] = struct{}{}
+		if isToReply {
+			s.toReply[root] = struct{}{}
+		} else {
+			s.direct[root] = struct{}{}
+		}
+	}
+	counts := func(s *sets) ThreadsRepliedCounts {
+		return ThreadsRepliedCounts{Total: len(s.all), Direct: len(s.direct), ToReply: len(s.toReply)}
+	}
+
+	overall := newSets()
+	byAdmin := map[string]*sets{}
+	for _, r := range rows {
+		isToReply := r.ReplyToID != nil && *r.ReplyToID != ""
+		add(overall, r.RootID, isToReply)
+		s, ok := byAdmin[r.AccountID]
+		if !ok {
+			s = newSets()
+			byAdmin[r.AccountID] = s
+		}
+		add(s, r.RootID, isToReply)
+	}
+
+	ids := make([]xid.ID, 0, len(byAdmin))
+	for k := range byAdmin {
+		if id, err := xid.FromString(k); err == nil {
+			ids = append(ids, id)
+		}
+	}
+	accounts, err := q.db.Account.Query().
+		Where(ent_account.IDIn(ids...)).
+		Select(ent_account.FieldID, ent_account.FieldHandle).
+		All(ctx)
+	if err != nil {
+		return nil, ThreadsRepliedCounts{}, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	stats := make([]AdminThreadsRepliedStat, 0, len(accounts))
+	for _, a := range accounts {
+		stats = append(stats, AdminThreadsRepliedStat{
+			AdminHandle:          a.Handle,
+			ThreadsRepliedCounts: counts(byAdmin[a.ID.String()]),
+		})
+	}
+	slices.SortFunc(stats, func(a, b AdminThreadsRepliedStat) int {
+		if a.Total != b.Total {
+			return b.Total - a.Total
+		}
+		return strings.Compare(a.AdminHandle, b.AdminHandle)
+	})
+
+	return stats, counts(overall), nil
 }

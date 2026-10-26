@@ -180,6 +180,12 @@ export function AnalyticsScreen() {
           <CardBox p="4" minWidth="[280px]">
             <AdminReplyTimeTable rows={data.admin_reply_times ?? []} />
           </CardBox>
+          <CardBox p="4" minWidth="[280px]">
+            <ThreadsRepliedTable
+              rows={data.admin_threads_replied ?? []}
+              summary={data.threads_replied_summary}
+            />
+          </CardBox>
         </HStack>
       )}
     </VStack>
@@ -360,6 +366,85 @@ function AdminReplyTimeTable({ rows }: { rows: ReplyRow[] }) {
                 </td>
               </tr>
             ))
+          )}
+        </tbody>
+      </table>
+    </VStack>
+  );
+}
+
+type ThreadsRepliedCounts = {
+  threads_replied: number;
+  threads_replied_direct: number;
+  threads_replied_to_reply: number;
+};
+type ThreadsRepliedRow = ThreadsRepliedCounts & { admin_handle: string };
+
+const threadsRepliedCellStyle = css({
+  paddingX: "2",
+  paddingY: "1",
+  textAlign: "right",
+  borderBottomWidth: "thin",
+  borderBottomStyle: "solid",
+  borderBottomColor: "border.subtle",
+});
+
+function ThreadsRepliedTable({
+  rows,
+  summary,
+}: {
+  rows: ThreadsRepliedRow[];
+  summary: ThreadsRepliedCounts;
+}) {
+  const headStyle = css({
+    textAlign: "right",
+    paddingX: "2",
+    paddingY: "1",
+    borderBottomWidth: "thin",
+    borderBottomStyle: "solid",
+    borderBottomColor: "border.default",
+  });
+
+  return (
+    <VStack gap="2" alignItems="stretch">
+      <p className={css({ fontWeight: "semibold", fontSize: "sm" })}>Threads Replied (Admins)</p>
+      <table className={css({ width: "full", borderCollapse: "collapse", fontSize: "sm" })}>
+        <thead>
+          <tr>
+            <th className={css({ textAlign: "left", paddingX: "2", paddingY: "1", borderBottomWidth: "thin", borderBottomStyle: "solid", borderBottomColor: "border.default" })}>
+              Admin Handle
+            </th>
+            <th className={headStyle}>Replied</th>
+            <th className={headStyle}>To Thread</th>
+            <th className={headStyle}>To Reply</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={4} className={css({ padding: "2", textAlign: "center", color: "fg.muted" })}>
+                No data in range
+              </td>
+            </tr>
+          ) : (
+            <>
+              {rows.map((row) => (
+                <tr key={row.admin_handle}>
+                  <td className={css({ paddingX: "2", paddingY: "1", borderBottomWidth: "thin", borderBottomStyle: "solid", borderBottomColor: "border.subtle" })}>
+                    @{row.admin_handle}
+                  </td>
+                  <td className={threadsRepliedCellStyle}>{row.threads_replied}</td>
+                  <td className={threadsRepliedCellStyle}>{row.threads_replied_direct}</td>
+                  <td className={threadsRepliedCellStyle}>{row.threads_replied_to_reply}</td>
+                </tr>
+              ))}
+              <tr className={css({ fontWeight: "semibold" })}>
+                <td className={css({ paddingX: "2", paddingY: "1" })}>Total (distinct)</td>
+                <td className={css({ paddingX: "2", paddingY: "1", textAlign: "right" })}>{summary.threads_replied}</td>
+                <td className={css({ paddingX: "2", paddingY: "1", textAlign: "right" })}>{summary.threads_replied_direct}</td>
+                <td className={css({ paddingX: "2", paddingY: "1", textAlign: "right" })}>{summary.threads_replied_to_reply}</td>
+              </tr>
+            </>
           )}
         </tbody>
       </table>
