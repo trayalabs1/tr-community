@@ -161,8 +161,13 @@ export function QueueScreen() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     params.set("tab", activeTab);
-    params.set("from", pendingReplyRange.createdAfter);
-    params.set("to", pendingReplyRange.createdBefore);
+    if (activeTab === "pending_reply" || activeTab === "pending_reply_to_reply") {
+      params.set("from", pendingReplyRange.createdAfter);
+      params.set("to", pendingReplyRange.createdBefore);
+    } else {
+      params.delete("from");
+      params.delete("to");
+    }
     const next = `${pathname}?${params.toString()}`;
     if (next !== `${pathname}${window.location.search}`) {
       router.replace(next, { scroll: false });
