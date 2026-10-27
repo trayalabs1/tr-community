@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Filter } from "lucide-react";
 import { today, getLocalTimeZone, type DateValue } from "@internationalized/date";
@@ -96,7 +97,15 @@ export function QueueScreen() {
   const accountId = session?.id;
   const { isLoading: isSessionLoading } = useAccountGet();
 
-  const [activeTab, setActiveTab] = useState<QueueTab>("pending_review");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Tab and date range live in the URL so a browser back from a thread restores them.
+  const [activeTab, setActiveTab] = useState<QueueTab>(() => {
+    const tab = searchParams.get("tab");
+    return (QUEUE_TABS as readonly string[]).includes(tab ?? "") ? (tab as QueueTab) : "pending_review";
+  });
   const [selectedChannelIds, setSelectedChannelIds] = useState<Set<string>>(() => new Set());
   const [loadedForAccount, setLoadedForAccount] = useState<string | null>(null);
   const [selectedContentType, setSelectedContentType] = useState<ContentType>("all");
@@ -136,6 +145,11 @@ export function QueueScreen() {
     createdAfter: string;
     createdBefore: string;
   }>(() => {
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+    if (from && to && !Number.isNaN(Date.parse(from)) && !Number.isNaN(Date.parse(to))) {
+      return { createdAfter: from, createdBefore: to };
+    }
     const tz = getLocalTimeZone();
     const start = todayVal.subtract({ days: 2 }).toDate(tz);
     start.setHours(0, 0, 0, 0);
@@ -143,6 +157,22 @@ export function QueueScreen() {
     end.setHours(23, 59, 59, 999);
     return { createdAfter: start.toISOString(), createdBefore: end.toISOString() };
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", activeTab);
+    if (activeTab === "pending_reply" || activeTab === "pending_reply_to_reply") {
+      params.set("from", pendingReplyRange.createdAfter);
+      params.set("to", pendingReplyRange.createdBefore);
+    } else {
+      params.delete("from");
+      params.delete("to");
+    }
+    const next = `${pathname}?${params.toString()}`;
+    if (next !== `${pathname}${window.location.search}`) {
+      router.replace(next, { scroll: false });
+    }
+  }, [activeTab, pendingReplyRange, pathname, router]);
 
   const [pendingReplyPage, setPendingReplyPage] = useState(1);
   const [allPendingReplyThreads, setAllPendingReplyThreads] = useState<ThreadReference[]>([]);

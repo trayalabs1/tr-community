@@ -8,10 +8,14 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
  * OpenAPI spec version: v1.25.13-canary
  */
 import type { AdminReplyTimeStat } from "./adminReplyTimeStat";
+import type { AdminThreadsRepliedStat } from "./adminThreadsRepliedStat";
 import type { ChannelAnalyticsStat } from "./channelAnalyticsStat";
+import type { ThreadsRepliedSummary } from "./threadsRepliedSummary";
 
 export interface AdminAnalyticsGetOKBody {
   admin_reply_times: AdminReplyTimeStat[];
+  admin_threads_replied: AdminThreadsRepliedStat[];
   channel_onboardings: ChannelAnalyticsStat[];
   channel_posts: ChannelAnalyticsStat[];
+  threads_replied_summary: ThreadsRepliedSummary;
 }

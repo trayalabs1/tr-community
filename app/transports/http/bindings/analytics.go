@@ -48,6 +48,19 @@ func (a *Analytics) AdminAnalyticsGet(ctx context.Context, request openapi.Admin
 			AdminReplyTimes: dt.Map(report.AdminReplyTimes, func(s analytics.AdminReplyTimeStat) openapi.AdminReplyTimeStat {
 				return openapi.AdminReplyTimeStat{AdminHandle: s.AdminHandle, AvgTimeMinutes: s.AvgTimeMinutes}
 			}),
+			AdminThreadsReplied: dt.Map(report.AdminThreadsReplied, func(s analytics.AdminThreadsRepliedStat) openapi.AdminThreadsRepliedStat {
+				return openapi.AdminThreadsRepliedStat{
+					AdminHandle:           s.AdminHandle,
+					ThreadsReplied:        s.Total,
+					ThreadsRepliedDirect:  s.Direct,
+					ThreadsRepliedToReply: s.ToReply,
+				}
+			}),
+			ThreadsRepliedSummary: openapi.ThreadsRepliedSummary{
+				ThreadsReplied:        report.ThreadsReplied.Total,
+				ThreadsRepliedDirect:  report.ThreadsReplied.Direct,
+				ThreadsRepliedToReply: report.ThreadsReplied.ToReply,
+			},
 		},
 	}, nil
 }
