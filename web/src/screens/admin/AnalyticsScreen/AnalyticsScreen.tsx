@@ -21,6 +21,8 @@ export function AnalyticsScreen() {
     customEndHour,
     setCustomEndHour,
     handleDateChange,
+    isDateUnavailable,
+    handleOpenChange,
     handleApplyCustom,
     appliedCustomRange,
     data,
@@ -103,7 +105,13 @@ export function AnalyticsScreen() {
 
         {mode === "custom" && (
           <HStack gap="2" alignItems="center" flexWrap="wrap">
-            <DateRangePicker hideInputs={true} max={todayVal} onValueChange={handleDateChange} />
+            <DateRangePicker
+              hideInputs={true}
+              max={todayVal}
+              onValueChange={handleDateChange}
+              onOpenChange={handleOpenChange}
+              isDateUnavailable={isDateUnavailable}
+            />
             <input
               type="number"
               min={0}

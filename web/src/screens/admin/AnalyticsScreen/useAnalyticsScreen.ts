@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { today, getLocalTimeZone, type DateValue } from "@internationalized/date";
 
 import { useAdminAnalyticsGet } from "@/api/openapi-client/admin";
@@ -15,6 +15,8 @@ function useDebounce<T>(value: T, delay: number): T {
   }, [value, delay]);
   return debounced;
 }
+
+const MAX_CUSTOM_RANGE_DAYS = 3;
 
 export type FilterMode = "today" | "custom";
 
@@ -39,13 +41,30 @@ export function useAnalyticsScreen() {
   });
   const [appliedCustomRange, setAppliedCustomRange] = useState<{ start: string; end: string } | null>(null);
 
+  const [pendingRangeStart, setPendingRangeStart] = useState<DateValue | null>(null);
+
+  // While only the start of a range is picked, disable days that would make the range exceed the max.
+  const isDateUnavailable = useCallback(
+    (date: DateValue) =>
+      pendingRangeStart !== null &&
+      Math.abs(date.compare(pendingRangeStart)) > MAX_CUSTOM_RANGE_DAYS - 1,
+    [pendingRangeStart],
+  );
+
+  const handleOpenChange = useCallback(({ open }: { open: boolean }) => {
+    if (!open) setPendingRangeStart(null);
+  }, []);
+
   const handleDateChange = ({ value }: { value: DateValue[] }) => {
     const [start, end] = value;
+    setPendingRangeStart(start && !end ? start : null);
     if (!start || !end) return;
 
     const tz = getLocalTimeZone();
     const [earlier, later] = start.compare(end) <= 0 ? [start, end] : [end, start];
-    setCustomDates({ start: earlier.toDate(tz), end: later.toDate(tz) });
+    const lastAllowed = earlier.add({ days: MAX_CUSTOM_RANGE_DAYS - 1 });
+    const clampedLater = later.compare(lastAllowed) > 0 ? lastAllowed : later;
+    setCustomDates({ start: earlier.toDate(tz), end: clampedLater.toDate(tz) });
   };
 
   const handleApplyCustom = () => {
@@ -81,6 +100,8 @@ export function useAnalyticsScreen() {
     customEndHour,
     setCustomEndHour,
     handleDateChange,
+    isDateUnavailable,
+    handleOpenChange,
     handleApplyCustom,
     appliedCustomRange,
     data,
