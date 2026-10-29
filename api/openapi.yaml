@@ -6483,7 +6483,14 @@ components:
 
     AdminAnalyticsGetOKBody:
       type: object
-      required: [channel_onboardings, channel_posts, admin_reply_times]
+      required:
+        [
+          channel_onboardings,
+          channel_posts,
+          admin_reply_times,
+          admin_threads_replied,
+          threads_replied_summary,
+        ]
       properties:
         channel_onboardings:
           type: array
@@ -6497,6 +6504,50 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AdminReplyTimeStat"
+        admin_threads_replied:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminThreadsRepliedStat"
+        threads_replied_summary:
+          $ref: "#/components/schemas/ThreadsRepliedSummary"
+
+    ThreadsRepliedSummary:
+      type: object
+      description: |
+        Distinct threads that received an admin reply in the period. The
+        direct and to-reply counts can overlap (a thread may have both kinds
+        of reply) so they do not necessarily sum to the total.
+      required:
+        [threads_replied, threads_replied_direct, threads_replied_to_reply]
+      properties:
+        threads_replied:
+          type: integer
+          description: Distinct threads with any admin reply.
+        threads_replied_direct:
+          type: integer
+          description: Distinct threads with an admin reply made directly to the thread.
+        threads_replied_to_reply:
+          type: integer
+          description: Distinct threads with an admin reply made to another reply.
+
+    AdminThreadsRepliedStat:
+      type: object
+      required:
+        [
+          admin_handle,
+          threads_replied,
+          threads_replied_direct,
+          threads_replied_to_reply,
+        ]
+      properties:
+        admin_handle:
+          type: string
+        threads_replied:
+          type: integer
+        threads_replied_direct:
+          type: integer
+        threads_replied_to_reply:
+          type: integer
 
     ChannelAnalyticsStat:
       type: object
