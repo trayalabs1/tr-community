@@ -19,6 +19,7 @@ type rotationStep struct {
 var rotation = []rotationStep{
 	{category: "feedback", typ: "story"},
 	{category: "feedback", typ: "progress"},
+	{category: "feedback", typ: "progress_score"},
 	{category: "BAH", typ: "21"},
 	{category: "tip"},
 	{category: "BAH", typ: "7"},
