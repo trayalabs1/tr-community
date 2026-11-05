@@ -40,12 +40,14 @@ func orgSeq(n int) []*thread.Thread {
 	return out
 }
 
-// oneOfEach returns one share for each of the 5 rotation steps, in rotation
-// order: feedback/story, feedback/progress, BAH/21, tip, BAH/7.
+// oneOfEach returns one share for each of the 6 rotation steps, in rotation
+// order: feedback/story, feedback/progress, feedback/progress_score, BAH/21,
+// tip, BAH/7.
 func oneOfEach() []*thread.Thread {
 	return []*thread.Thread{
 		share("s-story", "feedback", "story"),
 		share("s-prog", "feedback", "progress"),
+		share("s-score", "feedback", "progress_score"),
 		share("s-bah21", "BAH", "21"),
 		share("s-tip", "tip", ""),
 		share("s-bah7", "BAH", "7"),
@@ -53,18 +55,18 @@ func oneOfEach() []*thread.Thread {
 }
 
 func TestMergeFeed_SharesAtEveryFifthSlot(t *testing.T) {
-	organic := orgSeq(20)
+	organic := orgSeq(24)
 	shares := oneOfEach()
 
-	window, hasMore := mergeFeed(organic, shares, 0, 25)
+	window, hasMore := mergeFeed(organic, shares, 0, 30)
 	got := slugs(window)
 
-	// positions 5,10,15,20,25 (indices 4,9,14,19,24) follow the rotation order.
 	assert.Equal(t, "s-story", got[4], "slot 5 -> feedback/story")
 	assert.Equal(t, "s-prog", got[9], "slot 10 -> feedback/progress")
-	assert.Equal(t, "s-bah21", got[14], "slot 15 -> BAH/21")
-	assert.Equal(t, "s-tip", got[19], "slot 20 -> tip")
-	assert.Equal(t, "s-bah7", got[24], "slot 25 -> BAH/7")
+	assert.Equal(t, "s-score", got[14], "slot 15 -> feedback/progress_score")
+	assert.Equal(t, "s-bah21", got[19], "slot 20 -> BAH/21")
+	assert.Equal(t, "s-tip", got[24], "slot 25 -> tip")
+	assert.Equal(t, "s-bah7", got[29], "slot 30 -> BAH/7")
 
 	// organic fills all other slots in order.
 	assert.Equal(t, []string{"oA", "oB", "oC", "oD"}, got[0:4])
@@ -114,6 +116,24 @@ func TestMergeFeed_TypeSpecificMatching(t *testing.T) {
 
 	assert.Equal(t, "s-bah21", got[14], "slot 15 -> BAH/21 specifically")
 	assert.Equal(t, "s-bah7", got[24], "slot 25 -> BAH/7 specifically")
+}
+
+func TestMergeFeed_ProgressScoreFollowsProgress(t *testing.T) {
+	organic := orgSeq(20)
+	shares := []*thread.Thread{
+		share("p1", "feedback", "progress"),
+		share("ps1", "feedback", "progress_score"),
+		share("ps2", "feedback", "progress_score"),
+		share("b21", "BAH", "21"),
+	}
+
+	window, _ := mergeFeed(organic, shares, 0, 20)
+	got := slugs(window)
+
+	assert.Equal(t, "p1", got[4], "slot 5 -> feedback/progress")
+	assert.Equal(t, "ps1", got[9], "slot 10 -> feedback/progress_score")
+	assert.Equal(t, "b21", got[14], "slot 15 -> BAH/21")
+	assert.Equal(t, "ps2", got[19], "slot 20 -> rotation wraps to remaining progress_score")
 }
 
 func TestMergeFeed_MissingTypeCompacts(t *testing.T) {

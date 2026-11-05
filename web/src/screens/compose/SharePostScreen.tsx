@@ -26,6 +26,9 @@ type Props = {
   rewardCoins?: number;
   category?: string;
   type?: string;
+  score?: number;
+  text?: string;
+  image?: string;
 };
 
 function getStreakImageUrl(streakCount: number): string {
@@ -40,11 +43,21 @@ function buildStreakBody(streakCount: number, rewardCoins: number): string {
 const FEEDBACK_PROGRESS_COPY =
   "I'm seeing fewer strands every day, and I feel so much better about my hair! 🙌";
 
-function buildFeedbackBody(): string {
-  return `<p>${FEEDBACK_PROGRESS_COPY}</p><img src="${FEEDBACK_PROGRESS_IMAGE}" alt="Progress update" />`;
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
-export function SharePostScreen({ channelID, streakCount, rewardCoins, category, type }: Props) {
+function buildFeedbackBody(copy: string, image: string): string {
+  const img = image ? `<img src="${escapeHtml(image)}" alt="Progress update" />` : "";
+  return `<p>${escapeHtml(copy)}</p>${img}`;
+}
+
+export function SharePostScreen({ channelID, streakCount, rewardCoins, category, type, score, text, image }: Props) {
   const router = useRouter();
   const { mutate } = useSWRConfig();
   const session = useSession();
@@ -52,7 +65,10 @@ export function SharePostScreen({ channelID, streakCount, rewardCoins, category,
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isFeedbackProgress = category === "feedback" && type === "progress";
+  const isProgressScore = category === "feedback" && type === "progress_score" && !!text;
+  const isFeedbackProgress = (category === "feedback" && type === "progress") || isProgressScore;
+  const feedbackCopy = isProgressScore ? (text as string) : FEEDBACK_PROGRESS_COPY;
+  const feedbackImage = isProgressScore ? (image ?? "") : FEEDBACK_PROGRESS_IMAGE;
   const isBahStreak = streakCount !== undefined && rewardCoins !== undefined;
 
   if (!isFeedbackProgress && !isBahStreak) {
@@ -61,10 +77,10 @@ export function SharePostScreen({ channelID, streakCount, rewardCoins, category,
   }
 
   const previewImage = isFeedbackProgress
-    ? FEEDBACK_PROGRESS_IMAGE
+    ? feedbackImage
     : getStreakImageUrl(streakCount as number);
   const previewCopy = isFeedbackProgress
-    ? FEEDBACK_PROGRESS_COPY
+    ? feedbackCopy
     : `I just won ${rewardCoins} coins by completing my ${streakCount} day streak  🙌 `;
   const previewAlt = isFeedbackProgress
     ? "Progress update"
@@ -84,17 +100,19 @@ export function SharePostScreen({ channelID, streakCount, rewardCoins, category,
           ? Visibility.published
           : Visibility.review;
       const body = isFeedbackProgress
-        ? buildFeedbackBody()
+        ? buildFeedbackBody(feedbackCopy, feedbackImage)
         : buildStreakBody(streakCount as number, rewardCoins as number);
 
       if (isFeedbackProgress) {
-        trackSharePostCommunity("progress_update", channelID);
+        trackSharePostCommunity(isProgressScore ? "progress_score" : "progress_update", channelID);
       } else {
         trackSubmitForReview(body.length, false, false, channelID);
       }
 
       const meta = isFeedbackProgress
-        ? { post_category: "feedback", type: "progress" }
+        ? isProgressScore
+          ? { post_category: "feedback", type: "progress_score", ...(score !== undefined && { score }) }
+          : { post_category: "feedback", type: "progress" }
         : { post_category: "BAH", type: streakCount };
 
       const payload: ThreadInitialProps = {
@@ -173,7 +191,7 @@ export function SharePostScreen({ channelID, streakCount, rewardCoins, category,
             {previewCopy}
           </styled.p>
 
-          <styled.img src={previewImage} alt={previewAlt} w="full" />
+          {previewImage && <styled.img src={previewImage} alt={previewAlt} w="full" />}
         </VStack>
 
         {error && (

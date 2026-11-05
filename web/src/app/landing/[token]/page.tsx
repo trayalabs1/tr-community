@@ -11,6 +11,9 @@ type Props = {
     reward_coins?: string;
     category?: string;
     type?: string;
+    score?: string;
+    text?: string;
+    image?: string;
     tips?: string;
     case_id?: string;
     post?: string;
@@ -42,6 +45,9 @@ export default async function Page(props: Props) {
       rewardCoins={searchParams?.reward_coins ? parseInt(searchParams.reward_coins, 10) : undefined}
       category={searchParams?.category}
       type={searchParams?.type}
+      score={searchParams?.score}
+      text={searchParams?.text}
+      image={searchParams?.image}
       tips={searchParams?.tips === "true"}
       caseId={searchParams?.case_id}
       post={searchParams?.post}
