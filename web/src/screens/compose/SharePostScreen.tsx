@@ -66,9 +66,10 @@ export function SharePostScreen({
   const genericText = bodyParam?.trim() ?? "";
   const genericMedia = (media ?? []).filter(isSafeMediaUrl);
 
-  const isFeedbackProgress = category === "feedback" && type === "progress";
+  const isProgressType = category === "feedback" && type === "progress";
   const isBahStreak = streakCount !== undefined && rewardCoins !== undefined;
-  const isGenericShare = !isFeedbackProgress && !isBahStreak && genericText !== "";
+  const isGenericShare = !isBahStreak && genericText !== "";
+  const isFeedbackProgress = isProgressType && !isGenericShare;
 
   if (!isFeedbackProgress && !isBahStreak && !isGenericShare) {
     router.replace(`/channels/${channelID}`);
@@ -97,7 +98,7 @@ export function SharePostScreen({
 
     try {
       const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
-      const targetVisibility = isFeedbackProgress
+      const targetVisibility = isProgressType
         ? Visibility.review
         : isAdmin
           ? Visibility.published
@@ -108,7 +109,7 @@ export function SharePostScreen({
           ? buildFeedbackBody()
           : buildStreakBody(streakCount as number, rewardCoins as number);
 
-      if (isFeedbackProgress) {
+      if (isProgressType) {
         trackSharePostCommunity("progress_update", channelID);
       } else {
         trackSubmitForReview(body.length, false, false, channelID);
@@ -146,10 +147,10 @@ export function SharePostScreen({
     }
   };
 
-  const headerTitle = isGenericShare
-    ? "Share Post"
-    : isFeedbackProgress
-      ? "Share Your Progress"
+  const headerTitle = isProgressType
+    ? "Share Your Progress"
+    : isGenericShare
+      ? "Share Post"
       : "Share Your Streak";
 
   return (
