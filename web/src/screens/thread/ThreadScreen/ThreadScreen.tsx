@@ -39,6 +39,7 @@ import { HStack, LStack, VStack, WStack, styled } from "@/styled-system/jsx";
 import { PostImages } from "@/components/post/PostImages/PostImages";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { getAvatarColor, getAuthorAvatarStyle } from "@/utils/avatar-colors";
+import { formatDateTime } from "@/utils/date";
 import { hasPermission } from "@/utils/permissions";
 
 import { Form, Props, useThreadScreen } from "./useThreadScreen";
@@ -198,11 +199,7 @@ export function ThreadScreen(props: Props) {
                   </styled.span>
                 </Link>
                 <styled.span style={{ fontSize: "12px", lineHeight: "16px", color: "#999999", letterSpacing: "0.24px" }}>
-                  {new Date(thread.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
+                  {formatDateTime(thread.createdAt)}
                 </styled.span>
               </VStack>
 
