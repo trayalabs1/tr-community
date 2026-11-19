@@ -98,7 +98,7 @@ export function Reply(props: Props) {
               {reply.cohort_channel && <CohortBadge channel={reply.cohort_channel} />}
             </HStack>
             <styled.span style={{ fontSize: "10px", lineHeight: "12px", color: "#5c5c5c", letterSpacing: "0.4px" }}>
-              <Timestamp created={reply.createdAt} />
+              <Timestamp created={reply.createdAt} absolute />
             </styled.span>
           </VStack>
 
