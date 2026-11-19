@@ -18,6 +18,9 @@ import { NotificationItem } from "./item";
 export type Props = {
   initialData?: NotificationListResult;
   status: NotificationStatus;
+  // When false, the list is not fetched. Used to defer the request until the
+  // user actually opens the notifications menu.
+  enabled?: boolean;
 };
 
 export function useNotifications(props: Props) {
@@ -28,6 +31,7 @@ export function useNotifications(props: Props) {
     { status: [props.status] },
     {
       swr: {
+        enabled: props.enabled,
         fallbackData: props.initialData,
         revalidateIfStale: true,
         revalidateOnReconnect: true,
