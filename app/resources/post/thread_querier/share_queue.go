@@ -39,6 +39,7 @@ func (d *Querier) ListShares(
 
 	query.
 		WithCategory().
+		WithChannel().
 		WithAuthor().
 		WithAssets(func(aq *ent.AssetQuery) {
 			aq.Order(ent_asset.ByUpdatedAt(), ent_asset.ByCreatedAt())

@@ -22,7 +22,18 @@ var buildAHabitChips = []string{
 	"Manzil paas hai 🔥✨",
 }
 
+const doubtChannelSlug = "traya-warriors"
+
+var doubtChannelChips = []string{
+	"Same doubt",
+	"Helpful",
+}
+
 func quickReplyChipsFor(t *thread.Thread) *openapi.QuickReplyChips {
+	if ch, ok := t.Channel.Get(); ok && ch.Slug == doubtChannelSlug {
+		return cloneChips(doubtChannelChips)
+	}
+
 	// build_a_habit: identified by meta.post_category == "BAH"; no sentiment gate.
 	if cat, _ := t.Meta["post_category"].(string); cat == "BAH" {
 		return cloneChips(buildAHabitChips)
