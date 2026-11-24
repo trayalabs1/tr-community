@@ -92,6 +92,28 @@ export function useEventTracking() {
     trackEvent("community_info_clicked");
   }, [trackEvent]);
 
+  const trackHtuTooltipShown = useCallback(() => {
+    trackEvent("community_htu_tooltip_shown");
+  }, [trackEvent]);
+
+  const trackHtuClicked = useCallback(() => {
+    trackEvent("community_htu_clicked");
+  }, [trackEvent]);
+
+  const trackHtuNextClicked = useCallback(
+    (phase: number) => {
+      trackEvent("htu_next_clicked", { phase });
+    },
+    [trackEvent]
+  );
+
+  const trackHtuDismissed = useCallback(
+    (phase: number) => {
+      trackEvent("htu_dismissed", { phase });
+    },
+    [trackEvent]
+  );
+
   const trackMyPostsClicked = useCallback(() => {
     trackEvent("community_my_posts_clicked");
   }, [trackEvent]);
@@ -237,6 +259,10 @@ export function useEventTracking() {
     trackSearchClicked,
     trackSearchDone,
     trackInfoClicked,
+    trackHtuTooltipShown,
+    trackHtuClicked,
+    trackHtuNextClicked,
+    trackHtuDismissed,
     trackMyPostsClicked,
     trackPostClicked,
     trackSubmitForReview,

@@ -15,6 +15,7 @@ import { SelfAvatarBadge } from "@/components/member/MemberBadge/SelfAvatarBadge
 import { parsePromptNudges } from "@/components/feed/PromptNudge/prompts";
 import { TRAYA_COLORS } from "@/theme/traya-colors";
 import { UsersPostedToday } from "@/components/feed/QuickShare/UsersPostedToday";
+import { HowToUseButton } from "@/components/channel/HowToUse/HowToUse";
 import { ThreadCreateTrigger } from "@/components/thread/ThreadCreate/ThreadCreateTrigger";
 
 type ChannelMobileHeaderProps = {
@@ -68,6 +69,7 @@ export function ChannelMobileHeader({
           pl="1"
           pr="3.5"
           style={{ backgroundColor: "#eaf5f0" }}
+          data-htu="topbar"
         >
           <styled.button
             type="button"
@@ -84,6 +86,7 @@ export function ChannelMobileHeader({
           </styled.button>
 
           <HStack gap="2" alignItems="center" flexShrink="0">
+            <HowToUseButton account={session} />
             <Link href="/notifications" aria-label="Notifications">
               <styled.div position="relative" display="inline-flex" alignItems="center" justifyContent="center" w="10" h="10">
                 <NotificationIcon width="5" height="5" style={{ color: "var(--colors-fg-default)" }} />
@@ -117,11 +120,13 @@ export function ChannelMobileHeader({
             {channel.name}
           </styled.h1>
 
-          <ThreadCreateTrigger
-            channelID={channel.id}
-            channelName={channel.name}
-            promptNudges={parsePromptNudges(channel.meta)}
-          />
+          <styled.div width="full" data-htu="composer">
+            <ThreadCreateTrigger
+              channelID={channel.id}
+              channelName={channel.name}
+              promptNudges={parsePromptNudges(channel.meta)}
+            />
+          </styled.div>
 
           {/* Collapses while reading. Kept mounted and clipped rather than
               unmounted so the composer keeps any half-typed draft. */}
@@ -137,6 +142,7 @@ export function ChannelMobileHeader({
         width="full"
         bg="[#F0F0F0]"
         px="4"
+        data-htu="filters"
       >
         <Collapsible isCollapsed={isScrolledDown} expandedPadding="12px 0">
           <FeedFilterChips
