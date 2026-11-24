@@ -21,6 +21,7 @@ import { styled } from "@/styled-system/jsx";
 
 import { Account } from "@/api/openapi-schema";
 
+import { InfoIcon } from "./InfoIcon";
 import { MiniProfileAvatar } from "./MiniProfileAvatar";
 import { PointerIcon } from "./PointerIcon";
 import {
@@ -531,7 +532,7 @@ export function HowToUseButton({ account }: { account?: Account }) {
           h="10"
           style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
         >
-          <CircleHelp size={20} style={{ color: "var(--colors-fg-default)" }} />
+          <InfoIcon />
         </styled.button>
         {tooltip && (
           <styled.div
