@@ -62,6 +62,7 @@ func (d *Querier) List(
 
 	query.
 		WithCategory().
+		WithChannel().
 		WithAuthor().
 		WithAssets(func(aq *ent.AssetQuery) {
 			aq.Order(ent_asset.ByUpdatedAt(), ent_asset.ByCreatedAt())
@@ -356,6 +357,7 @@ func (d *Querier) GetMany(ctx context.Context, threadIDs []post.ID, accountID op
 				ent_post.IDIn(idList...),
 			).
 			WithCategory().
+			WithChannel().
 			WithLink(func(lq *ent.LinkQuery) {
 				lq.WithFaviconImage().WithPrimaryImage()
 			}).

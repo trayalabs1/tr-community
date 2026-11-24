@@ -46,6 +46,7 @@ func (d *Querier) ListSelfRecent(
 			ent_post.CreatedAtGTE(since),
 		).
 		WithCategory().
+		WithChannel().
 		WithAuthor().
 		WithAssets(func(aq *ent.AssetQuery) {
 			aq.Order(ent_asset.ByUpdatedAt(), ent_asset.ByCreatedAt())
@@ -116,6 +117,7 @@ func (d *Querier) ListSimilarFor(
 			),
 		).
 		WithCategory().
+		WithChannel().
 		WithAuthor().
 		WithAssets(func(aq *ent.AssetQuery) {
 			aq.Order(ent_asset.ByUpdatedAt(), ent_asset.ByCreatedAt())
