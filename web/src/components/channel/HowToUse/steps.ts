@@ -1,4 +1,3 @@
-import { getHowToUseNewCustomerCutoffDate } from "@/config";
 
 export type HowToUseStep = {
   target: string;
@@ -54,15 +53,4 @@ export const HOW_TO_USE_STEPS: HowToUseStep[] = [
 export const HOW_TO_USE_TOOLTIP_MS = 5000;
 export const HOW_TO_USE_SEEN_META_KEY = "community_htu_seen";
 
-export function isNewCustomer(joined: unknown) {
-  if (typeof joined !== "string") return false;
-  const joinedAt = Date.parse(joined);
-  if (Number.isNaN(joinedAt)) return false;
-
-  const cutoffSetting = getHowToUseNewCustomerCutoffDate();
-  if (!cutoffSetting) return false;
-  const cutoffAt = Date.parse(cutoffSetting);
-  if (Number.isNaN(cutoffAt)) return false;
-
-  return joinedAt >= cutoffAt;
-}
+export const HOW_TO_USE_SHOW_META_KEY = "community_htu_show";

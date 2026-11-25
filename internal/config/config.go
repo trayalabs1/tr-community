@@ -262,6 +262,8 @@ type Config struct {
 	KeycloakIssuerURL url.URL `envconfig:"OAUTH_KEYCLOAK_ISSUER_URL"`
 	// The base URL for the Traya API server. Used for authenticating users via Traya tokens and fetching user information.
 	TrayaAPIServerURL url.URL `envconfig:"TRAYA_API_SERVER_URL"`
+	// RFC 3339 timestamp (e.g. 2026-12-01T00:00:00Z). Accounts that joined at or after this moment are treated as new customers and get the "how to use community" tooltip once. When empty, nobody gets the tooltip.
+	HowToUseNewCustomerCutoffDate string `envconfig:"HOW_TO_USE_NEW_CUSTOMER_CUTOFF_DATE"`
 
 	// -
 	// SMS

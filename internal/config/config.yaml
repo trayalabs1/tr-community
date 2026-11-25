@@ -440,6 +440,12 @@
       description: |-
         The base URL for the Traya API server. Used for authenticating users via Traya tokens and fetching user information.
 
+    - env: HOW_TO_USE_NEW_CUSTOMER_CUTOFF_DATE
+      name: HowToUseNewCustomerCutoffDate
+      type: string
+      description: |-
+        RFC 3339 timestamp (e.g. 2026-12-01T00:00:00Z). Accounts that joined at or after this moment are treated as new customers and get the "how to use community" tooltip once. When empty, nobody gets the tooltip.
+
 - section: SMS
   description: |-
     SMS sending configuration. This must be enabled in order to support SMS-based authentication.
