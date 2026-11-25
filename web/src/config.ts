@@ -3,6 +3,7 @@ import { z } from "zod";
 const ConfigSchema = z.object({
   API_ADDRESS: z.string().url("API_ADDRESS must be a valid URL"),
   WEB_ADDRESS: z.string().url("WEB_ADDRESS must be a valid URL"),
+  HOW_TO_USE_NEW_CUSTOMER_CUTOFF_DATE: z.string().optional(),
   source: z.union([z.literal("server"), z.literal("script")]),
 });
 export type Config = z.infer<typeof ConfigSchema>;
@@ -14,6 +15,8 @@ export function serverEnvironment(): Config {
   const parsed = ConfigSchema.safeParse({
     API_ADDRESS: apiAddress,
     WEB_ADDRESS: webAddress,
+    HOW_TO_USE_NEW_CUSTOMER_CUTOFF_DATE:
+      process.env["HOW_TO_USE_NEW_CUSTOMER_CUTOFF_DATE"] || undefined,
     source: "server" as const,
   });
 
@@ -56,6 +59,10 @@ function getEnv(): Config {
 
 export function getWEBAddress() {
   return getEnv().WEB_ADDRESS;
+}
+
+export function getHowToUseNewCustomerCutoffDate() {
+  return getEnv().HOW_TO_USE_NEW_CUSTOMER_CUTOFF_DATE;
 }
 
 export function getAPIAddress() {

@@ -307,10 +307,12 @@ export function ChannelScreen(props: Props) {
             <VStack alignItems="start" gap={{ base: "2", md: "4" }} width="full">
               {filteredThreads.map((thread, index) => (
                 <Fragment key={thread.id}>
-                  <ThreadReferenceCard
-                    thread={thread}
-                    channelID={props.channel.id}
-                  />
+                  <styled.div width="full" data-htu={index === 0 ? "post" : undefined}>
+                    <ThreadReferenceCard
+                      thread={thread}
+                      channelID={props.channel.id}
+                    />
+                  </styled.div>
                   {index === 4 && (
                     <CategoryExploreCarousel
                       channelID={props.channel.id}
