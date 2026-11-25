@@ -25,7 +25,6 @@ import { InfoIcon } from "./InfoIcon";
 import { MiniProfileAvatar } from "./MiniProfileAvatar";
 import { PointerIcon } from "./PointerIcon";
 import {
-  HOW_TO_USE_SEEN_KEY,
   HOW_TO_USE_SEEN_META_KEY,
   isNewCustomer,
   HOW_TO_USE_STEPS,
@@ -68,20 +67,6 @@ function cutoutPath(rect: Rect, pad: { x: number; y: number }) {
     `M0 0H${vw}V${vh}H0Z`,
     `M${x + r} ${y}H${x + w - r}A${r} ${r} 0 0 1 ${x + w} ${y + r}V${y + h - r}A${r} ${r} 0 0 1 ${x + w - r} ${y + h}H${x + r}A${r} ${r} 0 0 1 ${x} ${y + h - r}V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`,
   ].join("");
-}
-
-function readSeen() {
-  try {
-    return window.localStorage.getItem(HOW_TO_USE_SEEN_KEY) === "1";
-  } catch {
-    return true;
-  }
-}
-
-function writeSeen() {
-  try {
-    window.localStorage.setItem(HOW_TO_USE_SEEN_KEY, "1");
-  } catch {}
 }
 
 const EXPAND_SETTLE_MS = 320;
@@ -442,12 +427,8 @@ export function HowToUseButton({ account }: { account?: Account }) {
     const meta = (loadedAccount as unknown as { meta?: Record<string, unknown> })
       .meta;
     const seenOnAccount = meta?.[HOW_TO_USE_SEEN_META_KEY] === true;
-    const seenOnDevice = readSeen();
 
-    if (seenOnAccount) {
-      writeSeen();
-      return;
-    }
+    if (seenOnAccount) return;
 
     const persist = () => {
       if (persisted.current) return;
@@ -461,12 +442,6 @@ export function HowToUseButton({ account }: { account?: Account }) {
         });
     };
 
-    if (seenOnDevice) {
-      persist();
-      return;
-    }
-
-    writeSeen();
     persist();
     setTooltip(true);
     trackHtuTooltipShown();
@@ -568,7 +543,6 @@ export function HowToUseButton({ account }: { account?: Account }) {
                 fontSize: 14,
                 lineHeight: "20px",
                 fontWeight: 700,
-                boxShadow: "inset 0 1px 0 rgba(0,0,0,0.12)",
               }}
             >
               Learn to use community features.

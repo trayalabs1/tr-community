@@ -51,7 +51,6 @@ export const HOW_TO_USE_STEPS: HowToUseStep[] = [
   },
 ];
 
-export const HOW_TO_USE_SEEN_KEY = "community_htu_seen";
 export const HOW_TO_USE_TOOLTIP_MS = 5000;
 export const HOW_TO_USE_SEEN_META_KEY = "community_htu_seen";
 
