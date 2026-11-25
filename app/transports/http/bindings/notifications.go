@@ -29,30 +29,53 @@ func NewNotifications(
 	}
 }
 
+const notificationListPageSize = 50
+
 func (h *Notifications) NotificationList(ctx context.Context, request openapi.NotificationListRequestObject) (openapi.NotificationListResponseObject, error) {
 	session, err := session.GetAccountID(ctx)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
-	list, err := h.notifyReader.ListNotifications(ctx, session)
+	pp := deserialisePageParams(request.Params.Page, notificationListPageSize)
+	read := deserialiseNotificationStatusFilter(request.Params.Status)
+
+	list, err := h.notifyReader.ListNotifications(ctx, session, pp, read)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
-	notifications := dt.Map(list, serialiseNotification)
-
 	return openapi.NotificationList200JSONResponse{
 		NotificationListOKJSONResponse: openapi.NotificationListOKJSONResponse{
-			// TODO: Pagination at resource layer.
-			CurrentPage:   1,
-			NextPage:      new(int),
-			Notifications: notifications,
-			PageSize:      len(notifications),
-			Results:       len(notifications),
-			TotalPages:    1,
+			CurrentPage:   list.CurrentPage,
+			NextPage:      list.NextPage.Ptr(),
+			Notifications: dt.Map(list.Items, serialiseNotification),
+			PageSize:      list.Size,
+			Results:       list.Results,
+			TotalPages:    list.TotalPages,
 		},
 	}, nil
+}
+
+func deserialiseNotificationStatusFilter(in *openapi.NotificationStatusQuery) opt.Optional[bool] {
+	if in == nil {
+		return opt.NewEmpty[bool]()
+	}
+
+	seen := map[bool]struct{}{}
+	for _, s := range *in {
+		seen[deserialiseNotificationStatus(s)] = struct{}{}
+	}
+
+	if len(seen) != 1 {
+		return opt.NewEmpty[bool]()
+	}
+
+	for v := range seen {
+		return opt.New(v)
+	}
+
+	return opt.NewEmpty[bool]()
 }
 
 func (h *Notifications) NotificationUpdate(ctx context.Context, request openapi.NotificationUpdateRequestObject) (openapi.NotificationUpdateResponseObject, error) {
