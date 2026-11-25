@@ -22,7 +22,7 @@ var buildAHabitChips = []string{
 	"Manzil paas hai 🔥✨",
 }
 
-const doubtChannelSlug = "traya-warriors"
+const doubtChannelSlug = "traya-explorers"
 
 var doubtChannelChips = []string{
 	"Same doubt",
