@@ -28,13 +28,13 @@ var doubtChannelChips = []string{
 }
 
 func quickReplyChipsFor(t *thread.Thread) *openapi.QuickReplyChips {
-	if ch, ok := t.Channel.Get(); ok && ch.Slug == doubtChannelSlug {
-		return cloneChips(doubtChannelChips)
-	}
-
 	// build_a_habit: identified by meta.post_category == "BAH"; no sentiment gate.
 	if cat, _ := t.Meta["post_category"].(string); cat == "BAH" {
 		return cloneChips(buildAHabitChips)
+	}
+
+	if ch, ok := t.Channel.Get(); ok && ch.Slug == doubtChannelSlug {
+		return cloneChips(doubtChannelChips)
 	}
 
 	// progress_success_story: AI-classified, gated on positive sentiment.
