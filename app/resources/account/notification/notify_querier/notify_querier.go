@@ -6,18 +6,19 @@ import (
 	"github.com/Southclaws/dt"
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
+	"github.com/Southclaws/opt"
 	"github.com/rs/xid"
 	"github.com/samber/lo"
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/account/notification"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
+	"github.com/Southclaws/storyden/app/resources/pagination"
 	"github.com/Southclaws/storyden/app/resources/post"
 	"github.com/Southclaws/storyden/app/resources/post/post_search"
 	"github.com/Southclaws/storyden/app/resources/post/reply"
 	"github.com/Southclaws/storyden/app/resources/post/reply_querier"
 	"github.com/Southclaws/storyden/internal/ent"
-	entaccount "github.com/Southclaws/storyden/internal/ent/account"
 	entnotification "github.com/Southclaws/storyden/internal/ent/notification"
 )
 
@@ -31,10 +32,28 @@ func New(db *ent.Client, postSearcher post_search.Repository, replyQuerier *repl
 	return &Querier{db: db, postSearcher: postSearcher, replyQuerier: replyQuerier}
 }
 
-func (n *Querier) ListNotifications(ctx context.Context, accountID account.AccountID) (notification.Notifications, error) {
-	r, err := n.db.Notification.Query().
-		Where(entnotification.HasOwnerWith(entaccount.ID(xid.ID(accountID)))).
-		Order(ent.Desc(entnotification.FieldCreatedAt)).
+func (n *Querier) ListNotifications(
+	ctx context.Context,
+	accountID account.AccountID,
+	pp pagination.Parameters,
+	read opt.Optional[bool],
+) (*pagination.Result[*notification.Notification], error) {
+	query := n.db.Notification.Query().
+		Where(entnotification.OwnerAccountID(xid.ID(accountID)))
+
+	if v, ok := read.Get(); ok {
+		query.Where(entnotification.Read(v))
+	}
+
+	total, err := query.Clone().Count(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	r, err := query.
+		Order(ent.Desc(entnotification.FieldCreatedAt), ent.Desc(entnotification.FieldID)).
+		Offset(pp.Offset()).
+		Limit(pp.Limit()).
 		WithSource().
 		All(ctx)
 	if err != nil {
@@ -46,12 +65,16 @@ func (n *Querier) ListNotifications(ctx context.Context, accountID account.Accou
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
-	ns, err := n.hydrateRefs(ctx, refs)
+	paged := pagination.NewPageResult(pp, total, refs)
+
+	ns, err := n.hydrateRefs(ctx, paged.Items)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
-	return ns, nil
+	result := pagination.ConvertPageResult(paged, []*notification.Notification(ns))
+
+	return &result, nil
 }
 
 func (n *Querier) hydrateRefs(ctx context.Context, refs notification.NotificationRefs) (notification.Notifications, error) {
