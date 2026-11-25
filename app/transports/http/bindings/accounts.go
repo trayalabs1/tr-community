@@ -35,18 +35,19 @@ import (
 )
 
 type Accounts struct {
-	profile_cache *profile_cache.Cache
-	avatarService avatar.Service
-	authManager   *authentication.Manager
-	accountQuery  *account_querier.Querier
-	profileQuery  *profile_querier.Querier
-	accountUpdate *account_update.Updater
-	accountAuth   *account_auth.Manager
-	accountEmail  *account_email.Manager
-	accountManage *account_manage.Manager
-	roleAssign    *role_assign.Assignment
-	roleBadge     *role_badge.Writer
-	webAddress    url.URL
+	profile_cache  *profile_cache.Cache
+	avatarService  avatar.Service
+	authManager    *authentication.Manager
+	accountQuery   *account_querier.Querier
+	profileQuery   *profile_querier.Querier
+	accountUpdate  *account_update.Updater
+	accountAuth    *account_auth.Manager
+	accountEmail   *account_email.Manager
+	accountManage  *account_manage.Manager
+	roleAssign     *role_assign.Assignment
+	roleBadge      *role_badge.Writer
+	webAddress     url.URL
+	howToUseCutoff time.Time
 }
 
 func NewAccounts(
@@ -63,19 +64,22 @@ func NewAccounts(
 	roleAssign *role_assign.Assignment,
 	roleBadge *role_badge.Writer,
 ) Accounts {
+	howToUseCutoff, _ := time.Parse(time.RFC3339, cfg.HowToUseNewCustomerCutoffDate)
+
 	return Accounts{
-		profile_cache: profile_cache,
-		avatarService: avatarService,
-		authManager:   authManager,
-		accountQuery:  accountQuery,
-		profileQuery:  profileQuery,
-		accountUpdate: accountUpdate,
-		accountAuth:   accountAuth,
-		accountEmail:  accountEmail,
-		accountManage: accountManage,
-		roleAssign:    roleAssign,
-		roleBadge:     roleBadge,
-		webAddress:    cfg.PublicWebAddress,
+		howToUseCutoff: howToUseCutoff,
+		profile_cache:  profile_cache,
+		avatarService:  avatarService,
+		authManager:    authManager,
+		accountQuery:   accountQuery,
+		profileQuery:   profileQuery,
+		accountUpdate:  accountUpdate,
+		accountAuth:    accountAuth,
+		accountEmail:   accountEmail,
+		accountManage:  accountManage,
+		roleAssign:     roleAssign,
+		roleBadge:      roleBadge,
+		webAddress:     cfg.PublicWebAddress,
 	}
 }
 
@@ -113,9 +117,12 @@ func (i *Accounts) AccountGet(ctx context.Context, request openapi.AccountGetReq
 		etag = cachecontrol.NewETag(acc.UpdatedAt)
 	}
 
+	body := serialiseAccount(acc)
+	body.Meta = withHowToUseTooltip(body.Meta, acc.CreatedAt, i.howToUseCutoff)
+
 	return openapi.AccountGet200JSONResponse{
 		AccountGetOKJSONResponse: openapi.AccountGetOKJSONResponse{
-			Body: serialiseAccount(acc),
+			Body: body,
 			Headers: openapi.AccountGetOKResponseHeaders{
 				CacheControl: accountGetCacheControl,
 				LastModified: etag.Time.Format(time.RFC1123),

@@ -26,7 +26,7 @@ import { MiniProfileAvatar } from "./MiniProfileAvatar";
 import { PointerIcon } from "./PointerIcon";
 import {
   HOW_TO_USE_SEEN_META_KEY,
-  isNewCustomer,
+  HOW_TO_USE_SHOW_META_KEY,
   HOW_TO_USE_STEPS,
   HOW_TO_USE_TOOLTIP_MS,
   type HowToUseStep,
@@ -421,20 +421,16 @@ export function HowToUseButton({ account }: { account?: Account }) {
 
   useEffect(() => {
     if (!loadedAccount) return;
-    if (!isNewCustomer((loadedAccount as unknown as { joined?: unknown }).joined)) {
-      return;
-    }
     const meta = (loadedAccount as unknown as { meta?: Record<string, unknown> })
       .meta;
-    const seenOnAccount = meta?.[HOW_TO_USE_SEEN_META_KEY] === true;
-
-    if (seenOnAccount) return;
+    if (meta?.[HOW_TO_USE_SHOW_META_KEY] !== true) return;
 
     const persist = () => {
       if (persisted.current) return;
       persisted.current = true;
+      const { [HOW_TO_USE_SHOW_META_KEY]: _show, ...stored } = meta ?? {};
       return accountUpdate({
-        meta: { ...(meta ?? {}), [HOW_TO_USE_SEEN_META_KEY]: true },
+        meta: { ...stored, [HOW_TO_USE_SEEN_META_KEY]: true },
       })
         .then(() => mutateAccount())
         .catch(() => {

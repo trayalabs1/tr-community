@@ -6,13 +6,11 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
-  const { API_ADDRESS, WEB_ADDRESS, HOW_TO_USE_NEW_CUSTOMER_CUTOFF_DATE } =
-    serverEnvironment();
+  const { API_ADDRESS, WEB_ADDRESS } = serverEnvironment();
 
   const configJson = JSON.stringify({
     API_ADDRESS,
     WEB_ADDRESS,
-    HOW_TO_USE_NEW_CUSTOMER_CUTOFF_DATE,
     source: "script",
   });
 
