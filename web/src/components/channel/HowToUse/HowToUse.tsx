@@ -428,7 +428,6 @@ export function HowToUseButton({ account }: { account?: Account }) {
       .meta;
     const seenOnAccount = meta?.[HOW_TO_USE_SEEN_META_KEY] === true;
 
-    console.log("[HowToUse] seen on account:", seenOnAccount, meta);
     if (seenOnAccount) return;
 
     const persist = () => {

@@ -55,15 +55,14 @@ export const HOW_TO_USE_TOOLTIP_MS = 5000;
 export const HOW_TO_USE_SEEN_META_KEY = "community_htu_seen";
 
 export function isNewCustomer(joined: unknown) {
+  if (typeof joined !== "string") return false;
+  const joinedAt = Date.parse(joined);
+  if (Number.isNaN(joinedAt)) return false;
+
   const cutoffSetting = getHowToUseNewCustomerCutoffDate();
-  const joinedAt = typeof joined === "string" ? Date.parse(joined) : NaN;
-  const cutoffAt = cutoffSetting ? Date.parse(cutoffSetting) : NaN;
-  const result =
-    !Number.isNaN(joinedAt) && !Number.isNaN(cutoffAt) && joinedAt >= cutoffAt;
-  console.log("[HowToUse] isNewCustomer", {
-    joined,
-    cutoff: cutoffSetting ?? "(unset)",
-    result,
-  });
-  return result;
+  if (!cutoffSetting) return false;
+  const cutoffAt = Date.parse(cutoffSetting);
+  if (Number.isNaN(cutoffAt)) return false;
+
+  return joinedAt >= cutoffAt;
 }

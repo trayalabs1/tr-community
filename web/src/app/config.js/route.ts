@@ -9,11 +9,6 @@ export async function GET() {
   const { API_ADDRESS, WEB_ADDRESS, HOW_TO_USE_NEW_CUSTOMER_CUTOFF_DATE } =
     serverEnvironment();
 
-  console.log(
-    "[HowToUse] config.js served, HOW_TO_USE_NEW_CUSTOMER_CUTOFF_DATE =",
-    HOW_TO_USE_NEW_CUSTOMER_CUTOFF_DATE ?? "(unset)",
-  );
-
   const configJson = JSON.stringify({
     API_ADDRESS,
     WEB_ADDRESS,
