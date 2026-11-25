@@ -9,17 +9,18 @@ type Props = {
   route: string | (() => string);
   icon: React.ReactElement;
   label: string;
+  onClick?: () => void;
 } & AnchorProps;
 
 export type AnchorProps = {
   hideLabel?: boolean;
 };
 
-export function Anchor({ id, route, icon, label, hideLabel, ...props }: Props) {
+export function Anchor({ id, route, icon, label, hideLabel, onClick, ...props }: Props) {
   const href = typeof route === "function" ? route() : route;
 
   return (
-    <LinkButton href={href} size="xs" p="1" variant="ghost" {...props}>
+    <LinkButton href={href} size="xs" p="1" variant="ghost" onClick={onClick} {...props}>
       {React.cloneElement(icon, {
         width: "1.5rem",
       } as any)}
@@ -38,12 +39,13 @@ export function MenuItem({
   icon,
   label,
   hideLabel,
+  onClick,
   ...props
 }: Props) {
   const href = typeof route === "function" ? route() : route;
 
   return (
-    <Link href={href}>
+    <Link href={href} onClick={onClick}>
       <Item value={id}>
         {icon}
         {!hideLabel && (

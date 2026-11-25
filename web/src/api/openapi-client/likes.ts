@@ -15,6 +15,8 @@ import type { SWRMutationConfiguration } from "swr/mutation";
 import { fetcher } from "../client";
 import type {
   InternalServerErrorResponse,
+  LikePostAddManyBody,
+  LikePostAddManyOKResponse,
   LikePostGetOKResponse,
   LikeProfileGetOKResponse,
   LikeProfileGetParams,
@@ -179,6 +181,61 @@ export const useLikePostRemove = <
 
   const swrKey = swrOptions?.swrKey ?? getLikePostRemoveMutationKey(postId);
   const swrFn = getLikePostRemoveMutationFetcher(postId);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Add a like/vote to many posts in a single request on behalf of the
+authenticated account. Idempotent per post. Posts that fail to be liked
+are skipped and reported in the response count.
+
+ */
+export const likePostAddMany = (likePostAddManyBody: LikePostAddManyBody) => {
+  return fetcher<LikePostAddManyOKResponse>({
+    url: `/likes/posts`,
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    data: likePostAddManyBody,
+  });
+};
+
+export const getLikePostAddManyMutationFetcher = () => {
+  return (
+    _: Key,
+    { arg }: { arg: LikePostAddManyBody },
+  ): Promise<LikePostAddManyOKResponse> => {
+    return likePostAddMany(arg);
+  };
+};
+export const getLikePostAddManyMutationKey = () => [`/likes/posts`] as const;
+
+export type LikePostAddManyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof likePostAddMany>>
+>;
+export type LikePostAddManyMutationError =
+  | UnauthorisedResponse
+  | InternalServerErrorResponse;
+
+export const useLikePostAddMany = <
+  TError = UnauthorisedResponse | InternalServerErrorResponse,
+>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof likePostAddMany>>,
+    TError,
+    Key,
+    LikePostAddManyBody,
+    Awaited<ReturnType<typeof likePostAddMany>>
+  > & { swrKey?: string };
+}) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getLikePostAddManyMutationKey();
+  const swrFn = getLikePostAddManyMutationFetcher();
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

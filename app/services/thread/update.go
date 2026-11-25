@@ -2,6 +2,7 @@ package thread
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/Southclaws/dt"
 	"github.com/Southclaws/fault"
@@ -43,6 +44,10 @@ func (s *service) Update(ctx context.Context, threadID post.ID, partial Partial)
 	}
 
 	if err := authoriseThreadUpdate(ctx, acc, thr); err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	if err := authoriseMutation(ctx, partial); err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
@@ -111,10 +116,34 @@ func (s *service) Update(ctx context.Context, threadID post.ID, partial Partial)
 			s.bus.Publish(ctx, &message.EventThreadPublished{
 				ID: thr.ID,
 			})
+
+			if err := s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
+				PostID: thr.ID,
+			}); err != nil {
+				s.logger.Error("failed to dispatch CommandScorePostSentiment from thread update",
+					slog.String("post_id", thr.ID.String()),
+					slog.String("error", err.Error()),
+				)
+			}
+		} else if thr.Visibility == visibility.VisibilityReview {
+			s.bus.Publish(ctx, &message.EventThreadSubmittedForReview{
+				ID:    thr.ID,
+				Title: thr.Title,
+				Body:  thr.Content.Plaintext(),
+			})
 		} else {
 			s.bus.Publish(ctx, &message.EventThreadUnpublished{
 				ID: thr.ID,
 			})
+		}
+	} else if (contentChanged || titleChanged) && thr.Visibility == visibility.VisibilityPublished {
+		if err := s.bus.SendCommand(ctx, &message.CommandScorePostSentiment{
+			PostID: thr.ID,
+		}); err != nil {
+			s.logger.Error("failed to dispatch CommandScorePostSentiment from thread update",
+				slog.String("post_id", thr.ID.String()),
+				slog.String("error", err.Error()),
+			)
 		}
 	}
 

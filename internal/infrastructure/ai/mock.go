@@ -26,6 +26,10 @@ func (o *Mock) Prompt(ctx context.Context, input string) (*Result, error) {
 	}, nil
 }
 
+func (o *Mock) PromptWithModel(ctx context.Context, model, input string) (*Result, error) {
+	return o.Prompt(ctx, input)
+}
+
 func (o *Mock) PromptStream(ctx context.Context, input string) (func(yield func(string, error) bool), error) {
 	// Simulating incremental streaming
 	parts := []string{

@@ -3,6 +3,7 @@ package moderation
 import (
 	"go.uber.org/fx"
 
+	"github.com/Southclaws/storyden/app/services/moderation/ai_reviewer"
 	"github.com/Southclaws/storyden/app/services/moderation/checker"
 	"github.com/Southclaws/storyden/app/services/moderation/length_checker"
 	"github.com/Southclaws/storyden/app/services/moderation/spam_checker"
@@ -36,5 +37,6 @@ func Build() fx.Option {
 			// Provide the manager
 			New,
 		),
+		ai_reviewer.Build(),
 	)
 }

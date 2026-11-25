@@ -76,4 +76,10 @@ export const fg = {
       _osDark: "{colors.accent.dark.text.6}",
     },
   },
+  composerAction: {
+    value: {
+      _osLight: "#2B5F73",
+      _osDark: "{colors.blue.dark.11}",
+    },
+  },
 };

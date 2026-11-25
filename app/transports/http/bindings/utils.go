@@ -12,6 +12,7 @@ import (
 	"github.com/rs/xid"
 
 	"github.com/Southclaws/storyden/app/resources/account"
+	"github.com/Southclaws/storyden/app/resources/channel"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/mark"
 	"github.com/Southclaws/storyden/app/resources/pagination"
@@ -93,17 +94,43 @@ func serialiseThreadReference(t *thread.Thread) openapi.ThreadReference {
 		Meta:        (*openapi.Metadata)(&t.Meta),
 		LastReplyAt: t.LastReplyAt.Ptr(),
 
-		Category:    opt.Map(t.Category, serialiseCategoryReference).Ptr(),
-		Visibility:  serialiseVisibility(t.Visibility),
-		Pinned:      t.Pinned,
-		ReadStatus:  opt.PtrMap(t.ReadStatus, serialiseReadStatus),
-		ReplyStatus: serialiseReplyStatus(t.ReplyStatus),
-		Likes:       serialiseLikeStatus(&t.Likes),
-		Reacts:      serialiseReactList(t.Reacts),
-		Tags:        serialiseTagReferenceList(t.Tags),
-		Assets:      dt.Map(t.Assets, serialiseAssetPtr),
-		Collections: serialiseCollectionStatus(t.Collections),
-		Link:        opt.Map(t.WebLink, serialiseLinkRef).Ptr(),
+		Category:        opt.Map(t.PostCategory, serialiseCategoryReference).Ptr(),
+		ChannelId:       openapi.Identifier(t.ChannelID.String()),
+		Channel:         opt.Map(t.Channel, serialiseChannelReference).Ptr(),
+		ReferencePostId: opt.Map(t.ReferencePostID, func(id post.ID) openapi.Identifier { return openapi.Identifier(id.String()) }).Ptr(),
+		Visibility:      serialiseVisibility(t.Visibility),
+		Pinned:          t.Pinned,
+		ReadStatus:      opt.PtrMap(t.ReadStatus, serialiseReadStatus),
+		ReplyStatus:     serialiseReplyStatus(t.ReplyStatus),
+		Likes:           serialiseLikeStatus(&t.Likes),
+		Reacts:          serialiseReactList(t.Reacts),
+		Tags:            serialiseTagReferenceList(t.Tags),
+		Assets:          dt.Map(t.Assets, serialiseAssetPtr),
+		Collections:     serialiseCollectionStatus(t.Collections),
+		Link:            opt.Map(t.WebLink, serialiseLinkRef).Ptr(),
+		QuickReplyChips: quickReplyChipsFor(t),
+	}
+}
+
+// serialiseSharedToChannelIDs omits the field entirely when a thread has not
+// been shared anywhere, rather than emitting an empty array.
+func serialiseSharedToChannelIDs(ids []xid.ID) *[]openapi.Identifier {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	out := dt.Map(ids, func(id xid.ID) openapi.Identifier {
+		return openapi.Identifier(id.String())
+	})
+
+	return &out
+}
+
+func serialiseChannelReference(c channel.Channel) openapi.ChannelReference {
+	return openapi.ChannelReference{
+		Id:   openapi.Identifier(xid.ID(c.ID).String()),
+		Name: c.Name,
+		Slug: c.Slug,
 	}
 }
 
@@ -113,30 +140,35 @@ func serialiseContentHTML(c datagraph.Content) string {
 
 func serialiseThread(t *thread.Thread) openapi.Thread {
 	return openapi.Thread{
-		Assets:         dt.Map(t.Assets, serialiseAssetPtr),
-		Author:         serialiseProfileReference(t.Author),
-		Body:           serialiseContentHTML(t.Content),
-		Category:       opt.Map(t.Category, serialiseCategoryReference).Ptr(),
-		Likes:          serialiseLikeStatus(&t.Likes),
-		Collections:    serialiseCollectionStatus(t.Collections),
-		CreatedAt:      t.CreatedAt,
-		DeletedAt:      t.DeletedAt.Ptr(),
-		Description:    &t.Short,
-		Visibility:     serialiseVisibility(t.Visibility),
-		Id:             openapi.Identifier(t.ID.String()),
-		Link:           opt.Map(t.WebLink, serialiseLinkRef).Ptr(),
-		Meta:           (*openapi.Metadata)(&t.Meta),
-		Pinned:         t.Pinned,
-		ReadStatus:     opt.PtrMap(t.ReadStatus, serialiseReadStatus),
-		ReplyStatus:    serialiseReplyStatus(t.ReplyStatus),
-		Reacts:         dt.Map(t.Reacts, serialiseReact),
-		Recomentations: dt.Map(t.Related, serialiseDatagraphItem),
-		Replies:        serialiseThreadRepliesPaginatedList(t.Replies),
-		Slug:           t.Slug,
-		Tags:           serialiseTagReferenceList(t.Tags),
-		Title:          t.Title,
-		UpdatedAt:      t.UpdatedAt,
-		LastReplyAt:    t.LastReplyAt.Ptr(),
+		Assets:             dt.Map(t.Assets, serialiseAssetPtr),
+		Author:             serialiseProfileReference(t.Author),
+		Body:               serialiseContentHTML(t.Content),
+		Category:           opt.Map(t.PostCategory, serialiseCategoryReference).Ptr(),
+		ChannelId:          openapi.Identifier(t.ChannelID.String()),
+		Channel:            opt.Map(t.Channel, serialiseChannelReference).Ptr(),
+		ReferencePostId:    opt.Map(t.ReferencePostID, func(id post.ID) openapi.Identifier { return openapi.Identifier(id.String()) }).Ptr(),
+		SharedToChannelIds: serialiseSharedToChannelIDs(t.SharedToChannelIDs),
+		Likes:              serialiseLikeStatus(&t.Likes),
+		Collections:        serialiseCollectionStatus(t.Collections),
+		CreatedAt:          t.CreatedAt,
+		DeletedAt:          t.DeletedAt.Ptr(),
+		Description:        &t.Short,
+		Visibility:         serialiseVisibility(t.Visibility),
+		Id:                 openapi.Identifier(t.ID.String()),
+		Link:               opt.Map(t.WebLink, serialiseLinkRef).Ptr(),
+		Meta:               (*openapi.Metadata)(&t.Meta),
+		Pinned:             t.Pinned,
+		ReadStatus:         opt.PtrMap(t.ReadStatus, serialiseReadStatus),
+		ReplyStatus:        serialiseReplyStatus(t.ReplyStatus),
+		Reacts:             dt.Map(t.Reacts, serialiseReact),
+		Recomentations:     dt.Map(t.Related, serialiseDatagraphItem),
+		Replies:            serialiseThreadRepliesPaginatedList(t.Replies),
+		Slug:               t.Slug,
+		Tags:               serialiseTagReferenceList(t.Tags),
+		Title:              t.Title,
+		UpdatedAt:          t.UpdatedAt,
+		LastReplyAt:        t.LastReplyAt.Ptr(),
+		QuickReplyChips:    quickReplyChipsFor(t),
 	}
 }
 
@@ -168,23 +200,24 @@ func serialiseReadStatus(s post.ReadStatus) openapi.ReadStatus {
 func serialiseReplyPtr(p *reply.Reply) openapi.Reply {
 	description := p.Content.Short()
 	return openapi.Reply{
-		Id:          openapi.Identifier(xid.ID(p.ID).String()),
-		CreatedAt:   p.CreatedAt,
-		UpdatedAt:   p.UpdatedAt,
-		DeletedAt:   p.DeletedAt.Ptr(),
-		RootId:      p.RootPostID.String(),
-		RootSlug:    p.RootThreadMark,
-		Slug:        p.Slug,
-		Title:       p.RootThreadTitle,
-		Body:        p.Content.HTML(),
-		Visibility:  serialiseVisibility(p.Visibility),
-		Description: &description,
-		Author:      serialiseProfileReference(p.Author),
-		Likes:       serialiseLikeStatus(&p.Likes),
-		Reacts:      dt.Map(p.Reacts, serialiseReact),
-		Meta:        (*openapi.Metadata)(&p.Meta),
-		Assets:      dt.Map(p.Assets, serialiseAssetPtr),
-		ReplyTo:     opt.Map(p.ReplyTo, serialiseReply).Ptr(),
+		Id:            openapi.Identifier(xid.ID(p.ID).String()),
+		CreatedAt:     p.CreatedAt,
+		UpdatedAt:     p.UpdatedAt,
+		DeletedAt:     p.DeletedAt.Ptr(),
+		RootId:        p.RootPostID.String(),
+		RootSlug:      p.RootThreadMark,
+		Slug:          p.Slug,
+		Title:         p.RootThreadTitle,
+		Body:          p.Content.HTML(),
+		Visibility:    serialiseVisibility(p.Visibility),
+		Description:   &description,
+		Author:        serialiseProfileReference(p.Author),
+		Likes:         serialiseLikeStatus(&p.Likes),
+		Reacts:        dt.Map(p.Reacts, serialiseReact),
+		Meta:          (*openapi.Metadata)(&p.Meta),
+		Assets:        dt.Map(p.Assets, serialiseAssetPtr),
+		ReplyTo:       opt.Map(p.ReplyTo, serialiseReply).Ptr(),
+		CohortChannel: opt.Map(p.CohortChannel, serialiseChannelReference).Ptr(),
 	}
 }
 

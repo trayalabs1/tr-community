@@ -28,14 +28,16 @@ const (
 	FieldTitle = "title"
 	// FieldSlug holds the string denoting the slug field in the database.
 	FieldSlug = "slug"
-	// FieldPinned holds the string denoting the pinned field in the database.
-	FieldPinned = "pinned"
+	// FieldPinnedRank holds the string denoting the pinned_rank field in the database.
+	FieldPinnedRank = "pinned_rank"
 	// FieldLastReplyAt holds the string denoting the last_reply_at field in the database.
 	FieldLastReplyAt = "last_reply_at"
 	// FieldRootPostID holds the string denoting the root_post_id field in the database.
 	FieldRootPostID = "root_post_id"
 	// FieldReplyToPostID holds the string denoting the reply_to_post_id field in the database.
 	FieldReplyToPostID = "reply_to_post_id"
+	// FieldReferencePostID holds the string denoting the reference_post_id field in the database.
+	FieldReferencePostID = "reference_post_id"
 	// FieldBody holds the string denoting the body field in the database.
 	FieldBody = "body"
 	// FieldShort holds the string denoting the short field in the database.
@@ -48,12 +50,16 @@ const (
 	FieldAccountPosts = "account_posts"
 	// FieldCategoryID holds the string denoting the category_id field in the database.
 	FieldCategoryID = "category_id"
+	// FieldChannelID holds the string denoting the channel_id field in the database.
+	FieldChannelID = "channel_id"
 	// FieldLinkID holds the string denoting the link_id field in the database.
 	FieldLinkID = "link_id"
 	// EdgeAuthor holds the string denoting the author edge name in mutations.
 	EdgeAuthor = "author"
 	// EdgeCategory holds the string denoting the category edge name in mutations.
 	EdgeCategory = "category"
+	// EdgeChannel holds the string denoting the channel edge name in mutations.
+	EdgeChannel = "channel"
 	// EdgeTags holds the string denoting the tags edge name in mutations.
 	EdgeTags = "tags"
 	// EdgeRoot holds the string denoting the root edge name in mutations.
@@ -64,6 +70,10 @@ const (
 	EdgeReplyTo = "replyTo"
 	// EdgeReplies holds the string denoting the replies edge name in mutations.
 	EdgeReplies = "replies"
+	// EdgeReference holds the string denoting the reference edge name in mutations.
+	EdgeReference = "reference"
+	// EdgeShares holds the string denoting the shares edge name in mutations.
+	EdgeShares = "shares"
 	// EdgeReacts holds the string denoting the reacts edge name in mutations.
 	EdgeReacts = "reacts"
 	// EdgeLikes holds the string denoting the likes edge name in mutations.
@@ -82,6 +92,10 @@ const (
 	EdgeEvent = "event"
 	// EdgePostReads holds the string denoting the post_reads edge name in mutations.
 	EdgePostReads = "post_reads"
+	// EdgePollVotes holds the string denoting the poll_votes edge name in mutations.
+	EdgePollVotes = "poll_votes"
+	// EdgeSentiment holds the string denoting the sentiment edge name in mutations.
+	EdgeSentiment = "sentiment"
 	// Table holds the table name of the post in the database.
 	Table = "posts"
 	// AuthorTable is the table that holds the author relation/edge.
@@ -98,6 +112,13 @@ const (
 	CategoryInverseTable = "categories"
 	// CategoryColumn is the table column denoting the category relation/edge.
 	CategoryColumn = "category_id"
+	// ChannelTable is the table that holds the channel relation/edge.
+	ChannelTable = "posts"
+	// ChannelInverseTable is the table name for the Channel entity.
+	// It exists in this package in order to avoid circular dependency with the "channel" package.
+	ChannelInverseTable = "channels"
+	// ChannelColumn is the table column denoting the channel relation/edge.
+	ChannelColumn = "channel_id"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
 	TagsTable = "tag_posts"
 	// TagsInverseTable is the table name for the Tag entity.
@@ -119,6 +140,14 @@ const (
 	RepliesTable = "posts"
 	// RepliesColumn is the table column denoting the replies relation/edge.
 	RepliesColumn = "reply_to_post_id"
+	// ReferenceTable is the table that holds the reference relation/edge.
+	ReferenceTable = "posts"
+	// ReferenceColumn is the table column denoting the reference relation/edge.
+	ReferenceColumn = "reference_post_id"
+	// SharesTable is the table that holds the shares relation/edge.
+	SharesTable = "posts"
+	// SharesColumn is the table column denoting the shares relation/edge.
+	SharesColumn = "reference_post_id"
 	// ReactsTable is the table that holds the reacts relation/edge.
 	ReactsTable = "reacts"
 	// ReactsInverseTable is the table name for the React entity.
@@ -176,6 +205,20 @@ const (
 	PostReadsInverseTable = "post_reads"
 	// PostReadsColumn is the table column denoting the post_reads relation/edge.
 	PostReadsColumn = "root_post_id"
+	// PollVotesTable is the table that holds the poll_votes relation/edge.
+	PollVotesTable = "poll_votes"
+	// PollVotesInverseTable is the table name for the PollVote entity.
+	// It exists in this package in order to avoid circular dependency with the "pollvote" package.
+	PollVotesInverseTable = "poll_votes"
+	// PollVotesColumn is the table column denoting the poll_votes relation/edge.
+	PollVotesColumn = "post_id"
+	// SentimentTable is the table that holds the sentiment relation/edge.
+	SentimentTable = "post_sentiments"
+	// SentimentInverseTable is the table name for the PostSentiment entity.
+	// It exists in this package in order to avoid circular dependency with the "postsentiment" package.
+	SentimentInverseTable = "post_sentiments"
+	// SentimentColumn is the table column denoting the sentiment relation/edge.
+	SentimentColumn = "post_id"
 )
 
 // Columns holds all SQL columns for post fields.
@@ -187,16 +230,18 @@ var Columns = []string{
 	FieldIndexedAt,
 	FieldTitle,
 	FieldSlug,
-	FieldPinned,
+	FieldPinnedRank,
 	FieldLastReplyAt,
 	FieldRootPostID,
 	FieldReplyToPostID,
+	FieldReferencePostID,
 	FieldBody,
 	FieldShort,
 	FieldMetadata,
 	FieldVisibility,
 	FieldAccountPosts,
 	FieldCategoryID,
+	FieldChannelID,
 	FieldLinkID,
 }
 
@@ -228,8 +273,8 @@ func ValidColumn(column string) bool {
 var (
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
-	// DefaultPinned holds the default value on creation for the "pinned" field.
-	DefaultPinned bool
+	// DefaultPinnedRank holds the default value on creation for the "pinned_rank" field.
+	DefaultPinnedRank int
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() xid.ID
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
@@ -248,6 +293,7 @@ const (
 	VisibilityUnlisted  Visibility = "unlisted"
 	VisibilityReview    Visibility = "review"
 	VisibilityPublished Visibility = "published"
+	VisibilityArchived  Visibility = "archived"
 )
 
 func (v Visibility) String() string {
@@ -257,7 +303,7 @@ func (v Visibility) String() string {
 // VisibilityValidator is a validator for the "visibility" field enum values. It is called by the builders before save.
 func VisibilityValidator(v Visibility) error {
 	switch v {
-	case VisibilityDraft, VisibilityUnlisted, VisibilityReview, VisibilityPublished:
+	case VisibilityDraft, VisibilityUnlisted, VisibilityReview, VisibilityPublished, VisibilityArchived:
 		return nil
 	default:
 		return fmt.Errorf("post: invalid enum value for visibility field: %q", v)
@@ -302,9 +348,9 @@ func BySlug(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSlug, opts...).ToFunc()
 }
 
-// ByPinned orders the results by the pinned field.
-func ByPinned(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPinned, opts...).ToFunc()
+// ByPinnedRank orders the results by the pinned_rank field.
+func ByPinnedRank(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPinnedRank, opts...).ToFunc()
 }
 
 // ByLastReplyAt orders the results by the last_reply_at field.
@@ -320,6 +366,11 @@ func ByRootPostID(opts ...sql.OrderTermOption) OrderOption {
 // ByReplyToPostID orders the results by the reply_to_post_id field.
 func ByReplyToPostID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldReplyToPostID, opts...).ToFunc()
+}
+
+// ByReferencePostID orders the results by the reference_post_id field.
+func ByReferencePostID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReferencePostID, opts...).ToFunc()
 }
 
 // ByBody orders the results by the body field.
@@ -347,6 +398,11 @@ func ByCategoryID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCategoryID, opts...).ToFunc()
 }
 
+// ByChannelID orders the results by the channel_id field.
+func ByChannelID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldChannelID, opts...).ToFunc()
+}
+
 // ByLinkID orders the results by the link_id field.
 func ByLinkID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLinkID, opts...).ToFunc()
@@ -363,6 +419,13 @@ func ByAuthorField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByCategoryField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newCategoryStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByChannelField orders the results by channel field.
+func ByChannelField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newChannelStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -419,6 +482,27 @@ func ByRepliesCount(opts ...sql.OrderTermOption) OrderOption {
 func ByReplies(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newRepliesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByReferenceField orders the results by reference field.
+func ByReferenceField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReferenceStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// BySharesCount orders the results by shares count.
+func BySharesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSharesStep(), opts...)
+	}
+}
+
+// ByShares orders the results by shares terms.
+func ByShares(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSharesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -540,6 +624,27 @@ func ByPostReads(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newPostReadsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByPollVotesCount orders the results by poll_votes count.
+func ByPollVotesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPollVotesStep(), opts...)
+	}
+}
+
+// ByPollVotes orders the results by poll_votes terms.
+func ByPollVotes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPollVotesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySentimentField orders the results by sentiment field.
+func BySentimentField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSentimentStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newAuthorStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -552,6 +657,13 @@ func newCategoryStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CategoryInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, CategoryTable, CategoryColumn),
+	)
+}
+func newChannelStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ChannelInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ChannelTable, ChannelColumn),
 	)
 }
 func newTagsStep() *sqlgraph.Step {
@@ -587,6 +699,20 @@ func newRepliesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(Table, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RepliesTable, RepliesColumn),
+	)
+}
+func newReferenceStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(Table, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ReferenceTable, ReferenceColumn),
+	)
+}
+func newSharesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(Table, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SharesTable, SharesColumn),
 	)
 }
 func newReactsStep() *sqlgraph.Step {
@@ -650,5 +776,19 @@ func newPostReadsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PostReadsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PostReadsTable, PostReadsColumn),
+	)
+}
+func newPollVotesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PollVotesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PollVotesTable, PollVotesColumn),
+	)
+}
+func newSentimentStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SentimentInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, SentimentTable, SentimentColumn),
 	)
 }

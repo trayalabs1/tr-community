@@ -16,14 +16,31 @@ import { fetcher } from "../client";
 import type {
   AccountGetOKResponse,
   AdminAccessKeyListOKResponse,
+  AdminAccountListOKResponse,
+  AdminAnalyticsGetOKResponse,
+  AdminAnalyticsGetParams,
+  AdminRegenerateTempHandlesOKResponse,
+  AdminRegenerateTempHandlesParams,
+  AdminReplyListOKResponse,
+  AdminReplyListParams,
+  AdminReplyQueueListOKResponse,
+  AdminReplyQueueListParams,
   AdminSettingsGetOKResponse,
   AdminSettingsUpdateBody,
   AdminSettingsUpdateOKResponse,
+  AuditEventCreatedOKResponse,
+  AuditEventGetOKResponse,
+  AuditEventListOKResponse,
+  AuditEventListParams,
   BadRequestResponse,
+  ChannelScoreUnscoredParams,
   ForbiddenResponse,
+  Identifier,
   InternalServerErrorResponse,
+  ModerationActionCreateBody,
   NoContentResponse,
   NotFoundResponse,
+  ScoreUnscoredOKResponse,
   UnauthorisedResponse,
 } from "../openapi-schema";
 
@@ -122,6 +139,254 @@ export const useAdminSettingsUpdate = <
 
   const swrKey = swrOptions?.swrKey ?? getAdminSettingsUpdateMutationKey();
   const swrFn = getAdminSettingsUpdateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * List audit events for the installation. Audit events track important
+actions taken by accounts with elevated permissions such as admin
+accounts and moderators. It also provides error logs for system internal
+components that could not be responded to the client directly such as
+background job failures and configuration issues.
+
+ */
+export const auditEventList = (params?: AuditEventListParams) => {
+  return fetcher<AuditEventListOKResponse>({
+    url: `/admin/audit-events`,
+    method: "GET",
+    params,
+  });
+};
+
+export const getAuditEventListKey = (params?: AuditEventListParams) =>
+  [`/admin/audit-events`, ...(params ? [params] : [])] as const;
+
+export type AuditEventListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof auditEventList>>
+>;
+export type AuditEventListQueryError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | InternalServerErrorResponse;
+
+export const useAuditEventList = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | InternalServerErrorResponse,
+>(
+  params?: AuditEventListParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof auditEventList>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getAuditEventListKey(params) : null));
+  const swrFn = () => auditEventList(params);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Retrieve a specific audit event by ID.
+ */
+export const auditEventGet = (auditEventId: string) => {
+  return fetcher<AuditEventGetOKResponse>({
+    url: `/admin/audit-events/${auditEventId}`,
+    method: "GET",
+  });
+};
+
+export const getAuditEventGetKey = (auditEventId: string) =>
+  [`/admin/audit-events/${auditEventId}`] as const;
+
+export type AuditEventGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof auditEventGet>>
+>;
+export type AuditEventGetQueryError =
+  | UnauthorisedResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useAuditEventGet = <
+  TError =
+    | UnauthorisedResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  auditEventId: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof auditEventGet>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false && !!auditEventId;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getAuditEventGetKey(auditEventId) : null));
+  const swrFn = () => auditEventGet(auditEventId);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Create a new moderation action such as a ban or content purge.
+ */
+export const moderationActionCreate = (
+  moderationActionCreateBody: ModerationActionCreateBody,
+) => {
+  return fetcher<AuditEventCreatedOKResponse>({
+    url: `/admin/actions`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: moderationActionCreateBody,
+  });
+};
+
+export const getModerationActionCreateMutationFetcher = () => {
+  return (
+    _: Key,
+    { arg }: { arg: ModerationActionCreateBody },
+  ): Promise<AuditEventCreatedOKResponse> => {
+    return moderationActionCreate(arg);
+  };
+};
+export const getModerationActionCreateMutationKey = () =>
+  [`/admin/actions`] as const;
+
+export type ModerationActionCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof moderationActionCreate>>
+>;
+export type ModerationActionCreateMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | InternalServerErrorResponse;
+
+export const useModerationActionCreate = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | InternalServerErrorResponse,
+>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof moderationActionCreate>>,
+    TError,
+    Key,
+    ModerationActionCreateBody,
+    Awaited<ReturnType<typeof moderationActionCreate>>
+  > & { swrKey?: string };
+}) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getModerationActionCreateMutationKey();
+  const swrFn = getModerationActionCreateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Regenerate handles for accounts that still carry a temporary handle
+(those with a `temp_` prefix assigned during signup) using the current
+handle generation logic. Requires ADMINISTRATOR permission.
+
+Processes a single bounded batch using keyset pagination so the operation
+can be run safely over very large tables without long-running requests or
+heavy load. Start with no cursor, then repeat the call passing the
+returned `next_cursor` until it is absent. The operation is idempotent and
+resumable: each successfully updated row stops matching the temporary
+prefix, so the set of remaining rows shrinks monotonically.
+
+ */
+export const adminRegenerateTempHandles = (
+  params?: AdminRegenerateTempHandlesParams,
+) => {
+  return fetcher<AdminRegenerateTempHandlesOKResponse>({
+    url: `/admin/temp-handles/regenerate`,
+    method: "POST",
+    params,
+  });
+};
+
+export const getAdminRegenerateTempHandlesMutationFetcher = (
+  params?: AdminRegenerateTempHandlesParams,
+) => {
+  return (
+    _: Key,
+    __: { arg: Arguments },
+  ): Promise<AdminRegenerateTempHandlesOKResponse> => {
+    return adminRegenerateTempHandles(params);
+  };
+};
+export const getAdminRegenerateTempHandlesMutationKey = (
+  params?: AdminRegenerateTempHandlesParams,
+) => [`/admin/temp-handles/regenerate`, ...(params ? [params] : [])] as const;
+
+export type AdminRegenerateTempHandlesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRegenerateTempHandles>>
+>;
+export type AdminRegenerateTempHandlesMutationError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | InternalServerErrorResponse;
+
+export const useAdminRegenerateTempHandles = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | InternalServerErrorResponse,
+>(
+  params?: AdminRegenerateTempHandlesParams,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof adminRegenerateTempHandles>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof adminRegenerateTempHandles>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getAdminRegenerateTempHandlesMutationKey(params);
+  const swrFn = getAdminRegenerateTempHandlesMutationFetcher(params);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -346,6 +611,367 @@ export const useAdminAccessKeyDelete = <
   const swrKey =
     swrOptions?.swrKey ?? getAdminAccessKeyDeleteMutationKey(accessKeyId);
   const swrFn = getAdminAccessKeyDeleteMutationFetcher(accessKeyId);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * List non-admin replies pending admin attention. Requires ADMINISTRATOR
+permission. Supports pagination and date range filtering.
+
+ */
+export const adminReplyQueueList = (params?: AdminReplyQueueListParams) => {
+  return fetcher<AdminReplyQueueListOKResponse>({
+    url: `/admin/reply-queue`,
+    method: "GET",
+    params,
+  });
+};
+
+export const getAdminReplyQueueListKey = (params?: AdminReplyQueueListParams) =>
+  [`/admin/reply-queue`, ...(params ? [params] : [])] as const;
+
+export type AdminReplyQueueListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminReplyQueueList>>
+>;
+export type AdminReplyQueueListQueryError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | InternalServerErrorResponse;
+
+export const useAdminReplyQueueList = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | InternalServerErrorResponse,
+>(
+  params?: AdminReplyQueueListParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof adminReplyQueueList>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getAdminReplyQueueListKey(params) : null));
+  const swrFn = () => adminReplyQueueList(params);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Dismiss a reply queue entry. Permanently deletes the entry.
+Requires ADMINISTRATOR permission.
+
+ */
+export const adminReplyQueueDismiss = (replyQueueId: Identifier) => {
+  return fetcher<NoContentResponse>({
+    url: `/admin/reply-queue/${replyQueueId}`,
+    method: "DELETE",
+  });
+};
+
+export const getAdminReplyQueueDismissMutationFetcher = (
+  replyQueueId: Identifier,
+) => {
+  return (_: Key, __: { arg: Arguments }): Promise<NoContentResponse> => {
+    return adminReplyQueueDismiss(replyQueueId);
+  };
+};
+export const getAdminReplyQueueDismissMutationKey = (
+  replyQueueId: Identifier,
+) => [`/admin/reply-queue/${replyQueueId}`] as const;
+
+export type AdminReplyQueueDismissMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminReplyQueueDismiss>>
+>;
+export type AdminReplyQueueDismissMutationError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useAdminReplyQueueDismiss = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  replyQueueId: Identifier,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof adminReplyQueueDismiss>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof adminReplyQueueDismiss>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getAdminReplyQueueDismissMutationKey(replyQueueId);
+  const swrFn = getAdminReplyQueueDismissMutationFetcher(replyQueueId);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * List all accounts considered administrators, for use in admin-facing
+filter controls. Requires ADMINISTRATOR permission.
+
+ */
+export const adminAccountList = () => {
+  return fetcher<AdminAccountListOKResponse>({
+    url: `/admin/admins`,
+    method: "GET",
+  });
+};
+
+export const getAdminAccountListKey = () => [`/admin/admins`] as const;
+
+export type AdminAccountListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminAccountList>>
+>;
+export type AdminAccountListQueryError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | InternalServerErrorResponse;
+
+export const useAdminAccountList = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | InternalServerErrorResponse,
+>(options?: {
+  swr?: SWRConfiguration<
+    Awaited<ReturnType<typeof adminAccountList>>,
+    TError
+  > & { swrKey?: Key; enabled?: boolean };
+}) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ?? (() => (isEnabled ? getAdminAccountListKey() : null));
+  const swrFn = () => adminAccountList();
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * List replies authored by administrators, optionally filtered to a single
+admin and a reply-date range. Used by the Queue screen's "Admin Replies"
+tab to audit which posts a given admin has responded to. The date range
+filters on the reply's own creation time, not the thread's.
+Requires ADMINISTRATOR permission.
+
+ */
+export const adminReplyList = (params?: AdminReplyListParams) => {
+  return fetcher<AdminReplyListOKResponse>({
+    url: `/admin/admin-replies`,
+    method: "GET",
+    params,
+  });
+};
+
+export const getAdminReplyListKey = (params?: AdminReplyListParams) =>
+  [`/admin/admin-replies`, ...(params ? [params] : [])] as const;
+
+export type AdminReplyListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminReplyList>>
+>;
+export type AdminReplyListQueryError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | InternalServerErrorResponse;
+
+export const useAdminReplyList = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | InternalServerErrorResponse,
+>(
+  params?: AdminReplyListParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof adminReplyList>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getAdminReplyListKey(params) : null));
+  const swrFn = () => adminReplyList(params);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * @summary Get analytics dashboard data
+ */
+export const adminAnalyticsGet = (params: AdminAnalyticsGetParams) => {
+  return fetcher<AdminAnalyticsGetOKResponse>({
+    url: `/admin/analytics`,
+    method: "GET",
+    params,
+  });
+};
+
+export const getAdminAnalyticsGetKey = (params: AdminAnalyticsGetParams) =>
+  [`/admin/analytics`, ...(params ? [params] : [])] as const;
+
+export type AdminAnalyticsGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminAnalyticsGet>>
+>;
+export type AdminAnalyticsGetQueryError = InternalServerErrorResponse;
+
+/**
+ * @summary Get analytics dashboard data
+ */
+export const useAdminAnalyticsGet = <TError = InternalServerErrorResponse>(
+  params: AdminAnalyticsGetParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof adminAnalyticsGet>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getAdminAnalyticsGetKey(params) : null));
+  const swrFn = () => adminAnalyticsGet(params);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Finds all published root posts in the channel that have not yet been
+scored and enqueues them for asynchronous sentiment scoring. Optionally
+includes posts that previously failed scoring. Supports date range
+filtering to target specific time windows.
+
+ * @summary Find and enqueue unscored posts in a channel for sentiment scoring.
+ */
+export const channelScoreUnscored = (
+  channelID: string,
+  params?: ChannelScoreUnscoredParams,
+) => {
+  return fetcher<ScoreUnscoredOKResponse>({
+    url: `/channels/${channelID}/scoring/score-unscored`,
+    method: "POST",
+    params,
+  });
+};
+
+export const getChannelScoreUnscoredMutationFetcher = (
+  channelID: string,
+  params?: ChannelScoreUnscoredParams,
+) => {
+  return (_: Key, __: { arg: Arguments }): Promise<ScoreUnscoredOKResponse> => {
+    return channelScoreUnscored(channelID, params);
+  };
+};
+export const getChannelScoreUnscoredMutationKey = (
+  channelID: string,
+  params?: ChannelScoreUnscoredParams,
+) =>
+  [
+    `/channels/${channelID}/scoring/score-unscored`,
+    ...(params ? [params] : []),
+  ] as const;
+
+export type ChannelScoreUnscoredMutationResult = NonNullable<
+  Awaited<ReturnType<typeof channelScoreUnscored>>
+>;
+export type ChannelScoreUnscoredMutationError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+/**
+ * @summary Find and enqueue unscored posts in a channel for sentiment scoring.
+ */
+export const useChannelScoreUnscored = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  params?: ChannelScoreUnscoredParams,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof channelScoreUnscored>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof channelScoreUnscored>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getChannelScoreUnscoredMutationKey(channelID, params);
+  const swrFn = getChannelScoreUnscoredMutationFetcher(channelID, params);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

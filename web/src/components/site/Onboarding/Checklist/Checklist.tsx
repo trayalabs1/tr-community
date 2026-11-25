@@ -21,7 +21,7 @@ export function Checklist({ onboardingStatus, onFinish }: Props) {
 
   return (
     <VStack width="full" height="full" justify="start" pt="4" pb="16">
-      <Heading size="lg">Welcome to Storyden!</Heading>
+      <Heading size="lg">Welcome to Traya Community!</Heading>
       <styled.p p="2" textAlign="center">
         Get your community set up
         <br />

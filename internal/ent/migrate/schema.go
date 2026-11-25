@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -112,6 +113,56 @@ var (
 			},
 		},
 	}
+	// AdminReplyTimesColumns holds the columns for the "admin_reply_times" table.
+	AdminReplyTimesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "user_post_time", Type: field.TypeTime},
+		{Name: "admin_post_time", Type: field.TypeTime},
+		{Name: "admin_handle", Type: field.TypeString},
+		{Name: "time_difference_seconds", Type: field.TypeInt64},
+		{Name: "user_post_id", Type: field.TypeString, Size: 20},
+		{Name: "admin_post_id", Type: field.TypeString, Size: 20},
+		{Name: "admin_account_id", Type: field.TypeString, Size: 20},
+	}
+	// AdminReplyTimesTable holds the schema information for the "admin_reply_times" table.
+	AdminReplyTimesTable = &schema.Table{
+		Name:       "admin_reply_times",
+		Columns:    AdminReplyTimesColumns,
+		PrimaryKey: []*schema.Column{AdminReplyTimesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "admin_reply_times_posts_user_post",
+				Columns:    []*schema.Column{AdminReplyTimesColumns[6]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "admin_reply_times_posts_admin_post",
+				Columns:    []*schema.Column{AdminReplyTimesColumns[7]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "admin_reply_times_accounts_admin_account",
+				Columns:    []*schema.Column{AdminReplyTimesColumns[8]},
+				RefColumns: []*schema.Column{AccountsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "adminreplytime_admin_account_id_admin_post_time",
+				Unique:  false,
+				Columns: []*schema.Column{AdminReplyTimesColumns[8], AdminReplyTimesColumns[3]},
+			},
+			{
+				Name:    "adminreplytime_admin_post_time",
+				Unique:  false,
+				Columns: []*schema.Column{AdminReplyTimesColumns[3]},
+			},
+		},
+	}
 	// AssetsColumns holds the columns for the "assets" table.
 	AssetsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Size: 20},
@@ -148,6 +199,31 @@ var (
 				Name:    "asset_filename",
 				Unique:  false,
 				Columns: []*schema.Column{AssetsColumns[3]},
+			},
+		},
+	}
+	// AuditLogsColumns holds the columns for the "audit_logs" table.
+	AuditLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "target_id", Type: field.TypeString, Nullable: true},
+		{Name: "target_kind", Type: field.TypeString, Nullable: true},
+		{Name: "type", Type: field.TypeString},
+		{Name: "error", Type: field.TypeString, Nullable: true},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "enacted_by_id", Type: field.TypeString, Nullable: true, Size: 20},
+	}
+	// AuditLogsTable holds the schema information for the "audit_logs" table.
+	AuditLogsTable = &schema.Table{
+		Name:       "audit_logs",
+		Columns:    AuditLogsColumns,
+		PrimaryKey: []*schema.Column{AuditLogsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "audit_logs_accounts_audit_logs",
+				Columns:    []*schema.Column{AuditLogsColumns[7]},
+				RefColumns: []*schema.Column{AccountsColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -205,6 +281,7 @@ var (
 		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
 		{Name: "parent_category_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "cover_image_asset_id", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "channel_id", Type: field.TypeString, Size: 20},
 	}
 	// CategoriesTable holds the schema information for the "categories" table.
 	CategoriesTable = &schema.Table{
@@ -224,6 +301,97 @@ var (
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
+			{
+				Symbol:     "categories_channels_categories",
+				Columns:    []*schema.Column{CategoriesColumns[12]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// ChannelsColumns holds the columns for the "channels" table.
+	ChannelsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "slug", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"public", "private"}, Default: "public"},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
+		{Name: "cover_image_asset_id", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "icon_asset_id", Type: field.TypeString, Nullable: true, Size: 20},
+	}
+	// ChannelsTable holds the schema information for the "channels" table.
+	ChannelsTable = &schema.Table{
+		Name:       "channels",
+		Columns:    ChannelsColumns,
+		PrimaryKey: []*schema.Column{ChannelsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "channels_assets_cover_image",
+				Columns:    []*schema.Column{ChannelsColumns[8]},
+				RefColumns: []*schema.Column{AssetsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "channels_assets_icon",
+				Columns:    []*schema.Column{ChannelsColumns[9]},
+				RefColumns: []*schema.Column{AssetsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// ChannelMembershipsColumns holds the columns for the "channel_memberships" table.
+	ChannelMembershipsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "role", Type: field.TypeEnum, Enums: []string{"owner", "admin", "moderator", "member"}, Default: "member"},
+		{Name: "channel_memberships", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "channel_id", Type: field.TypeString, Size: 20},
+		{Name: "account_id", Type: field.TypeString, Size: 20},
+	}
+	// ChannelMembershipsTable holds the schema information for the "channel_memberships" table.
+	ChannelMembershipsTable = &schema.Table{
+		Name:       "channel_memberships",
+		Columns:    ChannelMembershipsColumns,
+		PrimaryKey: []*schema.Column{ChannelMembershipsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "channel_memberships_channels_memberships",
+				Columns:    []*schema.Column{ChannelMembershipsColumns[3]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "channel_memberships_channels_channel",
+				Columns:    []*schema.Column{ChannelMembershipsColumns[4]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "channel_memberships_accounts_account",
+				Columns:    []*schema.Column{ChannelMembershipsColumns[5]},
+				RefColumns: []*schema.Column{AccountsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "unique_channel_member",
+				Unique:  true,
+				Columns: []*schema.Column{ChannelMembershipsColumns[4], ChannelMembershipsColumns[5]},
+			},
+			{
+				Name:    "channelmembership_account_id",
+				Unique:  false,
+				Columns: []*schema.Column{ChannelMembershipsColumns[5]},
+			},
+			{
+				Name:    "channelmembership_channel_id_role",
+				Unique:  false,
+				Columns: []*schema.Column{ChannelMembershipsColumns[4], ChannelMembershipsColumns[2]},
+			},
 		},
 	}
 	// CollectionsColumns holds the columns for the "collections" table.
@@ -235,7 +403,8 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "slug", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true},
-		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"draft", "unlisted", "review", "published"}, Default: "draft"},
+		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"draft", "unlisted", "review", "published", "archived"}, Default: "draft"},
+		{Name: "is_default", Type: field.TypeBool, Default: false},
 		{Name: "account_collections", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "cover_asset_id", Type: field.TypeString, Nullable: true, Size: 20},
 	}
@@ -247,15 +416,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "collections_accounts_collections",
-				Columns:    []*schema.Column{CollectionsColumns[8]},
+				Columns:    []*schema.Column{CollectionsColumns[9]},
 				RefColumns: []*schema.Column{AccountsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "collections_assets_cover_image",
-				Columns:    []*schema.Column{CollectionsColumns[9]},
+				Columns:    []*schema.Column{CollectionsColumns[10]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "unique_owner_default_collection",
+				Unique:  true,
+				Columns: []*schema.Column{CollectionsColumns[8], CollectionsColumns[9]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "is_default",
+				},
 			},
 		},
 	}
@@ -325,6 +504,11 @@ var (
 				Unique:  true,
 				Columns: []*schema.Column{CollectionPostsColumns[2], CollectionPostsColumns[3]},
 			},
+			{
+				Name:    "collectionpost_post_id",
+				Unique:  false,
+				Columns: []*schema.Column{CollectionPostsColumns[3]},
+			},
 		},
 	}
 	// EmailsColumns holds the columns for the "emails" table.
@@ -363,7 +547,7 @@ var (
 		{Name: "start_time", Type: field.TypeTime},
 		{Name: "end_time", Type: field.TypeTime},
 		{Name: "participation_policy", Type: field.TypeString},
-		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"draft", "unlisted", "review", "published"}, Default: "draft"},
+		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"draft", "unlisted", "review", "published", "archived"}, Default: "draft"},
 		{Name: "location_type", Type: field.TypeString, Nullable: true},
 		{Name: "location_name", Type: field.TypeString, Nullable: true},
 		{Name: "location_address", Type: field.TypeString, Nullable: true},
@@ -493,6 +677,16 @@ var (
 				Unique:  true,
 				Columns: []*schema.Column{LikePostsColumns[2], LikePostsColumns[3]},
 			},
+			{
+				Name:    "likepost_post_id",
+				Unique:  false,
+				Columns: []*schema.Column{LikePostsColumns[3]},
+			},
+			{
+				Name:    "likepost_account_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{LikePostsColumns[2], LikePostsColumns[1]},
+			},
 		},
 	}
 	// LinksColumns holds the columns for the "links" table.
@@ -573,10 +767,11 @@ var (
 		{Name: "description", Type: field.TypeString, Nullable: true},
 		{Name: "content", Type: field.TypeString, Nullable: true},
 		{Name: "hide_child_tree", Type: field.TypeBool, Default: map[string]schema.Expr{"postgres": "false", "sqlite3": "0"}},
-		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"draft", "unlisted", "review", "published"}, Default: "draft"},
+		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"draft", "unlisted", "review", "published", "archived"}, Default: "draft"},
 		{Name: "sort", Type: field.TypeString},
 		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
 		{Name: "account_id", Type: field.TypeString, Size: 20},
+		{Name: "channel_id", Type: field.TypeString, Size: 20},
 		{Name: "link_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "parent_node_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "primary_asset_id", Type: field.TypeString, Nullable: true, Size: 20},
@@ -595,26 +790,32 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "nodes_links_nodes",
+				Symbol:     "nodes_channels_nodes",
 				Columns:    []*schema.Column{NodesColumns[14]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "nodes_links_nodes",
+				Columns:    []*schema.Column{NodesColumns[15]},
 				RefColumns: []*schema.Column{LinksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "nodes_nodes_nodes",
-				Columns:    []*schema.Column{NodesColumns[15]},
+				Columns:    []*schema.Column{NodesColumns[16]},
 				RefColumns: []*schema.Column{NodesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "nodes_assets_primary_image",
-				Columns:    []*schema.Column{NodesColumns[16]},
+				Columns:    []*schema.Column{NodesColumns[17]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "nodes_property_schemas_node",
-				Columns:    []*schema.Column{NodesColumns[17]},
+				Columns:    []*schema.Column{NodesColumns[18]},
 				RefColumns: []*schema.Column{PropertySchemasColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -624,6 +825,21 @@ var (
 				Name:    "node_slug",
 				Unique:  false,
 				Columns: []*schema.Column{NodesColumns[6]},
+			},
+			{
+				Name:    "node_parent_node_id_visibility_sort",
+				Unique:  false,
+				Columns: []*schema.Column{NodesColumns[16], NodesColumns[10], NodesColumns[11]},
+			},
+			{
+				Name:    "node_visibility_deleted_at_updated_at",
+				Unique:  false,
+				Columns: []*schema.Column{NodesColumns[10], NodesColumns[3], NodesColumns[2]},
+			},
+			{
+				Name:    "node_account_id",
+				Unique:  false,
+				Columns: []*schema.Column{NodesColumns[13]},
 			},
 		},
 	}
@@ -658,6 +874,53 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "notification_owner_account_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{NotificationsColumns[7], NotificationsColumns[1]},
+			},
+		},
+	}
+	// PollVotesColumns holds the columns for the "poll_votes" table.
+	PollVotesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "option_id", Type: field.TypeString},
+		{Name: "account_id", Type: field.TypeString, Size: 20},
+		{Name: "post_id", Type: field.TypeString, Size: 20},
+	}
+	// PollVotesTable holds the schema information for the "poll_votes" table.
+	PollVotesTable = &schema.Table{
+		Name:       "poll_votes",
+		Columns:    PollVotesColumns,
+		PrimaryKey: []*schema.Column{PollVotesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "poll_votes_accounts_poll_votes",
+				Columns:    []*schema.Column{PollVotesColumns[3]},
+				RefColumns: []*schema.Column{AccountsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "poll_votes_posts_poll_votes",
+				Columns:    []*schema.Column{PollVotesColumns[4]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "unique_poll_vote_per_user",
+				Unique:  true,
+				Columns: []*schema.Column{PollVotesColumns[3], PollVotesColumns[4]},
+			},
+			{
+				Name:    "pollvote_post_id_option_id",
+				Unique:  false,
+				Columns: []*schema.Column{PollVotesColumns[4], PollVotesColumns[2]},
+			},
+		},
 	}
 	// PostsColumns holds the columns for the "posts" table.
 	PostsColumns = []*schema.Column{
@@ -668,17 +931,19 @@ var (
 		{Name: "indexed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "title", Type: field.TypeString, Nullable: true},
 		{Name: "slug", Type: field.TypeString, Nullable: true},
-		{Name: "pinned", Type: field.TypeBool, Default: false},
+		{Name: "pinned_rank", Type: field.TypeInt, Default: 0},
 		{Name: "last_reply_at", Type: field.TypeTime},
 		{Name: "body", Type: field.TypeString},
 		{Name: "short", Type: field.TypeString},
 		{Name: "metadata", Type: field.TypeJSON, Nullable: true},
-		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"draft", "unlisted", "review", "published"}, Default: "draft"},
+		{Name: "visibility", Type: field.TypeEnum, Enums: []string{"draft", "unlisted", "review", "published", "archived"}, Default: "draft"},
 		{Name: "account_posts", Type: field.TypeString, Size: 20},
 		{Name: "category_id", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "channel_id", Type: field.TypeString, Size: 20},
 		{Name: "link_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "root_post_id", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "reply_to_post_id", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "reference_post_id", Type: field.TypeString, Nullable: true, Size: 20},
 	}
 	// PostsTable holds the schema information for the "posts" table.
 	PostsTable = &schema.Table{
@@ -699,39 +964,76 @@ var (
 				OnDelete:   schema.SetNull,
 			},
 			{
-				Symbol:     "posts_links_posts",
+				Symbol:     "posts_channels_posts",
 				Columns:    []*schema.Column{PostsColumns[15]},
+				RefColumns: []*schema.Column{ChannelsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "posts_links_posts",
+				Columns:    []*schema.Column{PostsColumns[16]},
 				RefColumns: []*schema.Column{LinksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "posts_posts_posts",
-				Columns:    []*schema.Column{PostsColumns[16]},
+				Columns:    []*schema.Column{PostsColumns[17]},
 				RefColumns: []*schema.Column{PostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "posts_posts_replies",
-				Columns:    []*schema.Column{PostsColumns[17]},
+				Columns:    []*schema.Column{PostsColumns[18]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "posts_posts_shares",
+				Columns:    []*schema.Column{PostsColumns[19]},
 				RefColumns: []*schema.Column{PostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "post_root_post_id_deleted_at_visibility_last_reply_at",
+				Name:    "post_root_post_id_deleted_at_visibility_pinned_rank_last_reply_at",
 				Unique:  false,
-				Columns: []*schema.Column{PostsColumns[16], PostsColumns[3], PostsColumns[12], PostsColumns[8]},
+				Columns: []*schema.Column{PostsColumns[17], PostsColumns[3], PostsColumns[12], PostsColumns[7], PostsColumns[8]},
 			},
 			{
-				Name:    "post_root_post_id_deleted_at_visibility_category_id_last_reply_at",
+				Name:    "post_root_post_id_deleted_at_visibility_category_id_pinned_rank_last_reply_at",
 				Unique:  false,
-				Columns: []*schema.Column{PostsColumns[16], PostsColumns[3], PostsColumns[12], PostsColumns[14], PostsColumns[8]},
+				Columns: []*schema.Column{PostsColumns[17], PostsColumns[3], PostsColumns[12], PostsColumns[14], PostsColumns[7], PostsColumns[8]},
+			},
+			{
+				Name:    "post_channel_id_deleted_at_visibility_last_reply_at",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[15], PostsColumns[3], PostsColumns[12], PostsColumns[8]},
+			},
+			{
+				Name:    "post_channel_id_deleted_at_visibility_category_id_last_reply_at",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[15], PostsColumns[3], PostsColumns[12], PostsColumns[14], PostsColumns[8]},
 			},
 			{
 				Name:    "post_root_post_id_deleted_at_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{PostsColumns[16], PostsColumns[3], PostsColumns[1]},
+				Columns: []*schema.Column{PostsColumns[17], PostsColumns[3], PostsColumns[1]},
+			},
+			{
+				Name:    "post_account_posts",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[13]},
+			},
+			{
+				Name:    "post_category_id_deleted_at_visibility",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[14], PostsColumns[3], PostsColumns[12]},
+			},
+			{
+				Name:    "post_reference_post_id",
+				Unique:  false,
+				Columns: []*schema.Column{PostsColumns[19]},
 			},
 		},
 	}
@@ -766,6 +1068,50 @@ var (
 				Name:    "unique_post_read",
 				Unique:  true,
 				Columns: []*schema.Column{PostReadsColumns[3], PostReadsColumns[2]},
+			},
+		},
+	}
+	// PostSentimentsColumns holds the columns for the "post_sentiments" table.
+	PostSentimentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "sentiment_tag", Type: field.TypeString, Nullable: true},
+		{Name: "positivity_score", Type: field.TypeInt, Nullable: true},
+		{Name: "primary_topic", Type: field.TypeString, Nullable: true},
+		{Name: "feed_value_score", Type: field.TypeInt, Nullable: true},
+		{Name: "scoring_status", Type: field.TypeEnum, Enums: []string{"unscored", "scored", "failed"}, Default: "unscored"},
+		{Name: "rank_score", Type: field.TypeFloat64, Default: 0},
+		{Name: "post_id", Type: field.TypeString, Unique: true, Size: 20},
+	}
+	// PostSentimentsTable holds the schema information for the "post_sentiments" table.
+	PostSentimentsTable = &schema.Table{
+		Name:       "post_sentiments",
+		Columns:    PostSentimentsColumns,
+		PrimaryKey: []*schema.Column{PostSentimentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "post_sentiments_posts_sentiment",
+				Columns:    []*schema.Column{PostSentimentsColumns[9]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "postsentiment_scoring_status",
+				Unique:  false,
+				Columns: []*schema.Column{PostSentimentsColumns[7]},
+			},
+			{
+				Name:    "postsentiment_rank_score",
+				Unique:  false,
+				Columns: []*schema.Column{PostSentimentsColumns[8]},
+			},
+			{
+				Name:    "postsentiment_sentiment_tag",
+				Unique:  false,
+				Columns: []*schema.Column{PostSentimentsColumns[3]},
 			},
 		},
 	}
@@ -922,6 +1268,47 @@ var (
 				Name:    "unique_react_post_emoji",
 				Unique:  true,
 				Columns: []*schema.Column{ReactsColumns[3], ReactsColumns[4], ReactsColumns[2]},
+			},
+			{
+				Name:    "react_post_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReactsColumns[4]},
+			},
+		},
+	}
+	// ReplyAdminQueuesColumns holds the columns for the "reply_admin_queues" table.
+	ReplyAdminQueuesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Size: 20},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "channel_id", Type: field.TypeString},
+		{Name: "content_snippet", Type: field.TypeString, Default: ""},
+		{Name: "reply_id", Type: field.TypeString, Size: 20},
+		{Name: "thread_id", Type: field.TypeString, Size: 20},
+	}
+	// ReplyAdminQueuesTable holds the schema information for the "reply_admin_queues" table.
+	ReplyAdminQueuesTable = &schema.Table{
+		Name:       "reply_admin_queues",
+		Columns:    ReplyAdminQueuesColumns,
+		PrimaryKey: []*schema.Column{ReplyAdminQueuesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "reply_admin_queues_posts_reply",
+				Columns:    []*schema.Column{ReplyAdminQueuesColumns[4]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "reply_admin_queues_posts_thread",
+				Columns:    []*schema.Column{ReplyAdminQueuesColumns[5]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "replyadminqueue_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ReplyAdminQueuesColumns[1]},
 			},
 		},
 	}
@@ -1225,9 +1612,13 @@ var (
 		AccountsTable,
 		AccountFollowsTable,
 		AccountRolesTable,
+		AdminReplyTimesTable,
 		AssetsTable,
+		AuditLogsTable,
 		AuthenticationsTable,
 		CategoriesTable,
+		ChannelsTable,
+		ChannelMembershipsTable,
 		CollectionsTable,
 		CollectionNodesTable,
 		CollectionPostsTable,
@@ -1240,13 +1631,16 @@ var (
 		MentionProfilesTable,
 		NodesTable,
 		NotificationsTable,
+		PollVotesTable,
 		PostsTable,
 		PostReadsTable,
+		PostSentimentsTable,
 		PropertiesTable,
 		PropertySchemasTable,
 		PropertySchemaFieldsTable,
 		QuestionsTable,
 		ReactsTable,
+		ReplyAdminQueuesTable,
 		ReportsTable,
 		RolesTable,
 		SessionsTable,
@@ -1269,11 +1663,21 @@ func init() {
 	AccountFollowsTable.ForeignKeys[1].RefTable = AccountsTable
 	AccountRolesTable.ForeignKeys[0].RefTable = AccountsTable
 	AccountRolesTable.ForeignKeys[1].RefTable = RolesTable
+	AdminReplyTimesTable.ForeignKeys[0].RefTable = PostsTable
+	AdminReplyTimesTable.ForeignKeys[1].RefTable = PostsTable
+	AdminReplyTimesTable.ForeignKeys[2].RefTable = AccountsTable
 	AssetsTable.ForeignKeys[0].RefTable = AccountsTable
 	AssetsTable.ForeignKeys[1].RefTable = AssetsTable
+	AuditLogsTable.ForeignKeys[0].RefTable = AccountsTable
 	AuthenticationsTable.ForeignKeys[0].RefTable = AccountsTable
 	CategoriesTable.ForeignKeys[0].RefTable = CategoriesTable
 	CategoriesTable.ForeignKeys[1].RefTable = AssetsTable
+	CategoriesTable.ForeignKeys[2].RefTable = ChannelsTable
+	ChannelsTable.ForeignKeys[0].RefTable = AssetsTable
+	ChannelsTable.ForeignKeys[1].RefTable = AssetsTable
+	ChannelMembershipsTable.ForeignKeys[0].RefTable = ChannelsTable
+	ChannelMembershipsTable.ForeignKeys[1].RefTable = ChannelsTable
+	ChannelMembershipsTable.ForeignKeys[2].RefTable = AccountsTable
 	CollectionsTable.ForeignKeys[0].RefTable = AccountsTable
 	CollectionsTable.ForeignKeys[1].RefTable = AssetsTable
 	CollectionNodesTable.ForeignKeys[0].RefTable = CollectionsTable
@@ -1293,19 +1697,25 @@ func init() {
 	MentionProfilesTable.ForeignKeys[0].RefTable = AccountsTable
 	MentionProfilesTable.ForeignKeys[1].RefTable = PostsTable
 	NodesTable.ForeignKeys[0].RefTable = AccountsTable
-	NodesTable.ForeignKeys[1].RefTable = LinksTable
-	NodesTable.ForeignKeys[2].RefTable = NodesTable
-	NodesTable.ForeignKeys[3].RefTable = AssetsTable
-	NodesTable.ForeignKeys[4].RefTable = PropertySchemasTable
+	NodesTable.ForeignKeys[1].RefTable = ChannelsTable
+	NodesTable.ForeignKeys[2].RefTable = LinksTable
+	NodesTable.ForeignKeys[3].RefTable = NodesTable
+	NodesTable.ForeignKeys[4].RefTable = AssetsTable
+	NodesTable.ForeignKeys[5].RefTable = PropertySchemasTable
 	NotificationsTable.ForeignKeys[0].RefTable = AccountsTable
 	NotificationsTable.ForeignKeys[1].RefTable = AccountsTable
+	PollVotesTable.ForeignKeys[0].RefTable = AccountsTable
+	PollVotesTable.ForeignKeys[1].RefTable = PostsTable
 	PostsTable.ForeignKeys[0].RefTable = AccountsTable
 	PostsTable.ForeignKeys[1].RefTable = CategoriesTable
-	PostsTable.ForeignKeys[2].RefTable = LinksTable
-	PostsTable.ForeignKeys[3].RefTable = PostsTable
+	PostsTable.ForeignKeys[2].RefTable = ChannelsTable
+	PostsTable.ForeignKeys[3].RefTable = LinksTable
 	PostsTable.ForeignKeys[4].RefTable = PostsTable
+	PostsTable.ForeignKeys[5].RefTable = PostsTable
+	PostsTable.ForeignKeys[6].RefTable = PostsTable
 	PostReadsTable.ForeignKeys[0].RefTable = AccountsTable
 	PostReadsTable.ForeignKeys[1].RefTable = PostsTable
+	PostSentimentsTable.ForeignKeys[0].RefTable = PostsTable
 	PropertiesTable.ForeignKeys[0].RefTable = NodesTable
 	PropertiesTable.ForeignKeys[1].RefTable = PropertySchemaFieldsTable
 	PropertySchemaFieldsTable.ForeignKeys[0].RefTable = PropertySchemasTable
@@ -1313,6 +1723,8 @@ func init() {
 	QuestionsTable.ForeignKeys[1].RefTable = QuestionsTable
 	ReactsTable.ForeignKeys[0].RefTable = AccountsTable
 	ReactsTable.ForeignKeys[1].RefTable = PostsTable
+	ReplyAdminQueuesTable.ForeignKeys[0].RefTable = PostsTable
+	ReplyAdminQueuesTable.ForeignKeys[1].RefTable = PostsTable
 	ReportsTable.ForeignKeys[0].RefTable = AccountsTable
 	ReportsTable.ForeignKeys[1].RefTable = AccountsTable
 	SessionsTable.ForeignKeys[0].RefTable = AccountsTable

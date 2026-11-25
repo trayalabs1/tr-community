@@ -9,9 +9,11 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
  */
 import type { AccountHandle } from "./accountHandle";
 import type { CategorySlugListQueryParameter } from "./categorySlugListQueryParameter";
+import type { Identifier } from "./identifier";
 import type { PaginationQueryParameter } from "./paginationQueryParameter";
 import type { SearchQueryParameter } from "./searchQueryParameter";
 import type { TagListIDs } from "./tagListIDs";
+import type { ThreadsIgnorePinnedQueryParameter } from "./threadsIgnorePinnedQueryParameter";
 import type { VisibilityParamParameter } from "./visibilityParamParameter";
 
 export type ThreadListParams = {
@@ -23,6 +25,14 @@ export type ThreadListParams = {
    * Pagination query parameters.
    */
   page?: PaginationQueryParameter;
+  /**
+ * When set to true, pinned threads will be ignored in the results and the
+result will be ordered entirely by the most recent reply. By default,
+this is not set and pinned threads will appear at the top of the first
+page.
+
+ */
+  ignore_pinned?: ThreadsIgnorePinnedQueryParameter;
   /**
    * Show only results creeated by this user.
    */
@@ -50,4 +60,51 @@ will be ignored, only the value containing "null" will be considered.
 
  */
   categories?: CategorySlugListQueryParameter;
+  /**
+   * Show only threads created after this date/time.
+   */
+  created_after?: string;
+  /**
+   * Show only threads created before this date/time.
+   */
+  created_before?: string;
+  /**
+   * Show only threads that have no replies.
+   */
+  no_replies?: boolean;
+  /**
+   * Show only threads that have no likes.
+   */
+  no_likes?: boolean;
+  /**
+   * Exclude posts with post_category BAH from results.
+   */
+  exclude_bah?: boolean;
+  /**
+   * Exclude posts with post_category feedback from results.
+   */
+  exclude_feedback?: boolean;
+  /**
+   * Show only posts with post_category BAH.
+   */
+  bah_only?: boolean;
+  /**
+ * Show only posts whose meta.post_category matches one of these values
+(e.g. BAH, feedback). Multiple instances filter by any of the values.
+
+ */
+  post_categories?: string[];
+  /**
+ * Show only posts whose AI sentiment tag matches one of these values
+(positive, neutral, negative). Multiple instances filter by any.
+
+ */
+  sentiments?: string[];
+  /**
+ * Show only threads in these channels. Multiple instances of this
+parameter filter by any of the channels. If not provided, threads
+from all channels are returned.
+
+ */
+  channel_ids?: Identifier[];
 };

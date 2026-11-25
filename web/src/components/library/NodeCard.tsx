@@ -1,4 +1,4 @@
-import { Node } from "src/api/openapi-schema";
+import { Identifier, Node } from "src/api/openapi-schema";
 import { Timestamp } from "src/components/site/Timestamp";
 
 import { Card } from "@/components/ui/rich-card";
@@ -14,11 +14,14 @@ export type NodeCardContext = "library" | "generic";
 export type Props = {
   node: Node;
   libraryPath: LibraryPath;
+  channelID?: Identifier;
 } & RichCardVariantProps;
 
-export function NodeCard({ node, libraryPath, ...rest }: Props) {
+export function NodeCard({ node, libraryPath, channelID, ...rest }: Props) {
   const slug = joinLibraryPath(libraryPath, node.slug);
-  const url = `/l/${slug}`;
+  const url = channelID
+    ? `/channels/${channelID}/library/${slug}`
+    : `/l/${slug}`;
   const image = getAssetURL(node.primary_image?.path);
 
   return (

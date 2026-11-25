@@ -21,6 +21,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/post/thread_cache"
 	"github.com/Southclaws/storyden/app/resources/post/thread_querier"
 	"github.com/Southclaws/storyden/app/resources/profile/profile_querier"
+	"github.com/Southclaws/storyden/app/resources/rbac"
 	"github.com/Southclaws/storyden/app/resources/tag/tag_ref"
 	"github.com/Southclaws/storyden/app/resources/visibility"
 	"github.com/Southclaws/storyden/app/services/authentication/session"
@@ -64,6 +65,12 @@ func (i *Threads) ThreadCreate(ctx context.Context, request openapi.ThreadCreate
 		meta = *request.Body.Meta
 	}
 
+	if isPoll, _ := meta["is_poll"].(bool); isPoll {
+		if err := session.Authorise(ctx, nil, rbac.PermissionAdministrator); err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.PermissionDenied))
+		}
+	}
+
 	tags := opt.Map(opt.NewPtr(request.Body.Tags), func(tags []string) tag_ref.Names {
 		return dt.Map(tags, deserialiseTagName)
 	})
@@ -88,6 +95,10 @@ func (i *Threads) ThreadCreate(ctx context.Context, request openapi.ThreadCreate
 		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.InvalidArgument))
 	}
 
+	pinned := opt.NewPtrMap(request.Body.Pinned, func(p openapi.PinnedRank) int {
+		return int(p)
+	})
+
 	thread, err := i.thread_svc.Create(ctx,
 		request.Body.Title,
 		accountID,
@@ -98,6 +109,7 @@ func (i *Threads) ThreadCreate(ctx context.Context, request openapi.ThreadCreate
 			Tags:       tags,
 			Visibility: status,
 			URL:        url,
+			Pinned:     pinned,
 		},
 	)
 	if err != nil {
@@ -115,6 +127,22 @@ func (i *Threads) ThreadUpdate(ctx context.Context, request openapi.ThreadUpdate
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
+	existing, err := i.thread_svc.Get(ctx, postID, deserialisePageParams(nil, reply.RepliesPerPage))
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	if isPoll, _ := existing.Meta["is_poll"].(bool); isPoll {
+		b := request.Body
+		if b.Title != nil || b.Body != nil || b.Tags != nil || b.Category != nil || b.Visibility != nil || b.Url != nil || b.Meta != nil {
+			return nil, fault.Wrap(
+				fault.New("poll posts can only be pinned or unpinned"),
+				fctx.With(ctx),
+				ftag.With(ftag.InvalidArgument),
+			)
+		}
+	}
+
 	tags := opt.Map(opt.NewPtr(request.Body.Tags), func(tags []string) tag_ref.Names {
 		return dt.Map(tags, deserialiseTagName)
 	})
@@ -129,12 +157,17 @@ func (i *Threads) ThreadUpdate(ctx context.Context, request openapi.ThreadUpdate
 		return nil, fault.Wrap(err, fctx.With(ctx), ftag.With(ftag.InvalidArgument))
 	}
 
+	pinned := opt.NewPtrMap(request.Body.Pinned, func(p openapi.PinnedRank) int {
+		return int(p)
+	})
+
 	thread, err := i.thread_svc.Update(ctx, postID, thread_service.Partial{
 		Title:      opt.NewPtr(request.Body.Title),
 		Content:    richContent,
 		Tags:       tags,
 		Category:   opt.NewPtrMap(request.Body.Category, deserialiseID),
 		Visibility: Visibility,
+		Pinned:     pinned,
 	})
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
@@ -190,14 +223,33 @@ func (i *Threads) ThreadList(ctx context.Context, request openapi.ThreadListRequ
 	})
 
 	cats := deserialiseCategorySlugQueryParam(request.Params.Categories)
+	ignorePinned := opt.NewPtr(request.Params.IgnorePinned)
+	createdAfter := opt.NewPtr(request.Params.CreatedAfter)
+	createdBefore := opt.NewPtr(request.Params.CreatedBefore)
+	noReplies := opt.NewPtr(request.Params.NoReplies)
+	noLikes := opt.NewPtr(request.Params.NoLikes)
+	channelIDs := dt.Map(opt.NewPtr(request.Params.ChannelIds).Or(nil), func(i openapi.Identifier) xid.ID {
+		return openapi.ParseID(i)
+	})
 
 	page = max(0, page-1)
 	result, err := i.thread_svc.List(ctx, page, pageSize, thread_service.Params{
-		Query:      query,
-		AccountID:  author,
-		Visibility: visibilities,
-		Tags:       tags,
-		Categories: cats,
+		Query:           query,
+		AccountID:       author,
+		Visibility:      visibilities,
+		Tags:            tags,
+		Categories:      cats,
+		IgnorePinned:    ignorePinned,
+		CreatedAfter:    createdAfter,
+		CreatedBefore:   createdBefore,
+		NoReplies:       noReplies,
+		NoLikes:         noLikes,
+		ExcludeBAH:      request.Params.ExcludeBah != nil && *request.Params.ExcludeBah,
+		ExcludeFeedback: request.Params.ExcludeFeedback != nil && *request.Params.ExcludeFeedback,
+		BAHOnly:         request.Params.BahOnly != nil && *request.Params.BahOnly,
+		ChannelIDs:      channelIDs,
+		PostCategories:  opt.NewPtr(request.Params.PostCategories).Or(nil),
+		Sentiments:      opt.NewPtr(request.Params.Sentiments).Or(nil),
 	})
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))

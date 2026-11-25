@@ -33,6 +33,7 @@ export const treeView = defineSlotRecipe({
       display: "flex",
       fontWeight: "medium",
       gap: "1",
+      justifyContent: "space-between",
       ps: "calc((var(--depth)) * 22px)",
       py: "1",
       pr: "1",

@@ -30,7 +30,6 @@ export function ContextPane({ children }: PropsWithChildren) {
         {/* TODO: Provide links to privacy/terms/etc custom pages */}
         {/* <p>copyright {settings.owner}</p> */}
         {/* <a href={PrivacyRoute}>privacy</a> */}
-        <p>powered by storyden</p>
       </HStack>
     </styled.nav>
   );

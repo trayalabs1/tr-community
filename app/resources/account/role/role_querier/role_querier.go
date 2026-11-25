@@ -3,6 +3,8 @@ package role_querier
 import (
 	"context"
 	"sort"
+	"sync"
+	"time"
 
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
@@ -15,8 +17,15 @@ import (
 	ent_role "github.com/Southclaws/storyden/internal/ent/role"
 )
 
+const defaultRolesTTL = time.Minute
+
 type Querier struct {
 	db *ent.Client
+
+	mu               sync.Mutex
+	cachedGuestRole  *ent.Role
+	cachedMemberRole *ent.Role
+	cachedAt         time.Time
 }
 
 func New(db *ent.Client) *Querier {
@@ -154,6 +163,26 @@ func (q *Querier) GetGuestRole(ctx context.Context) (*role.Role, error) {
 }
 
 func (q *Querier) lookupDefaultRoles(ctx context.Context) (*ent.Role, *ent.Role, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	if !q.cachedAt.IsZero() && time.Since(q.cachedAt) < defaultRolesTTL {
+		return q.cachedGuestRole, q.cachedMemberRole, nil
+	}
+
+	guestRole, memberRole, err := q.fetchDefaultRoles(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	q.cachedGuestRole = guestRole
+	q.cachedMemberRole = memberRole
+	q.cachedAt = time.Now()
+
+	return guestRole, memberRole, nil
+}
+
+func (q *Querier) fetchDefaultRoles(ctx context.Context) (*ent.Role, *ent.Role, error) {
 	roles, err := q.db.Role.Query().Where(ent_role.IDIn(
 		xid.ID(role.DefaultRoleGuestID),
 		xid.ID(role.DefaultRoleMemberID),

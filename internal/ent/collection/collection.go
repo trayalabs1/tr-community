@@ -32,6 +32,8 @@ const (
 	FieldCoverAssetID = "cover_asset_id"
 	// FieldVisibility holds the string denoting the visibility field in the database.
 	FieldVisibility = "visibility"
+	// FieldIsDefault holds the string denoting the is_default field in the database.
+	FieldIsDefault = "is_default"
 	// EdgeOwner holds the string denoting the owner edge name in mutations.
 	EdgeOwner = "owner"
 	// EdgeCoverImage holds the string denoting the cover_image edge name in mutations.
@@ -97,6 +99,7 @@ var Columns = []string{
 	FieldDescription,
 	FieldCoverAssetID,
 	FieldVisibility,
+	FieldIsDefault,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "collections"
@@ -136,6 +139,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultIsDefault holds the default value on creation for the "is_default" field.
+	DefaultIsDefault bool
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() xid.ID
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
@@ -154,6 +159,7 @@ const (
 	VisibilityUnlisted  Visibility = "unlisted"
 	VisibilityReview    Visibility = "review"
 	VisibilityPublished Visibility = "published"
+	VisibilityArchived  Visibility = "archived"
 )
 
 func (v Visibility) String() string {
@@ -163,7 +169,7 @@ func (v Visibility) String() string {
 // VisibilityValidator is a validator for the "visibility" field enum values. It is called by the builders before save.
 func VisibilityValidator(v Visibility) error {
 	switch v {
-	case VisibilityDraft, VisibilityUnlisted, VisibilityReview, VisibilityPublished:
+	case VisibilityDraft, VisibilityUnlisted, VisibilityReview, VisibilityPublished, VisibilityArchived:
 		return nil
 	default:
 		return fmt.Errorf("collection: invalid enum value for visibility field: %q", v)
@@ -216,6 +222,11 @@ func ByCoverAssetID(opts ...sql.OrderTermOption) OrderOption {
 // ByVisibility orders the results by the visibility field.
 func ByVisibility(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVisibility, opts...).ToFunc()
+}
+
+// ByIsDefault orders the results by the is_default field.
+func ByIsDefault(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsDefault, opts...).ToFunc()
 }
 
 // ByOwnerField orders the results by owner field.

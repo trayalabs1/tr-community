@@ -15,9 +15,13 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/accountfollow"
 	"github.com/Southclaws/storyden/internal/ent/accountroles"
+	"github.com/Southclaws/storyden/internal/ent/adminreplytime"
 	"github.com/Southclaws/storyden/internal/ent/asset"
+	"github.com/Southclaws/storyden/internal/ent/auditlog"
 	"github.com/Southclaws/storyden/internal/ent/authentication"
 	"github.com/Southclaws/storyden/internal/ent/category"
+	"github.com/Southclaws/storyden/internal/ent/channel"
+	"github.com/Southclaws/storyden/internal/ent/channelmembership"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/collectionnode"
 	"github.com/Southclaws/storyden/internal/ent/collectionpost"
@@ -30,13 +34,16 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/mentionprofile"
 	"github.com/Southclaws/storyden/internal/ent/node"
 	"github.com/Southclaws/storyden/internal/ent/notification"
+	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
+	"github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/Southclaws/storyden/internal/ent/property"
 	"github.com/Southclaws/storyden/internal/ent/propertyschema"
 	"github.com/Southclaws/storyden/internal/ent/propertyschemafield"
 	"github.com/Southclaws/storyden/internal/ent/question"
 	"github.com/Southclaws/storyden/internal/ent/react"
+	"github.com/Southclaws/storyden/internal/ent/replyadminqueue"
 	"github.com/Southclaws/storyden/internal/ent/report"
 	"github.com/Southclaws/storyden/internal/ent/role"
 	"github.com/Southclaws/storyden/internal/ent/session"
@@ -105,9 +112,13 @@ func checkColumn(t, c string) error {
 			account.Table:             account.ValidColumn,
 			accountfollow.Table:       accountfollow.ValidColumn,
 			accountroles.Table:        accountroles.ValidColumn,
+			adminreplytime.Table:      adminreplytime.ValidColumn,
 			asset.Table:               asset.ValidColumn,
+			auditlog.Table:            auditlog.ValidColumn,
 			authentication.Table:      authentication.ValidColumn,
 			category.Table:            category.ValidColumn,
+			channel.Table:             channel.ValidColumn,
+			channelmembership.Table:   channelmembership.ValidColumn,
 			collection.Table:          collection.ValidColumn,
 			collectionnode.Table:      collectionnode.ValidColumn,
 			collectionpost.Table:      collectionpost.ValidColumn,
@@ -120,13 +131,16 @@ func checkColumn(t, c string) error {
 			mentionprofile.Table:      mentionprofile.ValidColumn,
 			node.Table:                node.ValidColumn,
 			notification.Table:        notification.ValidColumn,
+			pollvote.Table:            pollvote.ValidColumn,
 			post.Table:                post.ValidColumn,
 			postread.Table:            postread.ValidColumn,
+			postsentiment.Table:       postsentiment.ValidColumn,
 			property.Table:            property.ValidColumn,
 			propertyschema.Table:      propertyschema.ValidColumn,
 			propertyschemafield.Table: propertyschemafield.ValidColumn,
 			question.Table:            question.ValidColumn,
 			react.Table:               react.ValidColumn,
+			replyadminqueue.Table:     replyadminqueue.ValidColumn,
 			report.Table:              report.ValidColumn,
 			role.Table:                role.ValidColumn,
 			session.Table:             session.ValidColumn,

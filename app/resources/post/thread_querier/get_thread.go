@@ -14,6 +14,7 @@ import (
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/asset"
+	"github.com/Southclaws/storyden/app/resources/channel"
 	"github.com/Southclaws/storyden/app/resources/collection/collection_item_status"
 	"github.com/Southclaws/storyden/app/resources/pagination"
 	"github.com/Southclaws/storyden/app/resources/post"
@@ -24,6 +25,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent"
 	ent_account "github.com/Southclaws/storyden/internal/ent/account"
 	ent_asset "github.com/Southclaws/storyden/internal/ent/asset"
+	ent_channelmembership "github.com/Southclaws/storyden/internal/ent/channelmembership"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
 	ent_react "github.com/Southclaws/storyden/internal/ent/react"
 	ent_tag "github.com/Southclaws/storyden/internal/ent/tag"
@@ -123,7 +125,9 @@ func (d *Querier) Get(ctx context.Context, threadID post.ID, pageParams paginati
 			Limit(pageParams.Limit()).
 			Offset(pageParams.Offset()).
 			Order(ent.Asc(ent_post.FieldCreatedAt)).
-			WithReplyTo().
+			WithReplyTo(func(rq *ent.PostQuery) {
+				rq.Where(ent_post.DeletedAtIsNil())
+			}).
 			All(ctx)
 		if err != nil {
 			return fault.Wrap(err, fctx.With(ctx))
@@ -146,6 +150,8 @@ func (d *Querier) Get(ctx context.Context, threadID post.ID, pageParams paginati
 				ent_post.ID(xid.ID(threadID)),
 			).
 			WithCategory().
+			WithChannel().
+			WithSentiment().
 			WithLink(func(lq *ent.LinkQuery) {
 				lq.WithFaviconImage().WithPrimaryImage()
 			}).
@@ -226,6 +232,10 @@ func (d *Querier) Get(ctx context.Context, threadID post.ID, pageParams paginati
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
 
+	if err := d.decorateReplyCohorts(ctx, replies); err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
 	p, err := threadMapper(threadResult)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
@@ -238,5 +248,107 @@ func (d *Querier) Get(ctx context.Context, threadID post.ID, pageParams paginati
 	p.Tags = tags
 	p.Assets = assets
 
+	sharedTo, err := d.getSharedToChannelIDs(ctx, threadResult)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+	p.SharedToChannelIDs = sharedTo
+
 	return p, nil
+}
+
+// getSharedToChannelIDs resolves the channels a thread has been shared into by
+// looking up the shares that reference it. Shares cannot themselves be shared,
+// so a share row resolves to nothing and the query is skipped.
+func (d *Querier) getSharedToChannelIDs(ctx context.Context, p *ent.Post) ([]xid.ID, error) {
+	if p.ReferencePostID != nil {
+		return nil, nil
+	}
+
+	shares, err := d.db.Post.Query().
+		Where(
+			ent_post.ReferencePostIDEQ(p.ID),
+			ent_post.DeletedAtIsNil(),
+		).
+		Select(ent_post.FieldChannelID).
+		All(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	seen := make(map[xid.ID]struct{}, len(shares))
+	ids := make([]xid.ID, 0, len(shares))
+	for _, s := range shares {
+		if _, ok := seen[s.ChannelID]; ok {
+			continue
+		}
+		seen[s.ChannelID] = struct{}{}
+		ids = append(ids, s.ChannelID)
+	}
+
+	return ids, nil
+}
+
+// decorateReplyCohorts attaches each reply author's most-recent channel
+// membership as the reply's cohort tag, distinguishing who is replying.
+func (d *Querier) decorateReplyCohorts(ctx context.Context, replies []*reply.Reply) error {
+	if len(replies) == 0 {
+		return nil
+	}
+
+	authorIDs := make([]xid.ID, 0, len(replies))
+	seen := make(map[xid.ID]struct{})
+	for _, r := range replies {
+		aid := xid.ID(r.Author.ID)
+		if _, ok := seen[aid]; ok {
+			continue
+		}
+		seen[aid] = struct{}{}
+		authorIDs = append(authorIDs, aid)
+	}
+
+	// Admins aren't part of a cohort, so they get no cohort tag. Collect the
+	// admin authors and skip cohort resolution for them.
+	adminAuthors, err := d.db.Account.Query().
+		Where(ent_account.IDIn(authorIDs...), ent_account.Admin(true)).
+		IDs(ctx)
+	if err != nil {
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+	isAdmin := make(map[xid.ID]struct{}, len(adminAuthors))
+	for _, id := range adminAuthors {
+		isAdmin[id] = struct{}{}
+	}
+
+	memberships, err := d.db.ChannelMembership.Query().
+		Where(ent_channelmembership.AccountIDIn(authorIDs...)).
+		WithChannel().
+		Order(ent.Desc(ent_channelmembership.FieldCreatedAt)).
+		All(ctx)
+	if err != nil {
+		return fault.Wrap(err, fctx.With(ctx))
+	}
+
+	// First membership seen per account is the most recent (ordered desc).
+	latest := make(map[xid.ID]*channel.Channel)
+	for _, m := range memberships {
+		if _, ok := latest[m.AccountID]; ok {
+			continue
+		}
+		if m.Edges.Channel != nil {
+			latest[m.AccountID] = channel.FromModel(m.Edges.Channel)
+		}
+	}
+
+	for _, r := range replies {
+		authorID := xid.ID(r.Author.ID)
+		if _, admin := isAdmin[authorID]; admin {
+			continue
+		}
+		if c, ok := latest[authorID]; ok {
+			r.CohortChannel = opt.New(*c)
+		}
+	}
+
+	return nil
 }

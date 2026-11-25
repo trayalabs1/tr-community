@@ -84,6 +84,22 @@ type Config struct {
 	*/
 	DatabaseURL string `default:"sqlite://data/data.db?_pragma=foreign_keys(1)" envconfig:"DATABASE_URL"`
 	/*
+	   The maximum number of open connections to the database.
+
+	   Size this per-pod so that `pods × DATABASE_MAX_OPEN_CONNS` stays under the database's `max_connections` budget shared with other services.
+	*/
+	DatabaseMaxOpenConns int `default:"25" envconfig:"DATABASE_MAX_OPEN_CONNS"`
+	/*
+	   The maximum number of idle connections retained in the pool.
+
+	   Keep this equal to `DATABASE_MAX_OPEN_CONNS` so idle connections are never eagerly closed under steady load, which avoids per-request connection churn and repeated DNS resolution.
+	*/
+	DatabaseMaxIdleConns int `default:"25" envconfig:"DATABASE_MAX_IDLE_CONNS"`
+	// The maximum amount of time a connection may be reused before it is closed and replaced.
+	DatabaseConnMaxLifetime time.Duration `default:"30m" envconfig:"DATABASE_CONN_MAX_LIFETIME"`
+	// The maximum amount of time a connection may remain idle before it is closed.
+	DatabaseConnMaxIdleTime time.Duration `default:"5m" envconfig:"DATABASE_CONN_MAX_IDLE_TIME"`
+	/*
 	   The interface on which the API service will for HTTP requests.
 
 	   Typically, in a containerised environment, this should be all interfaces (`0.0.0.0`.)
@@ -169,6 +185,39 @@ type Config struct {
 	SendGridAPIKey string `envconfig:"SENDGRID_API_KEY"`
 
 	// -
+	// MoEngage
+	// -
+
+	// The MoEngage app key used to identify your MoEngage application.
+	MoEngageAppKey string `envconfig:"MOENGAGE_APP_KEY"`
+	// The MoEngage auth key used to authenticate API requests.
+	MoEngageAuthKey string `envconfig:"MOENGAGE_AUTH_KEY"`
+
+	// -
+	// Queue summary
+	// -
+
+	// The Slack incoming webhook URL to post the daily pending-queue summary to. When unset, the summary job does not run.
+	SlackQueueSummaryWebhookURL string `envconfig:"SLACK_QUEUE_SUMMARY_WEBHOOK_URL"`
+	// The time of day (24-hour `HH:MM`, in the `SLACK_QUEUE_SUMMARY_TIMEZONE` timezone) at which the daily pending-queue summary is posted to Slack.
+	SlackQueueSummaryTime string `default:"23:55" envconfig:"SLACK_QUEUE_SUMMARY_TIME"`
+	// The IANA timezone name used to interpret `SLACK_QUEUE_SUMMARY_TIME`.
+	SlackQueueSummaryTimezone string `default:"Asia/Kolkata" envconfig:"SLACK_QUEUE_SUMMARY_TIMEZONE"`
+	// Development/testing override. When set (e.g. `10s`), the summary is posted on this fixed repeating interval instead of once a day at `SLACK_QUEUE_SUMMARY_TIME`. Leave unset in production.
+	SlackQueueSummaryInterval time.Duration `envconfig:"SLACK_QUEUE_SUMMARY_INTERVAL"`
+
+	// -
+	// Rank score engagement job
+	// -
+
+	// The time of day (24-hour `HH:MM`, in the `RANKER_JOB_TIMEZONE` timezone) at which the daily rank_score engagement job runs.
+	RankerJobTime string `default:"06:30" envconfig:"RANKER_JOB_TIME"`
+	// The IANA timezone name used to interpret `RANKER_JOB_TIME`.
+	RankerJobTimezone string `default:"Asia/Kolkata" envconfig:"RANKER_JOB_TIMEZONE"`
+	// Development/testing override. When set (e.g. `10s`), the job runs on this fixed repeating interval instead of once a day at `RANKER_JOB_TIME`. Leave unset in production.
+	RankerJobInterval time.Duration `envconfig:"RANKER_JOB_INTERVAL"`
+
+	// -
 	// Authentication
 	// -
 
@@ -206,6 +255,8 @@ type Config struct {
 	KeycloakClientSecret string `envconfig:"OAUTH_KEYCLOAK_CLIENT_SECRET"`
 	// The issuer/discovery URL for the Keycloak realm (e.g. https://auth.example.com/realms/YourRealm).
 	KeycloakIssuerURL url.URL `envconfig:"OAUTH_KEYCLOAK_ISSUER_URL"`
+	// The base URL for the Traya API server. Used for authenticating users via Traya tokens and fetching user information.
+	TrayaAPIServerURL url.URL `envconfig:"TRAYA_API_SERVER_URL"`
 
 	// -
 	// SMS
@@ -282,6 +333,15 @@ type Config struct {
 	   This is a full URL with `redis://` as the scheme. You can set the username and password using the URL format, for example: `redis://<username>:<password>@<host>:<port>`.
 	*/
 	RedisURL url.URL `default:"" envconfig:"REDIS_URL"`
+	/*
+	   Development/testing override. When `true`, the channel feed's cached
+	   ordered-sequence layer is bypassed entirely — every request rebuilds
+	   the feed directly from the database, and nothing is written back to
+	   the cache. Useful when iterating locally on ranking changes, since
+	   the feed cache otherwise serves a stale sequence for up to 30 minutes.
+	   Leave unset (`false`) in production.
+	*/
+	FeedCacheDisable bool `default:"false" envconfig:"FEED_CACHE_DISABLE"`
 
 	// -
 	// Search features

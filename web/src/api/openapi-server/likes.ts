@@ -8,6 +8,8 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
  * OpenAPI spec version: v1.25.13-canary
  */
 import type {
+  LikePostAddManyBody,
+  LikePostAddManyOKResponse,
   LikePostGetOKResponse,
   LikeProfileGetOKResponse,
   LikeProfileGetParams,
@@ -88,6 +90,33 @@ export const likePostRemove = async (
       method: "DELETE",
     },
   );
+};
+
+/**
+ * Add a like/vote to many posts in a single request on behalf of the
+authenticated account. Idempotent per post. Posts that fail to be liked
+are skipped and reported in the response count.
+
+ */
+export type likePostAddManyResponse = {
+  data: LikePostAddManyOKResponse;
+  status: number;
+};
+
+export const getLikePostAddManyUrl = () => {
+  return `/likes/posts`;
+};
+
+export const likePostAddMany = async (
+  likePostAddManyBody: LikePostAddManyBody,
+  options?: RequestInit,
+): Promise<likePostAddManyResponse> => {
+  return fetcher<Promise<likePostAddManyResponse>>(getLikePostAddManyUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(likePostAddManyBody),
+  });
 };
 
 /**

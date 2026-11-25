@@ -22,12 +22,16 @@ func (Post) Fields() []ent.Field {
 		// parent posts
 		field.String("title").Optional(),
 		field.String("slug").Optional(),
-		field.Bool("pinned").Default(false),
+		field.Int("pinned_rank").Default(0),
 		field.Time("last_reply_at"),
 
 		// child posts
 		field.String("root_post_id").GoType(xid.ID{}).Optional().Nillable(),
 		field.String("reply_to_post_id").GoType(xid.ID{}).Optional().Nillable(),
+
+		// share posts: a root post that references another thread, featuring it
+		// in this post's channel. Interaction is routed to the referenced thread.
+		field.String("reference_post_id").GoType(xid.ID{}).Optional().Nillable(),
 
 		// All posts
 		field.String("body"),
@@ -40,6 +44,9 @@ func (Post) Fields() []ent.Field {
 		// Edges
 		field.String("account_posts").GoType(xid.ID{}),
 		field.String("category_id").GoType(xid.ID{}).Optional(),
+		field.String("channel_id").
+			GoType(xid.ID{}).
+			Comment("The channel this post belongs to"),
 		field.String("link_id").GoType(xid.ID{}).Optional(),
 	}
 }
@@ -49,13 +56,27 @@ func (Post) Indexes() []ent.Index {
 		// Thread listing queries:
 		// - root post + soft delete + visibility always used for filtering
 		// - last_reply_at always used for ordering (denormalized, always populated)
-		index.Fields("root_post_id", "deleted_at", "visibility", "last_reply_at"),
-		index.Fields("root_post_id", "deleted_at", "visibility", "category_id", "last_reply_at"),
+		index.Fields("root_post_id", "deleted_at", "visibility", "pinned_rank", "last_reply_at"),
+		index.Fields("root_post_id", "deleted_at", "visibility", "category_id", "pinned_rank", "last_reply_at"),
+
+		// Channel-scoped queries:
+		// - channel + soft delete + visibility for filtering by channel
+		index.Fields("channel_id", "deleted_at", "visibility", "last_reply_at"),
+		index.Fields("channel_id", "deleted_at", "visibility", "category_id", "last_reply_at"),
 
 		// Reply queries:
 		// - root post + soft delete always used for filtering
 		// - created at always used for ordering
 		index.Fields("root_post_id", "deleted_at", "created_at"),
+
+		// Author filtering queries
+		index.Fields("account_posts"),
+
+		// Category filtering queries
+		index.Fields("category_id", "deleted_at", "visibility"),
+
+		// Share lookups: find the shares that reference a given thread.
+		index.Fields("reference_post_id"),
 	}
 }
 
@@ -74,6 +95,12 @@ func (Post) Edges() []ent.Edge {
 			Unique().
 			Comment("Category is only required for root posts. It should never be added to a child post."),
 
+		edge.From("channel", Channel.Type).
+			Field("channel_id").
+			Ref("posts").
+			Unique().
+			Required(),
+
 		edge.From("tags", Tag.Type).
 			Ref("posts").
 			Comment("Tags are only required for root posts. It should never be added to a child post."),
@@ -91,6 +118,13 @@ func (Post) Edges() []ent.Edge {
 			Field("reply_to_post_id").
 			Annotations(entsql.OnDelete(entsql.SetNull)).
 			Comment("A many-to-many recursive self reference. The replyTo post is an optional post that this post is in reply to."),
+
+		edge.To("shares", Post.Type).
+			From("reference").
+			Unique().
+			Field("reference_post_id").
+			Annotations(entsql.OnDelete(entsql.Cascade)).
+			Comment("A recursive self reference. When set, this post is a share that features the referenced thread in this post's channel; deleting the referenced thread cascades to its shares."),
 
 		edge.To("reacts", React.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
@@ -117,6 +151,13 @@ func (Post) Edges() []ent.Edge {
 		edge.To("event", Event.Type),
 
 		edge.To("post_reads", PostRead.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+
+		edge.To("poll_votes", PollVote.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+
+		edge.To("sentiment", PostSentiment.Type).
+			Unique().
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

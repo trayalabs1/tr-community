@@ -20,12 +20,20 @@ type Tx struct {
 	AccountFollow *AccountFollowClient
 	// AccountRoles is the client for interacting with the AccountRoles builders.
 	AccountRoles *AccountRolesClient
+	// AdminReplyTime is the client for interacting with the AdminReplyTime builders.
+	AdminReplyTime *AdminReplyTimeClient
 	// Asset is the client for interacting with the Asset builders.
 	Asset *AssetClient
+	// AuditLog is the client for interacting with the AuditLog builders.
+	AuditLog *AuditLogClient
 	// Authentication is the client for interacting with the Authentication builders.
 	Authentication *AuthenticationClient
 	// Category is the client for interacting with the Category builders.
 	Category *CategoryClient
+	// Channel is the client for interacting with the Channel builders.
+	Channel *ChannelClient
+	// ChannelMembership is the client for interacting with the ChannelMembership builders.
+	ChannelMembership *ChannelMembershipClient
 	// Collection is the client for interacting with the Collection builders.
 	Collection *CollectionClient
 	// CollectionNode is the client for interacting with the CollectionNode builders.
@@ -50,10 +58,14 @@ type Tx struct {
 	Node *NodeClient
 	// Notification is the client for interacting with the Notification builders.
 	Notification *NotificationClient
+	// PollVote is the client for interacting with the PollVote builders.
+	PollVote *PollVoteClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
 	// PostRead is the client for interacting with the PostRead builders.
 	PostRead *PostReadClient
+	// PostSentiment is the client for interacting with the PostSentiment builders.
+	PostSentiment *PostSentimentClient
 	// Property is the client for interacting with the Property builders.
 	Property *PropertyClient
 	// PropertySchema is the client for interacting with the PropertySchema builders.
@@ -64,6 +76,8 @@ type Tx struct {
 	Question *QuestionClient
 	// React is the client for interacting with the React builders.
 	React *ReactClient
+	// ReplyAdminQueue is the client for interacting with the ReplyAdminQueue builders.
+	ReplyAdminQueue *ReplyAdminQueueClient
 	// Report is the client for interacting with the Report builders.
 	Report *ReportClient
 	// Role is the client for interacting with the Role builders.
@@ -208,9 +222,13 @@ func (tx *Tx) init() {
 	tx.Account = NewAccountClient(tx.config)
 	tx.AccountFollow = NewAccountFollowClient(tx.config)
 	tx.AccountRoles = NewAccountRolesClient(tx.config)
+	tx.AdminReplyTime = NewAdminReplyTimeClient(tx.config)
 	tx.Asset = NewAssetClient(tx.config)
+	tx.AuditLog = NewAuditLogClient(tx.config)
 	tx.Authentication = NewAuthenticationClient(tx.config)
 	tx.Category = NewCategoryClient(tx.config)
+	tx.Channel = NewChannelClient(tx.config)
+	tx.ChannelMembership = NewChannelMembershipClient(tx.config)
 	tx.Collection = NewCollectionClient(tx.config)
 	tx.CollectionNode = NewCollectionNodeClient(tx.config)
 	tx.CollectionPost = NewCollectionPostClient(tx.config)
@@ -223,13 +241,16 @@ func (tx *Tx) init() {
 	tx.MentionProfile = NewMentionProfileClient(tx.config)
 	tx.Node = NewNodeClient(tx.config)
 	tx.Notification = NewNotificationClient(tx.config)
+	tx.PollVote = NewPollVoteClient(tx.config)
 	tx.Post = NewPostClient(tx.config)
 	tx.PostRead = NewPostReadClient(tx.config)
+	tx.PostSentiment = NewPostSentimentClient(tx.config)
 	tx.Property = NewPropertyClient(tx.config)
 	tx.PropertySchema = NewPropertySchemaClient(tx.config)
 	tx.PropertySchemaField = NewPropertySchemaFieldClient(tx.config)
 	tx.Question = NewQuestionClient(tx.config)
 	tx.React = NewReactClient(tx.config)
+	tx.ReplyAdminQueue = NewReplyAdminQueueClient(tx.config)
 	tx.Report = NewReportClient(tx.config)
 	tx.Role = NewRoleClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)

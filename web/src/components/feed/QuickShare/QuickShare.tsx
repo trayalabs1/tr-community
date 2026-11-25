@@ -12,12 +12,14 @@ import { CardBox, Flex, HStack, WStack } from "@/styled-system/jsx";
 import { lstack } from "@/styled-system/patterns";
 import { getAssetURL } from "@/utils/asset";
 
+import { PromptNudge } from "../PromptNudge/PromptNudge";
+
 import { Props, useQuickShare } from "./useQuickShare";
 
 export function QuickShare(props: Props) {
   const {
     form,
-    state: { formRef, hydratedLink, resetKey },
+    state: { formRef, hydratedLink, resetKey, placeholder },
     handlers,
   } = useQuickShare(props);
 
@@ -39,7 +41,7 @@ export function QuickShare(props: Props) {
         <ComposeField
           control={form.control}
           name="body"
-          placeholder="Share a thought, a link, something cool..."
+          placeholder={placeholder}
           resetKey={resetKey}
         />
 
@@ -70,6 +72,13 @@ export function QuickShare(props: Props) {
           </Button>
         </WStack>
       </form>
+
+      {props.promptNudges && props.promptNudges.length > 0 && (
+        <PromptNudge
+          prompts={props.promptNudges}
+          onPick={(prompt) => handlers.applyPrompt(prompt.text)}
+        />
+      )}
 
       {match(hydratedLink)
         .with(null, () => null)

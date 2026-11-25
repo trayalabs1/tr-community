@@ -23,6 +23,13 @@
   min-height: 100dvh;
 }
 
+.navgrid[data-padding="none"] {
+  --grid-row-padding-outer: 0;
+  --grid-row-padding-inner: 0;
+  --grid-col-padding-outer: 0;
+  --grid-col-padding-inner: 0;
+}
+
 /* Mobile */
 .navgrid {
   display: grid;
@@ -74,7 +81,7 @@
 }
 
 .navpill {
-  display: block;
+  display: none;
   grid-area: navpill;
 }
 

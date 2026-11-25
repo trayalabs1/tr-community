@@ -23,7 +23,7 @@ export function MemberActions({ session }: Props) {
     <HStack w="full" gap="2" alignItems="center" justify="end" pr="1">
       {account ? (
         <>
-          <ComposeAnchor>Post</ComposeAnchor>
+          {/* <ComposeAnchor>Post</ComposeAnchor> */}
           <NotificationsMenu status="unread" />
           <AccountMenu account={account} />
         </>

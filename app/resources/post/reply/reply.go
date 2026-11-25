@@ -11,6 +11,7 @@ import (
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/asset"
+	"github.com/Southclaws/storyden/app/resources/channel"
 	"github.com/Southclaws/storyden/app/resources/collection/collection_item_status"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/post"
@@ -31,6 +32,10 @@ type Reply struct {
 	RootAuthor      profile.Ref
 	Slug            string // The root slug with the post ID as a #fragment
 	ReplyTo         opt.Optional[Reply]
+
+	// CohortChannel is the reply author's most recent channel membership,
+	// surfaced as a tag beside the reply to distinguish who is replying.
+	CohortChannel opt.Optional[channel.Channel]
 }
 
 type ReplyRef struct {

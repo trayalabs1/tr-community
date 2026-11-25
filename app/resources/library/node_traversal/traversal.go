@@ -20,6 +20,7 @@ type filters struct {
 	requestingAccount opt.Optional[account.AccountWithEdges]
 	visibility        []visibility.Visibility
 	depth             *uint
+	channelID         *string
 }
 
 type Filter func(*filters)
@@ -49,5 +50,11 @@ func WithVisibility(acc opt.Optional[account.AccountWithEdges], v ...visibility.
 func WithDepth(v uint) Filter {
 	return func(f *filters) {
 		f.depth = &v
+	}
+}
+
+func WithChannel(id string) Filter {
+	return func(f *filters) {
+		f.channelID = &id
 	}
 }

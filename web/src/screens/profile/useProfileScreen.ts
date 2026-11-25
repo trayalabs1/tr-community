@@ -14,6 +14,7 @@ import { handle } from "@/api/client";
 import { useProfileMutations } from "@/lib/profile/mutation";
 import { hasPermission, hasPermissionOr } from "@/utils/permissions";
 import { isSlug } from "@/utils/slugify";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 export type Props = {
   initialSession?: Account;
@@ -37,6 +38,7 @@ export type Form = z.infer<typeof FormSchema>;
 export function useProfileScreen({ initialSession, profile }: Props) {
   const router = useRouter();
   const session = useSession(initialSession);
+  const { trackNameChanged } = useEventTracking();
   const [isEditing, setEditing] = useQueryState("edit", {
     ...parseAsBoolean,
     defaultValue: false,
@@ -74,6 +76,7 @@ export function useProfileScreen({ initialSession, profile }: Props) {
         await update(data);
 
         if (data.handle !== profile.handle) {
+          trackNameChanged(data.handle);
           router.replace(`/m/${data.handle}`);
         } else {
           setEditing(false);

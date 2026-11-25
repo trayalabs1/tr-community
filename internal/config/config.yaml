@@ -87,6 +87,38 @@
         - `postgres://` or `postgresql://` for PostgreSQL, CockroachDB and any other PostgreSQL-compatible database
         - `libsql://` for Turso remote SQLite. **Note:** This is currently experimental, only remote Turso databases are supported.
 
+    - env: "DATABASE_MAX_OPEN_CONNS"
+      name: DatabaseMaxOpenConns
+      type: int
+      default: "25"
+      description: |-
+        The maximum number of open connections to the database.
+
+        Size this per-pod so that `pods × DATABASE_MAX_OPEN_CONNS` stays under the database's `max_connections` budget shared with other services.
+
+    - env: "DATABASE_MAX_IDLE_CONNS"
+      name: DatabaseMaxIdleConns
+      type: int
+      default: "25"
+      description: |-
+        The maximum number of idle connections retained in the pool.
+
+        Keep this equal to `DATABASE_MAX_OPEN_CONNS` so idle connections are never eagerly closed under steady load, which avoids per-request connection churn and repeated DNS resolution.
+
+    - env: "DATABASE_CONN_MAX_LIFETIME"
+      name: DatabaseConnMaxLifetime
+      type: time.Duration
+      default: "30m"
+      description: |-
+        The maximum amount of time a connection may be reused before it is closed and replaced.
+
+    - env: "DATABASE_CONN_MAX_IDLE_TIME"
+      name: DatabaseConnMaxIdleTime
+      type: time.Duration
+      default: "5m"
+      description: |-
+        The maximum amount of time a connection may remain idle before it is closed.
+
     - env: "LISTEN_ADDR"
       name: ListenAddr
       type: string
@@ -217,6 +249,76 @@
 
         This is typically a long string of characters that you can generate in the SendGrid dashboard.
 
+- section: MoEngage
+  description: |-
+    MoEngage event sending configuration. When unset, MoEngage event sending is disabled.
+  fields:
+    - env: "MOENGAGE_APP_KEY"
+      name: MoEngageAppKey
+      type: string
+      description: |-
+        The MoEngage app key used to identify your MoEngage application.
+
+    - env: "MOENGAGE_AUTH_KEY"
+      name: MoEngageAuthKey
+      type: string
+      description: |-
+        The MoEngage auth key used to authenticate API requests.
+
+- section: Queue summary
+  description: |-
+    Daily Slack summary of pending admin queue counts. When the webhook URL is unset, the summary job is disabled.
+  fields:
+    - env: "SLACK_QUEUE_SUMMARY_WEBHOOK_URL"
+      name: SlackQueueSummaryWebhookURL
+      type: string
+      description: |-
+        The Slack incoming webhook URL to post the daily pending-queue summary to. When unset, the summary job does not run.
+
+    - env: "SLACK_QUEUE_SUMMARY_TIME"
+      name: SlackQueueSummaryTime
+      type: string
+      default: "23:55"
+      description: |-
+        The time of day (24-hour `HH:MM`, in the `SLACK_QUEUE_SUMMARY_TIMEZONE` timezone) at which the daily pending-queue summary is posted to Slack.
+
+    - env: "SLACK_QUEUE_SUMMARY_TIMEZONE"
+      name: SlackQueueSummaryTimezone
+      type: string
+      default: "Asia/Kolkata"
+      description: |-
+        The IANA timezone name used to interpret `SLACK_QUEUE_SUMMARY_TIME`.
+
+    - env: "SLACK_QUEUE_SUMMARY_INTERVAL"
+      name: SlackQueueSummaryInterval
+      type: time.Duration
+      description: |-
+        Development/testing override. When set (e.g. `10s`), the summary is posted on this fixed repeating interval instead of once a day at `SLACK_QUEUE_SUMMARY_TIME`. Leave unset in production.
+
+- section: Rank score engagement job
+  description: |-
+    Daily job that folds likes/replies from the last 24 hours into each post's stored rank_score, since feed ranking no longer computes engagement live at read time. Runs unconditionally; only the schedule is configurable.
+  fields:
+    - env: "RANKER_JOB_TIME"
+      name: RankerJobTime
+      type: string
+      default: "06:30"
+      description: |-
+        The time of day (24-hour `HH:MM`, in the `RANKER_JOB_TIMEZONE` timezone) at which the daily rank_score engagement job runs.
+
+    - env: "RANKER_JOB_TIMEZONE"
+      name: RankerJobTimezone
+      type: string
+      default: "Asia/Kolkata"
+      description: |-
+        The IANA timezone name used to interpret `RANKER_JOB_TIME`.
+
+    - env: "RANKER_JOB_INTERVAL"
+      name: RankerJobInterval
+      type: time.Duration
+      description: |-
+        Development/testing override. When set (e.g. `10s`), the job runs on this fixed repeating interval instead of once a day at `RANKER_JOB_TIME`. Leave unset in production.
+
 - section: Authentication
   description: |-
     Authentication providers configuration. These are all optional, you can choose to enable any combination of them to allow members of your community to sign up and sign in using a third party provider.
@@ -311,6 +413,12 @@
       type: net/url.URL
       description: |-
         The issuer/discovery URL for the Keycloak realm (e.g. https://auth.example.com/realms/YourRealm).
+
+    - env: TRAYA_API_SERVER_URL
+      name: TrayaAPIServerURL
+      type: net/url.URL
+      description: |-
+        The base URL for the Traya API server. Used for authenticating users via Traya tokens and fetching user information.
 
 - section: SMS
   description: |-
@@ -429,6 +537,18 @@
         The Redis URL to connect to.
 
         This is a full URL with `redis://` as the scheme. You can set the username and password using the URL format, for example: `redis://<username>:<password>@<host>:<port>`.
+
+    - env: "FEED_CACHE_DISABLE"
+      name: FeedCacheDisable
+      type: bool
+      default: "false"
+      description: |-
+        Development/testing override. When `true`, the channel feed's cached
+        ordered-sequence layer is bypassed entirely — every request rebuilds
+        the feed directly from the database, and nothing is written back to
+        the cache. Useful when iterating locally on ranking changes, since
+        the feed cache otherwise serves a stale sequence for up to 30 minutes.
+        Leave unset (`false`) in production.
 
 - section: Search features
   description: |-

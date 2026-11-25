@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { MenuSelectionDetails, Portal } from "@ark-ui/react";
 
 import { Account } from "@/api/openapi-schema";
@@ -5,13 +6,18 @@ import { MemberAvatar } from "@/components/member/MemberBadge/MemberAvatar";
 import { MemberBadge } from "@/components/member/MemberBadge/MemberBadge";
 import * as Menu from "@/components/ui/menu";
 import { hasPermission } from "@/utils/permissions";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 import { AdminMenuItem } from "../Anchors/Admin";
+import { CollectionsMenuItem } from "../Anchors/Collections";
 import { DraftsMenuItem } from "../Anchors/Drafts";
+// import { LinksMenuItem } from "../Anchors/Link";
 import { LogoutMenuItem } from "../Anchors/Logout";
+import { MembersMenuItem } from "../Anchors/Members";
 import { ProfileMenuItem } from "../Anchors/Profile";
 import { QueueMenuItem } from "../Anchors/Queue";
 import { ReportsMenuItem } from "../Anchors/Reports";
+// import { RolesMenuItem } from "../Anchors/Roles";
 import { SettingsMenuItem } from "../Anchors/Settings";
 
 type Props = {
@@ -21,6 +27,11 @@ type Props = {
 
 export function AccountMenu({ account, size = "md" }: Props) {
   const isAdmin = hasPermission(account, "ADMINISTRATOR");
+  const { trackProfileClicked } = useEventTracking();
+
+  const handleProfileClick = useCallback(() => {
+    trackProfileClicked();
+  }, [trackProfileClicked]);
 
   return (
     <Menu.Root
@@ -32,7 +43,7 @@ export function AccountMenu({ account, size = "md" }: Props) {
         shift: size === "md" ? 24 : 0,
       }}
     >
-      <Menu.Trigger cursor="pointer" aria-label="Account menu">
+      <Menu.Trigger cursor="pointer" aria-label="Account menu" onClick={handleProfileClick}>
         <MemberAvatar profile={account} size={size} />
       </Menu.Trigger>
 
@@ -53,13 +64,14 @@ export function AccountMenu({ account, size = "md" }: Props) {
 
               <ProfileMenuItem handle={account.handle} />
               <SettingsMenuItem />
-              {isAdmin && <AdminMenuItem />}
-            </Menu.ItemGroup>
-
-            <Menu.ItemGroup id="content">
               <DraftsMenuItem />
               <QueueMenuItem />
               <ReportsMenuItem />
+              <CollectionsMenuItem />
+              {/* <LinksMenuItem /> */}
+              <MembersMenuItem />
+              {/* <RolesMenuItem /> */}
+              {isAdmin && <AdminMenuItem />}
             </Menu.ItemGroup>
 
             <Menu.Separator />

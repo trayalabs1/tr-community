@@ -21,6 +21,184 @@ import type {
 import { fetcher } from "../server";
 
 /**
+ * Get all categories in a channel.
+ */
+export type channelCategoryListResponse = {
+  data: CategoryListOKResponse;
+  status: number;
+};
+
+export const getChannelCategoryListUrl = (channelID: string) => {
+  return `/channels/${channelID}/categories`;
+};
+
+export const channelCategoryList = async (
+  channelID: string,
+  options?: RequestInit,
+): Promise<channelCategoryListResponse> => {
+  return fetcher<Promise<channelCategoryListResponse>>(
+    getChannelCategoryListUrl(channelID),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Create a category in a channel.
+ */
+export type channelCategoryCreateResponse = {
+  data: CategoryCreateOKResponse;
+  status: number;
+};
+
+export const getChannelCategoryCreateUrl = (channelID: string) => {
+  return `/channels/${channelID}/categories`;
+};
+
+export const channelCategoryCreate = async (
+  channelID: string,
+  categoryCreateBody: CategoryCreateBody,
+  options?: RequestInit,
+): Promise<channelCategoryCreateResponse> => {
+  return fetcher<Promise<channelCategoryCreateResponse>>(
+    getChannelCategoryCreateUrl(channelID),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(categoryCreateBody),
+    },
+  );
+};
+
+/**
+ * Get a specific category in a channel.
+ */
+export type channelCategoryGetResponse = {
+  data: CategoryGetOKResponse;
+  status: number;
+};
+
+export const getChannelCategoryGetUrl = (
+  channelID: string,
+  categorySlug: string,
+) => {
+  return `/channels/${channelID}/categories/${categorySlug}`;
+};
+
+export const channelCategoryGet = async (
+  channelID: string,
+  categorySlug: string,
+  options?: RequestInit,
+): Promise<channelCategoryGetResponse> => {
+  return fetcher<Promise<channelCategoryGetResponse>>(
+    getChannelCategoryGetUrl(channelID, categorySlug),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Update a category in a channel.
+ */
+export type channelCategoryUpdateResponse = {
+  data: CategoryUpdateOKResponse;
+  status: number;
+};
+
+export const getChannelCategoryUpdateUrl = (
+  channelID: string,
+  categorySlug: string,
+) => {
+  return `/channels/${channelID}/categories/${categorySlug}`;
+};
+
+export const channelCategoryUpdate = async (
+  channelID: string,
+  categorySlug: string,
+  categoryUpdateBody: CategoryUpdateBody,
+  options?: RequestInit,
+): Promise<channelCategoryUpdateResponse> => {
+  return fetcher<Promise<channelCategoryUpdateResponse>>(
+    getChannelCategoryUpdateUrl(channelID, categorySlug),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(categoryUpdateBody),
+    },
+  );
+};
+
+/**
+ * Delete a category. Posts will be moved to target category.
+ */
+export type channelCategoryDeleteResponse = {
+  data: CategoryDeleteOKResponse;
+  status: number;
+};
+
+export const getChannelCategoryDeleteUrl = (
+  channelID: string,
+  categorySlug: string,
+) => {
+  return `/channels/${channelID}/categories/${categorySlug}`;
+};
+
+export const channelCategoryDelete = async (
+  channelID: string,
+  categorySlug: string,
+  categoryDeleteBody: CategoryDeleteBody,
+  options?: RequestInit,
+): Promise<channelCategoryDeleteResponse> => {
+  return fetcher<Promise<channelCategoryDeleteResponse>>(
+    getChannelCategoryDeleteUrl(channelID, categorySlug),
+    {
+      ...options,
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(categoryDeleteBody),
+    },
+  );
+};
+
+/**
+ * Update category position in the tree for drag-and-drop.
+ */
+export type channelCategoryUpdatePositionResponse = {
+  data: CategoryListOKResponse;
+  status: number;
+};
+
+export const getChannelCategoryUpdatePositionUrl = (
+  channelID: string,
+  categorySlug: string,
+) => {
+  return `/channels/${channelID}/categories/${categorySlug}/position`;
+};
+
+export const channelCategoryUpdatePosition = async (
+  channelID: string,
+  categorySlug: string,
+  categoryUpdatePositionBody: CategoryUpdatePositionBody,
+  options?: RequestInit,
+): Promise<channelCategoryUpdatePositionResponse> => {
+  return fetcher<Promise<channelCategoryUpdatePositionResponse>>(
+    getChannelCategoryUpdatePositionUrl(channelID, categorySlug),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(categoryUpdatePositionBody),
+    },
+  );
+};
+
+/**
  * Create a category for organising posts.
  */
 export type categoryCreateResponse = {

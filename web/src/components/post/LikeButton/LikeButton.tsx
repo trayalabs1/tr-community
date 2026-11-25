@@ -2,6 +2,7 @@ import { LikeAction } from "@/components/site/Action/Like";
 import { Button } from "@/components/ui/button";
 import { LikeIcon, LikeSavedIcon } from "@/components/ui/icons/Like";
 import { styled } from "@/styled-system/jsx";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
 
 import { Props, useLikeButton } from "./useLikeButton";
 
@@ -14,23 +15,32 @@ export function LikeButton({ showCount = false, ...props }: LikeButtonProps) {
   const likeCount = props.thread.likes.likes;
 
   if (showCount) {
+    // Red only when the viewer has liked it. Likes from other people leave the
+    // icon in its default state.
+    const isLiked = props.thread.likes.liked;
     return (
-      <Button
-        type="button"
-        variant="subtle"
+      <styled.button
         display="flex"
-        size="xs"
+        alignItems="center"
         gap="1"
-        color="fg.muted"
-        aria-label={props.thread.likes.liked ? "Unlike" : "Like"}
-        title={props.thread.likes.liked ? "Unlike" : "Like"}
+        style={{
+          color: isLiked ? TRAYA_COLORS.heart : TRAYA_COLORS.actionIcon,
+          backgroundColor: "transparent",
+          border: "none",
+          cursor: "pointer",
+          padding: "0",
+          fontFamily: "inherit",
+          fontSize: "14px",
+        }}
+        aria-label={isLiked ? "Unlike" : "Like"}
+        title={isLiked ? "Unlike" : "Like"}
         onClick={handleClick}
       >
         <span>
-          {props.thread.likes.liked ? (
-            <LikeSavedIcon width="4" />
+          {isLiked ? (
+            <LikeSavedIcon width="5" height="5" />
           ) : (
-            <LikeIcon width="4" />
+            <LikeIcon width="5" height="5" />
           )}
         </span>
         <styled.span
@@ -38,10 +48,11 @@ export function LikeButton({ showCount = false, ...props }: LikeButtonProps) {
           fontWeight="medium"
           fontVariantNumeric="tabular-nums"
           fontVariant="tabular-nums"
+          style={{ color: "#404040" }}
         >
           {likeCount}
         </styled.span>
-      </Button>
+      </styled.button>
     );
   }
 

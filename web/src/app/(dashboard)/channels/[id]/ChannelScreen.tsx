@@ -1,0 +1,328 @@
+"use client";
+
+import Link from "next/link";
+import { Fragment, useState, useEffect, useCallback, useRef } from "react";
+
+import { Unready } from "src/components/site/Unready";
+import { LoadingBanner } from "@/components/site/Loading";
+
+import {
+  useChannelCategoryList,
+  useChannelThreadList,
+  useChannelThreadListPersonalized,
+} from "@/api/openapi-client/channels";
+import { Account, Channel, ThreadReference } from "@/api/openapi-schema";
+import { ChannelMobileHeader } from "@/components/channel/ChannelMobileHeader";
+import { ChannelFilterBar } from "@/components/channel/ChannelFilterBar";
+import { CategoryExploreCarousel } from "@/components/channel/CategoryExploreCarousel";
+import { parsePromptNudges } from "@/components/feed/PromptNudge/prompts";
+import { ThreadReferenceCard } from "@/components/post/ThreadCard";
+import { Button } from "@/components/ui/button";
+import { Heading } from "@/components/ui/heading";
+import { HStack, LStack, VStack, styled } from "@/styled-system/jsx";
+import { useChannelPermissions } from "@/lib/channel/permissions";
+
+type Props = {
+  session?: Account;
+  channel: Channel;
+  hasUnreadNotifications?: boolean;
+  bookmarkCount?: number;
+};
+
+export function ChannelScreen(props: Props) {
+  const permissions = useChannelPermissions(props.channel.id);
+  const promptNudges = parsePromptNudges(props.channel.meta);
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
+  const [selectedPrimaryTopic, setSelectedPrimaryTopic] = useState<string | null>(null);
+  const [selectedVisibility, setSelectedVisibility] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<{ createdAfter?: string; createdBefore?: string }>({});
+  const [excludeBAH, setExcludeBAH] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [allThreads, setAllThreads] = useState<ThreadReference[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
+  const loadedPagesRef = useRef<Set<number>>(new Set());
+
+  const { data: categories, isValidating: isCategoriesLoading } = useChannelCategoryList(props.channel.id, {
+    swr: {
+      revalidateOnFocus: false,
+    },
+  });
+
+  const threadParams: Record<string, string | string[]> = {
+    page: String(currentPage),
+  };
+  if (selectedCategorySlug) {
+    threadParams['categories'] = [selectedCategorySlug];
+  }
+  if (selectedPrimaryTopic) {
+    threadParams['primary_topics'] = [selectedPrimaryTopic];
+  }
+  if (selectedVisibility) {
+    threadParams['visibility'] = [selectedVisibility];
+  }
+  if (dateRange.createdAfter) {
+    threadParams['created_after'] = dateRange.createdAfter;
+  }
+  if (dateRange.createdBefore) {
+    threadParams['created_before'] = dateRange.createdBefore;
+  }
+  if (excludeBAH) {
+    threadParams['exclude_bah'] = 'true';
+  }
+
+  const { data: threads, error, isValidating: isThreadsLoading } = useChannelThreadList(
+    props.channel.id,
+    threadParams,
+    {
+      swr: {
+        revalidateOnFocus: false,
+      },
+    }
+  );
+
+  const hasActiveFilters =
+    !!selectedCategorySlug ||
+    !!selectedPrimaryTopic ||
+    !!selectedVisibility ||
+    !!dateRange.createdAfter ||
+    !!dateRange.createdBefore ||
+    excludeBAH;
+
+  const { data: personalized } = useChannelThreadListPersonalized(
+    props.channel.id,
+    {
+      swr: {
+        revalidateOnFocus: false,
+        enabled: !!props.session && !hasActiveFilters,
+      },
+    },
+  );
+
+  useEffect(() => {
+    loadedPagesRef.current = new Set();
+    setCurrentPage(1);
+    setAllThreads([]);
+    setHasInitiallyLoaded(false);
+  }, [selectedCategorySlug, selectedPrimaryTopic, selectedVisibility, dateRange, excludeBAH]);
+
+  useEffect(() => {
+    const pageNum = threads?.current_page;
+    if (!threads?.threads || pageNum === undefined) return;
+
+    setHasInitiallyLoaded(true);
+
+    // If page already loaded, sync updates (for optimistic updates like likes)
+    if (loadedPagesRef.current.has(pageNum)) {
+      setAllThreads((prev) => {
+        const freshById = new Map(threads.threads.map((t) => [t.id, t]));
+        const updated = prev.map((t) => freshById.get(t.id) ?? t);
+        // For page 1 revalidation, also prepend any newly created threads
+        if (pageNum === 1) {
+          const existingIds = new Set(prev.map((t) => t.id));
+          const newThreads = threads.threads.filter((t) => !existingIds.has(t.id));
+          if (newThreads.length > 0) {
+            return [...newThreads, ...updated];
+          }
+        }
+        return updated;
+      });
+      setIsLoadingMore(false);
+      return;
+    }
+
+    loadedPagesRef.current.add(pageNum);
+
+    if (pageNum === 1) {
+      setAllThreads(threads.threads);
+    } else {
+      setAllThreads((prev) => {
+        const existingIds = new Set(prev.map((t) => t.id));
+        const newThreads = threads.threads.filter((t) => !existingIds.has(t.id));
+        return [...prev, ...newThreads];
+      });
+    }
+    setIsLoadingMore(false);
+  }, [threads]);
+
+  const handleLoadMore = useCallback(() => {
+    if (threads?.next_page) {
+      setIsLoadingMore(true);
+      setCurrentPage(threads.next_page);
+    }
+  }, [threads?.next_page]);
+
+  if (error) {
+    return <Unready error={error} />;
+  }
+
+  const isInitialLoading = isCategoriesLoading || (isThreadsLoading && allThreads.length === 0);
+
+  if (isInitialLoading && !categories && !threads) {
+    return <LoadingBanner />;
+  }
+
+  const hasMore = threads?.next_page !== undefined;
+
+  return (
+    <styled.div
+      display="flex"
+      flexDirection="column"
+      alignItems="start"
+      gap="0"
+      p="0"
+      width="full"
+      mx="auto"
+      maxW={{ base: "[600px]", md: "[none]" }}
+    >
+      <ChannelMobileHeader
+        channel={props.channel}
+        session={props.session}
+        categories={categories?.categories || []}
+        selectedCategorySlug={selectedCategorySlug}
+        onCategoryChange={setSelectedCategorySlug}
+        selectedPrimaryTopic={selectedPrimaryTopic}
+        onPrimaryTopicChange={setSelectedPrimaryTopic}
+        hasUnreadNotifications={props.hasUnreadNotifications}
+      />
+
+      <LStack gap="6" p="4" pt={{ base: "0", md: "4" }}>
+
+      {/* Admin Filter Bar (visibility / date / streak) + Settings on the same row — desktop only; mobile uses FeedFilterChips */}
+      <styled.div width="full" display={{ base: "none", md: "block" }}>
+        <ChannelFilterBar
+          channelID={props.channel.id}
+          channelName={props.channel.name}
+          categories={categories?.categories || []}
+          selectedCategorySlug={selectedCategorySlug}
+          selectedPrimaryTopic={selectedPrimaryTopic}
+          selectedVisibility={selectedVisibility}
+          onCategoryChange={setSelectedCategorySlug}
+          onPrimaryTopicChange={setSelectedPrimaryTopic}
+          onVisibilityChange={setSelectedVisibility}
+          onDateRangeChange={setDateRange}
+          excludeBAH={excludeBAH}
+          onExcludeBAHChange={setExcludeBAH}
+          promptNudges={promptNudges}
+          hideComposer
+          rightSlot={
+            permissions.canManageChannel ? (
+              <Button asChild size="sm" variant="ghost" display={{ base: "none", md: "inline-flex" }}>
+                <Link href={`/channels/${props.channel.id}/settings`}>
+                  Settings
+                </Link>
+              </Button>
+            ) : undefined
+          }
+        />
+      </styled.div>
+
+      {/* Threads Section */}
+      <VStack
+        alignItems="start"
+        gap="4"
+        width="full"
+      >
+
+        {!hasInitiallyLoaded ? (
+          <styled.div
+            p="8"
+            textAlign="center"
+            color="fg.muted"
+            width="full"
+          >
+            Loading threads...
+          </styled.div>
+        ) : allThreads.length > 0 ? (
+          (() => {
+            const showPersonalized =
+              currentPage === 1 && !hasActiveFilters && !!personalized;
+            const personalizedIDs = new Set<string>();
+            if (showPersonalized) {
+              personalized!.self_recent.forEach((t) => personalizedIDs.add(t.id));
+              personalized!.similar.forEach((g) =>
+                g.threads.forEach((t) => personalizedIDs.add(t.id)),
+              );
+            }
+            const filteredThreads = showPersonalized
+              ? allThreads.filter((t) => !personalizedIDs.has(t.id))
+              : allThreads;
+
+            return (
+          <>
+            {showPersonalized && (
+              <VStack alignItems="start" gap={{ base: "2", md: "4" }} width="full">
+                {personalized!.self_recent.map((selfThread) => {
+                  const group = personalized!.similar.find(
+                    (g) => g.for_thread_id === selfThread.id,
+                  );
+                  return (
+                    <Fragment key={`personalized-${selfThread.id}`}>
+                      <ThreadReferenceCard
+                        thread={selfThread}
+                        channelID={props.channel.id}
+                      />
+                      {group?.threads.map((similar) => (
+                        <ThreadReferenceCard
+                          key={`similar-${selfThread.id}-${similar.id}`}
+                          thread={similar}
+                          channelID={props.channel.id}
+                        />
+                      ))}
+                    </Fragment>
+                  );
+                })}
+              </VStack>
+            )}
+
+            <VStack alignItems="start" gap={{ base: "2", md: "4" }} width="full">
+              {filteredThreads.map((thread, index) => (
+                <Fragment key={thread.id}>
+                  <ThreadReferenceCard
+                    thread={thread}
+                    channelID={props.channel.id}
+                  />
+                  {index === 4 && (
+                    <CategoryExploreCarousel
+                      channelID={props.channel.id}
+                      selectedPrimaryTopic={selectedPrimaryTopic}
+                      onPrimaryTopicChange={setSelectedPrimaryTopic}
+                    />
+                  )}
+                </Fragment>
+              ))}
+            </VStack>
+
+            {hasMore && (
+              <styled.div width="full" display="flex" justifyContent="center" py="4">
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? "Loading..." : "Show More"}
+                </Button>
+              </styled.div>
+            )}
+          </>
+            );
+          })()
+        ) : (
+          <styled.div
+            p="8"
+            textAlign="center"
+            color="fg.muted"
+            borderColor="border.default"
+            borderRadius="md"
+            borderStyle="solid"
+            width="full"
+          >
+            No threads yet in this channel
+          </styled.div>
+        )}
+      </VStack>
+      </LStack>
+    </styled.div>
+  );
+}

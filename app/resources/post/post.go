@@ -26,8 +26,9 @@ type ID xid.ID
 func (u ID) String() string { return xid.ID(u).String() }
 
 type Post struct {
-	ID   ID
-	Root ID // Identical to ID if this is the root.
+	ID        ID
+	Root      ID // Identical to ID if this is the root.
+	ChannelID xid.ID
 
 	Title       string
 	Slug        string
@@ -50,6 +51,10 @@ type Post struct {
 type PostRef struct {
 	ID   ID
 	Root ID
+	// IsShare is true when this post references another thread (a share row).
+	// Shares carry no conversation of their own; interaction must target the
+	// referenced original instead.
+	IsShare bool
 }
 
 func (p *PostRef) IsThread() bool {
@@ -110,8 +115,9 @@ func Map(in *ent.Post) (*Post, error) {
 	}
 
 	return &Post{
-		ID:   ID(in.ID),
-		Root: rootID,
+		ID:        ID(in.ID),
+		Root:      rootID,
+		ChannelID: in.ChannelID,
 
 		Title:      title,
 		Slug:       slug,
@@ -139,7 +145,8 @@ func MapRef(in *ent.Post) *PostRef {
 	}()
 
 	return &PostRef{
-		ID:   ID(in.ID),
-		Root: root,
+		ID:      ID(in.ID),
+		Root:    root,
+		IsShare: in.ReferencePostID != nil,
 	}
 }

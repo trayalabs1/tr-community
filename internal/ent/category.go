@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/Southclaws/storyden/internal/ent/asset"
 	"github.com/Southclaws/storyden/internal/ent/category"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/rs/xid"
 )
 
@@ -40,6 +41,8 @@ type Category struct {
 	ParentCategoryID xid.ID `json:"parent_category_id,omitempty"`
 	// CoverImageAssetID holds the value of the "cover_image_asset_id" field.
 	CoverImageAssetID *xid.ID `json:"cover_image_asset_id,omitempty"`
+	// The channel this category belongs to
+	ChannelID xid.ID `json:"channel_id,omitempty"`
 	// Arbitrary metadata used by clients to store domain specific information.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -58,9 +61,11 @@ type CategoryEdges struct {
 	Children []*Category `json:"children,omitempty"`
 	// CoverImage holds the value of the cover_image edge.
 	CoverImage *Asset `json:"cover_image,omitempty"`
+	// Channel holds the value of the channel edge.
+	Channel *Channel `json:"channel,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // PostsOrErr returns the Posts value or an error if the edge
@@ -103,6 +108,17 @@ func (e CategoryEdges) CoverImageOrErr() (*Asset, error) {
 	return nil, &NotLoadedError{edge: "cover_image"}
 }
 
+// ChannelOrErr returns the Channel value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e CategoryEdges) ChannelOrErr() (*Channel, error) {
+	if e.Channel != nil {
+		return e.Channel, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: channel.Label}
+	}
+	return nil, &NotLoadedError{edge: "channel"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Category) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -120,7 +136,7 @@ func (*Category) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case category.FieldCreatedAt, category.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case category.FieldID, category.FieldParentCategoryID:
+		case category.FieldID, category.FieldParentCategoryID, category.FieldChannelID:
 			values[i] = new(xid.ID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -204,6 +220,12 @@ func (_m *Category) assignValues(columns []string, values []any) error {
 				_m.CoverImageAssetID = new(xid.ID)
 				*_m.CoverImageAssetID = *value.S.(*xid.ID)
 			}
+		case category.FieldChannelID:
+			if value, ok := values[i].(*xid.ID); !ok {
+				return fmt.Errorf("unexpected type %T for field channel_id", values[i])
+			} else if value != nil {
+				_m.ChannelID = *value
+			}
 		case category.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field metadata", values[i])
@@ -243,6 +265,11 @@ func (_m *Category) QueryChildren() *CategoryQuery {
 // QueryCoverImage queries the "cover_image" edge of the Category entity.
 func (_m *Category) QueryCoverImage() *AssetQuery {
 	return NewCategoryClient(_m.config).QueryCoverImage(_m)
+}
+
+// QueryChannel queries the "channel" edge of the Category entity.
+func (_m *Category) QueryChannel() *ChannelQuery {
+	return NewCategoryClient(_m.config).QueryChannel(_m)
 }
 
 // Update returns a builder for updating this Category.
@@ -299,6 +326,9 @@ func (_m *Category) String() string {
 		builder.WriteString("cover_image_asset_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("channel_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ChannelID))
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Metadata))

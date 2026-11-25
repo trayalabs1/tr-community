@@ -1,4 +1,5 @@
 import { handle } from "@/api/client";
+import { Identifier } from "@/api/openapi-schema";
 import { ButtonProps } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
 import { CreateIcon } from "@/components/ui/icons/Create";
@@ -7,6 +8,7 @@ import { useLibraryMutation } from "@/lib/library/library";
 
 type Props = ButtonProps & {
   parentSlug?: string;
+  channelID?: Identifier;
   hideLabel?: boolean;
   disableRedirect?: boolean;
   onComplete?: () => void;
@@ -18,6 +20,7 @@ export const CreatePageIcon = <CreateIcon />;
 
 export function CreatePageAction({
   parentSlug,
+  channelID,
   hideLabel,
   disableRedirect,
   onComplete,
@@ -28,7 +31,7 @@ export function CreatePageAction({
   async function handleCreate() {
     await handle(
       async () => {
-        await createNode({ parentSlug, disableRedirect });
+        await createNode({ parentSlug, channelID, disableRedirect });
       },
       {
         promiseToast: {

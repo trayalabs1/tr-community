@@ -1,72 +1,266 @@
 "use client";
 
-import { CommandDock } from "@/components/site/CommandDock/CommandDock";
-import { ButtonProps } from "@/components/ui/button";
-import { IconButton } from "@/components/ui/icon-button";
-import { MenuIcon } from "@/components/ui/icons/Menu";
-import { SiteIcon } from "@/components/ui/icons/Site";
-import { WStack } from "@/styled-system/jsx";
+import { useCallback, useRef } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-import { Search } from "../../../search/Search/Search";
-import { CloseAction } from "../../Action/Close";
-import { AccountMenu } from "../AccountMenu/AccountMenu";
-import { ComposeAnchor } from "../Anchors/Compose";
-import { HomeAnchor } from "../Anchors/Home";
-import { LibraryAnchor } from "../Anchors/Library";
-import { LoginAnchor } from "../Anchors/Login";
-import { ContentNavigationList } from "../ContentNavigationList/ContentNavigationList";
+import { HStack, VStack, styled } from "@/styled-system/jsx";
+import { SearchIcon } from "@/components/ui/icons/Search";
+import { CommunityIcon } from "@/components/ui/icons/Community";
+// import { LibraryIcon } from "@/components/ui/icons/Library";
+// import { ProfileIcon } from "@/components/ui/icons/Profile";
+import { DocumentTextIcon, ArrowUturnLeftIcon } from "@heroicons/react/24/outline";
+import { TRAYA_COLORS } from "@/theme/traya-colors";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
+import { useSession } from "@/auth";
+import { useChannelList } from "@/api/openapi-client/channels";
+import { useAccountGet } from "@/api/openapi-client/accounts";
+import { hasPermission } from "@/utils/permissions";
+import { PINNED_CHANNEL_SLUGS } from "@/lib/channel/pinned";
 
-import { useMobileCommandBar } from "./useMobileCommandBar";
-
-export function MobileCommandBar() {
-  const { isExpanded, onExpand, onClose, account } = useMobileCommandBar();
-
-  return (
-    <CommandDock
-      isOpen={isExpanded}
-      onClickOutside={onClose}
-      render={() => {
-        return <ContentNavigationList />;
-      }}
-    >
-      <WStack alignItems="center">
-        {isExpanded ? (
-          <>
-            {account ? (
-              <AccountMenu account={account} size="sm" />
-            ) : (
-              <SiteIcon borderRadius="md" w="8" h="8" />
-            )}
-            <Search />
-            <CloseAction onClick={onClose} size="sm" />
-          </>
-        ) : (
-          <>
-            {account ? (
-              <AccountMenu account={account} size="sm" />
-            ) : (
-              <SiteIcon borderRadius="md" w="8" h="8" />
-            )}
-            <HomeAnchor hideLabel size="sm" />
-            {account ? <ComposeAnchor hideLabel size="sm" /> : <LoginAnchor />}
-            <LibraryAnchor hideLabel size="sm" />
-            <ExpandTrigger onClick={onExpand} />
-          </>
-        )}
-      </WStack>
-    </CommandDock>
-  );
+declare global {
+  interface Window {
+    ReactNativeWebView?: {
+      postMessage: (message: string) => void;
+    };
+  }
 }
 
-function ExpandTrigger(props: ButtonProps) {
+export function MobileCommandBar() {
+  const pathname = usePathname();
+  const { trackSearchClicked, trackMyPostsClicked  } = useEventTracking();
+  const session = useSession();
+  const { data: channelsData } = useChannelList();
+  const { data: account } = useAccountGet({
+    swr: {
+      revalidateOnFocus: true,
+      revalidateOnMount: true,
+    },
+  });
+
+  const isAdmin = hasPermission(session, "ADMINISTRATOR");
+  const channels = channelsData?.channels ?? [];
+  const monthChannel = channels.find((c) => c.name?.toLowerCase().includes("month")) || channels.find((c) => PINNED_CHANNEL_SLUGS.includes(c.slug));
+  const targetChannelId = monthChannel?.id ?? channels[0]?.id;
+  const communityHref = isAdmin || !targetChannelId ? "/channels" : `/channels/${targetChannelId}`;
+
+  const isHomeActive = pathname === "/" || (pathname.startsWith("/channels") && !pathname.includes("/settings"));
+  const isSearchActive = pathname.startsWith("/search");
+  // const isLibraryActive = pathname.startsWith("/l");
+  const isMyPostsActive = pathname.startsWith("/my-posts");
+  // const isProfileActive = pathname.startsWith("/m/") || pathname === "/m";
+
+  const handle = account?.handle || session?.handle;
+  // const profileHref = handle ? `/m/${handle}` : "#";
+
+  const handleSearchClick = useCallback(() => {
+    trackSearchClicked();
+  }, [trackSearchClicked]);
+
+  const handleMyPostsClick = useCallback(() => {
+    trackMyPostsClicked();
+  }, [trackMyPostsClicked]);
+
+  const handleCloseWebView = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("destination", "go_back");
+    window.location.href = url.toString();
+  }, []);
+
+  const TabItem = ({
+    href,
+    icon: Icon,
+    label,
+    isActive,
+    onClick,
+  }: {
+    href: string;
+    icon: React.ComponentType<any>;
+    label: string;
+    isActive: boolean;
+    onClick?: () => void;
+  }) => (
+    <Link href={href} style={{ textDecoration: "none" }} onClick={onClick}>
+      <VStack
+        alignItems="center"
+        justifyContent="center"
+        gap="1"
+        flex="1"
+        cursor="pointer"
+        as="div"
+      >
+        <styled.div
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          width="6"
+          height="6"
+          style={{
+            color: isActive ? TRAYA_COLORS.primary : TRAYA_COLORS.neutral.textMuted,
+          }}
+        >
+          <Icon width="24" height="24" strokeWidth={1.5} />
+        </styled.div>
+        <styled.span
+          fontSize="xs"
+          fontWeight="medium"
+          style={{
+            margin: "0",
+            textAlign: "center",
+            color: isActive ? TRAYA_COLORS.primary : TRAYA_COLORS.neutral.textMuted,
+          }}
+        >
+          {label}
+        </styled.span>
+      </VStack>
+    </Link>
+  );
+
+  const ActionButton = ({
+    icon: Icon,
+    label,
+    onClick,
+  }: {
+    icon: React.ComponentType<any>;
+    label: string;
+    onClick: () => void;
+  }) => {
+    const hasFired = useRef(false);
+
+    const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+      if (hasFired.current) return;
+      hasFired.current = true;
+      e.preventDefault();
+      onClick();
+    }, [onClick]);
+
+    const handleClick = useCallback((e: React.MouseEvent) => {
+      if (hasFired.current) {
+        hasFired.current = false;
+        return;
+      }
+      onClick();
+    }, [onClick]);
+
+    return (
+      <styled.button
+        type="button"
+        onClick={handleClick}
+        onTouchEnd={handleTouchEnd}
+        style={{ background: "none", border: "none", padding: 0 }}
+        cursor="pointer"
+      >
+        <VStack
+          alignItems="center"
+          justifyContent="center"
+          gap="1"
+          flex="1"
+        >
+          <styled.div
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            width="6"
+            height="6"
+            style={{
+              color: TRAYA_COLORS.neutral.textMuted,
+            }}
+          >
+            <Icon width="24" height="24" strokeWidth={1.5} />
+          </styled.div>
+          <styled.span
+            fontSize="xs"
+            fontWeight="medium"
+            style={{
+              margin: "0",
+              textAlign: "center",
+              color: TRAYA_COLORS.neutral.textMuted,
+            }}
+          >
+            {label}
+          </styled.span>
+        </VStack>
+      </styled.button>
+    );
+  };
+
   return (
-    <IconButton
-      title="Main navigation menu"
-      variant="ghost"
-      size="sm"
-      {...props}
+    <styled.nav
+      position="fixed"
+      bottom="0"
+      left="0"
+      right="0"
+      width="full"
+      backgroundColor="white"
+      borderTopWidth="thin"
+      borderTopColor="border.default"
+      display={{ base: "flex", md: "none" }}
+      style={{
+        justifyContent: "center",
+        alignItems: "flex-end",
+        zIndex: 40,
+        pointerEvents: "auto",
+      }}
     >
-      <MenuIcon />
-    </IconButton>
+      <HStack
+        width="full"
+        justifyContent="space-around"
+        alignItems="stretch"
+        py="3"
+        px="0"
+      >
+        <ActionButton
+          icon={ArrowUturnLeftIcon}
+          label="Home"
+          onClick={handleCloseWebView}
+        />
+        <styled.div
+          height="8"
+          alignSelf="center"
+          ml="-6"
+          mr="-6"
+          style={{ width: "1px", backgroundColor: TRAYA_COLORS.neutral.border }}
+        />
+        <TabItem
+          href={communityHref}
+          icon={CommunityIcon}
+          label="Community"
+          isActive={isHomeActive}
+        />
+        <TabItem
+          href="/search"
+          icon={SearchIcon}
+          label="Search"
+          isActive={isSearchActive}
+          onClick={handleSearchClick}
+        />
+        {/* <TabItem
+          href="/l"
+          icon={LibraryIcon}
+          label="Library"
+          isActive={isLibraryActive}
+        /> */}
+        {/* <TabItem
+          href="/info"
+          icon={InformationCircleIcon}
+          label="Info"
+          isActive={isInfoActive}
+          onClick={handleInfoClick}
+        /> */}
+        <TabItem
+          href="/my-posts"
+          icon={DocumentTextIcon}
+          label="My Posts"
+          isActive={isMyPostsActive}
+          onClick={handleMyPostsClick}
+        />
+        {/* <TabItem
+          href={profileHref}
+          icon={ProfileIcon}
+          label="Profile"
+          isActive={isProfileActive}
+        /> */}
+      </HStack>
+    </styled.nav>
   );
 }

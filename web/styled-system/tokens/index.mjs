@@ -1731,6 +1731,42 @@ const tokens = {
     "value": "#ffd6cefb",
     "variable": "var(--colors-tomato-dark-a12)"
   },
+  "colors.traya.primary.1": {
+    "value": "#DCF4E8",
+    "variable": "var(--colors-traya-primary-1)"
+  },
+  "colors.traya.primary.2": {
+    "value": "#B2E6CD",
+    "variable": "var(--colors-traya-primary-2)"
+  },
+  "colors.traya.primary.3": {
+    "value": "#6BA995",
+    "variable": "var(--colors-traya-primary-3)"
+  },
+  "colors.traya.primary.4": {
+    "value": "#329866",
+    "variable": "var(--colors-traya-primary-4)"
+  },
+  "colors.traya.primary.5": {
+    "value": "#1F6044",
+    "variable": "var(--colors-traya-primary-5)"
+  },
+  "colors.traya.primary": {
+    "value": "#329866",
+    "variable": "var(--colors-traya-primary)"
+  },
+  "colors.traya.accent.heart": {
+    "value": "#F04343",
+    "variable": "var(--colors-traya-accent-heart)"
+  },
+  "colors.traya.accent.gradient.start": {
+    "value": "#3EBC7F",
+    "variable": "var(--colors-traya-accent-gradient-start)"
+  },
+  "colors.traya.accent.gradient.end": {
+    "value": "#329866",
+    "variable": "var(--colors-traya-accent-gradient-end)"
+  },
   "colors.gray.light.1": {
     "value": "#fcfcfc",
     "variable": "var(--colors-gray-light-1)"
@@ -2330,6 +2366,10 @@ const tokens = {
   "fonts.interDisplay": {
     "value": "var(--font-inter-display)",
     "variable": "var(--fonts-inter-display)"
+  },
+  "fonts.nunito": {
+    "value": "'Nunito Sans', sans-serif",
+    "variable": "var(--fonts-nunito)"
   },
   "fonts.mono": {
     "value": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
@@ -3016,11 +3056,11 @@ const tokens = {
     "variable": "var(--radii-l3)"
   },
   "fonts.body": {
-    "value": "var(--fonts-inter)",
+    "value": "var(--fonts-nunito)",
     "variable": "var(--fonts-body)"
   },
   "fonts.heading": {
-    "value": "var(--fonts-inter-display)",
+    "value": "var(--fonts-nunito)",
     "variable": "var(--fonts-heading)"
   },
   "blurs.frosted": {
@@ -3303,6 +3343,62 @@ const tokens = {
     "value": "var(--colors-bg-opaque)",
     "variable": "var(--colors-bg-opaque)"
   },
+  "colors.bg.searchInput": {
+    "value": "var(--colors-bg-search-input)",
+    "variable": "var(--colors-bg-search-input)"
+  },
+  "colors.bg.searchHeader": {
+    "value": "var(--colors-bg-search-header)",
+    "variable": "var(--colors-bg-search-header)"
+  },
+  "colors.bg.searchPanel": {
+    "value": "var(--colors-bg-search-panel)",
+    "variable": "var(--colors-bg-search-panel)"
+  },
+  "colors.bg.notificationPage": {
+    "value": "var(--colors-bg-notification-page)",
+    "variable": "var(--colors-bg-notification-page)"
+  },
+  "colors.bg.notificationRead": {
+    "value": "var(--colors-bg-notification-read)",
+    "variable": "var(--colors-bg-notification-read)"
+  },
+  "colors.bg.notificationUnread": {
+    "value": "var(--colors-bg-notification-unread)",
+    "variable": "var(--colors-bg-notification-unread)"
+  },
+  "colors.bg.savedPage": {
+    "value": "var(--colors-bg-saved-page)",
+    "variable": "var(--colors-bg-saved-page)"
+  },
+  "colors.bg.profileStats": {
+    "value": "var(--colors-bg-profile-stats)",
+    "variable": "var(--colors-bg-profile-stats)"
+  },
+  "colors.bg.composerPage": {
+    "value": "var(--colors-bg-composer-page)",
+    "variable": "var(--colors-bg-composer-page)"
+  },
+  "colors.bg.surfaceWhite": {
+    "value": "var(--colors-bg-surface-white)",
+    "variable": "var(--colors-bg-surface-white)"
+  },
+  "colors.bg.composerAction": {
+    "value": "var(--colors-bg-composer-action)",
+    "variable": "var(--colors-bg-composer-action)"
+  },
+  "colors.bg.composerDraft": {
+    "value": "var(--colors-bg-composer-draft)",
+    "variable": "var(--colors-bg-composer-draft)"
+  },
+  "colors.bg.composerSubmit": {
+    "value": "var(--colors-bg-composer-submit)",
+    "variable": "var(--colors-bg-composer-submit)"
+  },
+  "colors.bg.composerSubmitDisabled": {
+    "value": "var(--colors-bg-composer-submit-disabled)",
+    "variable": "var(--colors-bg-composer-submit-disabled)"
+  },
   "colors.fg.default": {
     "value": "var(--colors-fg-default)",
     "variable": "var(--colors-fg-default)"
@@ -3350,6 +3446,10 @@ const tokens = {
   "colors.fg.accent": {
     "value": "var(--colors-fg-accent)",
     "variable": "var(--colors-fg-accent)"
+  },
+  "colors.fg.composerAction": {
+    "value": "var(--colors-fg-composer-action)",
+    "variable": "var(--colors-fg-composer-action)"
   },
   "colors.border": {
     "value": "var(--colors-border)",
@@ -3610,6 +3710,10 @@ const tokens = {
   "colors.blue.text": {
     "value": "var(--colors-blue-text)",
     "variable": "var(--colors-blue-text)"
+  },
+  "colors.overflow-fade": {
+    "value": "var(--colors-overflow-fade)",
+    "variable": "var(--colors-overflow-fade)"
   },
   "colors.colorPalette": {
     "value": "var(--colors-color-palette)",
@@ -3903,6 +4007,62 @@ const tokens = {
     "value": "var(--colors-color-palette-dark-a12)",
     "variable": "var(--colors-color-palette-dark-a12)"
   },
+  "colors.colorPalette.primary.1": {
+    "value": "var(--colors-color-palette-primary-1)",
+    "variable": "var(--colors-color-palette-primary-1)"
+  },
+  "colors.colorPalette.primary.2": {
+    "value": "var(--colors-color-palette-primary-2)",
+    "variable": "var(--colors-color-palette-primary-2)"
+  },
+  "colors.colorPalette.primary.3": {
+    "value": "var(--colors-color-palette-primary-3)",
+    "variable": "var(--colors-color-palette-primary-3)"
+  },
+  "colors.colorPalette.primary.4": {
+    "value": "var(--colors-color-palette-primary-4)",
+    "variable": "var(--colors-color-palette-primary-4)"
+  },
+  "colors.colorPalette.primary.5": {
+    "value": "var(--colors-color-palette-primary-5)",
+    "variable": "var(--colors-color-palette-primary-5)"
+  },
+  "colors.colorPalette.primary": {
+    "value": "var(--colors-color-palette-primary)",
+    "variable": "var(--colors-color-palette-primary)"
+  },
+  "colors.colorPalette.accent.heart": {
+    "value": "var(--colors-color-palette-accent-heart)",
+    "variable": "var(--colors-color-palette-accent-heart)"
+  },
+  "colors.colorPalette.heart": {
+    "value": "var(--colors-color-palette-heart)",
+    "variable": "var(--colors-color-palette-heart)"
+  },
+  "colors.colorPalette.accent.gradient.start": {
+    "value": "var(--colors-color-palette-accent-gradient-start)",
+    "variable": "var(--colors-color-palette-accent-gradient-start)"
+  },
+  "colors.colorPalette.gradient.start": {
+    "value": "var(--colors-color-palette-gradient-start)",
+    "variable": "var(--colors-color-palette-gradient-start)"
+  },
+  "colors.colorPalette.start": {
+    "value": "var(--colors-color-palette-start)",
+    "variable": "var(--colors-color-palette-start)"
+  },
+  "colors.colorPalette.accent.gradient.end": {
+    "value": "var(--colors-color-palette-accent-gradient-end)",
+    "variable": "var(--colors-color-palette-accent-gradient-end)"
+  },
+  "colors.colorPalette.gradient.end": {
+    "value": "var(--colors-color-palette-gradient-end)",
+    "variable": "var(--colors-color-palette-gradient-end)"
+  },
+  "colors.colorPalette.end": {
+    "value": "var(--colors-color-palette-end)",
+    "variable": "var(--colors-color-palette-end)"
+  },
   "colors.colorPalette.light.text.1": {
     "value": "var(--colors-color-palette-light-text-1)",
     "variable": "var(--colors-color-palette-light-text-1)"
@@ -4078,6 +4238,62 @@ const tokens = {
   "colors.colorPalette.opaque": {
     "value": "var(--colors-color-palette-opaque)",
     "variable": "var(--colors-color-palette-opaque)"
+  },
+  "colors.colorPalette.searchInput": {
+    "value": "var(--colors-color-palette-search-input)",
+    "variable": "var(--colors-color-palette-search-input)"
+  },
+  "colors.colorPalette.searchHeader": {
+    "value": "var(--colors-color-palette-search-header)",
+    "variable": "var(--colors-color-palette-search-header)"
+  },
+  "colors.colorPalette.searchPanel": {
+    "value": "var(--colors-color-palette-search-panel)",
+    "variable": "var(--colors-color-palette-search-panel)"
+  },
+  "colors.colorPalette.notificationPage": {
+    "value": "var(--colors-color-palette-notification-page)",
+    "variable": "var(--colors-color-palette-notification-page)"
+  },
+  "colors.colorPalette.notificationRead": {
+    "value": "var(--colors-color-palette-notification-read)",
+    "variable": "var(--colors-color-palette-notification-read)"
+  },
+  "colors.colorPalette.notificationUnread": {
+    "value": "var(--colors-color-palette-notification-unread)",
+    "variable": "var(--colors-color-palette-notification-unread)"
+  },
+  "colors.colorPalette.savedPage": {
+    "value": "var(--colors-color-palette-saved-page)",
+    "variable": "var(--colors-color-palette-saved-page)"
+  },
+  "colors.colorPalette.profileStats": {
+    "value": "var(--colors-color-palette-profile-stats)",
+    "variable": "var(--colors-color-palette-profile-stats)"
+  },
+  "colors.colorPalette.composerPage": {
+    "value": "var(--colors-color-palette-composer-page)",
+    "variable": "var(--colors-color-palette-composer-page)"
+  },
+  "colors.colorPalette.surfaceWhite": {
+    "value": "var(--colors-color-palette-surface-white)",
+    "variable": "var(--colors-color-palette-surface-white)"
+  },
+  "colors.colorPalette.composerAction": {
+    "value": "var(--colors-color-palette-composer-action)",
+    "variable": "var(--colors-color-palette-composer-action)"
+  },
+  "colors.colorPalette.composerDraft": {
+    "value": "var(--colors-color-palette-composer-draft)",
+    "variable": "var(--colors-color-palette-composer-draft)"
+  },
+  "colors.colorPalette.composerSubmit": {
+    "value": "var(--colors-color-palette-composer-submit)",
+    "variable": "var(--colors-color-palette-composer-submit)"
+  },
+  "colors.colorPalette.composerSubmitDisabled": {
+    "value": "var(--colors-color-palette-composer-submit-disabled)",
+    "variable": "var(--colors-color-palette-composer-submit-disabled)"
   },
   "colors.colorPalette.outline": {
     "value": "var(--colors-color-palette-outline)",

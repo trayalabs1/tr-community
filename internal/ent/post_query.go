@@ -15,13 +15,16 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/asset"
 	"github.com/Southclaws/storyden/internal/ent/category"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/event"
 	"github.com/Southclaws/storyden/internal/ent/likepost"
 	"github.com/Southclaws/storyden/internal/ent/link"
 	"github.com/Southclaws/storyden/internal/ent/mentionprofile"
+	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
+	"github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/Southclaws/storyden/internal/ent/predicate"
 	"github.com/Southclaws/storyden/internal/ent/react"
 	"github.com/Southclaws/storyden/internal/ent/tag"
@@ -37,11 +40,14 @@ type PostQuery struct {
 	predicates       []predicate.Post
 	withAuthor       *AccountQuery
 	withCategory     *CategoryQuery
+	withChannel      *ChannelQuery
 	withTags         *TagQuery
 	withRoot         *PostQuery
 	withPosts        *PostQuery
 	withReplyTo      *PostQuery
 	withReplies      *PostQuery
+	withReference    *PostQuery
+	withShares       *PostQuery
 	withReacts       *ReactQuery
 	withLikes        *LikePostQuery
 	withMentions     *MentionProfileQuery
@@ -51,6 +57,8 @@ type PostQuery struct {
 	withContentLinks *LinkQuery
 	withEvent        *EventQuery
 	withPostReads    *PostReadQuery
+	withPollVotes    *PollVoteQuery
+	withSentiment    *PostSentimentQuery
 	modifiers        []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -125,6 +133,28 @@ func (_q *PostQuery) QueryCategory() *CategoryQuery {
 			sqlgraph.From(post.Table, post.FieldID, selector),
 			sqlgraph.To(category.Table, category.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, post.CategoryTable, post.CategoryColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryChannel chains the current query on the "channel" edge.
+func (_q *PostQuery) QueryChannel() *ChannelQuery {
+	query := (&ChannelClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, selector),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, post.ChannelTable, post.ChannelColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -235,6 +265,50 @@ func (_q *PostQuery) QueryReplies() *PostQuery {
 			sqlgraph.From(post.Table, post.FieldID, selector),
 			sqlgraph.To(post.Table, post.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, post.RepliesTable, post.RepliesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReference chains the current query on the "reference" edge.
+func (_q *PostQuery) QueryReference() *PostQuery {
+	query := (&PostClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, selector),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, post.ReferenceTable, post.ReferenceColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryShares chains the current query on the "shares" edge.
+func (_q *PostQuery) QueryShares() *PostQuery {
+	query := (&PostClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, selector),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, post.SharesTable, post.SharesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -440,6 +514,50 @@ func (_q *PostQuery) QueryPostReads() *PostReadQuery {
 	return query
 }
 
+// QueryPollVotes chains the current query on the "poll_votes" edge.
+func (_q *PostQuery) QueryPollVotes() *PollVoteQuery {
+	query := (&PollVoteClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, selector),
+			sqlgraph.To(pollvote.Table, pollvote.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, post.PollVotesTable, post.PollVotesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySentiment chains the current query on the "sentiment" edge.
+func (_q *PostQuery) QuerySentiment() *PostSentimentQuery {
+	query := (&PostSentimentClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, selector),
+			sqlgraph.To(postsentiment.Table, postsentiment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, post.SentimentTable, post.SentimentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Post entity from the query.
 // Returns a *NotFoundError when no Post was found.
 func (_q *PostQuery) First(ctx context.Context) (*Post, error) {
@@ -634,11 +752,14 @@ func (_q *PostQuery) Clone() *PostQuery {
 		predicates:       append([]predicate.Post{}, _q.predicates...),
 		withAuthor:       _q.withAuthor.Clone(),
 		withCategory:     _q.withCategory.Clone(),
+		withChannel:      _q.withChannel.Clone(),
 		withTags:         _q.withTags.Clone(),
 		withRoot:         _q.withRoot.Clone(),
 		withPosts:        _q.withPosts.Clone(),
 		withReplyTo:      _q.withReplyTo.Clone(),
 		withReplies:      _q.withReplies.Clone(),
+		withReference:    _q.withReference.Clone(),
+		withShares:       _q.withShares.Clone(),
 		withReacts:       _q.withReacts.Clone(),
 		withLikes:        _q.withLikes.Clone(),
 		withMentions:     _q.withMentions.Clone(),
@@ -648,6 +769,8 @@ func (_q *PostQuery) Clone() *PostQuery {
 		withContentLinks: _q.withContentLinks.Clone(),
 		withEvent:        _q.withEvent.Clone(),
 		withPostReads:    _q.withPostReads.Clone(),
+		withPollVotes:    _q.withPollVotes.Clone(),
+		withSentiment:    _q.withSentiment.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -674,6 +797,17 @@ func (_q *PostQuery) WithCategory(opts ...func(*CategoryQuery)) *PostQuery {
 		opt(query)
 	}
 	_q.withCategory = query
+	return _q
+}
+
+// WithChannel tells the query-builder to eager-load the nodes that are connected to
+// the "channel" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *PostQuery) WithChannel(opts ...func(*ChannelQuery)) *PostQuery {
+	query := (&ChannelClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withChannel = query
 	return _q
 }
 
@@ -729,6 +863,28 @@ func (_q *PostQuery) WithReplies(opts ...func(*PostQuery)) *PostQuery {
 		opt(query)
 	}
 	_q.withReplies = query
+	return _q
+}
+
+// WithReference tells the query-builder to eager-load the nodes that are connected to
+// the "reference" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *PostQuery) WithReference(opts ...func(*PostQuery)) *PostQuery {
+	query := (&PostClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withReference = query
+	return _q
+}
+
+// WithShares tells the query-builder to eager-load the nodes that are connected to
+// the "shares" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *PostQuery) WithShares(opts ...func(*PostQuery)) *PostQuery {
+	query := (&PostClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withShares = query
 	return _q
 }
 
@@ -831,6 +987,28 @@ func (_q *PostQuery) WithPostReads(opts ...func(*PostReadQuery)) *PostQuery {
 	return _q
 }
 
+// WithPollVotes tells the query-builder to eager-load the nodes that are connected to
+// the "poll_votes" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *PostQuery) WithPollVotes(opts ...func(*PollVoteQuery)) *PostQuery {
+	query := (&PollVoteClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withPollVotes = query
+	return _q
+}
+
+// WithSentiment tells the query-builder to eager-load the nodes that are connected to
+// the "sentiment" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *PostQuery) WithSentiment(opts ...func(*PostSentimentQuery)) *PostQuery {
+	query := (&PostSentimentClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSentiment = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -909,14 +1087,17 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 	var (
 		nodes       = []*Post{}
 		_spec       = _q.querySpec()
-		loadedTypes = [16]bool{
+		loadedTypes = [21]bool{
 			_q.withAuthor != nil,
 			_q.withCategory != nil,
+			_q.withChannel != nil,
 			_q.withTags != nil,
 			_q.withRoot != nil,
 			_q.withPosts != nil,
 			_q.withReplyTo != nil,
 			_q.withReplies != nil,
+			_q.withReference != nil,
+			_q.withShares != nil,
 			_q.withReacts != nil,
 			_q.withLikes != nil,
 			_q.withMentions != nil,
@@ -926,6 +1107,8 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 			_q.withContentLinks != nil,
 			_q.withEvent != nil,
 			_q.withPostReads != nil,
+			_q.withPollVotes != nil,
+			_q.withSentiment != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -961,6 +1144,12 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 			return nil, err
 		}
 	}
+	if query := _q.withChannel; query != nil {
+		if err := _q.loadChannel(ctx, query, nodes, nil,
+			func(n *Post, e *Channel) { n.Edges.Channel = e }); err != nil {
+			return nil, err
+		}
+	}
 	if query := _q.withTags; query != nil {
 		if err := _q.loadTags(ctx, query, nodes,
 			func(n *Post) { n.Edges.Tags = []*Tag{} },
@@ -991,6 +1180,19 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 		if err := _q.loadReplies(ctx, query, nodes,
 			func(n *Post) { n.Edges.Replies = []*Post{} },
 			func(n *Post, e *Post) { n.Edges.Replies = append(n.Edges.Replies, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withReference; query != nil {
+		if err := _q.loadReference(ctx, query, nodes, nil,
+			func(n *Post, e *Post) { n.Edges.Reference = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withShares; query != nil {
+		if err := _q.loadShares(ctx, query, nodes,
+			func(n *Post) { n.Edges.Shares = []*Post{} },
+			func(n *Post, e *Post) { n.Edges.Shares = append(n.Edges.Shares, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1056,6 +1258,19 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 			return nil, err
 		}
 	}
+	if query := _q.withPollVotes; query != nil {
+		if err := _q.loadPollVotes(ctx, query, nodes,
+			func(n *Post) { n.Edges.PollVotes = []*PollVote{} },
+			func(n *Post, e *PollVote) { n.Edges.PollVotes = append(n.Edges.PollVotes, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSentiment; query != nil {
+		if err := _q.loadSentiment(ctx, query, nodes, nil,
+			func(n *Post, e *PostSentiment) { n.Edges.Sentiment = e }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -1110,6 +1325,35 @@ func (_q *PostQuery) loadCategory(ctx context.Context, query *CategoryQuery, nod
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "category_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *PostQuery) loadChannel(ctx context.Context, query *ChannelQuery, nodes []*Post, init func(*Post), assign func(*Post, *Channel)) error {
+	ids := make([]xid.ID, 0, len(nodes))
+	nodeids := make(map[xid.ID][]*Post)
+	for i := range nodes {
+		fk := nodes[i].ChannelID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(channel.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "channel_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -1303,6 +1547,71 @@ func (_q *PostQuery) loadReplies(ctx context.Context, query *PostQuery, nodes []
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "reply_to_post_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *PostQuery) loadReference(ctx context.Context, query *PostQuery, nodes []*Post, init func(*Post), assign func(*Post, *Post)) error {
+	ids := make([]xid.ID, 0, len(nodes))
+	nodeids := make(map[xid.ID][]*Post)
+	for i := range nodes {
+		if nodes[i].ReferencePostID == nil {
+			continue
+		}
+		fk := *nodes[i].ReferencePostID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(post.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "reference_post_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *PostQuery) loadShares(ctx context.Context, query *PostQuery, nodes []*Post, init func(*Post), assign func(*Post, *Post)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[xid.ID]*Post)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(post.FieldReferencePostID)
+	}
+	query.Where(predicate.Post(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(post.SharesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ReferencePostID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "reference_post_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "reference_post_id" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -1671,6 +1980,63 @@ func (_q *PostQuery) loadPostReads(ctx context.Context, query *PostReadQuery, no
 	}
 	return nil
 }
+func (_q *PostQuery) loadPollVotes(ctx context.Context, query *PollVoteQuery, nodes []*Post, init func(*Post), assign func(*Post, *PollVote)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[xid.ID]*Post)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(pollvote.FieldPostID)
+	}
+	query.Where(predicate.PollVote(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(post.PollVotesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.PostID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "post_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *PostQuery) loadSentiment(ctx context.Context, query *PostSentimentQuery, nodes []*Post, init func(*Post), assign func(*Post, *PostSentiment)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[xid.ID]*Post)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(postsentiment.FieldPostID)
+	}
+	query.Where(predicate.PostSentiment(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(post.SentimentColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.PostID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "post_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (_q *PostQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -1706,11 +2072,17 @@ func (_q *PostQuery) querySpec() *sqlgraph.QuerySpec {
 		if _q.withCategory != nil {
 			_spec.Node.AddColumnOnce(post.FieldCategoryID)
 		}
+		if _q.withChannel != nil {
+			_spec.Node.AddColumnOnce(post.FieldChannelID)
+		}
 		if _q.withRoot != nil {
 			_spec.Node.AddColumnOnce(post.FieldRootPostID)
 		}
 		if _q.withReplyTo != nil {
 			_spec.Node.AddColumnOnce(post.FieldReplyToPostID)
+		}
+		if _q.withReference != nil {
+			_spec.Node.AddColumnOnce(post.FieldReferencePostID)
 		}
 		if _q.withLink != nil {
 			_spec.Node.AddColumnOnce(post.FieldLinkID)

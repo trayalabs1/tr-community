@@ -8,16 +8,294 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
  * OpenAPI spec version: v1.25.13-canary
  */
 import type {
+  ChannelPersonalizedFeedOKResponse,
+  ChannelThreadGetParams,
+  ChannelThreadListParams,
+  PollVoteBody,
+  ReplyCreateBody,
+  ReplyCreateOKResponse,
   ThreadCreateBody,
   ThreadCreateOKResponse,
   ThreadGetParams,
+  ThreadGetPollOKResponse,
   ThreadGetResponse,
   ThreadListOKResponse,
   ThreadListParams,
+  ThreadStatsDailyUsersOKResponse,
   ThreadUpdateBody,
   ThreadUpdateOKResponse,
+  ThreadVotePollOKResponse,
 } from "../openapi-schema";
 import { fetcher } from "../server";
+
+/**
+ * Create a new thread within a channel category.
+ */
+export type channelThreadCreateResponse = {
+  data: ThreadCreateOKResponse;
+  status: number;
+};
+
+export const getChannelThreadCreateUrl = (channelID: string) => {
+  return `/channels/${channelID}/threads`;
+};
+
+export const channelThreadCreate = async (
+  channelID: string,
+  threadCreateBody: ThreadCreateBody,
+  options?: RequestInit,
+): Promise<channelThreadCreateResponse> => {
+  return fetcher<Promise<channelThreadCreateResponse>>(
+    getChannelThreadCreateUrl(channelID),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(threadCreateBody),
+    },
+  );
+};
+
+/**
+ * Get a list of threads in a channel.
+ */
+export type channelThreadListResponse = {
+  data: ThreadListOKResponse;
+  status: number;
+};
+
+export const getChannelThreadListUrl = (
+  channelID: string,
+  params?: ChannelThreadListParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["visibility"];
+
+    if (value instanceof Array && explodeParameters.includes(key)) {
+      value.forEach((v) =>
+        normalizedParams.append(key, v === null ? "null" : v.toString()),
+      );
+      return;
+    }
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/channels/${channelID}/threads?${normalizedParams.toString()}`
+    : `/channels/${channelID}/threads`;
+};
+
+export const channelThreadList = async (
+  channelID: string,
+  params?: ChannelThreadListParams,
+  options?: RequestInit,
+): Promise<channelThreadListResponse> => {
+  return fetcher<Promise<channelThreadListResponse>>(
+    getChannelThreadListUrl(channelID, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Get the count of unique authors who created threads in this channel
+today (IST). Used to render social-proof UI such as "N users posted
+today" above the post creation box. Requires an authenticated session.
+
+ */
+export type channelThreadStatsDailyUsersResponse = {
+  data: ThreadStatsDailyUsersOKResponse;
+  status: number;
+};
+
+export const getChannelThreadStatsDailyUsersUrl = (channelID: string) => {
+  return `/channels/${channelID}/threads/stats/daily-users`;
+};
+
+export const channelThreadStatsDailyUsers = async (
+  channelID: string,
+  options?: RequestInit,
+): Promise<channelThreadStatsDailyUsersResponse> => {
+  return fetcher<Promise<channelThreadStatsDailyUsersResponse>>(
+    getChannelThreadStatsDailyUsersUrl(channelID),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Personalised top-of-feed for a channel. Returns the requester's own
+threads from the last 24 hours (across all visibilities) plus, for each
+of those threads, up to two recent published threads from other users
+that share the same primary topic and sentiment tag. Both arrays are
+empty when the requester has no recent threads.
+
+ */
+export type channelThreadListPersonalizedResponse = {
+  data: ChannelPersonalizedFeedOKResponse;
+  status: number;
+};
+
+export const getChannelThreadListPersonalizedUrl = (channelID: string) => {
+  return `/channels/${channelID}/threads/personalized`;
+};
+
+export const channelThreadListPersonalized = async (
+  channelID: string,
+  options?: RequestInit,
+): Promise<channelThreadListPersonalizedResponse> => {
+  return fetcher<Promise<channelThreadListPersonalizedResponse>>(
+    getChannelThreadListPersonalizedUrl(channelID),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Get information about a thread in a channel including its posts.
+ * @summary Get a thread from a channel.
+ */
+export type channelThreadGetResponse = {
+  data: ThreadGetResponse;
+  status: number;
+};
+
+export const getChannelThreadGetUrl = (
+  channelID: string,
+  threadMark: string,
+  params?: ChannelThreadGetParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/channels/${channelID}/threads/${threadMark}?${normalizedParams.toString()}`
+    : `/channels/${channelID}/threads/${threadMark}`;
+};
+
+export const channelThreadGet = async (
+  channelID: string,
+  threadMark: string,
+  params?: ChannelThreadGetParams,
+  options?: RequestInit,
+): Promise<channelThreadGetResponse> => {
+  return fetcher<Promise<channelThreadGetResponse>>(
+    getChannelThreadGetUrl(channelID, threadMark, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Update a thread in a channel.
+ */
+export type channelThreadUpdateResponse = {
+  data: ThreadUpdateOKResponse;
+  status: number;
+};
+
+export const getChannelThreadUpdateUrl = (
+  channelID: string,
+  threadMark: string,
+) => {
+  return `/channels/${channelID}/threads/${threadMark}`;
+};
+
+export const channelThreadUpdate = async (
+  channelID: string,
+  threadMark: string,
+  threadUpdateBody: ThreadUpdateBody,
+  options?: RequestInit,
+): Promise<channelThreadUpdateResponse> => {
+  return fetcher<Promise<channelThreadUpdateResponse>>(
+    getChannelThreadUpdateUrl(channelID, threadMark),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(threadUpdateBody),
+    },
+  );
+};
+
+/**
+ * Delete a thread in a channel.
+ */
+export type channelThreadDeleteResponse = {
+  data: void;
+  status: number;
+};
+
+export const getChannelThreadDeleteUrl = (
+  channelID: string,
+  threadMark: string,
+) => {
+  return `/channels/${channelID}/threads/${threadMark}`;
+};
+
+export const channelThreadDelete = async (
+  channelID: string,
+  threadMark: string,
+  options?: RequestInit,
+): Promise<channelThreadDeleteResponse> => {
+  return fetcher<Promise<channelThreadDeleteResponse>>(
+    getChannelThreadDeleteUrl(channelID, threadMark),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+/**
+ * Create a new reply within a thread in a channel.
+ */
+export type channelReplyCreateResponse = {
+  data: ReplyCreateOKResponse;
+  status: number;
+};
+
+export const getChannelReplyCreateUrl = (
+  channelID: string,
+  threadMark: string,
+) => {
+  return `/channels/${channelID}/threads/${threadMark}/replies`;
+};
+
+export const channelReplyCreate = async (
+  channelID: string,
+  threadMark: string,
+  replyCreateBody: ReplyCreateBody,
+  options?: RequestInit,
+): Promise<channelReplyCreateResponse> => {
+  return fetcher<Promise<channelReplyCreateResponse>>(
+    getChannelReplyCreateUrl(channelID, threadMark),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(replyCreateBody),
+    },
+  );
+};
 
 /**
  * Create a new thread within the specified category.
@@ -175,6 +453,59 @@ export const threadDelete = async (
     {
       ...options,
       method: "DELETE",
+    },
+  );
+};
+
+/**
+ * @summary Get poll status for a thread
+ */
+export type threadGetPollResponse = {
+  data: ThreadGetPollOKResponse;
+  status: number;
+};
+
+export const getThreadGetPollUrl = (threadMark: string) => {
+  return `/threads/${threadMark}/poll`;
+};
+
+export const threadGetPoll = async (
+  threadMark: string,
+  options?: RequestInit,
+): Promise<threadGetPollResponse> => {
+  return fetcher<Promise<threadGetPollResponse>>(
+    getThreadGetPollUrl(threadMark),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * @summary Cast a vote on a poll
+ */
+export type threadVotePollResponse = {
+  data: ThreadVotePollOKResponse;
+  status: number;
+};
+
+export const getThreadVotePollUrl = (threadMark: string) => {
+  return `/threads/${threadMark}/poll/vote`;
+};
+
+export const threadVotePoll = async (
+  threadMark: string,
+  pollVoteBody: PollVoteBody,
+  options?: RequestInit,
+): Promise<threadVotePollResponse> => {
+  return fetcher<Promise<threadVotePollResponse>>(
+    getThreadVotePollUrl(threadMark),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(pollVoteBody),
     },
   );
 };

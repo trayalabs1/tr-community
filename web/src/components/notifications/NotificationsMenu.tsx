@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Portal } from "@ark-ui/react";
 import Link from "next/link";
 
@@ -13,6 +13,7 @@ import * as Menu from "@/components/ui/menu";
 import { Center, LStack, WStack, styled } from "@/styled-system/jsx";
 import { hstack } from "@/styled-system/patterns";
 import { deriveError } from "@/utils/error";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 import { hasPermission } from "@/utils/permissions";
 
 import { NotificationsTrigger } from "./NotificationsTrigger";
@@ -31,6 +32,11 @@ export function NotificationsMenu(props: Props) {
     ...props,
     enabled: lazy ? opened : undefined,
   });
+  const { trackNotificationsClicked } = useEventTracking();
+
+  const handleNotificationsClick = useCallback(() => {
+    trackNotificationsClicked();
+  }, [trackNotificationsClicked]);
 
   if (!ready && (error || !lazy)) {
     return (
@@ -58,7 +64,7 @@ export function NotificationsMenu(props: Props) {
         }
       }}
     >
-      <Menu.Trigger cursor="pointer" position="relative" asChild>
+      <Menu.Trigger cursor="pointer" position="relative" asChild onClick={handleNotificationsClick}>
         <NotificationsTrigger
           hideLabel
           size="md"

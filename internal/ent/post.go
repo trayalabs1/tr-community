@@ -12,8 +12,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/category"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/link"
 	"github.com/Southclaws/storyden/internal/ent/post"
+	"github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/rs/xid"
 )
 
@@ -34,14 +36,16 @@ type Post struct {
 	Title string `json:"title,omitempty"`
 	// Slug holds the value of the "slug" field.
 	Slug string `json:"slug,omitempty"`
-	// Pinned holds the value of the "pinned" field.
-	Pinned bool `json:"pinned,omitempty"`
+	// PinnedRank holds the value of the "pinned_rank" field.
+	PinnedRank int `json:"pinned_rank,omitempty"`
 	// LastReplyAt holds the value of the "last_reply_at" field.
 	LastReplyAt time.Time `json:"last_reply_at,omitempty"`
 	// RootPostID holds the value of the "root_post_id" field.
 	RootPostID *xid.ID `json:"root_post_id,omitempty"`
 	// ReplyToPostID holds the value of the "reply_to_post_id" field.
 	ReplyToPostID *xid.ID `json:"reply_to_post_id,omitempty"`
+	// ReferencePostID holds the value of the "reference_post_id" field.
+	ReferencePostID *xid.ID `json:"reference_post_id,omitempty"`
 	// Body holds the value of the "body" field.
 	Body string `json:"body,omitempty"`
 	// Short holds the value of the "short" field.
@@ -54,6 +58,8 @@ type Post struct {
 	AccountPosts xid.ID `json:"account_posts,omitempty"`
 	// CategoryID holds the value of the "category_id" field.
 	CategoryID xid.ID `json:"category_id,omitempty"`
+	// The channel this post belongs to
+	ChannelID xid.ID `json:"channel_id,omitempty"`
 	// LinkID holds the value of the "link_id" field.
 	LinkID xid.ID `json:"link_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -68,6 +74,8 @@ type PostEdges struct {
 	Author *Account `json:"author,omitempty"`
 	// Category is only required for root posts. It should never be added to a child post.
 	Category *Category `json:"category,omitempty"`
+	// Channel holds the value of the channel edge.
+	Channel *Channel `json:"channel,omitempty"`
 	// Tags are only required for root posts. It should never be added to a child post.
 	Tags []*Tag `json:"tags,omitempty"`
 	// A many-to-many recursive self reference. The root post is the first post in the thread.
@@ -78,6 +86,10 @@ type PostEdges struct {
 	ReplyTo *Post `json:"replyTo,omitempty"`
 	// Replies holds the value of the replies edge.
 	Replies []*Post `json:"replies,omitempty"`
+	// A recursive self reference. When set, this post is a share that features the referenced thread in this post's channel; deleting the referenced thread cascades to its shares.
+	Reference *Post `json:"reference,omitempty"`
+	// Shares holds the value of the shares edge.
+	Shares []*Post `json:"shares,omitempty"`
 	// Reacts holds the value of the reacts edge.
 	Reacts []*React `json:"reacts,omitempty"`
 	// Likes holds the value of the likes edge.
@@ -96,9 +108,13 @@ type PostEdges struct {
 	Event []*Event `json:"event,omitempty"`
 	// PostReads holds the value of the post_reads edge.
 	PostReads []*PostRead `json:"post_reads,omitempty"`
+	// PollVotes holds the value of the poll_votes edge.
+	PollVotes []*PollVote `json:"poll_votes,omitempty"`
+	// Sentiment holds the value of the sentiment edge.
+	Sentiment *PostSentiment `json:"sentiment,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [16]bool
+	loadedTypes [21]bool
 }
 
 // AuthorOrErr returns the Author value or an error if the edge
@@ -123,10 +139,21 @@ func (e PostEdges) CategoryOrErr() (*Category, error) {
 	return nil, &NotLoadedError{edge: "category"}
 }
 
+// ChannelOrErr returns the Channel value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e PostEdges) ChannelOrErr() (*Channel, error) {
+	if e.Channel != nil {
+		return e.Channel, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: channel.Label}
+	}
+	return nil, &NotLoadedError{edge: "channel"}
+}
+
 // TagsOrErr returns the Tags value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) TagsOrErr() ([]*Tag, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Tags, nil
 	}
 	return nil, &NotLoadedError{edge: "tags"}
@@ -137,7 +164,7 @@ func (e PostEdges) TagsOrErr() ([]*Tag, error) {
 func (e PostEdges) RootOrErr() (*Post, error) {
 	if e.Root != nil {
 		return e.Root, nil
-	} else if e.loadedTypes[3] {
+	} else if e.loadedTypes[4] {
 		return nil, &NotFoundError{label: post.Label}
 	}
 	return nil, &NotLoadedError{edge: "root"}
@@ -146,7 +173,7 @@ func (e PostEdges) RootOrErr() (*Post, error) {
 // PostsOrErr returns the Posts value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) PostsOrErr() ([]*Post, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.Posts, nil
 	}
 	return nil, &NotLoadedError{edge: "posts"}
@@ -157,7 +184,7 @@ func (e PostEdges) PostsOrErr() ([]*Post, error) {
 func (e PostEdges) ReplyToOrErr() (*Post, error) {
 	if e.ReplyTo != nil {
 		return e.ReplyTo, nil
-	} else if e.loadedTypes[5] {
+	} else if e.loadedTypes[6] {
 		return nil, &NotFoundError{label: post.Label}
 	}
 	return nil, &NotLoadedError{edge: "replyTo"}
@@ -166,16 +193,36 @@ func (e PostEdges) ReplyToOrErr() (*Post, error) {
 // RepliesOrErr returns the Replies value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) RepliesOrErr() ([]*Post, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[7] {
 		return e.Replies, nil
 	}
 	return nil, &NotLoadedError{edge: "replies"}
 }
 
+// ReferenceOrErr returns the Reference value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e PostEdges) ReferenceOrErr() (*Post, error) {
+	if e.Reference != nil {
+		return e.Reference, nil
+	} else if e.loadedTypes[8] {
+		return nil, &NotFoundError{label: post.Label}
+	}
+	return nil, &NotLoadedError{edge: "reference"}
+}
+
+// SharesOrErr returns the Shares value or an error if the edge
+// was not loaded in eager-loading.
+func (e PostEdges) SharesOrErr() ([]*Post, error) {
+	if e.loadedTypes[9] {
+		return e.Shares, nil
+	}
+	return nil, &NotLoadedError{edge: "shares"}
+}
+
 // ReactsOrErr returns the Reacts value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) ReactsOrErr() ([]*React, error) {
-	if e.loadedTypes[7] {
+	if e.loadedTypes[10] {
 		return e.Reacts, nil
 	}
 	return nil, &NotLoadedError{edge: "reacts"}
@@ -184,7 +231,7 @@ func (e PostEdges) ReactsOrErr() ([]*React, error) {
 // LikesOrErr returns the Likes value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) LikesOrErr() ([]*LikePost, error) {
-	if e.loadedTypes[8] {
+	if e.loadedTypes[11] {
 		return e.Likes, nil
 	}
 	return nil, &NotLoadedError{edge: "likes"}
@@ -193,7 +240,7 @@ func (e PostEdges) LikesOrErr() ([]*LikePost, error) {
 // MentionsOrErr returns the Mentions value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) MentionsOrErr() ([]*MentionProfile, error) {
-	if e.loadedTypes[9] {
+	if e.loadedTypes[12] {
 		return e.Mentions, nil
 	}
 	return nil, &NotLoadedError{edge: "mentions"}
@@ -202,7 +249,7 @@ func (e PostEdges) MentionsOrErr() ([]*MentionProfile, error) {
 // AssetsOrErr returns the Assets value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) AssetsOrErr() ([]*Asset, error) {
-	if e.loadedTypes[10] {
+	if e.loadedTypes[13] {
 		return e.Assets, nil
 	}
 	return nil, &NotLoadedError{edge: "assets"}
@@ -211,7 +258,7 @@ func (e PostEdges) AssetsOrErr() ([]*Asset, error) {
 // CollectionsOrErr returns the Collections value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) CollectionsOrErr() ([]*Collection, error) {
-	if e.loadedTypes[11] {
+	if e.loadedTypes[14] {
 		return e.Collections, nil
 	}
 	return nil, &NotLoadedError{edge: "collections"}
@@ -222,7 +269,7 @@ func (e PostEdges) CollectionsOrErr() ([]*Collection, error) {
 func (e PostEdges) LinkOrErr() (*Link, error) {
 	if e.Link != nil {
 		return e.Link, nil
-	} else if e.loadedTypes[12] {
+	} else if e.loadedTypes[15] {
 		return nil, &NotFoundError{label: link.Label}
 	}
 	return nil, &NotLoadedError{edge: "link"}
@@ -231,7 +278,7 @@ func (e PostEdges) LinkOrErr() (*Link, error) {
 // ContentLinksOrErr returns the ContentLinks value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) ContentLinksOrErr() ([]*Link, error) {
-	if e.loadedTypes[13] {
+	if e.loadedTypes[16] {
 		return e.ContentLinks, nil
 	}
 	return nil, &NotLoadedError{edge: "content_links"}
@@ -240,7 +287,7 @@ func (e PostEdges) ContentLinksOrErr() ([]*Link, error) {
 // EventOrErr returns the Event value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) EventOrErr() ([]*Event, error) {
-	if e.loadedTypes[14] {
+	if e.loadedTypes[17] {
 		return e.Event, nil
 	}
 	return nil, &NotLoadedError{edge: "event"}
@@ -249,10 +296,30 @@ func (e PostEdges) EventOrErr() ([]*Event, error) {
 // PostReadsOrErr returns the PostReads value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) PostReadsOrErr() ([]*PostRead, error) {
-	if e.loadedTypes[15] {
+	if e.loadedTypes[18] {
 		return e.PostReads, nil
 	}
 	return nil, &NotLoadedError{edge: "post_reads"}
+}
+
+// PollVotesOrErr returns the PollVotes value or an error if the edge
+// was not loaded in eager-loading.
+func (e PostEdges) PollVotesOrErr() ([]*PollVote, error) {
+	if e.loadedTypes[19] {
+		return e.PollVotes, nil
+	}
+	return nil, &NotLoadedError{edge: "poll_votes"}
+}
+
+// SentimentOrErr returns the Sentiment value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e PostEdges) SentimentOrErr() (*PostSentiment, error) {
+	if e.Sentiment != nil {
+		return e.Sentiment, nil
+	} else if e.loadedTypes[20] {
+		return nil, &NotFoundError{label: postsentiment.Label}
+	}
+	return nil, &NotLoadedError{edge: "sentiment"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -260,17 +327,17 @@ func (*Post) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case post.FieldRootPostID, post.FieldReplyToPostID:
+		case post.FieldRootPostID, post.FieldReplyToPostID, post.FieldReferencePostID:
 			values[i] = &sql.NullScanner{S: new(xid.ID)}
 		case post.FieldMetadata:
 			values[i] = new([]byte)
-		case post.FieldPinned:
-			values[i] = new(sql.NullBool)
+		case post.FieldPinnedRank:
+			values[i] = new(sql.NullInt64)
 		case post.FieldTitle, post.FieldSlug, post.FieldBody, post.FieldShort, post.FieldVisibility:
 			values[i] = new(sql.NullString)
 		case post.FieldCreatedAt, post.FieldUpdatedAt, post.FieldDeletedAt, post.FieldIndexedAt, post.FieldLastReplyAt:
 			values[i] = new(sql.NullTime)
-		case post.FieldID, post.FieldAccountPosts, post.FieldCategoryID, post.FieldLinkID:
+		case post.FieldID, post.FieldAccountPosts, post.FieldCategoryID, post.FieldChannelID, post.FieldLinkID:
 			values[i] = new(xid.ID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -331,11 +398,11 @@ func (_m *Post) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Slug = value.String
 			}
-		case post.FieldPinned:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field pinned", values[i])
+		case post.FieldPinnedRank:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field pinned_rank", values[i])
 			} else if value.Valid {
-				_m.Pinned = value.Bool
+				_m.PinnedRank = int(value.Int64)
 			}
 		case post.FieldLastReplyAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -356,6 +423,13 @@ func (_m *Post) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ReplyToPostID = new(xid.ID)
 				*_m.ReplyToPostID = *value.S.(*xid.ID)
+			}
+		case post.FieldReferencePostID:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field reference_post_id", values[i])
+			} else if value.Valid {
+				_m.ReferencePostID = new(xid.ID)
+				*_m.ReferencePostID = *value.S.(*xid.ID)
 			}
 		case post.FieldBody:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -395,6 +469,12 @@ func (_m *Post) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.CategoryID = *value
 			}
+		case post.FieldChannelID:
+			if value, ok := values[i].(*xid.ID); !ok {
+				return fmt.Errorf("unexpected type %T for field channel_id", values[i])
+			} else if value != nil {
+				_m.ChannelID = *value
+			}
 		case post.FieldLinkID:
 			if value, ok := values[i].(*xid.ID); !ok {
 				return fmt.Errorf("unexpected type %T for field link_id", values[i])
@@ -424,6 +504,11 @@ func (_m *Post) QueryCategory() *CategoryQuery {
 	return NewPostClient(_m.config).QueryCategory(_m)
 }
 
+// QueryChannel queries the "channel" edge of the Post entity.
+func (_m *Post) QueryChannel() *ChannelQuery {
+	return NewPostClient(_m.config).QueryChannel(_m)
+}
+
 // QueryTags queries the "tags" edge of the Post entity.
 func (_m *Post) QueryTags() *TagQuery {
 	return NewPostClient(_m.config).QueryTags(_m)
@@ -447,6 +532,16 @@ func (_m *Post) QueryReplyTo() *PostQuery {
 // QueryReplies queries the "replies" edge of the Post entity.
 func (_m *Post) QueryReplies() *PostQuery {
 	return NewPostClient(_m.config).QueryReplies(_m)
+}
+
+// QueryReference queries the "reference" edge of the Post entity.
+func (_m *Post) QueryReference() *PostQuery {
+	return NewPostClient(_m.config).QueryReference(_m)
+}
+
+// QueryShares queries the "shares" edge of the Post entity.
+func (_m *Post) QueryShares() *PostQuery {
+	return NewPostClient(_m.config).QueryShares(_m)
 }
 
 // QueryReacts queries the "reacts" edge of the Post entity.
@@ -494,6 +589,16 @@ func (_m *Post) QueryPostReads() *PostReadQuery {
 	return NewPostClient(_m.config).QueryPostReads(_m)
 }
 
+// QueryPollVotes queries the "poll_votes" edge of the Post entity.
+func (_m *Post) QueryPollVotes() *PollVoteQuery {
+	return NewPostClient(_m.config).QueryPollVotes(_m)
+}
+
+// QuerySentiment queries the "sentiment" edge of the Post entity.
+func (_m *Post) QuerySentiment() *PostSentimentQuery {
+	return NewPostClient(_m.config).QuerySentiment(_m)
+}
+
 // Update returns a builder for updating this Post.
 // Note that you need to call Post.Unwrap() before calling this method if this Post
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -539,8 +644,8 @@ func (_m *Post) String() string {
 	builder.WriteString("slug=")
 	builder.WriteString(_m.Slug)
 	builder.WriteString(", ")
-	builder.WriteString("pinned=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Pinned))
+	builder.WriteString("pinned_rank=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PinnedRank))
 	builder.WriteString(", ")
 	builder.WriteString("last_reply_at=")
 	builder.WriteString(_m.LastReplyAt.Format(time.ANSIC))
@@ -552,6 +657,11 @@ func (_m *Post) String() string {
 	builder.WriteString(", ")
 	if v := _m.ReplyToPostID; v != nil {
 		builder.WriteString("reply_to_post_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ReferencePostID; v != nil {
+		builder.WriteString("reference_post_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
@@ -572,6 +682,9 @@ func (_m *Post) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("category_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CategoryID))
+	builder.WriteString(", ")
+	builder.WriteString("channel_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ChannelID))
 	builder.WriteString(", ")
 	builder.WriteString("link_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.LinkID))

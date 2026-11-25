@@ -34,6 +34,8 @@ type LibraryPageContext = {
   store: NodeStoreAPI;
   saving: boolean;
   revalidate: () => void;
+  channelID?: Identifier;
+  channelName?: string;
 };
 
 const Context = createContext<LibraryPageContext | null>(null);
@@ -52,11 +54,15 @@ export function useLibraryPageContext() {
 export type Props = {
   node: NodeWithChildren;
   childNodes?: NodeListResult;
+  channelID?: Identifier;
+  channelName?: string;
 };
 
 export function LibraryPageProvider({
   node,
   childNodes,
+  channelID,
+  channelName,
   children,
 }: PropsWithChildren<Props>) {
   const [saving, setSaving] = useState(false);
@@ -190,6 +196,8 @@ export function LibraryPageProvider({
         store: storeRef.current,
         saving,
         revalidate,
+        channelID,
+        channelName,
       }}
     >
       {children}

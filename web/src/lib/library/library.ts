@@ -48,6 +48,7 @@ export type CreateNodeArgs = {
   initialName?: string;
   parentID?: string;
   parentSlug?: string;
+  channelID?: string;
   disableRedirect?: boolean;
 };
 
@@ -89,6 +90,7 @@ export function useLibraryMutation(node?: Node) {
     initialName,
     parentID,
     parentSlug,
+    channelID,
     disableRedirect,
   }: CreateNodeArgs) => {
     if (!session) return;
@@ -113,6 +115,11 @@ export function useLibraryMutation(node?: Node) {
       slug: slug,
       description: "",
       owner: session,
+      channel: {
+        id: "temp",
+        name: "General",
+        slug: "general",
+      },
       properties: [],
       child_property_schema: [],
       hide_child_tree: false,
@@ -145,6 +152,7 @@ export function useLibraryMutation(node?: Node) {
       name,
       slug,
       parent,
+      channel: channelID,
     });
 
     if (!disableRedirect) {

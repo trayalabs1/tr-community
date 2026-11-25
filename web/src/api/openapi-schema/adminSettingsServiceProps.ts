@@ -7,8 +7,10 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
 
  * OpenAPI spec version: v1.25.13-canary
  */
+import type { FeedRankingServiceSettings } from "./feedRankingServiceSettings";
 import type { ModerationServiceSettings } from "./moderationServiceSettings";
 
 export interface AdminSettingsServiceProps {
+  feed_ranking?: FeedRankingServiceSettings;
   moderation?: ModerationServiceSettings;
 }

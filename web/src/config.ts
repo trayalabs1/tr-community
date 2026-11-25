@@ -1,86 +1,74 @@
 import { z } from "zod";
 
-export const DEFAULT_API_ADDRESS = "http://localhost:8000";
-export const DEFAULT_WEB_ADDRESS = "http://localhost:3000";
-
-export const ConfigSchema = z.object({
-  API_ADDRESS: z.string(),
-  WEB_ADDRESS: z.string(),
+const ConfigSchema = z.object({
+  API_ADDRESS: z.string().url("API_ADDRESS must be a valid URL"),
+  WEB_ADDRESS: z.string().url("WEB_ADDRESS must be a valid URL"),
   source: z.union([z.literal("server"), z.literal("script")]),
 });
 export type Config = z.infer<typeof ConfigSchema>;
 
-export function serverEnvironment() {
-  return {
-    API_ADDRESS:
-      global.process.env["NEXT_PUBLIC_API_ADDRESS"] ??
-      global.process.env["PUBLIC_API_ADDRESS"] ??
-      DEFAULT_API_ADDRESS,
-    WEB_ADDRESS:
-      global.process.env["NEXT_PUBLIC_WEB_ADDRESS"] ??
-      global.process.env["PUBLIC_WEB_ADDRESS"] ??
-      DEFAULT_WEB_ADDRESS,
+export function serverEnvironment(): Config {
+  const apiAddress = process.env["NEXT_PUBLIC_API_ADDRESS"];
+  const webAddress = process.env["NEXT_PUBLIC_WEB_ADDRESS"];
+
+  const parsed = ConfigSchema.safeParse({
+    API_ADDRESS: apiAddress,
+    WEB_ADDRESS: webAddress,
     source: "server" as const,
-  };
+  });
+
+  if (!parsed.success) {
+    throw new Error(
+      `Invalid configuration: Missing or invalid required environment variables.\n` +
+      `Required: NEXT_PUBLIC_API_ADDRESS, NEXT_PUBLIC_WEB_ADDRESS\n` +
+      `Errors: ${parsed.error.message}`
+    );
+  }
+
+  return parsed.data;
 }
 
 function isomorphicEnvironment(): Config {
   if (typeof window !== "undefined") {
     const parsed = ConfigSchema.safeParse((window as any).__storyden__);
 
-    // Don't bail out if the config is invalid, just log it and use the default.
-    // This is a rare occurrance but it does happen when Next.js renders either
-    // not-found.tsx or error.tsx as it does not load the <script> tag for some
-    // weird unknown reason. This seems like a bug in Next.js and not Storyden.
-    // Either way, the config isn't necessary on either of those pages as they
-    // don't make client side API calls, they just render a basic error page.
     if (!parsed.success) {
-      console.error(
-        `Invalid config loaded from \`window.__storyden__\`, this indicates a problem running the root layout <script> tag on the server render which should inject the API_ADDRESS and WEB_ADDRESS environment variables.
-
-A default configuration will be used, however this configuration will most likely not work correctly in most production environments.
-
-If you see this, please open an issue at https://github.com/Southclaws/storyden/issues/new
-`,
-        parsed.error.issues,
+      throw new Error(
+        `Invalid config from window.__storyden__. This indicates the root layout <script> tag failed to inject configuration. ` +
+        `Error: ${parsed.error.message}`
       );
-
-      return {
-        API_ADDRESS: DEFAULT_API_ADDRESS,
-        WEB_ADDRESS: DEFAULT_WEB_ADDRESS,
-        source: "server",
-      };
     }
 
-    const config = parsed.data;
-    console.log("loaded window config", config);
-    return config;
+    return parsed.data;
   } else {
-    const config = serverEnvironment();
-    return config;
+    return serverEnvironment();
   }
 }
 
-const env = isomorphicEnvironment();
+let cachedEnv: Config | null = null;
 
-export const API_ADDRESS = env.API_ADDRESS;
+function getEnv(): Config {
+  if (cachedEnv === null) {
+    cachedEnv = isomorphicEnvironment();
+  }
+  return cachedEnv;
+}
 
-export const WEB_ADDRESS = env.WEB_ADDRESS;
+export function getWEBAddress() {
+  return getEnv().WEB_ADDRESS;
+}
 
 export function getAPIAddress() {
-  if (typeof window !== "undefined") {
-    // When called on the client, return the public API address, such as:
-    // https://api.mystorydencommunity.com
-    return env.API_ADDRESS;
-  } else {
-    // When called on the server side, we may be running in a container beside
-    // the API (the "fullstack" container image) so return the internal address
-    // if it's set, otherwise the regular API_ADDRESS configuration value.
-    return (
-      // The default fullstack image will set this value automatically to :8000.
-      global.process.env["SSR_API_ADDRESS"] ??
-      // There's no SSR address set so just use the public API address.
-      env.API_ADDRESS
-    );
-  }
+  const env = getEnv();
+  const isClient = typeof window !== "undefined";
+  const result = isClient
+    ? env.API_ADDRESS
+    : global.process.env["SSR_API_ADDRESS"] ?? env.API_ADDRESS;
+
+  return result;
 }
+
+// Deprecated: Use getAPIAddress() and getWEBAddress() instead
+// These are kept for backward compatibility using lazy getters
+export const API_ADDRESS = getAPIAddress();
+export const WEB_ADDRESS = getWEBAddress();

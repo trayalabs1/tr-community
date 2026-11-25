@@ -7,6 +7,7 @@ import (
 
 	"github.com/Southclaws/storyden/app/resources/account/account_querier"
 	"github.com/Southclaws/storyden/app/resources/asset"
+	"github.com/Southclaws/storyden/app/resources/channel"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/library"
 	"github.com/Southclaws/storyden/app/resources/library/node_cache"
@@ -32,6 +33,7 @@ type Partial struct {
 	Description  opt.Optional[string]
 	PrimaryImage deletable.Value[asset.AssetID]
 	Content      opt.Optional[datagraph.Content]
+	Channel      opt.Optional[library.QueryKey]
 	Parent       opt.Optional[library.QueryKey]
 	HideChildren opt.Optional[bool]
 	Properties   opt.Optional[library.PropertyMutationList]
@@ -47,6 +49,7 @@ type Manager struct {
 	accountQuery *account_querier.Querier
 	nodeQuerier  *node_querier.Querier
 	nodeWriter   *node_writer.Writer
+	channelRepo  *channel.Repository
 	schemaWriter *node_properties.SchemaWriter
 	propWriter   *node_properties.Writer
 	tagWriter    *tag_writer.Writer
@@ -63,6 +66,7 @@ func New(
 	accountQuery *account_querier.Querier,
 	nodeQuerier *node_querier.Querier,
 	nodeWriter *node_writer.Writer,
+	channelRepo *channel.Repository,
 	schemaWriter *node_properties.SchemaWriter,
 	propWriter *node_properties.Writer,
 	tagWriter *tag_writer.Writer,
@@ -78,6 +82,7 @@ func New(
 		accountQuery: accountQuery,
 		nodeQuerier:  nodeQuerier,
 		nodeWriter:   nodeWriter,
+		channelRepo:  channelRepo,
 		schemaWriter: schemaWriter,
 		propWriter:   propWriter,
 		tagWriter:    tagWriter,

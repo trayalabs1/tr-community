@@ -8,14 +8,21 @@ import (
 	"github.com/Southclaws/storyden/app/services/account/account_email"
 	"github.com/Southclaws/storyden/app/services/account/account_suspension"
 	"github.com/Southclaws/storyden/app/services/account/register"
+	"github.com/Southclaws/storyden/app/services/account/username"
+	"github.com/Southclaws/storyden/app/services/admin/admin_reply_manager"
+	"github.com/Southclaws/storyden/app/services/admin/reply_queue_manager"
 	"github.com/Southclaws/storyden/app/services/admin/settings_manager"
 	"github.com/Southclaws/storyden/app/services/asset"
+	"github.com/Southclaws/storyden/app/services/audit/audit_logger"
 	"github.com/Southclaws/storyden/app/services/authentication"
+	"github.com/Southclaws/storyden/app/services/authentication/session_cache"
 	"github.com/Southclaws/storyden/app/services/avatar"
 	"github.com/Southclaws/storyden/app/services/avatar_gen"
 	"github.com/Southclaws/storyden/app/services/beacon_listener"
 	"github.com/Southclaws/storyden/app/services/branding"
 	"github.com/Southclaws/storyden/app/services/category"
+	"github.com/Southclaws/storyden/app/services/channel"
+	"github.com/Southclaws/storyden/app/services/channel_membership"
 	"github.com/Southclaws/storyden/app/services/collection"
 	"github.com/Southclaws/storyden/app/services/comms"
 	"github.com/Southclaws/storyden/app/services/event"
@@ -25,9 +32,11 @@ import (
 	"github.com/Southclaws/storyden/app/services/link"
 	"github.com/Southclaws/storyden/app/services/mention/mention_job"
 	"github.com/Southclaws/storyden/app/services/moderation"
+	"github.com/Southclaws/storyden/app/services/moderation/action_dispatcher"
 	"github.com/Southclaws/storyden/app/services/notification/notify_job"
 	"github.com/Southclaws/storyden/app/services/onboarding"
 	"github.com/Southclaws/storyden/app/services/profile/following"
+	"github.com/Southclaws/storyden/app/services/queue/summary_job"
 	"github.com/Southclaws/storyden/app/services/react_manager"
 	"github.com/Southclaws/storyden/app/services/reply"
 	"github.com/Southclaws/storyden/app/services/report"
@@ -36,6 +45,8 @@ import (
 	"github.com/Southclaws/storyden/app/services/search/redis_search"
 	"github.com/Southclaws/storyden/app/services/search/search_indexer"
 	"github.com/Southclaws/storyden/app/services/semdex/semdexer"
+	"github.com/Southclaws/storyden/app/services/sentiment"
+	"github.com/Southclaws/storyden/app/services/sentiment/ranker_job"
 	"github.com/Southclaws/storyden/app/services/system/instance_info"
 	"github.com/Southclaws/storyden/app/services/tag/autotagger"
 	"github.com/Southclaws/storyden/app/services/thread"
@@ -46,11 +57,15 @@ func Build() fx.Option {
 	return fx.Options(
 		fx.Provide(register.New),
 		account.Build(),
+		username.Build(),
 		branding.Build(),
 		onboarding.Build(),
 		account_suspension.Build(),
 		authentication.Build(),
+		session_cache.Build(),
 		category.Build(),
+		channel.Build(),
+		channel_membership.Build(),
 		thread.Build(),
 		reply.Build(),
 		report.Build(),
@@ -69,16 +84,23 @@ func Build() fx.Option {
 		link.Build(),
 		notify_job.Build(),
 		mention_job.Build(),
+		sentiment.Build(),
+		ranker_job.Build(),
 		beacon_listener.Build(),
 		generative.Build(),
 		semdexer.Build(),
 		event.Build(),
 		moderation.Build(),
+		action_dispatcher.Build(),
+		audit_logger.Build(),
+		summary_job.Build(),
 		fx.Provide(avatar_gen.New),
 		fx.Provide(following.New),
 		fx.Provide(autotagger.New),
 		fx.Provide(instance_info.New),
 		fx.Provide(account_auth.New, account_email.New),
 		fx.Provide(settings_manager.New),
+		fx.Provide(reply_queue_manager.New),
+		fx.Provide(admin_reply_manager.New),
 	)
 }

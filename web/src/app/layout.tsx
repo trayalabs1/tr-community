@@ -14,26 +14,85 @@ import "./global.css";
 
 import { Providers } from "./providers";
 
-const { API_ADDRESS, WEB_ADDRESS } = serverEnvironment();
-
 export default async function RootLayout({ children }: PropsWithChildren) {
   const session = await getServerSession();
   const settings = await getSettings();
 
+  const colorModeAttr =
+    settings.color_mode === "system"
+      ? undefined
+      : settings.color_mode === "dark"
+        ? "dark"
+        : "light";
+
   return (
-    <html lang="en" className={`${inter.variable} ${interDisplay.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${interDisplay.variable}`}
+      data-color-mode={colorModeAttr}
+    >
       <head>
         {/*
           NOTE: Because the browser side does not support dynamic environment
           variables (obviously, it's a browser script) we hack around Next.js'
-          build-time variables by providing a direct reference to these inside
-          the window object. This allows us to set the API/frontend addresses
-          without rebuilding the entire app.
+          build-time variables by loading a dynamic script that sets the
+          API_ADDRESS and WEB_ADDRESS. The script is served from /config.js
+          which is a dynamic route that reads env vars at request time.
+
+          This must be a blocking script (no async/defer) to ensure it executes
+          before any React code that might try to read the config.
         */}
-        <script>{`
-          window.__storyden__ = {"API_ADDRESS":"${API_ADDRESS}", "WEB_ADDRESS":"${WEB_ADDRESS}", "source": "script"};
-          console.log("set up window config", window.__storyden__);
-        `}</script>
+        <script src="/config.js" />
+
+        {/* MoEngage SDK - Load the correct SDK version (matching form-v2s) */}
+        <script
+          src="https://cdn.moengage.com/webpush/moe_webSdk.min.latest.js"
+          async={false}
+        />
+        {/* Initialize MoEngage after SDK loads */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const appId = "${process.env["NEXT_PUBLIC_MOENGAGE_APP_ID"] || ""}";
+                const cluster = "${process.env["NEXT_PUBLIC_MOENGAGE_CLUSTER"] || "DC_3"}";
+                const debugLogs = parseInt("${process.env["NEXT_PUBLIC_MOENGAGE_DEBUG_LOGS"] || "1"}", 10);
+
+                if (!appId) return;
+
+                function initMoengage() {
+                  if (typeof window.moe === 'undefined') {
+                    setTimeout(initMoengage, 100);
+                    return;
+                  }
+                  try {
+                    window.Moengage = window.moe({
+                      app_id: appId,
+                      cluster: cluster,
+                      debug_logs: debugLogs
+                    });
+                  } catch (error) {
+                    console.error('[MoEngage] Initialization error:', error);
+                  }
+                }
+                initMoengage();
+              })();
+            `,
+          }}
+        />
+
+        {/* Microsoft Clarity */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+              })(window, document, "clarity", "script", "wu09ntd0sf");
+            `,
+          }}
+        />
 
         {/*
             NOTE: This stylesheet is fully server-side rendered but it's not
@@ -69,6 +128,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const iconURL = getIconURL("512x512");
 
+  const { WEB_ADDRESS } = serverEnvironment();
   const canonical = WEB_ADDRESS;
 
   // TODO: Add another settings field for this.

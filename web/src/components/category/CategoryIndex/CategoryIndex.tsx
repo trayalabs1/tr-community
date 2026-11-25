@@ -34,7 +34,7 @@ export function CategoryIndex({
   const categoryCount = categories.length;
 
   return (
-    <LStack gap="8">
+    <LStack gap="8" px="4">
       <LStack>
         <WStack>
           <Heading>Discussion categories</Heading>

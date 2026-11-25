@@ -60,6 +60,13 @@ func newSQL(cfg config.Config) (*sql.DB, *sqlx.DB, error) {
 		return nil, nil, fault.Wrap(err, fmsg.With("failed to connect to database"))
 	}
 
+	for _, h := range []*sql.DB{d, x.DB} {
+		h.SetMaxOpenConns(cfg.DatabaseMaxOpenConns)
+		h.SetMaxIdleConns(cfg.DatabaseMaxIdleConns)
+		h.SetConnMaxLifetime(cfg.DatabaseConnMaxLifetime)
+		h.SetConnMaxIdleTime(cfg.DatabaseConnMaxIdleTime)
+	}
+
 	return d, x, nil
 }
 
@@ -127,6 +134,9 @@ func newEntClient(lc fx.Lifecycle, tf tracing.Factory, cfg config.Config, db *sq
 				schema.WithDropColumn(true),
 				schema.WithApplyHook(populateLastReplyAt()),
 				schema.WithApplyHook(migrateReplyVisibility()),
+				schema.WithApplyHook(createPostCategoryIndex()),
+				schema.WithApplyHook(createShareComboIndex()),
+				schema.WithApplyHook(createThreadEdgeIndex()),
 			); err != nil {
 				return fault.Wrap(err, fctx.With(ctx))
 			}
@@ -292,6 +302,88 @@ func migrateReplyVisibility() schema.ApplyHook {
 			`, []any{}, nil)
 			if err != nil {
 				return fault.Wrap(err, fmsg.With("failed to migrate reply visibility from draft to published"))
+			}
+
+			return nil
+		})
+	}
+}
+
+// createPostCategoryIndex adds an expression index on metadata->>'post_category'
+// to back the category filters (OnlyBAHPosts / HasPostCategories) used by the
+// thread list and bulk-actions queries. Ent can't declare expression indexes,
+// so it's created here. The index is partial — scoped to the undeleted threads
+// the bulk-actions path scans — to keep it small and hot.
+//
+// Idempotent via IF NOT EXISTS. The expression and partial predicate are
+// supported by both PostgreSQL and SQLite.
+func createPostCategoryIndex() schema.ApplyHook {
+	return func(next schema.Applier) schema.Applier {
+		return schema.ApplyFunc(func(ctx context.Context, conn dialect.ExecQuerier, plan *migrate.Plan) error {
+			if err := next.Apply(ctx, conn, plan); err != nil {
+				return err
+			}
+
+			err := conn.Exec(ctx, `
+				CREATE INDEX IF NOT EXISTS post_category_threads
+				ON posts ((metadata->>'post_category'), last_reply_at)
+				WHERE root_post_id IS NULL AND deleted_at IS NULL
+			`, []any{}, nil)
+			if err != nil {
+				return fault.Wrap(err, fmsg.With("failed to create post_category index"))
+			}
+
+			return nil
+		})
+	}
+}
+
+// createShareComboIndex adds an expression index on
+// (metadata->>'post_category', metadata->>'type') to back the share-combo
+// filters (OnlyShareCombos / ExcludeShareCombos) used to split the channel feed
+// into its share and organic queues. Ent can't declare expression indexes, so
+// it's created here. The index is partial — scoped to undeleted root posts, the
+// set the feed scans — to keep it small and hot.
+//
+// Idempotent via IF NOT EXISTS. The expression and partial predicate are
+// supported by both PostgreSQL and SQLite.
+func createShareComboIndex() schema.ApplyHook {
+	return func(next schema.Applier) schema.Applier {
+		return schema.ApplyFunc(func(ctx context.Context, conn dialect.ExecQuerier, plan *migrate.Plan) error {
+			if err := next.Apply(ctx, conn, plan); err != nil {
+				return err
+			}
+
+			err := conn.Exec(ctx, `
+				CREATE INDEX IF NOT EXISTS post_share_combo_threads
+				ON posts ((metadata->>'post_category'), (metadata->>'type'))
+				WHERE root_post_id IS NULL AND deleted_at IS NULL
+			`, []any{}, nil)
+			if err != nil {
+				return fault.Wrap(err, fmsg.With("failed to create share combo index"))
+			}
+
+			return nil
+		})
+	}
+}
+
+// createThreadEdgeIndex adds an index on the tag_posts M2M join table keyed by
+// post_id. Ent generates the join table with a composite primary key led by
+// tag_id, so seeking a post's tags (GET /api/threads/:id) can't use it. The
+// post_assets join table already leads with post_id, so it needs no extra index.
+//
+// Idempotent via IF NOT EXISTS.
+func createThreadEdgeIndex() schema.ApplyHook {
+	return func(next schema.Applier) schema.Applier {
+		return schema.ApplyFunc(func(ctx context.Context, conn dialect.ExecQuerier, plan *migrate.Plan) error {
+			if err := next.Apply(ctx, conn, plan); err != nil {
+				return err
+			}
+
+			err := conn.Exec(ctx, `CREATE INDEX IF NOT EXISTS tag_posts_post_id ON tag_posts (post_id)`, []any{}, nil)
+			if err != nil {
+				return fault.Wrap(err, fmsg.With("failed to create tag_posts index"))
 			}
 
 			return nil

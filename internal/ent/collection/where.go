@@ -91,6 +91,11 @@ func CoverAssetID(v xid.ID) predicate.Collection {
 	return predicate.Collection(sql.FieldEQ(FieldCoverAssetID, v))
 }
 
+// IsDefault applies equality check predicate on the "is_default" field. It's identical to IsDefaultEQ.
+func IsDefault(v bool) predicate.Collection {
+	return predicate.Collection(sql.FieldEQ(FieldIsDefault, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Collection {
 	return predicate.Collection(sql.FieldEQ(FieldCreatedAt, v))
@@ -524,6 +529,16 @@ func VisibilityIn(vs ...Visibility) predicate.Collection {
 // VisibilityNotIn applies the NotIn predicate on the "visibility" field.
 func VisibilityNotIn(vs ...Visibility) predicate.Collection {
 	return predicate.Collection(sql.FieldNotIn(FieldVisibility, vs...))
+}
+
+// IsDefaultEQ applies the EQ predicate on the "is_default" field.
+func IsDefaultEQ(v bool) predicate.Collection {
+	return predicate.Collection(sql.FieldEQ(FieldIsDefault, v))
+}
+
+// IsDefaultNEQ applies the NEQ predicate on the "is_default" field.
+func IsDefaultNEQ(v bool) predicate.Collection {
+	return predicate.Collection(sql.FieldNEQ(FieldIsDefault, v))
 }
 
 // HasOwner applies the HasEdge predicate on the "owner" edge.

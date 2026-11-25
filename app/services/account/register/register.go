@@ -112,6 +112,7 @@ func (s *Registrar) GetOrCreateViaEmail(
 	handle string,
 	name string,
 	email mail.Address,
+	skipVerification bool,
 ) (*account.Account, error) {
 	// Two key pieces of information here can point to an existing account. The
 	// authentication record and the email address. In most cases, either both
@@ -207,14 +208,22 @@ func (s *Registrar) GetOrCreateViaEmail(
 		// are enabled at a later date, such as with OAuth providers.
 		// Link the email address to the account and send a verification.
 
-		err = s.linkAndVerifyEmail(ctx, authmethod.Account.ID, email)
+		if skipVerification {
+			err = s.linkVerifiedEmail(ctx, authmethod.Account.ID, email)
+		} else {
+			err = s.linkAndVerifyEmail(ctx, authmethod.Account.ID, email)
+		}
 		if err != nil {
 			return nil, fault.Wrap(err,
 				fctx.With(ctx),
 				fmsg.WithDesc("failed to link and verify email", "Unable to link email address to your account. Please try again."))
 		}
 
-		logger.Info("get or create: auth method exists, email not recorded, linking new email to existing account")
+		if skipVerification {
+			logger.Info("get or create: auth method exists, email not recorded, linking new verified email to existing account")
+		} else {
+			logger.Info("get or create: auth method exists, email not recorded, linking new email to existing account and verifying")
+		}
 
 		return &authmethod.Account, nil
 
@@ -224,11 +233,18 @@ func (s *Registrar) GetOrCreateViaEmail(
 		// the caller has verified this via OAuth or similar. The email may
 		// have also been added manually via a newsletter list. Link them.
 
-		if !isVerified {
+		if !isVerified && !skipVerification {
 			return nil, fault.Wrap(errEmailNotVerified,
 				fctx.With(ctx),
 				fmsg.WithDesc("email not verified", "Unable to complete sign-in. Please contact support if this issue persists."),
 			)
+		}
+
+		if !isVerified && skipVerification {
+			err = s.emailRepo.Verify(ctx, emailOwner.ID, email)
+			if err != nil {
+				return nil, fault.Wrap(err, fctx.With(ctx), fmsg.With("failed to verify existing email"))
+			}
 		}
 
 		_, err = s.authRepo.Create(ctx, emailOwner.ID, service, authentication.TokenTypeOAuth, identifier, token, nil, authentication.WithName(authName))
@@ -236,7 +252,11 @@ func (s *Registrar) GetOrCreateViaEmail(
 			return nil, fault.Wrap(err, fmsg.With("failed to create new auth method for existing email"), fctx.With(ctx))
 		}
 
-		logger.Info("get or create: no auth record, email already points to existing account, linking new auth method to existing account")
+		if skipVerification {
+			logger.Info("get or create: no auth record, email already points to existing account, linking new auth method and assuming email verified")
+		} else {
+			logger.Info("get or create: no auth record, email already points to existing account, linking new auth method")
+		}
 
 		return &emailOwner.Account, nil
 
@@ -249,7 +269,11 @@ func (s *Registrar) GetOrCreateViaEmail(
 		}
 
 		if !isVerified {
-			err = s.linkAndVerifyEmail(ctx, newAccount.ID, email)
+			if skipVerification {
+				err = s.linkVerifiedEmail(ctx, newAccount.ID, email)
+			} else {
+				err = s.linkAndVerifyEmail(ctx, newAccount.ID, email)
+			}
 			if err != nil {
 				return nil, fault.Wrap(err,
 					fctx.With(ctx),
@@ -257,7 +281,11 @@ func (s *Registrar) GetOrCreateViaEmail(
 			}
 		}
 
-		logger.Info("get or create: no auth record, no email record, creating new account and verifying email")
+		if skipVerification {
+			logger.Info("get or create: no auth record, no email record, creating new account and linking verified email")
+		} else {
+			logger.Info("get or create: no auth record, no email record, creating new account and verifying email")
+		}
 
 		return newAccount, nil
 
@@ -468,6 +496,17 @@ func (s *Registrar) linkAndVerifyEmail(ctx context.Context, accID account.Accoun
 		return fault.Wrap(err,
 			fctx.With(ctx),
 			fmsg.WithDesc("failed to begin email verification", "Unable to send verification email. Please try again or contact site administration."))
+	}
+
+	return nil
+}
+
+func (s *Registrar) linkVerifiedEmail(ctx context.Context, accID account.AccountID, email mail.Address) error {
+	_, err := s.emailRepo.Add(ctx, accID, email, "", true)
+	if err != nil {
+		return fault.Wrap(err,
+			fctx.With(ctx),
+			fmsg.WithDesc("failed to link verified email", "Unable to link email address to your account. Please try again."))
 	}
 
 	return nil

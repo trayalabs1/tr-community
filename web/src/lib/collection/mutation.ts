@@ -1,9 +1,11 @@
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { uniqueId } from "lodash";
 import { Arguments, MutatorCallback, useSWRConfig } from "swr";
 
 import {
   collectionAddNode,
   collectionAddPost,
+  collectionAddPostToDefault,
   collectionCreate,
   collectionDelete,
   collectionRemoveNode,
@@ -44,6 +46,7 @@ export function useCollectionMutations(session?: Account) {
         updatedAt: new Date().toISOString(),
         owner: session,
         has_queried_item: false,
+        is_default: false,
         item_count: 0,
         slug: create.slug ?? slugify(create.name),
         ...create,
@@ -122,9 +125,9 @@ export function useCollectionMutations(session?: Account) {
   };
 }
 
-export function useCollectionItemMutations(session: Account) {
+export function useCollectionItemMutations(session: Account, router?: AppRouterInstance) {
   const { mutate } = useSWRConfig();
-  const { revalidate: revalidateFeed } = useFeedMutations();
+  const { revalidate: revalidateFeed } = useFeedMutations(undefined, undefined, undefined, router);
 
   const threadQueryMutationKey = getThreadListKey()[0];
   function threadListKeyFilterFn(key: Arguments) {
@@ -202,6 +205,38 @@ export function useCollectionItemMutations(session: Account) {
     });
 
     await collectionAddPost(collection.id, postID);
+  };
+
+  const addPostToDefault = async (postID: string) => {
+    const threadListMutator: MutatorCallback<ThreadListOKResponse> = (data) => {
+      if (!data) return;
+
+      const newThreads = data.threads.map((t) => {
+        if (t.id === postID) {
+          return {
+            ...t,
+            collections: {
+              in_collections: t.collections.in_collections + 1,
+              has_collected: true,
+            },
+          };
+        }
+        return t;
+      });
+
+      return {
+        ...data,
+        threads: newThreads,
+      };
+    };
+
+    await mutate(threadListKeyFilterFn, threadListMutator, {
+      revalidate: false,
+    });
+
+    await collectionAddPostToDefault(postID);
+
+    await mutate(collectionListAnyKeyFilterFn);
   };
 
   const removePost = async (collectionID: string, postID: string) => {
@@ -291,6 +326,7 @@ export function useCollectionItemMutations(session: Account) {
 
   return {
     addPost,
+    addPostToDefault,
     removePost,
     addNode,
     removeNode,

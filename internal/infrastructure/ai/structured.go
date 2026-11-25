@@ -24,7 +24,7 @@ func PromptObject[T any](ctx context.Context, prompter Prompter, description, in
 	}
 
 	res, err := s.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-		Model: openai.ChatModelGPT4_1,
+		Model: openai.ChatModelGPT4_1Mini,
 		Messages: []openai.ChatCompletionMessageParamUnion{
 			openai.UserMessage(input),
 		},

@@ -14,20 +14,577 @@ import type { SWRMutationConfiguration } from "swr/mutation";
 
 import { fetcher } from "../client";
 import type {
+  BadRequestResponse,
+  ChannelPersonalizedFeedOKResponse,
+  ChannelThreadGetParams,
+  ChannelThreadListParams,
+  ForbiddenResponse,
   InternalServerErrorResponse,
   NotFoundResponse,
   NotModifiedResponse,
+  PollVoteBody,
+  ReplyCreateBody,
+  ReplyCreateOKResponse,
   ThreadCreateBody,
   ThreadCreateOKResponse,
   ThreadGetParams,
+  ThreadGetPollOKResponse,
   ThreadGetResponse,
   ThreadListOKResponse,
   ThreadListParams,
+  ThreadStatsDailyUsersOKResponse,
   ThreadUpdateBody,
   ThreadUpdateOKResponse,
+  ThreadVotePollOKResponse,
   UnauthorisedResponse,
 } from "../openapi-schema";
 
+/**
+ * Create a new thread within a channel category.
+ */
+export const channelThreadCreate = (
+  channelID: string,
+  threadCreateBody: ThreadCreateBody,
+) => {
+  return fetcher<ThreadCreateOKResponse>({
+    url: `/channels/${channelID}/threads`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: threadCreateBody,
+  });
+};
+
+export const getChannelThreadCreateMutationFetcher = (channelID: string) => {
+  return (
+    _: Key,
+    { arg }: { arg: ThreadCreateBody },
+  ): Promise<ThreadCreateOKResponse> => {
+    return channelThreadCreate(channelID, arg);
+  };
+};
+export const getChannelThreadCreateMutationKey = (channelID: string) =>
+  [`/channels/${channelID}/threads`] as const;
+
+export type ChannelThreadCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof channelThreadCreate>>
+>;
+export type ChannelThreadCreateMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelThreadCreate = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof channelThreadCreate>>,
+      TError,
+      Key,
+      ThreadCreateBody,
+      Awaited<ReturnType<typeof channelThreadCreate>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getChannelThreadCreateMutationKey(channelID);
+  const swrFn = getChannelThreadCreateMutationFetcher(channelID);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Get a list of threads in a channel.
+ */
+export const channelThreadList = (
+  channelID: string,
+  params?: ChannelThreadListParams,
+) => {
+  return fetcher<ThreadListOKResponse>({
+    url: `/channels/${channelID}/threads`,
+    method: "GET",
+    params,
+  });
+};
+
+export const getChannelThreadListKey = (
+  channelID: string,
+  params?: ChannelThreadListParams,
+) => [`/channels/${channelID}/threads`, ...(params ? [params] : [])] as const;
+
+export type ChannelThreadListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof channelThreadList>>
+>;
+export type ChannelThreadListQueryError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelThreadList = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  params?: ChannelThreadListParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof channelThreadList>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false && !!channelID;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getChannelThreadListKey(channelID, params) : null));
+  const swrFn = () => channelThreadList(channelID, params);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Get the count of unique authors who created threads in this channel
+today (IST). Used to render social-proof UI such as "N users posted
+today" above the post creation box. Requires an authenticated session.
+
+ */
+export const channelThreadStatsDailyUsers = (channelID: string) => {
+  return fetcher<ThreadStatsDailyUsersOKResponse>({
+    url: `/channels/${channelID}/threads/stats/daily-users`,
+    method: "GET",
+  });
+};
+
+export const getChannelThreadStatsDailyUsersKey = (channelID: string) =>
+  [`/channels/${channelID}/threads/stats/daily-users`] as const;
+
+export type ChannelThreadStatsDailyUsersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof channelThreadStatsDailyUsers>>
+>;
+export type ChannelThreadStatsDailyUsersQueryError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelThreadStatsDailyUsers = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof channelThreadStatsDailyUsers>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false && !!channelID;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getChannelThreadStatsDailyUsersKey(channelID) : null));
+  const swrFn = () => channelThreadStatsDailyUsers(channelID);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Personalised top-of-feed for a channel. Returns the requester's own
+threads from the last 24 hours (across all visibilities) plus, for each
+of those threads, up to two recent published threads from other users
+that share the same primary topic and sentiment tag. Both arrays are
+empty when the requester has no recent threads.
+
+ */
+export const channelThreadListPersonalized = (channelID: string) => {
+  return fetcher<ChannelPersonalizedFeedOKResponse>({
+    url: `/channels/${channelID}/threads/personalized`,
+    method: "GET",
+  });
+};
+
+export const getChannelThreadListPersonalizedKey = (channelID: string) =>
+  [`/channels/${channelID}/threads/personalized`] as const;
+
+export type ChannelThreadListPersonalizedQueryResult = NonNullable<
+  Awaited<ReturnType<typeof channelThreadListPersonalized>>
+>;
+export type ChannelThreadListPersonalizedQueryError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelThreadListPersonalized = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof channelThreadListPersonalized>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false && !!channelID;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getChannelThreadListPersonalizedKey(channelID) : null));
+  const swrFn = () => channelThreadListPersonalized(channelID);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Get information about a thread in a channel including its posts.
+ * @summary Get a thread from a channel.
+ */
+export const channelThreadGet = (
+  channelID: string,
+  threadMark: string,
+  params?: ChannelThreadGetParams,
+) => {
+  return fetcher<ThreadGetResponse>({
+    url: `/channels/${channelID}/threads/${threadMark}`,
+    method: "GET",
+    params,
+  });
+};
+
+export const getChannelThreadGetKey = (
+  channelID: string,
+  threadMark: string,
+  params?: ChannelThreadGetParams,
+) =>
+  [
+    `/channels/${channelID}/threads/${threadMark}`,
+    ...(params ? [params] : []),
+  ] as const;
+
+export type ChannelThreadGetQueryResult = NonNullable<
+  Awaited<ReturnType<typeof channelThreadGet>>
+>;
+export type ChannelThreadGetQueryError =
+  | NotModifiedResponse
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+/**
+ * @summary Get a thread from a channel.
+ */
+export const useChannelThreadGet = <
+  TError =
+    | NotModifiedResponse
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  threadMark: string,
+  params?: ChannelThreadGetParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof channelThreadGet>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled =
+    swrOptions?.enabled !== false && !!(channelID && threadMark);
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() =>
+      isEnabled ? getChannelThreadGetKey(channelID, threadMark, params) : null);
+  const swrFn = () => channelThreadGet(channelID, threadMark, params);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Update a thread in a channel.
+ */
+export const channelThreadUpdate = (
+  channelID: string,
+  threadMark: string,
+  threadUpdateBody: ThreadUpdateBody,
+) => {
+  return fetcher<ThreadUpdateOKResponse>({
+    url: `/channels/${channelID}/threads/${threadMark}`,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    data: threadUpdateBody,
+  });
+};
+
+export const getChannelThreadUpdateMutationFetcher = (
+  channelID: string,
+  threadMark: string,
+) => {
+  return (
+    _: Key,
+    { arg }: { arg: ThreadUpdateBody },
+  ): Promise<ThreadUpdateOKResponse> => {
+    return channelThreadUpdate(channelID, threadMark, arg);
+  };
+};
+export const getChannelThreadUpdateMutationKey = (
+  channelID: string,
+  threadMark: string,
+) => [`/channels/${channelID}/threads/${threadMark}`] as const;
+
+export type ChannelThreadUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof channelThreadUpdate>>
+>;
+export type ChannelThreadUpdateMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelThreadUpdate = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  threadMark: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof channelThreadUpdate>>,
+      TError,
+      Key,
+      ThreadUpdateBody,
+      Awaited<ReturnType<typeof channelThreadUpdate>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ??
+    getChannelThreadUpdateMutationKey(channelID, threadMark);
+  const swrFn = getChannelThreadUpdateMutationFetcher(channelID, threadMark);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Delete a thread in a channel.
+ */
+export const channelThreadDelete = (channelID: string, threadMark: string) => {
+  return fetcher<void>({
+    url: `/channels/${channelID}/threads/${threadMark}`,
+    method: "DELETE",
+  });
+};
+
+export const getChannelThreadDeleteMutationFetcher = (
+  channelID: string,
+  threadMark: string,
+) => {
+  return (_: Key, __: { arg: Arguments }): Promise<void> => {
+    return channelThreadDelete(channelID, threadMark);
+  };
+};
+export const getChannelThreadDeleteMutationKey = (
+  channelID: string,
+  threadMark: string,
+) => [`/channels/${channelID}/threads/${threadMark}`] as const;
+
+export type ChannelThreadDeleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof channelThreadDelete>>
+>;
+export type ChannelThreadDeleteMutationError =
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelThreadDelete = <
+  TError =
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  threadMark: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof channelThreadDelete>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof channelThreadDelete>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ??
+    getChannelThreadDeleteMutationKey(channelID, threadMark);
+  const swrFn = getChannelThreadDeleteMutationFetcher(channelID, threadMark);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * Create a new reply within a thread in a channel.
+ */
+export const channelReplyCreate = (
+  channelID: string,
+  threadMark: string,
+  replyCreateBody: ReplyCreateBody,
+) => {
+  return fetcher<ReplyCreateOKResponse>({
+    url: `/channels/${channelID}/threads/${threadMark}/replies`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: replyCreateBody,
+  });
+};
+
+export const getChannelReplyCreateMutationFetcher = (
+  channelID: string,
+  threadMark: string,
+) => {
+  return (
+    _: Key,
+    { arg }: { arg: ReplyCreateBody },
+  ): Promise<ReplyCreateOKResponse> => {
+    return channelReplyCreate(channelID, threadMark, arg);
+  };
+};
+export const getChannelReplyCreateMutationKey = (
+  channelID: string,
+  threadMark: string,
+) => [`/channels/${channelID}/threads/${threadMark}/replies`] as const;
+
+export type ChannelReplyCreateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof channelReplyCreate>>
+>;
+export type ChannelReplyCreateMutationError =
+  | BadRequestResponse
+  | UnauthorisedResponse
+  | ForbiddenResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useChannelReplyCreate = <
+  TError =
+    | BadRequestResponse
+    | UnauthorisedResponse
+    | ForbiddenResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  channelID: string,
+  threadMark: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof channelReplyCreate>>,
+      TError,
+      Key,
+      ReplyCreateBody,
+      Awaited<ReturnType<typeof channelReplyCreate>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ??
+    getChannelReplyCreateMutationKey(channelID, threadMark);
+  const swrFn = getChannelReplyCreateMutationFetcher(channelID, threadMark);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
 /**
  * Create a new thread within the specified category.
  */
@@ -309,6 +866,113 @@ export const useThreadDelete = <
 
   const swrKey = swrOptions?.swrKey ?? getThreadDeleteMutationKey(threadMark);
   const swrFn = getThreadDeleteMutationFetcher(threadMark);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * @summary Get poll status for a thread
+ */
+export const threadGetPoll = (threadMark: string) => {
+  return fetcher<ThreadGetPollOKResponse>({
+    url: `/threads/${threadMark}/poll`,
+    method: "GET",
+  });
+};
+
+export const getThreadGetPollKey = (threadMark: string) =>
+  [`/threads/${threadMark}/poll`] as const;
+
+export type ThreadGetPollQueryResult = NonNullable<
+  Awaited<ReturnType<typeof threadGetPoll>>
+>;
+export type ThreadGetPollQueryError = InternalServerErrorResponse;
+
+/**
+ * @summary Get poll status for a thread
+ */
+export const useThreadGetPoll = <TError = InternalServerErrorResponse>(
+  threadMark: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof threadGetPoll>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false && !!threadMark;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getThreadGetPollKey(threadMark) : null));
+  const swrFn = () => threadGetPoll(threadMark);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions,
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
+ * @summary Cast a vote on a poll
+ */
+export const threadVotePoll = (
+  threadMark: string,
+  pollVoteBody: PollVoteBody,
+) => {
+  return fetcher<ThreadVotePollOKResponse>({
+    url: `/threads/${threadMark}/poll/vote`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: pollVoteBody,
+  });
+};
+
+export const getThreadVotePollMutationFetcher = (threadMark: string) => {
+  return (
+    _: Key,
+    { arg }: { arg: PollVoteBody },
+  ): Promise<ThreadVotePollOKResponse> => {
+    return threadVotePoll(threadMark, arg);
+  };
+};
+export const getThreadVotePollMutationKey = (threadMark: string) =>
+  [`/threads/${threadMark}/poll/vote`] as const;
+
+export type ThreadVotePollMutationResult = NonNullable<
+  Awaited<ReturnType<typeof threadVotePoll>>
+>;
+export type ThreadVotePollMutationError = InternalServerErrorResponse;
+
+/**
+ * @summary Cast a vote on a poll
+ */
+export const useThreadVotePoll = <TError = InternalServerErrorResponse>(
+  threadMark: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof threadVotePoll>>,
+      TError,
+      Key,
+      PollVoteBody,
+      Awaited<ReturnType<typeof threadVotePoll>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getThreadVotePollMutationKey(threadMark);
+  const swrFn = getThreadVotePollMutationFetcher(threadMark);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

@@ -1,6 +1,10 @@
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { uniqueId } from "lodash/fp";
 import { Arguments, MutatorCallback, useSWRConfig } from "swr";
 
+import {
+  channelThreadCreate,
+} from "@/api/openapi-client/channels";
 import { likePostAdd, likePostRemove } from "@/api/openapi-client/likes";
 import {
   getThreadListKey,
@@ -21,7 +25,12 @@ import {
 } from "@/api/openapi-schema";
 import { deepEqual } from "@/utils/equality";
 
-export function useFeedMutations(session?: Account, params?: ThreadListParams) {
+export function useFeedMutations(
+  session?: Account,
+  params?: ThreadListParams,
+  channelID?: string,
+  router?: AppRouterInstance,
+) {
   const { mutate } = useSWRConfig();
 
   const pageKeyParams = {
@@ -33,16 +42,27 @@ export function useFeedMutations(session?: Account, params?: ThreadListParams) {
   function threadListKeyFilterFn(key: Arguments) {
     if (!Array.isArray(key)) return false;
 
-    const path = key[0];
-    const params = key[1] as ThreadListParams;
+    const path = key[0] as string;
+    const keyParams = (key[1] || {}) as ThreadListParams;
 
-    const pathMatch = path === threadQueryMutationKey[0];
+    // Match both regular thread lists (/threads) and channel thread lists (/channels/{id}/threads)
+    const isThreadList = path === threadQueryMutationKey[0];
+    const isChannelThreadList = path.match(/^\/channels\/[^/]+\/threads$/);
+    const pathMatch = isThreadList || isChannelThreadList;
+
     if (!pathMatch) return false;
 
-    const pageMatch = (params.page ?? "1") === (pageKeyParams.page ?? "1");
+    // If no params were provided to useFeedMutations, match ALL thread list keys
+    // This is important for operations like delete that should affect all views
+    if (!params || Object.keys(pageKeyParams).length === 0) {
+      return true;
+    }
+
+    // Only apply param filtering if params were provided
+    const pageMatch = (keyParams?.page ?? "1") === (pageKeyParams.page ?? "1");
 
     const categoryMatch = pageKeyParams.categories
-      ? deepEqual(params.categories, pageKeyParams.categories)
+      ? deepEqual(keyParams?.categories, pageKeyParams.categories)
       : true;
 
     const paramsMatch = pageMatch && categoryMatch;
@@ -50,8 +70,22 @@ export function useFeedMutations(session?: Account, params?: ThreadListParams) {
     return pathMatch && paramsMatch;
   }
 
+  function threadDetailKeyFilterFn(key: Arguments) {
+    if (!Array.isArray(key)) return false;
+    const path = key[0];
+    return typeof path === "string" && /^\/threads\/[^/]+$/.test(path);
+  }
+
+  function threadCacheKeyFilterFn(key: Arguments) {
+    return threadListKeyFilterFn(key) || threadDetailKeyFilterFn(key);
+  }
+
   async function revalidate() {
     await mutate(threadListKeyFilterFn);
+    // Invalidate Next.js router cache for server components
+    if (router) {
+      router.refresh();
+    }
   }
 
   async function createThread(
@@ -63,7 +97,7 @@ export function useFeedMutations(session?: Account, params?: ThreadListParams) {
       if (!session) return;
 
       // Don't mutate if not on first page.
-      if (data.current_page === 1) {
+      if (data.current_page !== 1) {
         return;
       }
 
@@ -102,11 +136,12 @@ export function useFeedMutations(session?: Account, params?: ThreadListParams) {
         },
         likes: { likes: 0, liked: false },
         reacts: [],
-        pinned: false,
+        pinned: initial.pinned ?? 0,
         reply_status: { replies: 0, replied: 0 },
         tags: [],
         visibility: Visibility.draft,
         link: preHydratedLink,
+        channel_id: channelID || "",
       } satisfies ThreadReference;
 
       const newData = {
@@ -121,7 +156,11 @@ export function useFeedMutations(session?: Account, params?: ThreadListParams) {
       revalidate: false,
     });
 
-    return await threadCreate(initial);
+    if (channelID) {
+      return await channelThreadCreate(channelID, initial);
+    } else {
+      return await threadCreate(initial);
+    }
   }
 
   async function updateThread(id: Identifier, updated: ThreadMutableProps) {
@@ -172,46 +211,68 @@ export function useFeedMutations(session?: Account, params?: ThreadListParams) {
   }
 
   async function deleteThread(id: Identifier) {
-    const mutator: MutatorCallback<ThreadListOKResponse> = (data) => {
-      if (!data) return;
-
-      return {
-        ...data,
-        threads: data.threads.filter((t) => t.id !== id),
-      };
-    };
-
-    await mutate(threadListKeyFilterFn, mutator, {
-      revalidate: false,
-    });
-
+    // Delete from backend first
     await threadDelete(id);
+
+    // Invalidate all thread list caches (both regular and channel-specific)
+    await mutate(
+      (key) => {
+        if (!Array.isArray(key)) return false;
+        const path = key[0] as string;
+        // Match /threads or /channels/{id}/threads
+        return path === "/threads" || (typeof path === "string" && path.match(/^\/channels\/[^/]+\/threads$/));
+      },
+      undefined,
+      { revalidate: true }
+    );
+
+    // Refresh Next.js router cache for server components
+    if (router) {
+      router.refresh();
+    }
+  }
+
+  function buildLikeMutator(id: Identifier, delta: number, nowLiked: boolean) {
+    return (data: unknown) => {
+      if (!data || typeof data !== "object") return data as never;
+
+      // List response shape: { threads: ThreadReference[], ... }
+      if (Array.isArray((data as { threads?: unknown }).threads)) {
+        const list = data as ThreadListOKResponse;
+        return {
+          ...list,
+          threads: list.threads.map((thread) =>
+            thread.id === id
+              ? {
+                  ...thread,
+                  likes: {
+                    likes: thread.likes.likes + delta,
+                    liked: nowLiked,
+                  },
+                }
+              : thread,
+          ),
+        };
+      }
+
+      // Detail response shape: ThreadGetResponse with likes on root.
+      const detail = data as { id?: string; likes?: { likes: number; liked: boolean } };
+      if (detail.id === id && detail.likes) {
+        return {
+          ...detail,
+          likes: {
+            likes: detail.likes.likes + delta,
+            liked: nowLiked,
+          },
+        };
+      }
+
+      return data as never;
+    };
   }
 
   async function likePost(id: Identifier) {
-    const mutator: MutatorCallback<ThreadListOKResponse> = (data) => {
-      if (!data) return;
-
-      const newThreads = data.threads.map((thread) => {
-        if (thread.id === id) {
-          return {
-            ...thread,
-            likes: {
-              likes: thread.likes.likes + 1,
-              liked: true,
-            },
-          };
-        }
-        return thread;
-      });
-
-      return {
-        ...data,
-        threads: newThreads,
-      };
-    };
-
-    await mutate(threadListKeyFilterFn, mutator, {
+    await mutate(threadCacheKeyFilterFn, buildLikeMutator(id, 1, true), {
       revalidate: false,
     });
 
@@ -219,29 +280,7 @@ export function useFeedMutations(session?: Account, params?: ThreadListParams) {
   }
 
   async function unlikePost(id: Identifier) {
-    const mutator: MutatorCallback<ThreadListOKResponse> = (data) => {
-      if (!data) return;
-
-      const newThreads = data.threads.map((thread) => {
-        if (thread.id === id) {
-          return {
-            ...thread,
-            likes: {
-              likes: thread.likes.likes - 1,
-              liked: false,
-            },
-          };
-        }
-        return thread;
-      });
-
-      return {
-        ...data,
-        threads: newThreads,
-      };
-    };
-
-    await mutate(threadListKeyFilterFn, mutator, {
+    await mutate(threadCacheKeyFilterFn, buildLikeMutator(id, -1, false), {
       revalidate: false,
     });
 

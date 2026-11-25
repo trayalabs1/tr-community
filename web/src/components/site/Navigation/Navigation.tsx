@@ -11,17 +11,18 @@ import styles from "./navigation.module.css";
 
 import { ContextPane } from "./ContextPane";
 import { DesktopCommandBar } from "./DesktopCommandBar";
-import { MobileCommandBar } from "./MobileCommandBar/MobileCommandBar";
 import { NavigationPane } from "./NavigationPane/NavigationPane";
 import { getServerSidebarState } from "./NavigationPane/server";
 
 type Props = {
   contextpane: React.ReactNode;
+  paddingMode?: "default" | "none";
 };
 
 export async function Navigation({
   contextpane,
   children,
+  paddingMode = "default",
 }: PropsWithChildren<Props>) {
   const globalSettings = await getSettings();
   const sessionAccount = await getServerSession();
@@ -40,7 +41,11 @@ export async function Navigation({
       w="full"
       data-leftbar-shown={showLeftBar}
     >
-      <Box id="navigation__scroll" className={styles["navgrid"]}>
+      <Box 
+        id="navigation__scroll" 
+        className={styles["navgrid"]}
+        data-padding={paddingMode}
+      >
         <Box className={styles["main"]}>
           {/*  */}
           <Onboarding />
@@ -57,6 +62,7 @@ export async function Navigation({
         left="0"
         height="dvh"
         className={styles["navgrid"]}
+        data-padding={paddingMode}
         pointerEvents="none"
       >
         <DesktopCommandBar />
@@ -70,7 +76,7 @@ export async function Navigation({
         </Box>
 
         <Box className={styles["navpill"]}>
-          <MobileCommandBar />
+          {/* MobileCommandBar is now rendered outside */}
         </Box>
       </Box>
     </Box>

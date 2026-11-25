@@ -60,10 +60,13 @@ func (i *Collections) CollectionCreate(ctx context.Context, request openapi.Coll
 }
 
 func (i *Collections) CollectionList(ctx context.Context, request openapi.CollectionListRequestObject) (openapi.CollectionListResponseObject, error) {
-	opts := []collection_querier.Option{}
+	acc, err := session.GetAccount(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
 
-	if v := request.Params.AccountHandle; v != nil {
-		opts = append(opts, collection_querier.WithOwnerHandle(*v))
+	opts := []collection_querier.Option{
+		collection_querier.WithOwnerHandle(acc.Handle),
 	}
 
 	itemPresenceQuery := opt.Map(opt.NewPtr(request.Params.HasItem), deserialiseID)
@@ -86,9 +89,18 @@ func (i *Collections) CollectionList(ctx context.Context, request openapi.Collec
 }
 
 func (i *Collections) CollectionGet(ctx context.Context, request openapi.CollectionGetRequestObject) (openapi.CollectionGetResponseObject, error) {
+	acc, err := session.GetAccount(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
 	coll, err := i.colReader.GetCollection(ctx, collection.NewKey(request.CollectionMark))
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	if coll.Owner.ID != acc.ID {
+		return nil, fault.Wrap(fault.New("not the owner of this collection"), fctx.With(ctx))
 	}
 
 	return openapi.CollectionGet200JSONResponse{
@@ -130,6 +142,29 @@ func (i *Collections) CollectionAddPost(ctx context.Context, request openapi.Col
 	}
 
 	return openapi.CollectionAddPost200JSONResponse{
+		CollectionAddPostOKJSONResponse: openapi.CollectionAddPostOKJSONResponse(serialiseCollectionWithItems(c)),
+	}, nil
+}
+
+func (i *Collections) CollectionAddPostToDefault(ctx context.Context, request openapi.CollectionAddPostToDefaultRequestObject) (openapi.CollectionAddPostToDefaultResponseObject, error) {
+	accountID, err := session.GetAccountID(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	def, err := i.colManager.GetOrCreateDefault(ctx, accountID)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	c, err := i.colItemManager.PostAdd(ctx,
+		collection.NewID(def.Mark.ID()),
+		post.ID(deserialiseID(request.PostId)))
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	return openapi.CollectionAddPostToDefault200JSONResponse{
 		CollectionAddPostOKJSONResponse: openapi.CollectionAddPostOKJSONResponse(serialiseCollectionWithItems(c)),
 	}, nil
 }
@@ -182,6 +217,7 @@ func serialiseCollection(in *collection.Collection) openapi.Collection {
 		Slug:           in.Mark.String(),
 		Description:    in.Description.Ptr(),
 		Owner:          serialiseProfileReference(in.Owner),
+		IsDefault:      in.IsDefault,
 		ItemCount:      int(in.ItemCount),
 		HasQueriedItem: in.HasQueriedItem,
 	}

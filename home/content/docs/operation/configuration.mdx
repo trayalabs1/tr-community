@@ -115,6 +115,46 @@ The accepted schemes for this URL are:
 - `postgres://` or `postgresql://` for PostgreSQL, CockroachDB and any other PostgreSQL-compatible database
 - `libsql://` for Turso remote SQLite. **Note:** This is currently experimental, only remote Turso databases are supported.
 
+### `DATABASE_MAX_OPEN_CONNS`
+
+<table>
+<tr><td>type</td><td>`integer` (number without decimal point)</td></tr>
+<tr><td>default</td><td>`25`</td></tr>
+</table>
+
+The maximum number of open connections to the database.
+
+Size this per-pod so that `pods × DATABASE_MAX_OPEN_CONNS` stays under the database's `max_connections` budget shared with other services.
+
+### `DATABASE_MAX_IDLE_CONNS`
+
+<table>
+<tr><td>type</td><td>`integer` (number without decimal point)</td></tr>
+<tr><td>default</td><td>`25`</td></tr>
+</table>
+
+The maximum number of idle connections retained in the pool.
+
+Keep this equal to `DATABASE_MAX_OPEN_CONNS` so idle connections are never eagerly closed under steady load, which avoids per-request connection churn and repeated DNS resolution.
+
+### `DATABASE_CONN_MAX_LIFETIME`
+
+<table>
+<tr><td>type</td><td>duration (e.g. 1h, 1m, 1s)</td></tr>
+<tr><td>default</td><td>`30m`</td></tr>
+</table>
+
+The maximum amount of time a connection may be reused before it is closed and replaced.
+
+### `DATABASE_CONN_MAX_IDLE_TIME`
+
+<table>
+<tr><td>type</td><td>duration (e.g. 1h, 1m, 1s)</td></tr>
+<tr><td>default</td><td>`5m`</td></tr>
+</table>
+
+The maximum amount of time a connection may remain idle before it is closed.
+
 ### `LISTEN_ADDR`
 
 <table>
@@ -277,6 +317,99 @@ The API key for the SendGrid account. This is required for sending emails via Se
 
 This is typically a long string of characters that you can generate in the SendGrid dashboard.
 
+## MoEngage
+
+MoEngage event sending configuration. When unset, MoEngage event sending is disabled.
+
+### `MOENGAGE_APP_KEY`
+
+<table>
+<tr><td>type</td><td>`string`</td></tr>
+<tr><td>default</td><td>none</td></tr>
+</table>
+
+The MoEngage app key used to identify your MoEngage application.
+
+### `MOENGAGE_AUTH_KEY`
+
+<table>
+<tr><td>type</td><td>`string`</td></tr>
+<tr><td>default</td><td>none</td></tr>
+</table>
+
+The MoEngage auth key used to authenticate API requests.
+
+## Queue summary
+
+Daily Slack summary of pending admin queue counts. When the webhook URL is unset, the summary job is disabled.
+
+### `SLACK_QUEUE_SUMMARY_WEBHOOK_URL`
+
+<table>
+<tr><td>type</td><td>`string`</td></tr>
+<tr><td>default</td><td>none</td></tr>
+</table>
+
+The Slack incoming webhook URL to post the daily pending-queue summary to. When unset, the summary job does not run.
+
+### `SLACK_QUEUE_SUMMARY_TIME`
+
+<table>
+<tr><td>type</td><td>`string`</td></tr>
+<tr><td>default</td><td>`23:55`</td></tr>
+</table>
+
+The time of day (24-hour `HH:MM`, in the `SLACK_QUEUE_SUMMARY_TIMEZONE` timezone) at which the daily pending-queue summary is posted to Slack.
+
+### `SLACK_QUEUE_SUMMARY_TIMEZONE`
+
+<table>
+<tr><td>type</td><td>`string`</td></tr>
+<tr><td>default</td><td>`Asia/Kolkata`</td></tr>
+</table>
+
+The IANA timezone name used to interpret `SLACK_QUEUE_SUMMARY_TIME`.
+
+### `SLACK_QUEUE_SUMMARY_INTERVAL`
+
+<table>
+<tr><td>type</td><td>duration (e.g. 1h, 1m, 1s)</td></tr>
+<tr><td>default</td><td>none</td></tr>
+</table>
+
+Development/testing override. When set (e.g. `10s`), the summary is posted on this fixed repeating interval instead of once a day at `SLACK_QUEUE_SUMMARY_TIME`. Leave unset in production.
+
+## Rank score engagement job
+
+Daily job that folds likes/replies from the last 24 hours into each post's stored rank_score, since feed ranking no longer computes engagement live at read time. Runs unconditionally; only the schedule is configurable.
+
+### `RANKER_JOB_TIME`
+
+<table>
+<tr><td>type</td><td>`string`</td></tr>
+<tr><td>default</td><td>`06:30`</td></tr>
+</table>
+
+The time of day (24-hour `HH:MM`, in the `RANKER_JOB_TIMEZONE` timezone) at which the daily rank_score engagement job runs.
+
+### `RANKER_JOB_TIMEZONE`
+
+<table>
+<tr><td>type</td><td>`string`</td></tr>
+<tr><td>default</td><td>`Asia/Kolkata`</td></tr>
+</table>
+
+The IANA timezone name used to interpret `RANKER_JOB_TIME`.
+
+### `RANKER_JOB_INTERVAL`
+
+<table>
+<tr><td>type</td><td>duration (e.g. 1h, 1m, 1s)</td></tr>
+<tr><td>default</td><td>none</td></tr>
+</table>
+
+Development/testing override. When set (e.g. `10s`), the job runs on this fixed repeating interval instead of once a day at `RANKER_JOB_TIME`. Leave unset in production.
+
 ## Authentication
 
 Authentication providers configuration. These are all optional, you can choose to enable any combination of them to allow members of your community to sign up and sign in using a third party provider.
@@ -412,6 +545,15 @@ The client secret for the Keycloak OAuth2 application.
 </table>
 
 The issuer/discovery URL for the Keycloak realm (e.g. https://auth.example.com/realms/YourRealm).
+
+### `TRAYA_API_SERVER_URL`
+
+<table>
+<tr><td>type</td><td>url (e.g. http://example.com)</td></tr>
+<tr><td>default</td><td>none</td></tr>
+</table>
+
+The base URL for the Traya API server. Used for authenticating users via Traya tokens and fetching user information.
 
 ## SMS
 
@@ -569,6 +711,20 @@ This is necessary for deploying replica instances of Storyden that are backed by
 The Redis URL to connect to.
 
 This is a full URL with `redis://` as the scheme. You can set the username and password using the URL format, for example: `redis://<username>:<password>@<host>:<port>`.
+
+### `FEED_CACHE_DISABLE`
+
+<table>
+<tr><td>type</td><td>boolean (`true` or `false`, case sensitive)</td></tr>
+<tr><td>default</td><td>`false`</td></tr>
+</table>
+
+Development/testing override. When `true`, the channel feed's cached
+ordered-sequence layer is bypassed entirely — every request rebuilds
+the feed directly from the database, and nothing is written back to
+the cache. Useful when iterating locally on ranking changes, since
+the feed cache otherwise serves a stale sequence for up to 30 minutes.
+Leave unset (`false`) in production.
 
 ## Search features
 

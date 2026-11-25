@@ -17,8 +17,13 @@ import (
 	"github.com/Southclaws/storyden/app/resources/account/role/role_querier"
 	"github.com/Southclaws/storyden/app/resources/account/role/role_writer"
 	"github.com/Southclaws/storyden/app/resources/account/token"
+	"github.com/Southclaws/storyden/app/resources/analytics"
 	"github.com/Southclaws/storyden/app/resources/asset/asset_querier"
 	"github.com/Southclaws/storyden/app/resources/asset/asset_writer"
+	"github.com/Southclaws/storyden/app/resources/audit/audit_querier"
+	"github.com/Southclaws/storyden/app/resources/audit/audit_writer"
+	"github.com/Southclaws/storyden/app/resources/channel"
+	"github.com/Southclaws/storyden/app/resources/channel_membership"
 	collection_items "github.com/Southclaws/storyden/app/resources/collection/collection_item"
 	"github.com/Southclaws/storyden/app/resources/collection/collection_querier"
 	"github.com/Southclaws/storyden/app/resources/collection/collection_writer"
@@ -38,6 +43,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/like/like_writer"
 	"github.com/Southclaws/storyden/app/resources/link/link_querier"
 	"github.com/Southclaws/storyden/app/resources/link/link_writer"
+	poll_vote "github.com/Southclaws/storyden/app/resources/poll_vote"
 	"github.com/Southclaws/storyden/app/resources/post/category"
 	"github.com/Southclaws/storyden/app/resources/post/category_cache"
 	"github.com/Southclaws/storyden/app/resources/post/post_querier"
@@ -45,6 +51,8 @@ import (
 	"github.com/Southclaws/storyden/app/resources/post/post_search"
 	"github.com/Southclaws/storyden/app/resources/post/post_writer"
 	"github.com/Southclaws/storyden/app/resources/post/reaction"
+	"github.com/Southclaws/storyden/app/resources/post/reply_admin_queue_querier"
+	"github.com/Southclaws/storyden/app/resources/post/reply_admin_queue_writer"
 	"github.com/Southclaws/storyden/app/resources/post/reply_querier"
 	"github.com/Southclaws/storyden/app/resources/post/reply_writer"
 	"github.com/Southclaws/storyden/app/resources/post/thread_cache"
@@ -68,6 +76,7 @@ func Build() fx.Option {
 		fx.Provide(
 			settings.New,
 			account_querier.New,
+			account_querier.ProvideSessionAccountLoader,
 			account_writer.New,
 			access_key.New,
 			email.New,
@@ -79,7 +88,11 @@ func Build() fx.Option {
 			invitation_writer.New,
 			asset_querier.New,
 			asset_writer.New,
+			audit_querier.New,
+			audit_writer.New,
 			authentication.New,
+			channel.New,
+			channel_membership.New,
 			category.New,
 			category_cache.New,
 			notify_querier.New,
@@ -92,6 +105,7 @@ func Build() fx.Option {
 			thread_querier.New,
 			thread_cache.New,
 			reaction.New,
+			poll_vote.New,
 			like_querier.New,
 			like_writer.New,
 			post_querier.New,
@@ -121,6 +135,9 @@ func Build() fx.Option {
 			participant_writer.New,
 			hydrate.New,
 			question.New,
+			analytics.New,
+			reply_admin_queue_querier.New,
+			reply_admin_queue_writer.New,
 			report_querier.New,
 			report_writer.New,
 		),

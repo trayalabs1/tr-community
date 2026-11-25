@@ -2,33 +2,83 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useSWRConfig } from "swr";
 import { z } from "zod";
 
+import { PollOption } from "@/components/poll/PollComposer";
+
+import { channelThreadCreate } from "src/api/openapi-client/channels";
 import { threadCreate, threadUpdate } from "src/api/openapi-client/threads";
-import { Thread, ThreadInitialProps, Visibility } from "src/api/openapi-schema";
+import { Thread, ThreadInitialProps, Visibility, Permission } from "src/api/openapi-schema";
 
 import { handle } from "@/api/client";
-import { NO_CATEGORY_VALUE } from "@/components/category/CategorySelect/useCategorySelect";
+import { hasPermission } from "@/utils/permissions";
+import { containsMobileNumber, MOBILE_NUMBER_ERROR } from "@/utils/content-validation";
+import { useSession } from "@/auth";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
-export type Props = { editing?: string; initialDraft?: Thread };
+export type Props = {
+  editing?: string;
+  initialDraft?: Thread;
+  channelID?: string;
+  categoryID?: string;
+  onSuccess?: () => void;
+  skipDraftNavigation?: boolean;
+};
+
+export const BODY_REQUIRED_ERROR = "Please write something before posting.";
+
+// The body is HTML from the rich text editor, so an empty body is markup such
+// as <p></p> rather than an empty string. An embedded image counts as content in
+// its own right, so an image-only body is not empty even though it has no text.
+export function isBodyEmpty(body: string | undefined): boolean {
+  if (!body) {
+    return true;
+  }
+
+  if (/<img[\s>]/i.test(body)) {
+    return false;
+  }
+
+  return body.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim() === "";
+}
 
 export const FormShapeSchema = z.object({
-  title: z.string().default(""),
-  body: z.string().min(1),
+  title: z.string().optional(),
+  body: z
+    .string()
+    .optional()
+    .refine((v) => !isBodyEmpty(v), { message: BODY_REQUIRED_ERROR }),
   category: z.string().optional(),
   tags: z.string().array().optional(),
   url: z.string().optional(),
 });
 export type FormShape = z.infer<typeof FormShapeSchema>;
 
-export function useComposeForm({ initialDraft, editing }: Props) {
+export function useComposeForm({
+  initialDraft,
+  editing,
+  channelID,
+  categoryID,
+  onSuccess,
+  skipDraftNavigation,
+}: Props) {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
+  const session = useSession();
+  const { trackPostClicked, trackSubmitForReview } = useEventTracking();
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<PollOption[]>([
+    { id: crypto.randomUUID(), text: "" },
+    { id: crypto.randomUUID(), text: "" },
+  ]);
 
   const form = useForm<FormShape>({
     resolver: zodResolver(FormShapeSchema),
+    mode: "onChange",
     reValidateMode: "onChange",
     defaultValues: initialDraft
       ? {
@@ -36,20 +86,29 @@ export function useComposeForm({ initialDraft, editing }: Props) {
           body: initialDraft.body,
           tags: initialDraft.tags.map((t) => t.name),
           url: initialDraft.link?.url,
+          category: initialDraft.category?.id,
         }
-      : {},
+      : {
+          title: "",
+          body: "",
+          category: categoryID,
+        },
   });
 
   const saveDraft = async (data: FormShape) => {
+    if (isBodyEmpty(data.body)) {
+      form.setError("body", { message: BODY_REQUIRED_ERROR });
+      return;
+    }
+
     const payload: ThreadInitialProps = {
       ...data,
 
-      // When saving a new draft, these are optional but must be explicitly set.
       title: data.title ?? "",
       body: data.body ?? "",
       url: data.url ?? "",
       tags: data.tags ?? [],
-      category: data.category === NO_CATEGORY_VALUE ? undefined : data.category,
+      category: data.category || undefined,
 
       visibility: Visibility.draft,
     };
@@ -57,39 +116,83 @@ export function useComposeForm({ initialDraft, editing }: Props) {
     if (editing) {
       await threadUpdate(editing, payload);
     } else {
-      const { id } = await threadCreate(payload);
-      router.push(`/new?id=${id}`);
+      if (channelID) {
+        const { id } = await channelThreadCreate(channelID, payload);
+        if (!skipDraftNavigation) {
+          router.push(`/new?id=${id}&channel=${channelID}`);
+        }
+      } else {
+        const { id } = await threadCreate(payload);
+        if (!skipDraftNavigation) {
+          router.push(`/new?id=${id}`);
+        }
+      }
     }
   };
 
-  const publish = async ({ title, body, category, tags, url }: FormShape) => {
-    if (title.length < 1) {
-      form.setError("title", {
-        message: "Your post must have a title to be published",
-      });
+  const publish = async ({ body = "", category, tags, url }: FormShape, isPoll: boolean) => {
+    if (!isPoll && isBodyEmpty(body)) {
+      form.setError("body", { message: BODY_REQUIRED_ERROR });
       return;
     }
 
+    const isAdmin = session && hasPermission(session, Permission.ADMINISTRATOR);
+
+    if (!isAdmin && !isPoll && containsMobileNumber(body)) {
+      form.setError("body", { message: MOBILE_NUMBER_ERROR });
+      throw new Error(MOBILE_NUMBER_ERROR);
+    }
+
+    const targetVisibility = isAdmin ? Visibility.published : Visibility.review;
+
+    const payload: ThreadInitialProps = {
+      title: "",
+      body: isPoll ? pollQuestion : body,
+      category: category || undefined,
+      visibility: targetVisibility,
+      tags,
+      url,
+      ...(isPoll && {
+        meta: {
+          is_poll: true,
+          poll_options: pollOptions,
+        },
+      }),
+    };
+
     if (editing) {
-      const { slug } = await threadUpdate(editing, {
-        title,
-        body,
-        category: category === NO_CATEGORY_VALUE ? undefined : category,
-        visibility: Visibility.published,
-        tags,
-        url,
-      });
-      router.push(`/t/${slug}`);
+      const { slug } = await threadUpdate(editing, payload);
+      if (targetVisibility === Visibility.review) {
+        router.back();
+      } else {
+        router.push(`/t/${slug}`);
+      }
     } else {
-      const { slug } = await threadCreate({
-        title,
-        body,
-        category: category === NO_CATEGORY_VALUE ? undefined : category,
-        visibility: Visibility.published,
-        tags,
-        url,
-      });
-      router.push(`/t/${slug}`);
+      if (channelID) {
+        await channelThreadCreate(channelID, payload);
+        await mutate(
+          (key: unknown) =>
+            Array.isArray(key) &&
+            typeof key[0] === "string" &&
+            key[0].startsWith(`/channels/${channelID}/threads`),
+        );
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          if (targetVisibility === Visibility.review) {
+            router.push(`/channels/${channelID}`);
+          } else {
+            router.push(`/channels/${channelID}`);
+          }
+        }
+      } else {
+        const { slug } = await threadCreate(payload);
+        if (targetVisibility === Visibility.review) {
+          router.back();
+        } else {
+          router.push(`/t/${slug}`);
+        }
+      }
     }
   };
 
@@ -111,23 +214,25 @@ export function useComposeForm({ initialDraft, editing }: Props) {
     ),
   );
 
-  const handlePublish = form.handleSubmit((data) =>
-    handle(
-      async () => {
-        setIsPublishing(true);
-        await publish(data);
-      },
-      {
-        promiseToast: {
-          loading: "Publishing post...",
-          success: "Post published!",
+  const handlePublish = (isPoll: boolean) =>
+    form.handleSubmit((data) => {
+      trackSubmitForReview(data.body?.length, false, false, channelID);
+      return handle(
+        async () => {
+          setIsPublishing(true);
+          await publish(data, isPoll);
         },
-        cleanup: async () => {
-          setIsPublishing(false);
+        {
+          promiseToast: {
+            loading: "Publishing post...",
+            success: "Post published!",
+          },
+          cleanup: async () => {
+            setIsPublishing(false);
+          },
         },
-      },
-    ),
-  );
+      );
+    });
 
   const handleAssetUpload = async () => {
     await handle(
@@ -176,6 +281,8 @@ export function useComposeForm({ initialDraft, editing }: Props) {
     state: {
       isPublishing,
       isSavingDraft,
+      pollQuestion,
+      pollOptions,
     },
     handlers: {
       handleSaveDraft,
@@ -183,6 +290,8 @@ export function useComposeForm({ initialDraft, editing }: Props) {
       handleAssetDelete,
       handleAssetUpload,
       handleBack,
+      setPollQuestion,
+      setPollOptions,
     },
   };
 }

@@ -52,6 +52,12 @@ func WithCoverImage(id asset.AssetID) Option {
 	}
 }
 
+func WithIsDefault(v bool) Option {
+	return func(c *ent.CollectionMutation) {
+		c.SetIsDefault(v)
+	}
+}
+
 func (w *Writer) Create(ctx context.Context, owner account.AccountID, name string, slug string, opts ...Option) (*collection.CollectionWithItems, error) {
 	create := w.db.Collection.Create()
 	mutate := create.Mutation()

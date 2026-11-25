@@ -12,10 +12,13 @@ const (
 	serviceAccessKey   serviceEnum = "access_key"   // API access key
 
 	// OAuth services
-	serviceOAuthGoogle  serviceEnum = "oauth_google"  // Google
-	serviceOAuthGitHub  serviceEnum = "oauth_github"  // GitHub
-	serviceOAuthDiscord serviceEnum = "oauth_discord" // Discord
+	serviceOAuthGoogle   serviceEnum = "oauth_google"   // Google
+	serviceOAuthGitHub   serviceEnum = "oauth_github"   // GitHub
+	serviceOAuthDiscord  serviceEnum = "oauth_discord"  // Discord
 	serviceOAuthKeycloak serviceEnum = "oauth_keycloak" // Keycloak
+
+	// Custom authentication services
+	serviceTraya serviceEnum = "traya" // Traya token authentication
 )
 
 type tokenTypeEnum string
@@ -25,4 +28,5 @@ const (
 	tokenTypePasswordHash tokenTypeEnum = "password_hash" // argon2 hashed password
 	tokenTypeWebAuthn     tokenTypeEnum = "webauthn"      // WebAuthn token
 	tokenTypeOAuth        tokenTypeEnum = "oauth"         // OAuth2 token
+	tokenTypeTraya        tokenTypeEnum = "traya"         // Traya token
 )

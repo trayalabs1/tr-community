@@ -112,6 +112,11 @@ func AccountID(v xid.ID) predicate.Node {
 	return predicate.Node(sql.FieldEQ(FieldAccountID, v))
 }
 
+// ChannelID applies equality check predicate on the "channel_id" field. It's identical to ChannelIDEQ.
+func ChannelID(v xid.ID) predicate.Node {
+	return predicate.Node(sql.FieldEQ(FieldChannelID, v))
+}
+
 // PropertySchemaID applies equality check predicate on the "property_schema_id" field. It's identical to PropertySchemaIDEQ.
 func PropertySchemaID(v xid.ID) predicate.Node {
 	return predicate.Node(sql.FieldEQ(FieldPropertySchemaID, v))
@@ -752,6 +757,76 @@ func AccountIDContainsFold(v xid.ID) predicate.Node {
 	return predicate.Node(sql.FieldContainsFold(FieldAccountID, vc))
 }
 
+// ChannelIDEQ applies the EQ predicate on the "channel_id" field.
+func ChannelIDEQ(v xid.ID) predicate.Node {
+	return predicate.Node(sql.FieldEQ(FieldChannelID, v))
+}
+
+// ChannelIDNEQ applies the NEQ predicate on the "channel_id" field.
+func ChannelIDNEQ(v xid.ID) predicate.Node {
+	return predicate.Node(sql.FieldNEQ(FieldChannelID, v))
+}
+
+// ChannelIDIn applies the In predicate on the "channel_id" field.
+func ChannelIDIn(vs ...xid.ID) predicate.Node {
+	return predicate.Node(sql.FieldIn(FieldChannelID, vs...))
+}
+
+// ChannelIDNotIn applies the NotIn predicate on the "channel_id" field.
+func ChannelIDNotIn(vs ...xid.ID) predicate.Node {
+	return predicate.Node(sql.FieldNotIn(FieldChannelID, vs...))
+}
+
+// ChannelIDGT applies the GT predicate on the "channel_id" field.
+func ChannelIDGT(v xid.ID) predicate.Node {
+	return predicate.Node(sql.FieldGT(FieldChannelID, v))
+}
+
+// ChannelIDGTE applies the GTE predicate on the "channel_id" field.
+func ChannelIDGTE(v xid.ID) predicate.Node {
+	return predicate.Node(sql.FieldGTE(FieldChannelID, v))
+}
+
+// ChannelIDLT applies the LT predicate on the "channel_id" field.
+func ChannelIDLT(v xid.ID) predicate.Node {
+	return predicate.Node(sql.FieldLT(FieldChannelID, v))
+}
+
+// ChannelIDLTE applies the LTE predicate on the "channel_id" field.
+func ChannelIDLTE(v xid.ID) predicate.Node {
+	return predicate.Node(sql.FieldLTE(FieldChannelID, v))
+}
+
+// ChannelIDContains applies the Contains predicate on the "channel_id" field.
+func ChannelIDContains(v xid.ID) predicate.Node {
+	vc := v.String()
+	return predicate.Node(sql.FieldContains(FieldChannelID, vc))
+}
+
+// ChannelIDHasPrefix applies the HasPrefix predicate on the "channel_id" field.
+func ChannelIDHasPrefix(v xid.ID) predicate.Node {
+	vc := v.String()
+	return predicate.Node(sql.FieldHasPrefix(FieldChannelID, vc))
+}
+
+// ChannelIDHasSuffix applies the HasSuffix predicate on the "channel_id" field.
+func ChannelIDHasSuffix(v xid.ID) predicate.Node {
+	vc := v.String()
+	return predicate.Node(sql.FieldHasSuffix(FieldChannelID, vc))
+}
+
+// ChannelIDEqualFold applies the EqualFold predicate on the "channel_id" field.
+func ChannelIDEqualFold(v xid.ID) predicate.Node {
+	vc := v.String()
+	return predicate.Node(sql.FieldEqualFold(FieldChannelID, vc))
+}
+
+// ChannelIDContainsFold applies the ContainsFold predicate on the "channel_id" field.
+func ChannelIDContainsFold(v xid.ID) predicate.Node {
+	vc := v.String()
+	return predicate.Node(sql.FieldContainsFold(FieldChannelID, vc))
+}
+
 // PropertySchemaIDEQ applies the EQ predicate on the "property_schema_id" field.
 func PropertySchemaIDEQ(v xid.ID) predicate.Node {
 	return predicate.Node(sql.FieldEQ(FieldPropertySchemaID, v))
@@ -1107,6 +1182,29 @@ func HasOwner() predicate.Node {
 func HasOwnerWith(preds ...predicate.Account) predicate.Node {
 	return predicate.Node(func(s *sql.Selector) {
 		step := newOwnerStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasChannel applies the HasEdge predicate on the "channel" edge.
+func HasChannel() predicate.Node {
+	return predicate.Node(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ChannelTable, ChannelColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasChannelWith applies the HasEdge predicate on the "channel" edge with a given conditions (other predicates).
+func HasChannelWith(preds ...predicate.Channel) predicate.Node {
+	return predicate.Node(func(s *sql.Selector) {
+		step := newChannelStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

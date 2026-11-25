@@ -6,7 +6,7 @@ export type Options = {
   url: string;
   method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   headers?: Record<string, string>;
-  params?: Record<string, string | string[] | boolean>;
+  params?: Record<string, string | string[] | boolean | number>;
   data?: unknown;
   responseType?: string;
   cookie?: string;
@@ -90,7 +90,7 @@ export const buildPayload = (data: unknown) => {
   return JSON.stringify(data);
 };
 
-type ParameterValue = string | string[] | boolean;
+type ParameterValue = string | string[] | boolean | number;
 
 type QueryParameters = Record<string, ParameterValue>;
 
@@ -106,6 +106,8 @@ const objectToParams = (init: URLSearchParams) =>
       v.forEach((vv) => acc.append(k, vv));
     } else if (typeof v === "boolean") {
       acc.append(k, v ? "true" : "false");
+    } else if (typeof v === "number") {
+      acc.append(k, v.toString());
     } else {
       acc.append(k, v);
     }

@@ -7,11 +7,16 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
 
  * OpenAPI spec version: v1.25.13-canary
  */
+import type { ChannelReference } from "./channelReference";
 import type { Identifier } from "./identifier";
 import type { Reply } from "./reply";
 import type { ThreadMark } from "./threadMark";
 
 export interface ReplyProps {
+  /** The reply author's most recent channel membership, shown as a tag
+beside the reply to distinguish which cohort is replying.
+ */
+  cohort_channel?: ChannelReference;
   reply_to?: Reply;
   root_id: Identifier;
   root_slug: ThreadMark;

@@ -8,6 +8,7 @@ import (
 	"github.com/Southclaws/fault/fctx"
 
 	"github.com/Southclaws/storyden/app/resources/account/authentication"
+	"github.com/Southclaws/storyden/app/resources/settings"
 	"github.com/Southclaws/storyden/app/services/branding/banner"
 	"github.com/Southclaws/storyden/app/services/branding/icon"
 	"github.com/Southclaws/storyden/app/services/system/instance_info"
@@ -99,6 +100,7 @@ func serialiseInfo(info *instance_info.Info) openapi.Info {
 		Description:        info.Settings.Description.OrZero(),
 		Content:            info.Settings.Content.OrZero().HTML(),
 		AccentColour:       info.Settings.AccentColour.OrZero(),
+		ColorMode:          openapi.ColorMode(info.Settings.ColorMode.Or(settings.ColorModeLight)),
 		OnboardingStatus:   openapi.OnboardingStatus(info.OnboardingStatus.String()),
 		AuthenticationMode: openapi.AuthMode(info.Settings.AuthenticationMode.Or(authentication.ModeHandle).String()),
 		Capabilities:       serialiseCapabilitiesList(info.Capabilities),

@@ -12,5 +12,7 @@ export function visibilityColour(v: Visibility): UtilityValues["colorPalette"] {
       return "visibility.draft";
     case Visibility.unlisted:
       return "visibility.unlisted";
+    case Visibility.archived:
+      return "visibility.draft";
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { Portal } from "@ark-ui/react";
+import { useState } from "react";
 import { format } from "date-fns/format";
 
 import { MoreAction } from "src/components/site/Action/More";
@@ -17,13 +18,17 @@ import { ShareIcon } from "@/components/ui/icons/Share";
 import * as Menu from "@/components/ui/menu";
 import { HStack, styled } from "@/styled-system/jsx";
 
+import { DeleteConfirmSheet } from "../ThreadMenu/DeleteConfirmSheet";
+
 import { Props, useReplyMenu } from "./useReplyMenu";
 
 export function ReplyMenu(props: Props) {
   const { isSharingEnabled, isEditingEnabled, isDeletingEnabled, handlers } =
     useReplyMenu(props);
+  const [showDeleteSheet, setShowDeleteSheet] = useState(false);
 
   return (
+    <>
     <Menu.Root lazyMount>
       <Menu.Trigger asChild>
         <MoreAction size="xs" />
@@ -38,7 +43,7 @@ export function ReplyMenu(props: Props) {
                 flexDir="column"
                 userSelect="none"
               >
-                <styled.span>{`Post by ${props.reply.author.name}`}</styled.span>
+                <styled.span>{`Post by @${props.reply.author.handle}`}</styled.span>
 
                 <styled.time fontWeight="normal">
                   {format(new Date(props.reply.createdAt), "yyyy-MM-dd")}
@@ -47,7 +52,7 @@ export function ReplyMenu(props: Props) {
 
               <Menu.Separator />
 
-              <Menu.Item value="copy-link" onClick={handlers.handleCopyURL}>
+              {/* <Menu.Item value="copy-link" onClick={handlers.handleCopyURL}>
                 <HStack gap="1">
                   <LinkIcon /> Copy link
                 </HStack>
@@ -59,14 +64,14 @@ export function ReplyMenu(props: Props) {
                     <ShareIcon /> Share
                   </HStack>
                 </Menu.Item>
-              )}
+              )} */}
 
               <ReportPostMenuItem
                 menuLabel="Report reply"
                 targetKind={DatagraphItemKind.reply}
                 targetId={props.reply.id}
                 author={props.reply.author}
-                headline={`Reply from ${props.reply.author.name}`}
+                headline={`Reply from @${props.reply.author.handle}`}
                 body={truncateBody(props.reply.body)}
               />
 
@@ -79,7 +84,10 @@ export function ReplyMenu(props: Props) {
               )}
 
               {isDeletingEnabled && (
-                <Menu.Item value="delete" onClick={handlers.handleDelete}>
+                <Menu.Item
+                  value="delete"
+                  onClick={() => setShowDeleteSheet(true)}
+                >
                   <HStack gap="1">
                     <DeleteIcon /> Delete
                   </HStack>
@@ -90,5 +98,13 @@ export function ReplyMenu(props: Props) {
         </Menu.Positioner>
       </Portal>
     </Menu.Root>
+
+    <DeleteConfirmSheet
+      isOpen={showDeleteSheet}
+      onOpenChange={setShowDeleteSheet}
+      onConfirm={handlers.handleDelete}
+      title="Are you sure you want to delete this comment?"
+    />
+    </>
   );
 }

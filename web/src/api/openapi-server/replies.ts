@@ -7,8 +7,45 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
 
  * OpenAPI spec version: v1.25.13-canary
  */
-import type { ReplyCreateBody, ReplyCreateOKResponse } from "../openapi-schema";
+import type {
+  ReplyCreateBody,
+  ReplyCreateManyBody,
+  ReplyCreateManyOKResponse,
+  ReplyCreateOKResponse,
+} from "../openapi-schema";
 import { fetcher } from "../server";
+
+/**
+ * Create a new reply within a thread in a channel.
+ */
+export type channelReplyCreateResponse = {
+  data: ReplyCreateOKResponse;
+  status: number;
+};
+
+export const getChannelReplyCreateUrl = (
+  channelID: string,
+  threadMark: string,
+) => {
+  return `/channels/${channelID}/threads/${threadMark}/replies`;
+};
+
+export const channelReplyCreate = async (
+  channelID: string,
+  threadMark: string,
+  replyCreateBody: ReplyCreateBody,
+  options?: RequestInit,
+): Promise<channelReplyCreateResponse> => {
+  return fetcher<Promise<channelReplyCreateResponse>>(
+    getChannelReplyCreateUrl(channelID, threadMark),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(replyCreateBody),
+    },
+  );
+};
 
 /**
  * Create a new post within a thread.
@@ -32,5 +69,33 @@ export const replyCreate = async (
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
     body: JSON.stringify(replyCreateBody),
+  });
+};
+
+/**
+ * Create replies on many threads in a single request. Each item targets a
+thread by its mark and carries its own body, so different threads may
+receive different replies. Items that fail are skipped and reported in
+the response count.
+
+ */
+export type replyCreateManyResponse = {
+  data: ReplyCreateManyOKResponse;
+  status: number;
+};
+
+export const getReplyCreateManyUrl = () => {
+  return `/threads/replies/bulk`;
+};
+
+export const replyCreateMany = async (
+  replyCreateManyBody: ReplyCreateManyBody,
+  options?: RequestInit,
+): Promise<replyCreateManyResponse> => {
+  return fetcher<Promise<replyCreateManyResponse>>(getReplyCreateManyUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(replyCreateManyBody),
   });
 };

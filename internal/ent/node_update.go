@@ -14,6 +14,7 @@ import (
 	"github.com/Southclaws/lexorank"
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/asset"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/link"
 	"github.com/Southclaws/storyden/internal/ent/node"
@@ -200,6 +201,20 @@ func (_u *NodeUpdate) SetNillableAccountID(v *xid.ID) *NodeUpdate {
 	return _u
 }
 
+// SetChannelID sets the "channel_id" field.
+func (_u *NodeUpdate) SetChannelID(v xid.ID) *NodeUpdate {
+	_u.mutation.SetChannelID(v)
+	return _u
+}
+
+// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
+func (_u *NodeUpdate) SetNillableChannelID(v *xid.ID) *NodeUpdate {
+	if v != nil {
+		_u.SetChannelID(*v)
+	}
+	return _u
+}
+
 // SetPropertySchemaID sets the "property_schema_id" field.
 func (_u *NodeUpdate) SetPropertySchemaID(v xid.ID) *NodeUpdate {
 	_u.mutation.SetPropertySchemaID(v)
@@ -309,6 +324,11 @@ func (_u *NodeUpdate) SetOwnerID(id xid.ID) *NodeUpdate {
 // SetOwner sets the "owner" edge to the Account entity.
 func (_u *NodeUpdate) SetOwner(v *Account) *NodeUpdate {
 	return _u.SetOwnerID(v.ID)
+}
+
+// SetChannel sets the "channel" edge to the Channel entity.
+func (_u *NodeUpdate) SetChannel(v *Channel) *NodeUpdate {
+	return _u.SetChannelID(v.ID)
 }
 
 // SetParentID sets the "parent" edge to the Node entity by ID.
@@ -457,6 +477,12 @@ func (_u *NodeUpdate) Mutation() *NodeMutation {
 // ClearOwner clears the "owner" edge to the Account entity.
 func (_u *NodeUpdate) ClearOwner() *NodeUpdate {
 	_u.mutation.ClearOwner()
+	return _u
+}
+
+// ClearChannel clears the "channel" edge to the Channel entity.
+func (_u *NodeUpdate) ClearChannel() *NodeUpdate {
+	_u.mutation.ClearChannel()
 	return _u
 }
 
@@ -656,6 +682,9 @@ func (_u *NodeUpdate) check() error {
 	if _u.mutation.OwnerCleared() && len(_u.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Node.owner"`)
 	}
+	if _u.mutation.ChannelCleared() && len(_u.mutation.ChannelIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Node.channel"`)
+	}
 	return nil
 }
 
@@ -747,6 +776,35 @@ func (_u *NodeUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ChannelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   node.ChannelTable,
+			Columns: []string{node.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ChannelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   node.ChannelTable,
+			Columns: []string{node.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -1336,6 +1394,20 @@ func (_u *NodeUpdateOne) SetNillableAccountID(v *xid.ID) *NodeUpdateOne {
 	return _u
 }
 
+// SetChannelID sets the "channel_id" field.
+func (_u *NodeUpdateOne) SetChannelID(v xid.ID) *NodeUpdateOne {
+	_u.mutation.SetChannelID(v)
+	return _u
+}
+
+// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
+func (_u *NodeUpdateOne) SetNillableChannelID(v *xid.ID) *NodeUpdateOne {
+	if v != nil {
+		_u.SetChannelID(*v)
+	}
+	return _u
+}
+
 // SetPropertySchemaID sets the "property_schema_id" field.
 func (_u *NodeUpdateOne) SetPropertySchemaID(v xid.ID) *NodeUpdateOne {
 	_u.mutation.SetPropertySchemaID(v)
@@ -1445,6 +1517,11 @@ func (_u *NodeUpdateOne) SetOwnerID(id xid.ID) *NodeUpdateOne {
 // SetOwner sets the "owner" edge to the Account entity.
 func (_u *NodeUpdateOne) SetOwner(v *Account) *NodeUpdateOne {
 	return _u.SetOwnerID(v.ID)
+}
+
+// SetChannel sets the "channel" edge to the Channel entity.
+func (_u *NodeUpdateOne) SetChannel(v *Channel) *NodeUpdateOne {
+	return _u.SetChannelID(v.ID)
 }
 
 // SetParentID sets the "parent" edge to the Node entity by ID.
@@ -1593,6 +1670,12 @@ func (_u *NodeUpdateOne) Mutation() *NodeMutation {
 // ClearOwner clears the "owner" edge to the Account entity.
 func (_u *NodeUpdateOne) ClearOwner() *NodeUpdateOne {
 	_u.mutation.ClearOwner()
+	return _u
+}
+
+// ClearChannel clears the "channel" edge to the Channel entity.
+func (_u *NodeUpdateOne) ClearChannel() *NodeUpdateOne {
+	_u.mutation.ClearChannel()
 	return _u
 }
 
@@ -1805,6 +1888,9 @@ func (_u *NodeUpdateOne) check() error {
 	if _u.mutation.OwnerCleared() && len(_u.mutation.OwnerIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Node.owner"`)
 	}
+	if _u.mutation.ChannelCleared() && len(_u.mutation.ChannelIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Node.channel"`)
+	}
 	return nil
 }
 
@@ -1913,6 +1999,35 @@ func (_u *NodeUpdateOne) sqlSave(ctx context.Context) (_node *Node, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ChannelCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   node.ChannelTable,
+			Columns: []string{node.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ChannelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   node.ChannelTable,
+			Columns: []string{node.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

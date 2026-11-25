@@ -34,6 +34,7 @@ export function Breadcrumbs({
         overflowX="scroll"
         pt="scrollGutter"
         mt="-scrollGutter"
+        display={{ base: "none", md: "flex" }}
       >
         <LinkButton
           size="xs"

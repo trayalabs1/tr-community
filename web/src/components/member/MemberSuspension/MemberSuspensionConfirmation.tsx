@@ -12,11 +12,11 @@ export function MemberSuspensionConfirmation(props: WithDisclosure<Props>) {
     <VStack alignItems="start">
       {props.profile.suspended ? (
         <styled.p>
-          Do you want to reinstate the suspended account {props.profile.name}?
+          Do you want to reinstate the suspended account @{props.profile.handle}?
         </styled.p>
       ) : (
         <styled.p>
-          Do you want to suspend the account {props.profile.name}?
+          Do you want to suspend the account @{props.profile.handle}?
         </styled.p>
       )}
 

@@ -1,4 +1,4 @@
-import { FormatDistanceToNowOptions, formatDistanceToNow } from "date-fns";
+import { FormatDistanceToNowOptions, formatDistanceToNow, format } from "date-fns";
 
 const formatDistanceLocale = {
   lessThanXSeconds: "{{count}}s",
@@ -41,6 +41,14 @@ export function timestamp(date: string | number | Date, short = true) {
       date,
       short ? formatDistanceDefaults : { addSuffix: true },
     );
+  } catch (e: unknown) {
+    throw new Error(`Failed to format date: ${date}: error: ${e}`);
+  }
+}
+
+export function formatDateTime(date: string | number | Date): string {
+  try {
+    return format(new Date(date), "dd MMM yyyy, h:mm a");
   } catch (e: unknown) {
     throw new Error(`Failed to format date: ${date}: error: ${e}`);
   }

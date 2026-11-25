@@ -2,6 +2,7 @@ package message
 
 import (
 	"net/url"
+	"time"
 
 	"github.com/Southclaws/opt"
 	"github.com/rs/xid"
@@ -37,6 +38,12 @@ type EventThreadDeleted struct {
 	ID post.ID
 }
 
+type EventThreadSubmittedForReview struct {
+	ID    post.ID
+	Title string
+	Body  string
+}
+
 type EventThreadReplyCreated struct {
 	ThreadID        post.ID
 	ReplyID         post.ID
@@ -56,6 +63,19 @@ type EventThreadReplyUpdated struct {
 	ReplyID  post.ID
 }
 
+type EventReplyRequiresAdminAttention struct {
+	ThreadID post.ID
+	ReplyID  post.ID
+	Snippet  string
+}
+
+type EventAdminReplied struct {
+	AdminAccountID account.AccountID
+	AdminPostID    post.ID
+	AdminPostTime  time.Time
+	ParentPostID   post.ID
+}
+
 type EventThreadReplyPublished struct {
 	ThreadID post.ID
 	ReplyID  post.ID
@@ -69,6 +89,7 @@ type EventThreadReplyUnpublished struct {
 type EventPostLiked struct {
 	PostID     post.ID
 	RootPostID post.ID
+	LikerID    account.AccountID
 }
 
 type EventPostUnliked struct {
@@ -176,6 +197,14 @@ type EventAccountUpdated struct {
 	ID account.AccountID
 }
 
+type EventAccountSuspended struct {
+	ID account.AccountID
+}
+
+type EventAccountUnsuspended struct {
+	ID account.AccountID
+}
+
 type CommandProfileIndex struct {
 	ID account.AccountID
 }
@@ -253,4 +282,12 @@ type EventActivityPublished struct {
 
 type EventSettingsUpdated struct {
 	Settings *settings.Settings
+}
+
+// -
+// Sentiment scoring commands
+// -
+
+type CommandScorePostSentiment struct {
+	PostID post.ID
 }

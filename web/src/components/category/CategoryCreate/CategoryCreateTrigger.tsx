@@ -15,6 +15,7 @@ import { CategoryCreateModal } from "./CategoryCreateModal";
 type Props = ButtonProps & {
   parentSlug?: string;
   hideLabel?: boolean;
+  channelID?: string;
 };
 
 export const CreateCategoryID = "create-category";
@@ -24,6 +25,7 @@ export const CreateCategoryIcon = <CreateIcon />;
 export function CategoryCreateTrigger({
   parentSlug,
   hideLabel,
+  channelID,
   ...props
 }: Props) {
   const session = useSession();
@@ -51,7 +53,11 @@ export function CategoryCreateTrigger({
         )}
       </IconButton>
 
-      <CategoryCreateModal {...useDisclosureProps} defaultParent={parentSlug} />
+      <CategoryCreateModal
+        {...useDisclosureProps}
+        defaultParent={parentSlug}
+        channelID={channelID}
+      />
     </>
   );
 }

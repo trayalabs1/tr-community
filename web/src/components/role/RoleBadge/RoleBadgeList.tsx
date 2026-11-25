@@ -23,7 +23,7 @@ export function RoleBadgeList({ roles, onlyBadgeRole, limit }: Props) {
 
   return (
     <HStack flexWrap="wrap" py="1">
-      {limited.map((r) => (
+      {limited?.map((r) => (
         <RoleBadge key={r.id} role={r} />
       ))}
       {isLimited && (
@@ -40,7 +40,7 @@ export function RoleBadgeList({ roles, onlyBadgeRole, limit }: Props) {
               </Popover.Arrow>
               <Popover.Description>
                 <HStack flexWrap="wrap">
-                  {filtered.map((r) => (
+                  {filtered?.map((r) => (
                     <RoleBadge key={r.id} role={r} />
                   ))}
                 </HStack>

@@ -26,7 +26,7 @@ export function TagsIndexScreen(props: Props) {
     .sort((a, b) => b.item_count - a.item_count);
 
   return (
-    <LStack>
+    <LStack px="4">
       <LStack gap="1">
         <Breadcrumbs
           index={{

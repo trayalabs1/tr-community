@@ -18,13 +18,27 @@ import (
 )
 
 type Params struct {
-	Query         opt.Optional[string]
-	CreatedBefore opt.Optional[time.Time]
-	UpdatedBefore opt.Optional[time.Time]
-	AccountID     opt.Optional[account.AccountID]
-	Visibility    opt.Optional[[]visibility.Visibility]
-	Tags          opt.Optional[[]xid.ID]
-	Categories    opt.Optional[thread_querier.CategoryFilter]
+	Query               opt.Optional[string]
+	CreatedBefore       opt.Optional[time.Time]
+	CreatedAfter        opt.Optional[time.Time]
+	UpdatedBefore       opt.Optional[time.Time]
+	AccountID           opt.Optional[account.AccountID]
+	Visibility          opt.Optional[[]visibility.Visibility]
+	Tags                opt.Optional[[]xid.ID]
+	Categories          opt.Optional[thread_querier.CategoryFilter]
+	ChannelID           opt.Optional[xid.ID]
+	ChannelIDs          []xid.ID
+	IgnorePinned        opt.Optional[bool]
+	NoReplies           opt.Optional[bool]
+	NoLikes             opt.Optional[bool]
+	UseSentimentRanking bool
+	ExcludeBAH          bool
+	ExcludeFeedback     bool
+	BAHOnly             bool
+	PostCategories      []string
+	Sentiments          []string
+	PrimaryTopics       []string
+	InterleaveShares    bool
 }
 
 func (s *service) List(ctx context.Context,
@@ -40,10 +54,46 @@ func (s *service) List(ctx context.Context,
 
 	opts.Query.Call(func(value string) { q = append(q, thread_querier.HasKeyword(value)) })
 	opts.CreatedBefore.Call(func(value time.Time) { q = append(q, thread_querier.HasCreatedDateBefore(value)) })
+	opts.CreatedAfter.Call(func(value time.Time) { q = append(q, thread_querier.HasCreatedDateAfter(value)) })
 	opts.UpdatedBefore.Call(func(value time.Time) { q = append(q, thread_querier.HasUpdatedDateBefore(value)) })
 	opts.AccountID.Call(func(a account.AccountID) { q = append(q, thread_querier.HasAuthor(a)) })
 	opts.Tags.Call(func(a []xid.ID) { q = append(q, thread_querier.HasTags(a)) })
 	opts.Categories.Call(func(cf thread_querier.CategoryFilter) { q = append(q, thread_querier.HasCategories(cf)) })
+	opts.ChannelID.Call(func(channelID xid.ID) { q = append(q, thread_querier.HasChannel(channelID)) })
+	if len(opts.ChannelIDs) > 0 {
+		q = append(q, thread_querier.HasChannels(opts.ChannelIDs))
+	}
+	opts.IgnorePinned.Call(func(value bool) { q = append(q, thread_querier.HasNoPinnedOrdering(value)) })
+	opts.NoReplies.Call(func(value bool) {
+		if value {
+			q = append(q, thread_querier.HasNoReplies())
+		}
+	})
+	opts.NoLikes.Call(func(value bool) {
+		if value {
+			q = append(q, thread_querier.HasNoLikes())
+		}
+	})
+	if opts.UseSentimentRanking {
+		q = append(q, thread_querier.UseSentimentRanking())
+	}
+	if opts.BAHOnly {
+		q = append(q, thread_querier.OnlyBAHPosts())
+	} else if opts.ExcludeBAH {
+		q = append(q, thread_querier.ExcludeBAHPosts())
+	}
+	if opts.ExcludeFeedback {
+		q = append(q, thread_querier.ExcludeFeedbackPosts())
+	}
+	if len(opts.PostCategories) > 0 {
+		q = append(q, thread_querier.HasPostCategories(opts.PostCategories))
+	}
+	if len(opts.Sentiments) > 0 {
+		q = append(q, thread_querier.HasSentiments(opts.Sentiments))
+	}
+	if len(opts.PrimaryTopics) > 0 {
+		q = append(q, thread_querier.HasPrimaryTopics(opts.PrimaryTopics))
+	}
 
 	vq := func() thread_querier.Query {
 		v, ok := opts.Visibility.Get()
@@ -53,12 +103,7 @@ func (s *service) List(ctx context.Context,
 			// builds a query specifically for moderators to see in-review posts
 			// as well as authors to see their own posts in-review while other
 			// members will just see published posts.
-			isModerator := false
-			if accountID.Ok() {
-				roles := session.GetRoles(ctx)
-				isModerator = roles.Permissions().HasAny(rbac.PermissionManagePosts, rbac.PermissionAdministrator)
-			}
-			return thread_querier.HasPublishedOrOwnInReview(accountID, isModerator)
+			return thread_querier.HasPublishedOrOwnInReview(accountID, isModerator(ctx, accountID))
 		}
 
 		onlyRequestingPublished := len(v) == 1 && v[0] == visibility.VisibilityPublished
@@ -100,6 +145,25 @@ func (s *service) List(ctx context.Context,
 		return thread_querier.HasStatus(v...)
 	}()
 	q = append(q, vq)
+
+	// The interleaved feed is precomputed once and cached as an ordered ID
+	// sequence, but only for the default unfiltered channel feed. Filtered
+	// requests and pages beyond the cached window fall through to the plain
+	// ranked query.
+	// A cache miss inside listCachedInterleaved already recomputes the interleave
+	// from the DB, so the only error that surfaces here is a genuine DB failure —
+	// which the plain query below would hit too. Propagate it rather than masking
+	// it behind a second failing query.
+	if opts.InterleaveShares && isCacheableFeed(opts) {
+		channelID, _ := opts.ChannelID.Get()
+		result, handled, err := s.listCachedInterleaved(ctx, channelID, page, size, accountID, isModerator(ctx, accountID), q)
+		if err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
+		}
+		if handled {
+			return result, nil
+		}
+	}
 
 	thr, err := s.threadQuerier.List(ctx, page, size, accountID, q...)
 	if err != nil {

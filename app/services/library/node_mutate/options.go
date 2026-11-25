@@ -43,6 +43,32 @@ func (s *Manager) preMutation(ctx context.Context, p Partial, current opt.Option
 	p.Visibility.Call(func(value visibility.Visibility) { opts = append(opts, node_writer.WithVisibility(value)) })
 	p.HideChildren.Call(func(value bool) { opts = append(opts, node_writer.WithHideChildren(value)) })
 
+	// If the mutation includes a channel, we need to query it to get the ID
+	if channelMark, ok := p.Channel.Get(); ok {
+		var channelID xid.ID
+		channelMark.Apply(
+			func(id xid.ID) {
+				// It's already an ID, use it directly
+				channelID = id
+			},
+			func(slug string) {
+				// It's a slug, query to get the ID
+				ch, err := s.channelRepo.GetBySlug(ctx, slug)
+				if err != nil {
+					// Error will be caught below
+					return
+				}
+				channelID = xid.ID(ch.ID)
+			},
+		)
+
+		if channelID.IsNil() {
+			return nil, fault.New("channel not found")
+		}
+
+		opts = append(opts, node_writer.WithChannel(channelID))
+	}
+
 	// If the mutation includes a parent node, we need to query it because the
 	// WithParent API only accepts a node ID, not a node mark (slug or ID).
 	if parentSlug, ok := p.Parent.Get(); ok {

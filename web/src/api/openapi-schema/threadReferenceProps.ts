@@ -8,19 +8,43 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
  * OpenAPI spec version: v1.25.13-canary
  */
 import type { CategoryReference } from "./categoryReference";
+import type { ChannelReference } from "./channelReference";
+import type { Identifier } from "./identifier";
 import type { LinkReference } from "./linkReference";
+import type { PinnedRank } from "./pinnedRank";
+import type { QuickReplyChips } from "./quickReplyChips";
 import type { ReadStatus } from "./readStatus";
 import type { ReplyStatus } from "./replyStatus";
 import type { TagReferenceList } from "./tagReferenceList";
 
 export interface ThreadReferenceProps {
   category?: CategoryReference;
+  /** The thread's home channel (name + slug). Populated on single-thread
+reads so a shared card can name the source channel without a
+separate membership-gated channel lookup.
+ */
+  channel?: ChannelReference;
+  channel_id: Identifier;
   /** The time of the last reply to the thread. */
   last_reply_at?: string;
   link?: LinkReference;
-  /** Whether the thread is pinned in this category. */
-  pinned: boolean;
+  pinned: PinnedRank;
+  quick_reply_chips?: QuickReplyChips;
   read_status?: ReadStatus;
+  /** Present when this thread is a share: the id of the referenced
+original thread. Clients fetch the referenced thread's content
+separately (via ThreadGet) to render the shared card.
+ */
+  reference_post_id?: Identifier;
   reply_status: ReplyStatus;
+  /** Channels this thread has been shared into, resolved from the shares
+that reference it. A thread is reachable by members of its home
+channel or of any channel listed here, so deep-link gating can
+allow a viewer who only shares a destination channel with it.
+Empty for a share row itself, since shares cannot be re-shared.
+Only populated on single-thread reads; list endpoints omit it to
+avoid a per-row lookup across a page of threads.
+ */
+  shared_to_channel_ids?: Identifier[];
   tags: TagReferenceList;
 }

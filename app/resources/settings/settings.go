@@ -12,6 +12,14 @@ import (
 	"github.com/Southclaws/storyden/internal/ent"
 )
 
+type ColorMode string
+
+const (
+	ColorModeLight  ColorMode = "light"
+	ColorModeDark   ColorMode = "dark"
+	ColorModeSystem ColorMode = "system"
+)
+
 // Settings is the global Storyden settings data that can be changed at runtime.
 type Settings struct {
 	// Title is the primary name of the instance, it's commonly used for things
@@ -27,6 +35,11 @@ type Settings struct {
 	// AccentColour is used for controlling frontend brand colour usage. Despite
 	// being frontend-specific, it may be used for backend email/SMS templates.
 	AccentColour opt.Optional[string]
+
+	// ColorMode controls the color theme for the entire instance. When set to
+	// "light" or "dark", all users see that theme. When set to "system" (default),
+	// the theme follows each user's operating system preference.
+	ColorMode opt.Optional[ColorMode]
 
 	// Public is intended to be used to configure public access to the API. If
 	// set to false any request to the API will require a verified user account.
@@ -44,7 +57,8 @@ type Settings struct {
 }
 
 type ServiceSettings struct {
-	Moderation opt.Optional[ModerationServiceSettings]
+	Moderation  opt.Optional[ModerationServiceSettings]
+	FeedRanking opt.Optional[FeedRankingServiceSettings]
 }
 
 type ModerationServiceSettings struct {
@@ -52,6 +66,26 @@ type ModerationServiceSettings struct {
 	ReplyBodyLengthMax  opt.Optional[int]
 	WordBlockList       opt.Optional[[]string]
 	WordReportList      opt.Optional[[]string]
+}
+
+// FeedRankingServiceSettings holds the weights used by the v4 feed ranking
+// formula. WPositivity/WFeedValue/WQuality/WCategory feed into rank_score at
+// LLM classification time and only affect newly-scored posts.
+// FreshnessHalflifeHours/FormatMultiplier/SentimentMultiplier are applied
+// live at feed-read time. LikeWeight/ReplyWeight are applied by the daily
+// ranker_job that folds engagement into rank_score.
+type FeedRankingServiceSettings struct {
+	WPositivity opt.Optional[float64]
+	WFeedValue  opt.Optional[float64]
+	WQuality    opt.Optional[float64]
+	WCategory   opt.Optional[float64]
+
+	FreshnessHalflifeHours opt.Optional[float64]
+	FormatMultiplier       opt.Optional[float64]
+	SentimentMultiplier    opt.Optional[float64]
+
+	LikeWeight  opt.Optional[float64]
+	ReplyWeight opt.Optional[float64]
 }
 
 // Merge will combine "updated" into "s" while overwriting any new values.

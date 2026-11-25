@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   CategoryList,
   CategoryListResult,
@@ -7,6 +8,7 @@ import {
   ThreadListResult,
 } from "@/api/openapi-schema";
 import { useSettingsContext } from "@/components/site/SettingsContext/SettingsContext";
+import { useEventTracking } from "@/lib/moengage/useEventTracking";
 
 import { CategoryIndexScreen } from "../category/CategoryIndexScreen";
 
@@ -26,6 +28,11 @@ type Props = {
 
 export function FeedScreenContent({ initialData }: Props) {
   const { feed } = useSettingsContext();
+  const { trackLandedHome } = useEventTracking();
+
+  useEffect(() => {
+    trackLandedHome();
+  }, [trackLandedHome]);
 
   switch (feed.source.type) {
     case "threads":

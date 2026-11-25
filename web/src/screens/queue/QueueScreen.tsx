@@ -1,26 +1,847 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { Filter } from "lucide-react";
+import { today, getLocalTimeZone, type DateValue } from "@internationalized/date";
+import { DateRangePicker } from "@/components/ui/date-picker";
+import { useAccountGet } from "@/api/openapi-client/accounts";
+import { useAdminReplyQueueList, adminReplyQueueDismiss } from "@/api/openapi-client/admin";
+import { useChannelList } from "@/api/openapi-client/channels";
 import { useNodeList } from "@/api/openapi-client/nodes";
-import { Visibility } from "@/api/openapi-schema";
+import { useThreadList } from "@/api/openapi-client/threads";
+import { Visibility, ThreadReference, ReplyQueueEntry } from "@/api/openapi-schema";
+import { AdminRepliesPanel } from "@/components/queue/AdminRepliesPanel";
+import { BulkActionsPanel } from "@/components/queue/BulkActionsPanel";
+import { PendingReplyThreadList } from "@/components/queue/PendingReplyThreadList";
 import { QueueNodeList } from "@/components/queue/QueueNodeList";
-import { Unready } from "@/components/site/Unready";
+import { QueueThreadList } from "@/components/queue/QueueThreadList";
+import { ReplyAdminQueueList } from "@/components/queue/ReplyAdminQueueList";
+import { LoadingBanner } from "@/components/site/Loading";
+import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
-import { LStack } from "@/styled-system/jsx";
+import { VStack, LStack, HStack, styled } from "@/styled-system/jsx";
+import { getAssetURL } from "@/utils/asset";
+import { MembersIcon } from "@/components/ui/icons/Members";
+import { useSession } from "@/auth";
+
+type ContentType = "threads" | "nodes" | "all";
+type QueueTab = "pending_review" | "pending_reply" | "pending_reply_to_reply" | "bulk_actions" | "admin_replies";
+
+const SELECTED_CHANNELS_STORAGE_PREFIX = "queue.selectedChannelIds:";
+const PENDING_REPLY_MAX_LOOKBACK_DAYS = 90;
+
+const QUEUE_TABS = [
+  "pending_review",
+  "pending_reply",
+  "pending_reply_to_reply",
+  "bulk_actions",
+  "admin_replies",
+] as const;
+
+const QUEUE_TAB_LABELS: Record<QueueTab, string> = {
+  pending_review: "Pending Review",
+  pending_reply: "Pending Reply",
+  pending_reply_to_reply: "Pending Reply to Reply",
+  bulk_actions: "Bulk Actions",
+  admin_replies: "Admin Replies",
+};
+
+function formatDateRange(startISO: string, endISO: string) {
+  const fmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
+  const start = new Date(startISO);
+  const end = new Date(endISO);
+  const year = end.getFullYear();
+  if (start.toDateString() === end.toDateString()) {
+    return `${fmt.format(start)}, ${year}`;
+  }
+  return `${fmt.format(start)} – ${fmt.format(end)}, ${year}`;
+}
+
+function storageKey(accountId: string) {
+  return `${SELECTED_CHANNELS_STORAGE_PREFIX}${accountId}`;
+}
+
+function readPersistedChannelIds(accountId: string): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(storageKey(accountId));
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((v): v is string => typeof v === "string"));
+  } catch {
+    return new Set();
+  }
+}
+
+function pruneOtherAccountEntries(currentAccountId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const keep = storageKey(currentAccountId);
+    const toRemove: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (!key) continue;
+      if (key.startsWith(SELECTED_CHANNELS_STORAGE_PREFIX) && key !== keep) {
+        toRemove.push(key);
+      }
+    }
+    toRemove.forEach((k) => window.localStorage.removeItem(k));
+  } catch {}
+}
 
 export function QueueScreen() {
-  const { data, error } = useNodeList({
+  const session = useSession();
+  const accountId = session?.id;
+  const { isLoading: isSessionLoading } = useAccountGet();
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Tab and date range live in the URL so a browser back from a thread restores them.
+  const [activeTab, setActiveTab] = useState<QueueTab>(() => {
+    const tab = searchParams.get("tab");
+    return (QUEUE_TABS as readonly string[]).includes(tab ?? "") ? (tab as QueueTab) : "pending_review";
+  });
+  const [selectedChannelIds, setSelectedChannelIds] = useState<Set<string>>(() => new Set());
+  const [loadedForAccount, setLoadedForAccount] = useState<string | null>(null);
+  const [selectedContentType, setSelectedContentType] = useState<ContentType>("all");
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [excludeBAH, setExcludeBAH] = useState(true);
+  const [excludeFeedback, setExcludeFeedback] = useState(true);
+
+  useEffect(() => {
+    if (!accountId) {
+      setSelectedChannelIds(new Set());
+      setLoadedForAccount(null);
+      return;
+    }
+    if (loadedForAccount === accountId) return;
+    pruneOtherAccountEntries(accountId);
+    setSelectedChannelIds(readPersistedChannelIds(accountId));
+    setLoadedForAccount(accountId);
+  }, [accountId, loadedForAccount]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !accountId) return;
+    if (loadedForAccount !== accountId) return;
+    try {
+      window.localStorage.setItem(
+        storageKey(accountId),
+        JSON.stringify(Array.from(selectedChannelIds)),
+      );
+    } catch {}
+  }, [accountId, loadedForAccount, selectedChannelIds]);
+
+  const channelIdList = useMemo(() => Array.from(selectedChannelIds).sort(), [selectedChannelIds]);
+  const channelFilterReady = accountId ? loadedForAccount === accountId : !isSessionLoading;
+
+  const todayVal = useMemo(() => today(getLocalTimeZone()), []);
+
+  const [pendingReplyRange, setPendingReplyRange] = useState<{
+    createdAfter: string;
+    createdBefore: string;
+  }>(() => {
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+    if (from && to && !Number.isNaN(Date.parse(from)) && !Number.isNaN(Date.parse(to))) {
+      return { createdAfter: from, createdBefore: to };
+    }
+    const tz = getLocalTimeZone();
+    const start = todayVal.subtract({ days: 2 }).toDate(tz);
+    start.setHours(0, 0, 0, 0);
+    const end = todayVal.toDate(tz);
+    end.setHours(23, 59, 59, 999);
+    return { createdAfter: start.toISOString(), createdBefore: end.toISOString() };
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", activeTab);
+    if (activeTab === "pending_reply" || activeTab === "pending_reply_to_reply") {
+      params.set("from", pendingReplyRange.createdAfter);
+      params.set("to", pendingReplyRange.createdBefore);
+    } else {
+      params.delete("from");
+      params.delete("to");
+    }
+    const next = `${pathname}?${params.toString()}`;
+    if (next !== `${pathname}${window.location.search}`) {
+      router.replace(next, { scroll: false });
+    }
+  }, [activeTab, pendingReplyRange, pathname, router]);
+
+  const [pendingReplyPage, setPendingReplyPage] = useState(1);
+  const [allPendingReplyThreads, setAllPendingReplyThreads] = useState<ThreadReference[]>([]);
+  const [isPendingReplyLoadingMore, setIsPendingReplyLoadingMore] = useState(false);
+  const pendingReplyLoadedPages = useRef<Set<number>>(new Set());
+
+  const [replyQueuePage, setReplyQueuePage] = useState(1);
+  const [allReplyQueueEntries, setAllReplyQueueEntries] = useState<ReplyQueueEntry[]>([]);
+  const [isReplyQueueLoadingMore, setIsReplyQueueLoadingMore] = useState(false);
+  const replyQueueLoadedPages = useRef<Set<number>>(new Set());
+
+  const resetPendingReplyPagination = useCallback(() => {
+    setPendingReplyPage(1);
+    setAllPendingReplyThreads([]);
+    pendingReplyLoadedPages.current = new Set();
+  }, []);
+
+  const toggleChannel = useCallback((id: string) => {
+    setSelectedChannelIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    resetPendingReplyPagination();
+  }, [resetPendingReplyPagination]);
+
+  const clearChannels = useCallback(() => {
+    setSelectedChannelIds(new Set());
+    resetPendingReplyPagination();
+  }, [resetPendingReplyPagination]);
+
+  const { data: channelData } = useChannelList({});
+
+  const { data: nodeData, isValidating: isNodesLoading } = useNodeList({
     visibility: [Visibility.review],
     format: "flat",
   });
-  if (!data) {
-    return <Unready error={error} />;
+
+  const { data: threadData, isValidating: isThreadsLoading } = useThreadList(
+    {
+      visibility: [Visibility.review],
+      ...(excludeBAH && { exclude_bah: true }),
+      ...(excludeFeedback && { exclude_feedback: true }),
+      ...(channelIdList.length > 0 && { channel_ids: channelIdList }),
+    },
+    { swr: { enabled: channelFilterReady } },
+  );
+
+  const { data: pendingReplyData, isValidating: isPendingReplyLoading } = useThreadList(
+    {
+      visibility: [Visibility.published],
+      created_after: pendingReplyRange.createdAfter,
+      created_before: pendingReplyRange.createdBefore,
+      no_replies: true,
+      ...(excludeBAH && { exclude_bah: true }),
+      ...(excludeFeedback && { exclude_feedback: true }),
+      ...(channelIdList.length > 0 && { channel_ids: channelIdList }),
+      page: String(pendingReplyPage),
+    },
+    { swr: { enabled: channelFilterReady } },
+  );
+
+  const { data: replyQueueData, mutate: mutateReplyQueue, isValidating: isReplyQueueLoading } = useAdminReplyQueueList({
+    created_after: pendingReplyRange.createdAfter,
+    created_before: pendingReplyRange.createdBefore,
+    page: String(replyQueuePage),
+  });
+
+  useEffect(() => {
+    const pageNum = pendingReplyData?.current_page;
+    if (!pendingReplyData?.threads || pageNum === undefined) return;
+
+    if (pendingReplyLoadedPages.current.has(pageNum)) {
+      setIsPendingReplyLoadingMore(false);
+      return;
+    }
+    pendingReplyLoadedPages.current.add(pageNum);
+
+    if (pageNum === 1) {
+      setAllPendingReplyThreads(pendingReplyData.threads);
+    } else {
+      setAllPendingReplyThreads((prev) => {
+        const existingIds = new Set(prev.map((t) => t.id));
+        const newThreads = pendingReplyData.threads.filter((t) => !existingIds.has(t.id));
+        return [...prev, ...newThreads];
+      });
+    }
+    setIsPendingReplyLoadingMore(false);
+  }, [pendingReplyData]);
+
+  useEffect(() => {
+    const pageNum = replyQueueData?.current_page;
+    if (!replyQueueData?.reply_queue_entries || pageNum === undefined) return;
+
+    if (replyQueueLoadedPages.current.has(pageNum)) {
+      setIsReplyQueueLoadingMore(false);
+      return;
+    }
+    replyQueueLoadedPages.current.add(pageNum);
+
+    if (pageNum === 1) {
+      setAllReplyQueueEntries(replyQueueData.reply_queue_entries);
+    } else {
+      setAllReplyQueueEntries((prev) => {
+        const existingIds = new Set(prev.map((e) => e.id));
+        const newEntries = replyQueueData.reply_queue_entries.filter((e) => !existingIds.has(e.id));
+        return [...prev, ...newEntries];
+      });
+    }
+    setIsReplyQueueLoadingMore(false);
+  }, [replyQueueData]);
+
+  const handleLoadMorePendingReply = useCallback(() => {
+    if (pendingReplyData?.next_page) {
+      setIsPendingReplyLoadingMore(true);
+      setPendingReplyPage(pendingReplyData.next_page);
+    }
+  }, [pendingReplyData?.next_page]);
+
+  const handleLoadMoreReplyQueue = useCallback(() => {
+    if (replyQueueData?.next_page) {
+      setIsReplyQueueLoadingMore(true);
+      setReplyQueuePage(replyQueueData.next_page);
+    }
+  }, [replyQueueData?.next_page]);
+
+  const resetPagination = useCallback(() => {
+    setPendingReplyPage(1);
+    setAllPendingReplyThreads([]);
+    pendingReplyLoadedPages.current = new Set();
+    setReplyQueuePage(1);
+    setAllReplyQueueEntries([]);
+    replyQueueLoadedPages.current = new Set();
+  }, []);
+
+  const applyPendingReplyRange = useCallback(
+    (createdAfter: string, createdBefore: string) => {
+      if (
+        createdAfter === pendingReplyRange.createdAfter &&
+        createdBefore === pendingReplyRange.createdBefore
+      ) {
+        return;
+      }
+      setPendingReplyRange({ createdAfter, createdBefore });
+      resetPagination();
+    },
+    [pendingReplyRange, resetPagination],
+  );
+
+  const [pendingRangeStart, setPendingRangeStart] = useState<DateValue | null>(null);
+
+  const isPendingReplyDateUnavailable = useCallback(
+    (date: DateValue) =>
+      pendingRangeStart !== null && Math.abs(date.compare(pendingRangeStart)) > 2,
+    [pendingRangeStart],
+  );
+
+  const handlePendingReplyOpenChange = useCallback(({ open }: { open: boolean }) => {
+    if (!open) setPendingRangeStart(null);
+  }, []);
+
+  const handlePendingReplyDateChange = useCallback(({ value }: { value: DateValue[] }) => {
+    const [start, end] = value;
+
+    setPendingRangeStart(start && !end ? start : null);
+
+    if (!start) {
+      const tz = getLocalTimeZone();
+      const s = todayVal.subtract({ days: 2 }).toDate(tz);
+      s.setHours(0, 0, 0, 0);
+      const e = todayVal.toDate(tz);
+      e.setHours(23, 59, 59, 999);
+      applyPendingReplyRange(s.toISOString(), e.toISOString());
+      return;
+    }
+
+    if (!end) return;
+
+    const [earlier, later] = start.compare(end) <= 0 ? [start, end] : [end, start];
+    const effectiveEnd = later.compare(earlier) > 2 ? earlier.add({ days: 2 }) : later;
+
+    const startDate = earlier.toDate(getLocalTimeZone());
+    startDate.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(effectiveEnd.add({ days: 1 }).toDate(getLocalTimeZone()).getTime() - 1);
+
+    applyPendingReplyRange(startDate.toISOString(), endOfDay.toISOString());
+  }, [todayVal, applyPendingReplyRange]);
+
+  const isInitialLoading =
+    activeTab === "pending_review" ? !channelFilterReady || (isThreadsLoading && isNodesLoading) :
+    activeTab === "pending_reply" ? !channelFilterReady || (isPendingReplyLoading && allPendingReplyThreads.length === 0) :
+    activeTab === "pending_reply_to_reply" ? isReplyQueueLoading && allReplyQueueEntries.length === 0 :
+    false;
+
+  if (isInitialLoading) {
+    return <LoadingBanner />;
   }
 
-  return (
-    <LStack>
-      <Heading>Submission queue</Heading>
+  const hasNodes = nodeData?.nodes && nodeData.nodes.length > 0;
+  const hasThreads = threadData?.threads && threadData.threads.length > 0;
 
-      <QueueNodeList nodes={data.nodes} />
+  const channels = channelData?.channels || [];
+  const channelMap = new Map(channels.map((ch) => [ch.id, ch]));
+
+  const threadsByChannel = new Map<string, any[]>();
+  threadData?.threads?.forEach((thread) => {
+    if (!threadsByChannel.has(thread.channel_id)) {
+      threadsByChannel.set(thread.channel_id, []);
+    }
+    threadsByChannel.get(thread.channel_id)!.push(thread);
+  });
+
+  const sortedChannels = Array.from(threadsByChannel.entries())
+    .sort((a, b) => {
+      const channelA = channelMap.get(a[0]);
+      const channelB = channelMap.get(b[0]);
+      if (!channelA || !channelB) return 0;
+      return (channelA.name || "").localeCompare(channelB.name || "");
+    })
+    .map(([channelId, threads]) => ({
+      channel: channelMap.get(channelId),
+      threads,
+    }));
+
+  const shouldShowThreads = selectedContentType === "threads" || selectedContentType === "all";
+  const shouldShowNodes = selectedContentType === "nodes" || selectedContentType === "all";
+
+  const pendingReplyThreads = allPendingReplyThreads;
+  const replyQueueEntries = allReplyQueueEntries;
+
+  const allChannelOptions = [...channels].sort((a, b) =>
+    (a.name || "").localeCompare(b.name || ""),
+  );
+
+  return (
+    <LStack gap="6" p="4">
+      {/* Header */}
+      <VStack alignItems="start" gap="2" width="full">
+        <HStack justifyContent="space-between" width="full" alignItems="center">
+          <Heading as="h1" size="2xl">
+            Submission Queue
+          </Heading>
+          {activeTab !== "bulk_actions" && activeTab !== "admin_replies" && (
+            <styled.button
+              onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+              display="flex"
+              alignItems="center"
+              gap="2"
+              fontSize="sm"
+              fontWeight="semibold"
+              cursor="pointer"
+              px="3"
+              py="2"
+              rounded="md"
+              style={{
+                backgroundColor: isFiltersOpen ? "var(--colors-bg-muted)" : "transparent",
+                color: "var(--colors-fg-default)",
+                border: "1px solid var(--colors-border-default)",
+                transition: "all 0.2s ease-in-out",
+              }}
+            >
+              <Filter size={18} strokeWidth={2} />
+              <styled.span>Filters</styled.span>
+            </styled.button>
+          )}
+        </HStack>
+
+        {/* Tabs */}
+        <HStack gap="0" width="full" style={{ borderBottom: "1px solid var(--colors-border-default)" }}>
+          {QUEUE_TABS.map((tab) => (
+            <styled.button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              fontSize="sm"
+              cursor="pointer"
+              px="4"
+              py="2"
+              style={{
+                background: "none",
+                border: "none",
+                borderBottom: activeTab === tab ? "2px solid var(--colors-fg-default)" : "2px solid transparent",
+                marginBottom: "-1px",
+                fontWeight: activeTab === tab ? "600" : "400",
+                color: activeTab === tab ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
+              }}
+            >
+              {QUEUE_TAB_LABELS[tab]}
+            </styled.button>
+          ))}
+        </HStack>
+      </VStack>
+
+      {/* Filters Panel */}
+      {isFiltersOpen && activeTab !== "admin_replies" && (
+        <VStack
+          alignItems="start"
+          gap="4"
+          width="full"
+          p="4"
+          rounded="md"
+          style={{
+            border: "1px solid var(--colors-border-default)",
+            backgroundColor: "var(--colors-bg-muted)",
+          }}
+        >
+          {/* Content Type Filter */}
+          <VStack alignItems="start" gap="2" width="full">
+            <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
+              Content Type
+            </styled.label>
+            <HStack gap="3" flexWrap="wrap">
+              {(["all", "threads", "nodes"] as const).map((type) => (
+                <styled.button
+                  key={type}
+                  onClick={() => setSelectedContentType(type)}
+                  fontSize="sm"
+                  cursor="pointer"
+                  transition="all"
+                  style={{
+                    backgroundColor: "transparent",
+                    color: selectedContentType === type ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
+                    border: "none",
+                    borderBottom: selectedContentType === type ? "2px solid var(--colors-fg-default)" : "2px solid transparent",
+                    padding: "4px 0",
+                    fontWeight: selectedContentType === type ? "600" : "400",
+                  }}
+                >
+                  {type === "all" ? "All" : type === "threads" ? "Threads" : "Library Pages"}
+                </styled.button>
+              ))}
+            </HStack>
+          </VStack>
+
+          {allChannelOptions.length > 0 && (
+            <VStack alignItems="start" gap="2" width="full">
+              <HStack justifyContent="space-between" width="full">
+                <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
+                  Channel
+                </styled.label>
+                {selectedChannelIds.size > 0 && (
+                  <styled.button
+                    onClick={clearChannels}
+                    fontSize="xs"
+                    color="fg.muted"
+                    cursor="pointer"
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: "0",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    Clear
+                  </styled.button>
+                )}
+              </HStack>
+              <HStack gap="2" flexWrap="wrap">
+                {allChannelOptions.map((channel) => {
+                  const isSelected = selectedChannelIds.has(channel.id);
+                  return (
+                    <styled.button
+                      key={channel.id}
+                      onClick={() => toggleChannel(channel.id)}
+                      fontSize="xs"
+                      cursor="pointer"
+                      px="3"
+                      py="1.5"
+                      rounded="full"
+                      transition="all"
+                      style={{
+                        backgroundColor: isSelected
+                          ? "var(--colors-bg-default)"
+                          : "var(--colors-bg-subtle)",
+                        color: isSelected
+                          ? "var(--colors-fg-default)"
+                          : "var(--colors-fg-muted)",
+                        border: "1px solid var(--colors-border-default)",
+                        fontWeight: isSelected ? "600" : "400",
+                      }}
+                    >
+                      {channel.name || "Unknown"}
+                    </styled.button>
+                  );
+                })}
+              </HStack>
+            </VStack>
+          )}
+
+          {(activeTab === "pending_reply" || activeTab === "pending_reply_to_reply") && (
+            <VStack alignItems="start" gap="2" width="full">
+              <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
+                Date Range
+              </styled.label>
+              <HStack gap="2" alignItems="center">
+                <DateRangePicker
+                  hideInputs={true}
+                  min={todayVal.subtract({ days: PENDING_REPLY_MAX_LOOKBACK_DAYS })}
+                  max={todayVal}
+                  onValueChange={handlePendingReplyDateChange}
+                  onOpenChange={handlePendingReplyOpenChange}
+                  isDateUnavailable={isPendingReplyDateUnavailable}
+                />
+                <styled.span fontSize="sm" color="fg.muted" fontWeight="medium">
+                  {formatDateRange(pendingReplyRange.createdAfter, pendingReplyRange.createdBefore)}
+                </styled.span>
+              </HStack>
+            </VStack>
+          )}
+
+          <VStack alignItems="start" gap="2" width="full">
+            <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
+              Streak Posts
+            </styled.label>
+            <HStack gap="2" flexWrap="wrap">
+              <styled.button
+                onClick={() => setExcludeBAH(!excludeBAH)}
+                fontSize="xs"
+                cursor="pointer"
+                px="3"
+                py="1.5"
+                rounded="full"
+                transition="all"
+                style={{
+                  backgroundColor: excludeBAH ? "var(--colors-bg-default)" : "var(--colors-bg-subtle)",
+                  color: excludeBAH ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
+                  border: "1px solid var(--colors-border-default)",
+                  fontWeight: excludeBAH ? "600" : "400",
+                }}
+              >
+                Hide Streak Posts
+              </styled.button>
+            </HStack>
+          </VStack>
+
+          <VStack alignItems="start" gap="2" width="full">
+            <styled.label fontSize="xs" fontWeight="semibold" color="fg.muted" textTransform="uppercase">
+              Feedback Posts
+            </styled.label>
+            <HStack gap="2" flexWrap="wrap">
+              <styled.button
+                onClick={() => setExcludeFeedback(!excludeFeedback)}
+                fontSize="xs"
+                cursor="pointer"
+                px="3"
+                py="1.5"
+                rounded="full"
+                transition="all"
+                style={{
+                  backgroundColor: excludeFeedback ? "var(--colors-bg-default)" : "var(--colors-bg-subtle)",
+                  color: excludeFeedback ? "var(--colors-fg-default)" : "var(--colors-fg-muted)",
+                  border: "1px solid var(--colors-border-default)",
+                  fontWeight: excludeFeedback ? "600" : "400",
+                }}
+              >
+                Hide Feedback
+              </styled.button>
+            </HStack>
+          </VStack>
+        </VStack>
+      )}
+
+      {/* Pending Reply Tab */}
+      {activeTab === "pending_reply" && (
+        <VStack gap="4" width="full">
+          <HStack justifyContent="space-between" width="full" alignItems="center">
+            <Heading as="h2" size="lg">
+              Threads Pending Reply
+            </Heading>
+            <styled.span fontSize="xs" color="fg.muted" fontWeight="semibold">
+              {pendingReplyThreads.length} pending
+            </styled.span>
+          </HStack>
+          {shouldShowThreads && pendingReplyThreads.length > 0 ? (
+            <>
+              <PendingReplyThreadList threads={pendingReplyThreads} />
+              {pendingReplyData?.next_page && (
+                <styled.div width="full" display="flex" justifyContent="center" py="4">
+                  <Button
+                    variant="outline"
+                    size="md"
+                    onClick={handleLoadMorePendingReply}
+                    disabled={isPendingReplyLoadingMore}
+                  >
+                    {isPendingReplyLoadingMore ? "Loading..." : "Load More"}
+                  </Button>
+                </styled.div>
+              )}
+            </>
+          ) : (
+            <VStack
+              gap="4"
+              width="full"
+              p="12"
+              alignItems="center"
+              justifyContent="center"
+              style={{
+                border: "1px dashed var(--colors-border-default)",
+                borderRadius: "0.75rem",
+                backgroundColor: "var(--colors-bg-muted)",
+                minHeight: "300px",
+              }}
+            >
+              <styled.div fontSize="lg" fontWeight="semibold" color="fg.muted">
+                All Replied!
+              </styled.div>
+              <styled.p fontSize="sm" color="fg.muted">
+                No threads pending reply for the selected filters.
+              </styled.p>
+            </VStack>
+          )}
+        </VStack>
+      )}
+
+      {/* Pending Reply to Reply Tab */}
+      {activeTab === "pending_reply_to_reply" && (
+        <VStack gap="4" width="full">
+          <HStack justifyContent="space-between" width="full" alignItems="center">
+            <Heading as="h2" size="lg">
+              Replies Pending Admin Attention
+            </Heading>
+            <styled.span fontSize="xs" color="fg.muted" fontWeight="semibold">
+              {replyQueueEntries.length} pending
+            </styled.span>
+          </HStack>
+          <ReplyAdminQueueList
+            entries={selectedChannelIds.size > 0
+              ? replyQueueEntries.filter((e) => e.channel_id && selectedChannelIds.has(e.channel_id))
+              : replyQueueEntries}
+            channelMap={channelMap}
+            onDismiss={async (id) => {
+              await adminReplyQueueDismiss(id);
+              setAllReplyQueueEntries((prev) => prev.filter((e) => e.id !== id));
+              await mutateReplyQueue();
+            }}
+          />
+          {replyQueueData?.next_page && (
+            <styled.div width="full" display="flex" justifyContent="center" py="4">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={handleLoadMoreReplyQueue}
+                disabled={isReplyQueueLoadingMore}
+              >
+                {isReplyQueueLoadingMore ? "Loading..." : "Load More"}
+              </Button>
+            </styled.div>
+          )}
+        </VStack>
+      )}
+
+      {/* Bulk Actions Tab */}
+      {activeTab === "bulk_actions" && <BulkActionsPanel />}
+
+      {activeTab === "admin_replies" && <AdminRepliesPanel />}
+
+      {/* Pending Review Tab */}
+      {activeTab === "pending_review" && <VStack gap="8" width="full">
+        {/* Threads Section */}
+        {shouldShowThreads && hasThreads && (
+          <VStack gap="6" width="full">
+            <HStack justifyContent="space-between" width="full" alignItems="center">
+              <Heading as="h2" size="lg">
+                Threads Pending Review
+              </Heading>
+              <styled.span fontSize="xs" color="fg.muted" fontWeight="semibold">
+                {sortedChannels.reduce((sum, { threads }) => sum + threads.length, 0)} pending
+              </styled.span>
+            </HStack>
+
+            {sortedChannels.length > 0 ? (
+              <VStack gap="4" width="full">
+                {sortedChannels.map(({ channel, threads }) => (
+                  <VStack key={channel?.id || "unknown"} gap="3" width="full">
+                    <HStack gap="3" alignItems="center">
+                      {channel?.icon ? (
+                        <styled.img
+                          src={getAssetURL(channel.icon.path)}
+                          alt={channel.name}
+                          w="6"
+                          h="6"
+                          rounded="md"
+                          objectFit="cover"
+                          flexShrink="0"
+                        />
+                      ) : (
+                        <styled.div
+                          w="6"
+                          h="6"
+                          rounded="md"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          flexShrink="0"
+                          style={{ background: "#4a9d6f" }}
+                        >
+                          <MembersIcon width="4" height="4" style={{ color: "#ffffff" }} />
+                        </styled.div>
+                      )}
+                      <Link href={`/channels/${channel?.id}`} style={{ flex: 1 }}>
+                        <Heading size="sm" as="h3">
+                          {channel?.name || "Unknown Channel"}
+                        </Heading>
+                      </Link>
+                      <styled.span fontSize="xs" color="fg.muted">
+                        {threads.length} pending
+                      </styled.span>
+                    </HStack>
+                    <QueueThreadList threads={threads} />
+                  </VStack>
+                ))}
+              </VStack>
+            ) : (
+              <styled.div
+                p="8"
+                textAlign="center"
+                color="fg.muted"
+                width="full"
+                style={{
+                  border: "1px solid var(--colors-border-subtle)",
+                  borderRadius: "0.5rem",
+                  backgroundColor: "var(--colors-bg-muted)",
+                }}
+              >
+                No threads pending review in selected channel
+              </styled.div>
+            )}
+          </VStack>
+        )}
+
+        {/* Library Pages Section */}
+        {shouldShowNodes && hasNodes && (
+          <VStack gap="3" width="full">
+            <HStack justifyContent="space-between" width="full" alignItems="center">
+              <Heading as="h2" size="lg">
+                Library Pages Pending Review
+              </Heading>
+              <styled.span fontSize="xs" color="fg.muted" fontWeight="semibold">
+                {nodeData?.nodes?.length || 0} pending
+              </styled.span>
+            </HStack>
+            <QueueNodeList nodes={nodeData?.nodes || []} />
+          </VStack>
+        )}
+
+        {/* Empty State */}
+        {!hasThreads && !hasNodes && (
+          <VStack
+            gap="4"
+            width="full"
+            p="12"
+            alignItems="center"
+            justifyContent="center"
+            style={{
+              border: "1px dashed var(--colors-border-default)",
+              borderRadius: "0.75rem",
+              backgroundColor: "var(--colors-bg-muted)",
+              minHeight: "300px",
+            }}
+          >
+            <styled.div fontSize="lg" fontWeight="semibold" color="fg.muted">
+              All Caught Up!
+            </styled.div>
+            <styled.p fontSize="sm" color="fg.muted">
+              No submissions waiting for review at the moment.
+            </styled.p>
+          </VStack>
+        )}
+      </VStack>}
     </LStack>
   );
 }

@@ -1,0 +1,5 @@
+/* Placeholder colour can't be set via inline styles, so it lives here. */
+.ugt-scope textarea::placeholder {
+  color: #999999;
+  opacity: 1;
+}

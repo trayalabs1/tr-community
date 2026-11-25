@@ -40,12 +40,24 @@ export function LibraryPageScreen(props: Props) {
     return <UnreadyBanner error={error} />;
   }
 
-  return <LibraryPageForm node={data} childNodes={props.childNodes} />;
+  return (
+    <LibraryPageForm
+      node={data}
+      childNodes={props.childNodes}
+      channelID={props.channelID}
+      channelName={props.channelName}
+    />
+  );
 }
 
 const LibraryPageForm = memo((props: Props) => {
   return (
-    <LibraryPageProvider node={props.node} childNodes={props.childNodes}>
+    <LibraryPageProvider
+      node={props.node}
+      childNodes={props.childNodes}
+      channelID={props.channelID}
+      channelName={props.channelName}
+    >
       <LibraryPage />
     </LibraryPageProvider>
   );

@@ -6,6 +6,7 @@ import (
 	"github.com/Southclaws/dt"
 	"github.com/Southclaws/fault"
 	"github.com/Southclaws/fault/fctx"
+	"github.com/rs/xid"
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
@@ -52,6 +53,10 @@ func (s *postSearcher) Search(ctx context.Context, query string, p pagination.Pa
 
 	opts.Tags.Call(func(value []tag_ref.Name) {
 		o = append(o, post_search.WithTags(value...))
+	})
+
+	opts.Channels.Call(func(value []xid.ID) {
+		o = append(o, post_search.WithChannels(value...))
 	})
 
 	rs, err := s.post_search.Search(ctx, p, o...)

@@ -1,10 +1,19 @@
 import { z } from "zod";
+import type { Metadata } from "next";
 
 import { SearchScreen } from "src/screens/search/SearchScreen";
 
 import { datagraphSearch } from "@/api/openapi-server/datagraph";
 import { UnreadyBanner } from "@/components/site/Unready";
 import { DatagraphKindSchema } from "@/lib/datagraph/schema";
+
+export const metadata: Metadata = {
+  title: "Search",
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 type Props = {
   searchParams: Promise<Query>;

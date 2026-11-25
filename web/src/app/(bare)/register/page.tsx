@@ -24,6 +24,6 @@ export async function generateMetadata() {
   const settings = await getSettings();
   return {
     title: `Join the community at ${settings.title}`,
-    description: `Log in or sign up to ${settings.title} - powered by Storyden`,
+    description: `Log in or sign up to ${settings.title}`,
   };
 }

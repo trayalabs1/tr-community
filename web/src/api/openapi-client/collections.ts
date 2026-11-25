@@ -314,6 +314,70 @@ export const useCollectionDelete = <
   };
 };
 /**
+ * Add a post to the authenticated account's default collection, creating
+the default collection first if it does not exist yet. Enables one-tap
+saving without requiring the user to pick or create a collection.
+
+ */
+export const collectionAddPostToDefault = (postId: string) => {
+  return fetcher<CollectionAddPostOKResponse>({
+    url: `/collections/default/posts/${postId}`,
+    method: "PUT",
+  });
+};
+
+export const getCollectionAddPostToDefaultMutationFetcher = (
+  postId: string,
+) => {
+  return (
+    _: Key,
+    __: { arg: Arguments },
+  ): Promise<CollectionAddPostOKResponse> => {
+    return collectionAddPostToDefault(postId);
+  };
+};
+export const getCollectionAddPostToDefaultMutationKey = (postId: string) =>
+  [`/collections/default/posts/${postId}`] as const;
+
+export type CollectionAddPostToDefaultMutationResult = NonNullable<
+  Awaited<ReturnType<typeof collectionAddPostToDefault>>
+>;
+export type CollectionAddPostToDefaultMutationError =
+  | UnauthorisedResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse;
+
+export const useCollectionAddPostToDefault = <
+  TError =
+    | UnauthorisedResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse,
+>(
+  postId: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof collectionAddPostToDefault>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof collectionAddPostToDefault>>
+    > & { swrKey?: string };
+  },
+) => {
+  const { swr: swrOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getCollectionAddPostToDefaultMutationKey(postId);
+  const swrFn = getCollectionAddPostToDefaultMutationFetcher(postId);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+/**
  * Add a post to a collection. The collection must be owned by the account
 making the request. The post can be any published post of any kind.
 

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/rs/xid"
+
 	"github.com/Southclaws/storyden/app/resources/post/category"
 	"github.com/Southclaws/storyden/internal/utils"
 )
@@ -63,7 +65,7 @@ func categories(r category.Repository) {
 	ctx := context.Background()
 
 	for _, c := range Categories {
-		utils.Must(r.CreateCategory(ctx, c.Name, c.Description, c.Colour, c.Sort, c.Admin, category.WithID(c.ID)))
+		utils.Must(r.CreateCategory(ctx, c.Name, c.Description, c.Colour, c.Sort, c.Admin, xid.ID{}, category.WithID(c.ID)))
 	}
 
 	fmt.Println("created seed categories")

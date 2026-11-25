@@ -10,7 +10,7 @@ export type ReportMemberModalProps = Omit<ReportModalProps, "title" | "descripti
 export function ReportMemberModal({ profile, ...disclosure }: ReportMemberModalProps) {
   return (
     <ReportModal
-      title={`Report ${profile.name}`}
+      title={`Report @${profile.handle}`}
       description={
         "Tell us what's happening with this member. Reports help moderators keep the community safe."
       }

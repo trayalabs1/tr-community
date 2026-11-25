@@ -7,6 +7,10 @@ import {
   categoryCreate,
   getCategoryListKey,
 } from "src/api/openapi-client/categories";
+import {
+  channelCategoryCreate,
+  getChannelCategoryListKey,
+} from "src/api/openapi-client/channels";
 import { Asset } from "src/api/openapi-schema";
 import { UseDisclosureProps } from "src/utils/useDisclosure";
 
@@ -24,6 +28,7 @@ export type Form = z.infer<typeof FormSchema>;
 
 export interface CategoryCreateProps extends UseDisclosureProps {
   defaultParent?: string;
+  channelID?: string;
 }
 
 export function useCategoryCreate(props: CategoryCreateProps) {
@@ -37,9 +42,17 @@ export function useCategoryCreate(props: CategoryCreateProps) {
 
   const onSubmit = handleSubmit(async (data) => {
     await handle(async () => {
-      await categoryCreate(data);
+      if (props.channelID) {
+        // Use channel-specific API
+        await channelCategoryCreate(props.channelID, data);
+        // Invalidate the channel-specific category list cache
+        mutate(getChannelCategoryListKey(props.channelID));
+      } else {
+        // Fallback to global API (will fail if no default channel set)
+        await categoryCreate(data);
+        mutate(getCategoryListKey());
+      }
       props.onClose?.();
-      mutate(getCategoryListKey());
     });
   });
 

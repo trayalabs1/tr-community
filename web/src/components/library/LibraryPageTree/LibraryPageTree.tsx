@@ -38,6 +38,7 @@ export interface LibraryPageTreeProps {
   nodes: NodeWithChildren[];
   currentNode: string | undefined;
   canManageLibrary: boolean;
+  channelId?: string | undefined;
 }
 
 const visibilitySortKey: Record<Visibility, number> = {
@@ -45,6 +46,7 @@ const visibilitySortKey: Record<Visibility, number> = {
   [Visibility.review]: 1,
   [Visibility.draft]: 2,
   [Visibility.unlisted]: 3,
+  [Visibility.archived]: 4,
 };
 
 const visibilityLabels: Record<Visibility, string> = {
@@ -52,6 +54,7 @@ const visibilityLabels: Record<Visibility, string> = {
   [Visibility.review]: "In review",
   [Visibility.draft]: "Drafts",
   [Visibility.unlisted]: "Unlisted",
+  [Visibility.archived]: "Archived",
 };
 
 const visibilityIcons: Record<Visibility, JSX.Element> = {
@@ -59,6 +62,7 @@ const visibilityIcons: Record<Visibility, JSX.Element> = {
   [Visibility.review]: <ReviewIcon />,
   [Visibility.draft]: <DraftIcon />,
   [Visibility.unlisted]: <UnlistedIcon />,
+  [Visibility.archived]: <DraftIcon />,
 };
 
 export type PositionInList = "top" | "in" | "bottom" | "only";
@@ -191,6 +195,7 @@ export const LibraryPageTree = (props: LibraryPageTreeProps) => {
                   positionInList={getPositionInList(rootNodes.length, index)}
                   handleExpandNode={handleExpandNode}
                   canManageLibrary={props.canManageLibrary}
+                  channelId={props.channelId}
                 />
               </Fragment>
             );
@@ -212,6 +217,7 @@ type TreeNodeProps = {
   positionInList: PositionInList;
   handleExpandNode: (id: string) => void;
   canManageLibrary: boolean;
+  channelId?: string | undefined;
 };
 
 const linkStyles = css({
@@ -232,6 +238,7 @@ function TreeNode({
   positionInList,
   handleExpandNode,
   canManageLibrary,
+  channelId,
 }: TreeNodeProps) {
   const {
     attributes,
@@ -416,7 +423,11 @@ function TreeNode({
               className={linkStyles}
               onClick={handleLinkClick}
               onTouchStart={handleLinkTouchStart}
-              href={`/l/${node.slug}`}
+              href={
+                channelId
+                  ? `/channels/${channelId}/library/${node.slug}`
+                  : `/l/${node.slug}`
+              }
             >
               {label}
             </Link>
@@ -464,6 +475,7 @@ function TreeNode({
                   )}
                   handleExpandNode={handleExpandNode}
                   canManageLibrary={canManageLibrary}
+                  channelId={channelId}
                 />
               );
             })}

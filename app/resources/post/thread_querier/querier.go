@@ -3,6 +3,7 @@ package thread_querier
 import (
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/Southclaws/dt"
 	"github.com/Southclaws/opt"
 	"github.com/jmoiron/sqlx"
@@ -10,26 +11,31 @@ import (
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/post/thread"
+	"github.com/Southclaws/storyden/app/resources/settings"
 	"github.com/Southclaws/storyden/app/resources/visibility"
 	"github.com/Southclaws/storyden/internal/ent"
 	ent_account "github.com/Southclaws/storyden/internal/ent/account"
 	ent_category "github.com/Southclaws/storyden/internal/ent/category"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
+	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
+	"github.com/Southclaws/storyden/internal/ent/predicate"
 	ent_tag "github.com/Southclaws/storyden/internal/ent/tag"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/spanner"
 )
 
 type Querier struct {
-	ins spanner.Instrumentation
-	db  *ent.Client
-	raw *sqlx.DB
+	ins      spanner.Instrumentation
+	db       *ent.Client
+	raw      *sqlx.DB
+	settings *settings.SettingsRepository
 }
 
-func New(ins spanner.Builder, db *ent.Client, raw *sqlx.DB) *Querier {
+func New(ins spanner.Builder, db *ent.Client, raw *sqlx.DB, settingsRepo *settings.SettingsRepository) *Querier {
 	return &Querier{
-		ins: ins.Build(),
-		db:  db,
-		raw: raw,
+		ins:      ins.Build(),
+		db:       db,
+		raw:      raw,
+		settings: settingsRepo,
 	}
 }
 
@@ -51,11 +57,17 @@ type CategoryFilter struct {
 	Uncategorised bool
 }
 
-type Query func(q *ent.PostQuery)
+type threadListOptions struct {
+	q                   *ent.PostQuery
+	ignorePinned        bool
+	useSentimentRanking bool
+}
+
+type Query func(*threadListOptions)
 
 func HasKeyword(s string) Query {
-	return func(q *ent.PostQuery) {
-		q.Where(ent_post.Or(
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.Or(
 			ent_post.TitleContainsFold(s),
 			ent_post.SlugContainsFold(s),
 			ent_post.BodyContainsFold(s),
@@ -64,36 +76,201 @@ func HasKeyword(s string) Query {
 }
 
 func HasCreatedDateBefore(t time.Time) Query {
-	return func(q *ent.PostQuery) {
-		q.Where(ent_post.CreatedAtLT(t))
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.CreatedAtLT(t))
+	}
+}
+
+func HasCreatedDateAfter(t time.Time) Query {
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.CreatedAtGT(t))
+	}
+}
+
+func HasNoReplies() Query {
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.Not(ent_post.HasPosts()))
+	}
+}
+
+func HasNoLikes() Query {
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.Not(ent_post.HasLikes()))
+	}
+}
+
+func UseSentimentRanking() Query {
+	return func(q *threadListOptions) {
+		q.useSentimentRanking = true
+	}
+}
+
+func ExcludeBAHPosts() Query {
+	return func(q *threadListOptions) {
+		q.q.Where(predicate.Post(func(s *sql.Selector) {
+			s.Where(sql.P(func(b *sql.Builder) {
+				b.WriteString("COALESCE(" + s.C(ent_post.FieldMetadata) + "->>'post_category', '') != 'BAH'")
+			}))
+		}))
+	}
+}
+
+func ExcludeFeedbackPosts() Query {
+	return func(q *threadListOptions) {
+		q.q.Where(predicate.Post(func(s *sql.Selector) {
+			s.Where(sql.P(func(b *sql.Builder) {
+				b.WriteString("COALESCE(" + s.C(ent_post.FieldMetadata) + "->>'post_category', '') != 'feedback'")
+			}))
+		}))
+	}
+}
+
+func OnlyBAHPosts() Query {
+	return func(q *threadListOptions) {
+		q.q.Where(predicate.Post(func(s *sql.Selector) {
+			s.Where(sql.P(func(b *sql.Builder) {
+				b.WriteString(s.C(ent_post.FieldMetadata) + "->>'post_category' = 'BAH'")
+			}))
+		}))
+	}
+}
+
+// ShareCombo identifies a share post by its metadata post_category and,
+// optionally, its type. An empty Type matches any post in the category.
+type ShareCombo struct {
+	Category string
+	Type     string
+}
+
+func shareComboPredicate(s *sql.Selector, b *sql.Builder, combo ShareCombo) {
+	// COALESCE to '' so posts without the metadata key compare as a non-match
+	// (NULL) rather than propagating NULL through NOT (...) and dropping the row.
+	catCol := "COALESCE(" + s.C(ent_post.FieldMetadata) + "->>'post_category', '')"
+	typCol := "COALESCE(" + s.C(ent_post.FieldMetadata) + "->>'type', '')"
+
+	b.WriteString("(")
+	b.WriteString(catCol + " = ")
+	b.Arg(combo.Category)
+	if combo.Type != "" {
+		b.WriteString(" AND " + typCol + " = ")
+		b.Arg(combo.Type)
+	}
+	b.WriteString(")")
+}
+
+// ExcludeShareCombos filters out posts matching any of the given share combos,
+// leaving the organic queue.
+func ExcludeShareCombos(combos []ShareCombo) Query {
+	return func(q *threadListOptions) {
+		if len(combos) == 0 {
+			return
+		}
+		q.q.Where(predicate.Post(func(s *sql.Selector) {
+			s.Where(sql.P(func(b *sql.Builder) {
+				b.WriteString("NOT (")
+				for i, combo := range combos {
+					if i > 0 {
+						b.WriteString(" OR ")
+					}
+					shareComboPredicate(s, b, combo)
+				}
+				b.WriteString(")")
+			}))
+		}))
+	}
+}
+
+// OnlyShareCombos restricts results to posts matching any of the given share
+// combos, forming the share queue.
+func OnlyShareCombos(combos []ShareCombo) Query {
+	return func(q *threadListOptions) {
+		if len(combos) == 0 {
+			// No combos means nothing is a share; match nothing.
+			q.q.Where(predicate.Post(func(s *sql.Selector) {
+				s.Where(sql.P(func(b *sql.Builder) {
+					b.WriteString("1 = 0")
+				}))
+			}))
+			return
+		}
+		q.q.Where(predicate.Post(func(s *sql.Selector) {
+			s.Where(sql.P(func(b *sql.Builder) {
+				b.WriteString("(")
+				for i, combo := range combos {
+					if i > 0 {
+						b.WriteString(" OR ")
+					}
+					shareComboPredicate(s, b, combo)
+				}
+				b.WriteString(")")
+			}))
+		}))
+	}
+}
+
+func HasPostCategories(categories []string) Query {
+	return func(q *threadListOptions) {
+		if len(categories) == 0 {
+			return
+		}
+		args := dt.Map(categories, func(c string) any { return c })
+		q.q.Where(predicate.Post(func(s *sql.Selector) {
+			s.Where(sql.P(func(b *sql.Builder) {
+				b.WriteString(s.C(ent_post.FieldMetadata) + "->>'post_category' IN (")
+				b.Args(args...)
+				b.WriteString(")")
+			}))
+		}))
+	}
+}
+
+func HasSentiments(sentiments []string) Query {
+	return func(q *threadListOptions) {
+		if len(sentiments) == 0 {
+			return
+		}
+		q.q.Where(ent_post.HasSentimentWith(
+			ent_post_sentiment.SentimentTagIn(sentiments...),
+		))
+	}
+}
+
+func HasPrimaryTopics(topics []string) Query {
+	return func(q *threadListOptions) {
+		if len(topics) == 0 {
+			return
+		}
+		q.q.Where(ent_post.HasSentimentWith(
+			ent_post_sentiment.PrimaryTopicIn(topics...),
+		))
 	}
 }
 
 func HasUpdatedDateBefore(t time.Time) Query {
-	return func(q *ent.PostQuery) {
-		q.Where(ent_post.UpdatedAtLT(t))
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.UpdatedAtLT(t))
 	}
 }
 
 func HasAuthor(id account.AccountID) Query {
-	return func(q *ent.PostQuery) {
-		q.Where(ent_post.HasAuthorWith(ent_account.ID(xid.ID(id))))
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.HasAuthorWith(ent_account.ID(xid.ID(id))))
 	}
 }
 
 func HasTags(ids []xid.ID) Query {
-	return func(q *ent.PostQuery) {
-		q.Where(ent_post.HasTagsWith(ent_tag.IDIn(ids...)))
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.HasTagsWith(ent_tag.IDIn(ids...)))
 	}
 }
 
 func HasCategories(cf CategoryFilter) Query {
-	return func(q *ent.PostQuery) {
+	return func(q *threadListOptions) {
 		if len(cf.Slugs) > 0 {
-			q.Where(ent_post.HasCategoryWith(ent_category.SlugIn(cf.Slugs...)))
+			q.q.Where(ent_post.HasCategoryWith(ent_category.SlugIn(cf.Slugs...)))
 		} else {
 			if cf.Uncategorised {
-				q.Where(ent_post.CategoryIDIsNil())
+				q.q.Where(ent_post.CategoryIDIsNil())
 			} else {
 				// No filter, fetch all threads.
 			}
@@ -101,44 +278,68 @@ func HasCategories(cf CategoryFilter) Query {
 	}
 }
 
+func HasChannel(channelID xid.ID) Query {
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.ChannelID(channelID))
+	}
+}
+
+func HasChannels(channelIDs []xid.ID) Query {
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.ChannelIDIn(channelIDs...))
+	}
+}
+
 func HasStatus(status ...visibility.Visibility) Query {
 	pv := dt.Map(status, func(v visibility.Visibility) ent_post.Visibility { return ent_post.Visibility(v.String()) })
-	return func(q *ent.PostQuery) {
-		q.Where(ent_post.VisibilityIn(pv...))
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.VisibilityIn(pv...))
 	}
 }
 
 func HasPublishedOrOwnInReview(accountID opt.Optional[account.AccountID], isModerator bool) Query {
-	return func(q *ent.PostQuery) {
+	return func(q *threadListOptions) {
 		publishedStatus := ent_post.Visibility(visibility.VisibilityPublished.String())
 		reviewStatus := ent_post.Visibility(visibility.VisibilityReview.String())
+		archivedStatus := ent_post.Visibility(visibility.VisibilityArchived.String())
 
 		authorID, hasAuthor := accountID.Get()
 		if !hasAuthor {
-			q.Where(ent_post.VisibilityEQ(publishedStatus))
+			q.q.Where(ent_post.VisibilityEQ(publishedStatus))
 			return
 		}
 
 		if isModerator {
-			q.Where(ent_post.Or(
+			q.q.Where(ent_post.Or(
 				ent_post.VisibilityEQ(publishedStatus),
 				ent_post.VisibilityEQ(reviewStatus),
 			))
 			return
 		}
 
-		q.Where(ent_post.Or(
+		ownPredicate := ent_post.HasAuthorWith(ent_account.ID(xid.ID(authorID)))
+		q.q.Where(ent_post.Or(
 			ent_post.VisibilityEQ(publishedStatus),
 			ent_post.And(
 				ent_post.VisibilityEQ(reviewStatus),
-				ent_post.HasAuthorWith(ent_account.ID(xid.ID(authorID))),
+				ownPredicate,
+			),
+			ent_post.And(
+				ent_post.VisibilityEQ(archivedStatus),
+				ownPredicate,
 			),
 		))
 	}
 }
 
 func HasNotBeenDeleted() Query {
-	return func(q *ent.PostQuery) {
-		q.Where(ent_post.DeletedAtIsNil())
+	return func(q *threadListOptions) {
+		q.q.Where(ent_post.DeletedAtIsNil())
+	}
+}
+
+func HasNoPinnedOrdering(ignorePinned bool) Query {
+	return func(q *threadListOptions) {
+		q.ignorePinned = ignorePinned
 	}
 }

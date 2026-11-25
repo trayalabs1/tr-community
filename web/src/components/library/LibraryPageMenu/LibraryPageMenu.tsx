@@ -77,7 +77,7 @@ export function LibraryPageMenu({
       onInteractOutside={onInteractOutside}
     >
       <Menu.Trigger asChild>
-        {children ?? <MoreAction variant="subtle" size="xs" {...props} />}
+        {children ?? <MoreAction size="xs" {...props} />}
       </Menu.Trigger>
 
       <Portal>
@@ -90,7 +90,7 @@ export function LibraryPageMenu({
                 userSelect="none"
               >
                 <styled.span>
-                  {`Created by ${node.owner.name}`} {statusText}
+                  {`Created by @${node.owner.handle}`} {statusText}
                 </styled.span>
 
                 <styled.time fontWeight="normal">

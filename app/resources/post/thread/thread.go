@@ -10,6 +10,7 @@ import (
 
 	"github.com/Southclaws/storyden/app/resources/account"
 	"github.com/Southclaws/storyden/app/resources/asset"
+	"github.com/Southclaws/storyden/app/resources/channel"
 	"github.com/Southclaws/storyden/app/resources/collection/collection_item_status"
 	"github.com/Southclaws/storyden/app/resources/datagraph"
 	"github.com/Southclaws/storyden/app/resources/link/link_ref"
@@ -30,15 +31,32 @@ type Thread struct {
 	Title       string
 	Slug        string
 	Short       string
-	Pinned      bool
+	Pinned      int
 	LastReplyAt opt.Optional[time.Time]
 
-	ReadStatus  opt.Optional[post.ReadStatus]
-	ReplyStatus post.ReplyStatus
-	Replies     pagination.Result[*reply.Reply]
-	Category    opt.Optional[category.Category]
-	Tags        tag_ref.Tags
-	Related     datagraph.ItemList
+	ReadStatus   opt.Optional[post.ReadStatus]
+	ReplyStatus  post.ReplyStatus
+	Replies      pagination.Result[*reply.Reply]
+	PostCategory opt.Optional[category.Category]
+	Tags         tag_ref.Tags
+	Related      datagraph.ItemList
+
+	SentimentTag opt.Optional[string]
+	Category     opt.Optional[string]
+
+	// ReferencePostID, when set, marks this thread as a share featuring the
+	// referenced thread. The client fetches the referenced thread separately.
+	ReferencePostID opt.Optional[post.ID]
+
+	// Channel is the thread's home channel (name + slug), when eager-loaded.
+	// Used so a shared card can name the source channel without a separate
+	// membership-gated lookup.
+	Channel opt.Optional[channel.Channel]
+
+	// SharedToChannelIDs lists the channels this thread has been shared into,
+	// resolved from the shares that reference it. A viewer who can reach any of
+	// these channels can reach the thread, which is what deep-link gating needs.
+	SharedToChannelIDs []xid.ID
 }
 
 type ThreadRef struct {
@@ -46,7 +64,7 @@ type ThreadRef struct {
 	Title       string
 	Slug        string
 	Short       string
-	Pinned      bool
+	Pinned      int
 	LastReplyAt opt.Optional[time.Time]
 }
 
@@ -60,7 +78,7 @@ func (t *Thread) GetCreated() time.Time   { return t.CreatedAt }
 func (t *Thread) GetUpdated() time.Time   { return t.UpdatedAt }
 func (t *Thread) GetAuthor() xid.ID       { return xid.ID(t.Author.ID) }
 func (t *Thread) GetCategory() xid.ID {
-	if cat, ok := t.Category.Get(); ok {
+	if cat, ok := t.PostCategory.Get(); ok {
 		return xid.ID(cat.ID)
 	}
 	return xid.NilID()
@@ -72,6 +90,16 @@ func (t *Thread) GetTags() []string {
 		tags[i] = tag.Name.String()
 	}
 	return tags
+}
+
+func mapSentiment(m *ent.Post) (opt.Optional[string], opt.Optional[string]) {
+	s := m.Edges.Sentiment
+	if s == nil || s.ScoringStatus != "scored" {
+		return opt.NewEmpty[string](), opt.NewEmpty[string]()
+	}
+	tag := opt.NewPtr(s.SentimentTag)
+	sentimentCategory := opt.NewPtr(s.PrimaryTopic)
+	return tag, sentimentCategory
 }
 
 func Map(m *ent.Post) (*Thread, error) {
@@ -95,9 +123,20 @@ func Map(m *ent.Post) (*Thread, error) {
 
 	tags := dt.Map(m.Edges.Tags, tag_ref.Map(nil))
 
+	rootID := func() post.ID {
+		if m.RootPostID == nil {
+			return post.ID(m.ID)
+		}
+		return post.ID(*m.RootPostID)
+	}()
+
+	sentimentTag, sentimentCategory := mapSentiment(m)
+
 	return &Thread{
 		Post: post.Post{
-			ID: post.ID(m.ID),
+			ID:        post.ID(m.ID),
+			Root:      rootID,
+			ChannelID: m.ChannelID,
 
 			Content:    content,
 			Author:     *pro,
@@ -114,12 +153,34 @@ func Map(m *ent.Post) (*Thread, error) {
 		Title:       m.Title,
 		Slug:        m.Slug,
 		Short:       m.Short,
-		Pinned:      m.Pinned,
+		Pinned:      m.PinnedRank,
 		LastReplyAt: opt.New(m.LastReplyAt),
 
-		Category: category,
-		Tags:     tags,
+		PostCategory:    category,
+		Tags:            tags,
+		SentimentTag:    sentimentTag,
+		Category:        sentimentCategory,
+		ReferencePostID: mapReferencePostID(m),
+		Channel:         mapChannel(m),
 	}, nil
+}
+
+// mapReferencePostID converts the ent nillable reference_post_id into an
+// optional post ID for the domain model.
+func mapReferencePostID(m *ent.Post) opt.Optional[post.ID] {
+	if m.ReferencePostID == nil {
+		return opt.NewEmpty[post.ID]()
+	}
+	return opt.New(post.ID(*m.ReferencePostID))
+}
+
+// mapChannel converts an eager-loaded channel edge into an optional channel ref
+// on the thread. Empty when the edge wasn't loaded.
+func mapChannel(m *ent.Post) opt.Optional[channel.Channel] {
+	if m.Edges.Channel == nil {
+		return opt.NewEmpty[channel.Channel]()
+	}
+	return opt.New(*channel.FromModel(m.Edges.Channel))
 }
 
 func Mapper(
@@ -160,9 +221,20 @@ func Mapper(
 
 		reacts := rl[xid.ID(m.ID)]
 
+		rootID := func() post.ID {
+			if m.RootPostID == nil {
+				return post.ID(m.ID)
+			}
+			return post.ID(*m.RootPostID)
+		}()
+
+		sentimentTag, sentimentCategory := mapSentiment(m)
+
 		return &Thread{
 			Post: post.Post{
-				ID: post.ID(m.ID),
+				ID:        post.ID(m.ID),
+				Root:      rootID,
+				ChannelID: m.ChannelID,
 
 				Content:     content,
 				Author:      *pro,
@@ -181,21 +253,34 @@ func Mapper(
 			Title:  m.Title,
 			Slug:   m.Slug,
 			Short:  m.Short,
-			Pinned: m.Pinned,
+			Pinned: m.PinnedRank,
 			// Only populate the last-reply-at if there are replies.
 			LastReplyAt: opt.NewSafe(m.LastReplyAt, rs.Status(m.ID).Count > 0),
 
-			ReadStatus:  rr.Status(m.ID),
-			ReplyStatus: rs.Status(m.ID),
-			Category:    category,
+			ReadStatus:      rr.Status(m.ID),
+			ReplyStatus:     rs.Status(m.ID),
+			PostCategory:    category,
+			SentimentTag:    sentimentTag,
+			Category:        sentimentCategory,
+			ReferencePostID: mapReferencePostID(m),
+			Channel:         mapChannel(m),
 		}, nil
 	}
 }
 
 func MapRef(m *ent.Post) *ThreadRef {
+	rootID := func() post.ID {
+		if m.RootPostID == nil {
+			return post.ID(m.ID)
+		}
+		return post.ID(*m.RootPostID)
+	}()
+
 	return &ThreadRef{
 		Post: post.Post{
-			ID: post.ID(m.ID),
+			ID:        post.ID(m.ID),
+			Root:      rootID,
+			ChannelID: m.ChannelID,
 
 			CreatedAt: m.CreatedAt,
 			UpdatedAt: m.UpdatedAt,
@@ -205,7 +290,7 @@ func MapRef(m *ent.Post) *ThreadRef {
 		Title:       m.Title,
 		Slug:        m.Slug,
 		Short:       m.Short,
-		Pinned:      m.Pinned,
+		Pinned:      m.PinnedRank,
 		LastReplyAt: opt.New(m.LastReplyAt),
 	}
 }
@@ -216,9 +301,19 @@ func ItemRef(t *ent.Post) (datagraph.Item, error) {
 		return nil, fault.Wrap(err)
 	}
 
+	rootID := func() post.ID {
+		if t.RootPostID == nil {
+			return post.ID(t.ID)
+		}
+		return post.ID(*t.RootPostID)
+	}()
+
 	return &Thread{
 		Post: post.Post{
-			ID:      post.ID(t.ID),
+			ID:        post.ID(t.ID),
+			Root:      rootID,
+			ChannelID: t.ChannelID,
+
 			Content: content,
 			Meta:    t.Metadata,
 			Author: profile.Ref{
@@ -232,10 +327,11 @@ func ItemRef(t *ent.Post) (datagraph.Item, error) {
 
 		Title: t.Title,
 		Slug:  t.Slug,
-		Category: opt.New(category.Category{
+		PostCategory: opt.New(category.Category{
 			ID: category.CategoryID(t.CategoryID),
 		}),
-		Short: t.Short,
-		Tags:  dt.Map(t.Edges.Tags, tag_ref.Map(nil)),
+		Short:           t.Short,
+		Tags:            dt.Map(t.Edges.Tags, tag_ref.Map(nil)),
+		ReferencePostID: mapReferencePostID(t),
 	}, nil
 }

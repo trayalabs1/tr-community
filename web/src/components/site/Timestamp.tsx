@@ -1,4 +1,4 @@
-import { timestamp } from "src/utils/date";
+import { timestamp, formatDateTime } from "src/utils/date";
 
 import { styled } from "@/styled-system/jsx";
 import { JsxStyleProps } from "@/styled-system/types";
@@ -9,14 +9,17 @@ type Props = {
   created: string | Date;
   href?: string;
   large?: boolean;
+  absolute?: boolean;
 };
 
 export function Timestamp(props: Props & JsxStyleProps) {
-  const { created, href, large, ...rest } = props;
+  const { created, href, large, absolute, ...rest } = props;
 
   const createdDate = normaliseDate(created);
 
-  const createdAt = timestamp(createdDate, !large);
+  const createdAt = absolute
+    ? formatDateTime(createdDate)
+    : timestamp(createdDate, !large);
 
   return (
     <styled.span

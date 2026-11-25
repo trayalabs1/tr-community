@@ -19,9 +19,13 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/account"
 	"github.com/Southclaws/storyden/internal/ent/accountfollow"
 	"github.com/Southclaws/storyden/internal/ent/accountroles"
+	"github.com/Southclaws/storyden/internal/ent/adminreplytime"
 	"github.com/Southclaws/storyden/internal/ent/asset"
+	"github.com/Southclaws/storyden/internal/ent/auditlog"
 	"github.com/Southclaws/storyden/internal/ent/authentication"
 	"github.com/Southclaws/storyden/internal/ent/category"
+	"github.com/Southclaws/storyden/internal/ent/channel"
+	"github.com/Southclaws/storyden/internal/ent/channelmembership"
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/collectionnode"
 	"github.com/Southclaws/storyden/internal/ent/collectionpost"
@@ -34,13 +38,16 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/mentionprofile"
 	"github.com/Southclaws/storyden/internal/ent/node"
 	"github.com/Southclaws/storyden/internal/ent/notification"
+	"github.com/Southclaws/storyden/internal/ent/pollvote"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/Southclaws/storyden/internal/ent/postread"
+	"github.com/Southclaws/storyden/internal/ent/postsentiment"
 	"github.com/Southclaws/storyden/internal/ent/property"
 	"github.com/Southclaws/storyden/internal/ent/propertyschema"
 	"github.com/Southclaws/storyden/internal/ent/propertyschemafield"
 	"github.com/Southclaws/storyden/internal/ent/question"
 	"github.com/Southclaws/storyden/internal/ent/react"
+	"github.com/Southclaws/storyden/internal/ent/replyadminqueue"
 	"github.com/Southclaws/storyden/internal/ent/report"
 	"github.com/Southclaws/storyden/internal/ent/role"
 	"github.com/Southclaws/storyden/internal/ent/session"
@@ -61,12 +68,20 @@ type Client struct {
 	AccountFollow *AccountFollowClient
 	// AccountRoles is the client for interacting with the AccountRoles builders.
 	AccountRoles *AccountRolesClient
+	// AdminReplyTime is the client for interacting with the AdminReplyTime builders.
+	AdminReplyTime *AdminReplyTimeClient
 	// Asset is the client for interacting with the Asset builders.
 	Asset *AssetClient
+	// AuditLog is the client for interacting with the AuditLog builders.
+	AuditLog *AuditLogClient
 	// Authentication is the client for interacting with the Authentication builders.
 	Authentication *AuthenticationClient
 	// Category is the client for interacting with the Category builders.
 	Category *CategoryClient
+	// Channel is the client for interacting with the Channel builders.
+	Channel *ChannelClient
+	// ChannelMembership is the client for interacting with the ChannelMembership builders.
+	ChannelMembership *ChannelMembershipClient
 	// Collection is the client for interacting with the Collection builders.
 	Collection *CollectionClient
 	// CollectionNode is the client for interacting with the CollectionNode builders.
@@ -91,10 +106,14 @@ type Client struct {
 	Node *NodeClient
 	// Notification is the client for interacting with the Notification builders.
 	Notification *NotificationClient
+	// PollVote is the client for interacting with the PollVote builders.
+	PollVote *PollVoteClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
 	// PostRead is the client for interacting with the PostRead builders.
 	PostRead *PostReadClient
+	// PostSentiment is the client for interacting with the PostSentiment builders.
+	PostSentiment *PostSentimentClient
 	// Property is the client for interacting with the Property builders.
 	Property *PropertyClient
 	// PropertySchema is the client for interacting with the PropertySchema builders.
@@ -105,6 +124,8 @@ type Client struct {
 	Question *QuestionClient
 	// React is the client for interacting with the React builders.
 	React *ReactClient
+	// ReplyAdminQueue is the client for interacting with the ReplyAdminQueue builders.
+	ReplyAdminQueue *ReplyAdminQueueClient
 	// Report is the client for interacting with the Report builders.
 	Report *ReportClient
 	// Role is the client for interacting with the Role builders.
@@ -129,9 +150,13 @@ func (c *Client) init() {
 	c.Account = NewAccountClient(c.config)
 	c.AccountFollow = NewAccountFollowClient(c.config)
 	c.AccountRoles = NewAccountRolesClient(c.config)
+	c.AdminReplyTime = NewAdminReplyTimeClient(c.config)
 	c.Asset = NewAssetClient(c.config)
+	c.AuditLog = NewAuditLogClient(c.config)
 	c.Authentication = NewAuthenticationClient(c.config)
 	c.Category = NewCategoryClient(c.config)
+	c.Channel = NewChannelClient(c.config)
+	c.ChannelMembership = NewChannelMembershipClient(c.config)
 	c.Collection = NewCollectionClient(c.config)
 	c.CollectionNode = NewCollectionNodeClient(c.config)
 	c.CollectionPost = NewCollectionPostClient(c.config)
@@ -144,13 +169,16 @@ func (c *Client) init() {
 	c.MentionProfile = NewMentionProfileClient(c.config)
 	c.Node = NewNodeClient(c.config)
 	c.Notification = NewNotificationClient(c.config)
+	c.PollVote = NewPollVoteClient(c.config)
 	c.Post = NewPostClient(c.config)
 	c.PostRead = NewPostReadClient(c.config)
+	c.PostSentiment = NewPostSentimentClient(c.config)
 	c.Property = NewPropertyClient(c.config)
 	c.PropertySchema = NewPropertySchemaClient(c.config)
 	c.PropertySchemaField = NewPropertySchemaFieldClient(c.config)
 	c.Question = NewQuestionClient(c.config)
 	c.React = NewReactClient(c.config)
+	c.ReplyAdminQueue = NewReplyAdminQueueClient(c.config)
 	c.Report = NewReportClient(c.config)
 	c.Role = NewRoleClient(c.config)
 	c.Session = NewSessionClient(c.config)
@@ -251,9 +279,13 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Account:             NewAccountClient(cfg),
 		AccountFollow:       NewAccountFollowClient(cfg),
 		AccountRoles:        NewAccountRolesClient(cfg),
+		AdminReplyTime:      NewAdminReplyTimeClient(cfg),
 		Asset:               NewAssetClient(cfg),
+		AuditLog:            NewAuditLogClient(cfg),
 		Authentication:      NewAuthenticationClient(cfg),
 		Category:            NewCategoryClient(cfg),
+		Channel:             NewChannelClient(cfg),
+		ChannelMembership:   NewChannelMembershipClient(cfg),
 		Collection:          NewCollectionClient(cfg),
 		CollectionNode:      NewCollectionNodeClient(cfg),
 		CollectionPost:      NewCollectionPostClient(cfg),
@@ -266,13 +298,16 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		MentionProfile:      NewMentionProfileClient(cfg),
 		Node:                NewNodeClient(cfg),
 		Notification:        NewNotificationClient(cfg),
+		PollVote:            NewPollVoteClient(cfg),
 		Post:                NewPostClient(cfg),
 		PostRead:            NewPostReadClient(cfg),
+		PostSentiment:       NewPostSentimentClient(cfg),
 		Property:            NewPropertyClient(cfg),
 		PropertySchema:      NewPropertySchemaClient(cfg),
 		PropertySchemaField: NewPropertySchemaFieldClient(cfg),
 		Question:            NewQuestionClient(cfg),
 		React:               NewReactClient(cfg),
+		ReplyAdminQueue:     NewReplyAdminQueueClient(cfg),
 		Report:              NewReportClient(cfg),
 		Role:                NewRoleClient(cfg),
 		Session:             NewSessionClient(cfg),
@@ -300,9 +335,13 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Account:             NewAccountClient(cfg),
 		AccountFollow:       NewAccountFollowClient(cfg),
 		AccountRoles:        NewAccountRolesClient(cfg),
+		AdminReplyTime:      NewAdminReplyTimeClient(cfg),
 		Asset:               NewAssetClient(cfg),
+		AuditLog:            NewAuditLogClient(cfg),
 		Authentication:      NewAuthenticationClient(cfg),
 		Category:            NewCategoryClient(cfg),
+		Channel:             NewChannelClient(cfg),
+		ChannelMembership:   NewChannelMembershipClient(cfg),
 		Collection:          NewCollectionClient(cfg),
 		CollectionNode:      NewCollectionNodeClient(cfg),
 		CollectionPost:      NewCollectionPostClient(cfg),
@@ -315,13 +354,16 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		MentionProfile:      NewMentionProfileClient(cfg),
 		Node:                NewNodeClient(cfg),
 		Notification:        NewNotificationClient(cfg),
+		PollVote:            NewPollVoteClient(cfg),
 		Post:                NewPostClient(cfg),
 		PostRead:            NewPostReadClient(cfg),
+		PostSentiment:       NewPostSentimentClient(cfg),
 		Property:            NewPropertyClient(cfg),
 		PropertySchema:      NewPropertySchemaClient(cfg),
 		PropertySchemaField: NewPropertySchemaFieldClient(cfg),
 		Question:            NewQuestionClient(cfg),
 		React:               NewReactClient(cfg),
+		ReplyAdminQueue:     NewReplyAdminQueueClient(cfg),
 		Report:              NewReportClient(cfg),
 		Role:                NewRoleClient(cfg),
 		Session:             NewSessionClient(cfg),
@@ -356,12 +398,13 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Account, c.AccountFollow, c.AccountRoles, c.Asset, c.Authentication,
-		c.Category, c.Collection, c.CollectionNode, c.CollectionPost, c.Email, c.Event,
+		c.Account, c.AccountFollow, c.AccountRoles, c.AdminReplyTime, c.Asset,
+		c.AuditLog, c.Authentication, c.Category, c.Channel, c.ChannelMembership,
+		c.Collection, c.CollectionNode, c.CollectionPost, c.Email, c.Event,
 		c.EventParticipant, c.Invitation, c.LikePost, c.Link, c.MentionProfile, c.Node,
-		c.Notification, c.Post, c.PostRead, c.Property, c.PropertySchema,
-		c.PropertySchemaField, c.Question, c.React, c.Report, c.Role, c.Session,
-		c.Setting, c.Tag,
+		c.Notification, c.PollVote, c.Post, c.PostRead, c.PostSentiment, c.Property,
+		c.PropertySchema, c.PropertySchemaField, c.Question, c.React,
+		c.ReplyAdminQueue, c.Report, c.Role, c.Session, c.Setting, c.Tag,
 	} {
 		n.Use(hooks...)
 	}
@@ -371,12 +414,13 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Account, c.AccountFollow, c.AccountRoles, c.Asset, c.Authentication,
-		c.Category, c.Collection, c.CollectionNode, c.CollectionPost, c.Email, c.Event,
+		c.Account, c.AccountFollow, c.AccountRoles, c.AdminReplyTime, c.Asset,
+		c.AuditLog, c.Authentication, c.Category, c.Channel, c.ChannelMembership,
+		c.Collection, c.CollectionNode, c.CollectionPost, c.Email, c.Event,
 		c.EventParticipant, c.Invitation, c.LikePost, c.Link, c.MentionProfile, c.Node,
-		c.Notification, c.Post, c.PostRead, c.Property, c.PropertySchema,
-		c.PropertySchemaField, c.Question, c.React, c.Report, c.Role, c.Session,
-		c.Setting, c.Tag,
+		c.Notification, c.PollVote, c.Post, c.PostRead, c.PostSentiment, c.Property,
+		c.PropertySchema, c.PropertySchemaField, c.Question, c.React,
+		c.ReplyAdminQueue, c.Report, c.Role, c.Session, c.Setting, c.Tag,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -391,12 +435,20 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AccountFollow.mutate(ctx, m)
 	case *AccountRolesMutation:
 		return c.AccountRoles.mutate(ctx, m)
+	case *AdminReplyTimeMutation:
+		return c.AdminReplyTime.mutate(ctx, m)
 	case *AssetMutation:
 		return c.Asset.mutate(ctx, m)
+	case *AuditLogMutation:
+		return c.AuditLog.mutate(ctx, m)
 	case *AuthenticationMutation:
 		return c.Authentication.mutate(ctx, m)
 	case *CategoryMutation:
 		return c.Category.mutate(ctx, m)
+	case *ChannelMutation:
+		return c.Channel.mutate(ctx, m)
+	case *ChannelMembershipMutation:
+		return c.ChannelMembership.mutate(ctx, m)
 	case *CollectionMutation:
 		return c.Collection.mutate(ctx, m)
 	case *CollectionNodeMutation:
@@ -421,10 +473,14 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Node.mutate(ctx, m)
 	case *NotificationMutation:
 		return c.Notification.mutate(ctx, m)
+	case *PollVoteMutation:
+		return c.PollVote.mutate(ctx, m)
 	case *PostMutation:
 		return c.Post.mutate(ctx, m)
 	case *PostReadMutation:
 		return c.PostRead.mutate(ctx, m)
+	case *PostSentimentMutation:
+		return c.PostSentiment.mutate(ctx, m)
 	case *PropertyMutation:
 		return c.Property.mutate(ctx, m)
 	case *PropertySchemaMutation:
@@ -435,6 +491,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Question.mutate(ctx, m)
 	case *ReactMutation:
 		return c.React.mutate(ctx, m)
+	case *ReplyAdminQueueMutation:
+		return c.ReplyAdminQueue.mutate(ctx, m)
 	case *ReportMutation:
 		return c.Report.mutate(ctx, m)
 	case *RoleMutation:
@@ -926,6 +984,38 @@ func (c *AccountClient) QueryHandledReports(_m *Account) *ReportQuery {
 	return query
 }
 
+// QueryAuditLogs queries the audit_logs edge of a Account.
+func (c *AccountClient) QueryAuditLogs(_m *Account) *AuditLogQuery {
+	query := (&AuditLogClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, id),
+			sqlgraph.To(auditlog.Table, auditlog.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, account.AuditLogsTable, account.AuditLogsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPollVotes queries the poll_votes edge of a Account.
+func (c *AccountClient) QueryPollVotes(_m *Account) *PollVoteQuery {
+	query := (&PollVoteClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, id),
+			sqlgraph.To(pollvote.Table, pollvote.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, account.PollVotesTable, account.PollVotesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryAccountRoles queries the account_roles edge of a Account.
 func (c *AccountClient) QueryAccountRoles(_m *Account) *AccountRolesQuery {
 	query := (&AccountRolesClient{config: c.config}).Query()
@@ -1297,6 +1387,187 @@ func (c *AccountRolesClient) mutate(ctx context.Context, m *AccountRolesMutation
 	}
 }
 
+// AdminReplyTimeClient is a client for the AdminReplyTime schema.
+type AdminReplyTimeClient struct {
+	config
+}
+
+// NewAdminReplyTimeClient returns a client for the AdminReplyTime from the given config.
+func NewAdminReplyTimeClient(c config) *AdminReplyTimeClient {
+	return &AdminReplyTimeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `adminreplytime.Hooks(f(g(h())))`.
+func (c *AdminReplyTimeClient) Use(hooks ...Hook) {
+	c.hooks.AdminReplyTime = append(c.hooks.AdminReplyTime, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `adminreplytime.Intercept(f(g(h())))`.
+func (c *AdminReplyTimeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AdminReplyTime = append(c.inters.AdminReplyTime, interceptors...)
+}
+
+// Create returns a builder for creating a AdminReplyTime entity.
+func (c *AdminReplyTimeClient) Create() *AdminReplyTimeCreate {
+	mutation := newAdminReplyTimeMutation(c.config, OpCreate)
+	return &AdminReplyTimeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AdminReplyTime entities.
+func (c *AdminReplyTimeClient) CreateBulk(builders ...*AdminReplyTimeCreate) *AdminReplyTimeCreateBulk {
+	return &AdminReplyTimeCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AdminReplyTimeClient) MapCreateBulk(slice any, setFunc func(*AdminReplyTimeCreate, int)) *AdminReplyTimeCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AdminReplyTimeCreateBulk{err: fmt.Errorf("calling to AdminReplyTimeClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AdminReplyTimeCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AdminReplyTimeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AdminReplyTime.
+func (c *AdminReplyTimeClient) Update() *AdminReplyTimeUpdate {
+	mutation := newAdminReplyTimeMutation(c.config, OpUpdate)
+	return &AdminReplyTimeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AdminReplyTimeClient) UpdateOne(_m *AdminReplyTime) *AdminReplyTimeUpdateOne {
+	mutation := newAdminReplyTimeMutation(c.config, OpUpdateOne, withAdminReplyTime(_m))
+	return &AdminReplyTimeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AdminReplyTimeClient) UpdateOneID(id xid.ID) *AdminReplyTimeUpdateOne {
+	mutation := newAdminReplyTimeMutation(c.config, OpUpdateOne, withAdminReplyTimeID(id))
+	return &AdminReplyTimeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AdminReplyTime.
+func (c *AdminReplyTimeClient) Delete() *AdminReplyTimeDelete {
+	mutation := newAdminReplyTimeMutation(c.config, OpDelete)
+	return &AdminReplyTimeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AdminReplyTimeClient) DeleteOne(_m *AdminReplyTime) *AdminReplyTimeDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AdminReplyTimeClient) DeleteOneID(id xid.ID) *AdminReplyTimeDeleteOne {
+	builder := c.Delete().Where(adminreplytime.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AdminReplyTimeDeleteOne{builder}
+}
+
+// Query returns a query builder for AdminReplyTime.
+func (c *AdminReplyTimeClient) Query() *AdminReplyTimeQuery {
+	return &AdminReplyTimeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAdminReplyTime},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AdminReplyTime entity by its id.
+func (c *AdminReplyTimeClient) Get(ctx context.Context, id xid.ID) (*AdminReplyTime, error) {
+	return c.Query().Where(adminreplytime.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AdminReplyTimeClient) GetX(ctx context.Context, id xid.ID) *AdminReplyTime {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUserPost queries the user_post edge of a AdminReplyTime.
+func (c *AdminReplyTimeClient) QueryUserPost(_m *AdminReplyTime) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(adminreplytime.Table, adminreplytime.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, adminreplytime.UserPostTable, adminreplytime.UserPostColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAdminPost queries the admin_post edge of a AdminReplyTime.
+func (c *AdminReplyTimeClient) QueryAdminPost(_m *AdminReplyTime) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(adminreplytime.Table, adminreplytime.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, adminreplytime.AdminPostTable, adminreplytime.AdminPostColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAdminAccount queries the admin_account edge of a AdminReplyTime.
+func (c *AdminReplyTimeClient) QueryAdminAccount(_m *AdminReplyTime) *AccountQuery {
+	query := (&AccountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(adminreplytime.Table, adminreplytime.FieldID, id),
+			sqlgraph.To(account.Table, account.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, adminreplytime.AdminAccountTable, adminreplytime.AdminAccountColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AdminReplyTimeClient) Hooks() []Hook {
+	return c.hooks.AdminReplyTime
+}
+
+// Interceptors returns the client interceptors.
+func (c *AdminReplyTimeClient) Interceptors() []Interceptor {
+	return c.inters.AdminReplyTime
+}
+
+func (c *AdminReplyTimeClient) mutate(ctx context.Context, m *AdminReplyTimeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AdminReplyTimeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AdminReplyTimeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AdminReplyTimeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AdminReplyTimeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AdminReplyTime mutation op: %q", m.Op())
+	}
+}
+
 // AssetClient is a client for the Asset schema.
 type AssetClient struct {
 	config
@@ -1539,6 +1810,155 @@ func (c *AssetClient) mutate(ctx context.Context, m *AssetMutation) (Value, erro
 		return (&AssetDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Asset mutation op: %q", m.Op())
+	}
+}
+
+// AuditLogClient is a client for the AuditLog schema.
+type AuditLogClient struct {
+	config
+}
+
+// NewAuditLogClient returns a client for the AuditLog from the given config.
+func NewAuditLogClient(c config) *AuditLogClient {
+	return &AuditLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `auditlog.Hooks(f(g(h())))`.
+func (c *AuditLogClient) Use(hooks ...Hook) {
+	c.hooks.AuditLog = append(c.hooks.AuditLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `auditlog.Intercept(f(g(h())))`.
+func (c *AuditLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AuditLog = append(c.inters.AuditLog, interceptors...)
+}
+
+// Create returns a builder for creating a AuditLog entity.
+func (c *AuditLogClient) Create() *AuditLogCreate {
+	mutation := newAuditLogMutation(c.config, OpCreate)
+	return &AuditLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AuditLog entities.
+func (c *AuditLogClient) CreateBulk(builders ...*AuditLogCreate) *AuditLogCreateBulk {
+	return &AuditLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AuditLogClient) MapCreateBulk(slice any, setFunc func(*AuditLogCreate, int)) *AuditLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AuditLogCreateBulk{err: fmt.Errorf("calling to AuditLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AuditLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AuditLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AuditLog.
+func (c *AuditLogClient) Update() *AuditLogUpdate {
+	mutation := newAuditLogMutation(c.config, OpUpdate)
+	return &AuditLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AuditLogClient) UpdateOne(_m *AuditLog) *AuditLogUpdateOne {
+	mutation := newAuditLogMutation(c.config, OpUpdateOne, withAuditLog(_m))
+	return &AuditLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AuditLogClient) UpdateOneID(id xid.ID) *AuditLogUpdateOne {
+	mutation := newAuditLogMutation(c.config, OpUpdateOne, withAuditLogID(id))
+	return &AuditLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AuditLog.
+func (c *AuditLogClient) Delete() *AuditLogDelete {
+	mutation := newAuditLogMutation(c.config, OpDelete)
+	return &AuditLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AuditLogClient) DeleteOne(_m *AuditLog) *AuditLogDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AuditLogClient) DeleteOneID(id xid.ID) *AuditLogDeleteOne {
+	builder := c.Delete().Where(auditlog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AuditLogDeleteOne{builder}
+}
+
+// Query returns a query builder for AuditLog.
+func (c *AuditLogClient) Query() *AuditLogQuery {
+	return &AuditLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAuditLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AuditLog entity by its id.
+func (c *AuditLogClient) Get(ctx context.Context, id xid.ID) (*AuditLog, error) {
+	return c.Query().Where(auditlog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AuditLogClient) GetX(ctx context.Context, id xid.ID) *AuditLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryEnactedBy queries the enacted_by edge of a AuditLog.
+func (c *AuditLogClient) QueryEnactedBy(_m *AuditLog) *AccountQuery {
+	query := (&AccountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(auditlog.Table, auditlog.FieldID, id),
+			sqlgraph.To(account.Table, account.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, auditlog.EnactedByTable, auditlog.EnactedByColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AuditLogClient) Hooks() []Hook {
+	return c.hooks.AuditLog
+}
+
+// Interceptors returns the client interceptors.
+func (c *AuditLogClient) Interceptors() []Interceptor {
+	return c.inters.AuditLog
+}
+
+func (c *AuditLogClient) mutate(ctx context.Context, m *AuditLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AuditLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AuditLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AuditLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AuditLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AuditLog mutation op: %q", m.Op())
 	}
 }
 
@@ -1863,6 +2283,22 @@ func (c *CategoryClient) QueryCoverImage(_m *Category) *AssetQuery {
 	return query
 }
 
+// QueryChannel queries the channel edge of a Category.
+func (c *CategoryClient) QueryChannel(_m *Category) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(category.Table, category.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, category.ChannelTable, category.ChannelColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *CategoryClient) Hooks() []Hook {
 	return c.hooks.Category
@@ -1885,6 +2321,400 @@ func (c *CategoryClient) mutate(ctx context.Context, m *CategoryMutation) (Value
 		return (&CategoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Category mutation op: %q", m.Op())
+	}
+}
+
+// ChannelClient is a client for the Channel schema.
+type ChannelClient struct {
+	config
+}
+
+// NewChannelClient returns a client for the Channel from the given config.
+func NewChannelClient(c config) *ChannelClient {
+	return &ChannelClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `channel.Hooks(f(g(h())))`.
+func (c *ChannelClient) Use(hooks ...Hook) {
+	c.hooks.Channel = append(c.hooks.Channel, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `channel.Intercept(f(g(h())))`.
+func (c *ChannelClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Channel = append(c.inters.Channel, interceptors...)
+}
+
+// Create returns a builder for creating a Channel entity.
+func (c *ChannelClient) Create() *ChannelCreate {
+	mutation := newChannelMutation(c.config, OpCreate)
+	return &ChannelCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Channel entities.
+func (c *ChannelClient) CreateBulk(builders ...*ChannelCreate) *ChannelCreateBulk {
+	return &ChannelCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ChannelClient) MapCreateBulk(slice any, setFunc func(*ChannelCreate, int)) *ChannelCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ChannelCreateBulk{err: fmt.Errorf("calling to ChannelClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ChannelCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ChannelCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Channel.
+func (c *ChannelClient) Update() *ChannelUpdate {
+	mutation := newChannelMutation(c.config, OpUpdate)
+	return &ChannelUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ChannelClient) UpdateOne(_m *Channel) *ChannelUpdateOne {
+	mutation := newChannelMutation(c.config, OpUpdateOne, withChannel(_m))
+	return &ChannelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ChannelClient) UpdateOneID(id xid.ID) *ChannelUpdateOne {
+	mutation := newChannelMutation(c.config, OpUpdateOne, withChannelID(id))
+	return &ChannelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Channel.
+func (c *ChannelClient) Delete() *ChannelDelete {
+	mutation := newChannelMutation(c.config, OpDelete)
+	return &ChannelDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ChannelClient) DeleteOne(_m *Channel) *ChannelDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ChannelClient) DeleteOneID(id xid.ID) *ChannelDeleteOne {
+	builder := c.Delete().Where(channel.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ChannelDeleteOne{builder}
+}
+
+// Query returns a query builder for Channel.
+func (c *ChannelClient) Query() *ChannelQuery {
+	return &ChannelQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeChannel},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Channel entity by its id.
+func (c *ChannelClient) Get(ctx context.Context, id xid.ID) (*Channel, error) {
+	return c.Query().Where(channel.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ChannelClient) GetX(ctx context.Context, id xid.ID) *Channel {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCoverImage queries the cover_image edge of a Channel.
+func (c *ChannelClient) QueryCoverImage(_m *Channel) *AssetQuery {
+	query := (&AssetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, channel.CoverImageTable, channel.CoverImageColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryIcon queries the icon edge of a Channel.
+func (c *ChannelClient) QueryIcon(_m *Channel) *AssetQuery {
+	query := (&AssetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, channel.IconTable, channel.IconColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMemberships queries the memberships edge of a Channel.
+func (c *ChannelClient) QueryMemberships(_m *Channel) *ChannelMembershipQuery {
+	query := (&ChannelMembershipClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(channelmembership.Table, channelmembership.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, channel.MembershipsTable, channel.MembershipsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCategories queries the categories edge of a Channel.
+func (c *ChannelClient) QueryCategories(_m *Channel) *CategoryQuery {
+	query := (&CategoryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(category.Table, category.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, channel.CategoriesTable, channel.CategoriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPosts queries the posts edge of a Channel.
+func (c *ChannelClient) QueryPosts(_m *Channel) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, channel.PostsTable, channel.PostsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryNodes queries the nodes edge of a Channel.
+func (c *ChannelClient) QueryNodes(_m *Channel) *NodeQuery {
+	query := (&NodeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channel.Table, channel.FieldID, id),
+			sqlgraph.To(node.Table, node.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, channel.NodesTable, channel.NodesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ChannelClient) Hooks() []Hook {
+	return c.hooks.Channel
+}
+
+// Interceptors returns the client interceptors.
+func (c *ChannelClient) Interceptors() []Interceptor {
+	return c.inters.Channel
+}
+
+func (c *ChannelClient) mutate(ctx context.Context, m *ChannelMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ChannelCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ChannelUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ChannelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ChannelDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Channel mutation op: %q", m.Op())
+	}
+}
+
+// ChannelMembershipClient is a client for the ChannelMembership schema.
+type ChannelMembershipClient struct {
+	config
+}
+
+// NewChannelMembershipClient returns a client for the ChannelMembership from the given config.
+func NewChannelMembershipClient(c config) *ChannelMembershipClient {
+	return &ChannelMembershipClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `channelmembership.Hooks(f(g(h())))`.
+func (c *ChannelMembershipClient) Use(hooks ...Hook) {
+	c.hooks.ChannelMembership = append(c.hooks.ChannelMembership, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `channelmembership.Intercept(f(g(h())))`.
+func (c *ChannelMembershipClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ChannelMembership = append(c.inters.ChannelMembership, interceptors...)
+}
+
+// Create returns a builder for creating a ChannelMembership entity.
+func (c *ChannelMembershipClient) Create() *ChannelMembershipCreate {
+	mutation := newChannelMembershipMutation(c.config, OpCreate)
+	return &ChannelMembershipCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ChannelMembership entities.
+func (c *ChannelMembershipClient) CreateBulk(builders ...*ChannelMembershipCreate) *ChannelMembershipCreateBulk {
+	return &ChannelMembershipCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ChannelMembershipClient) MapCreateBulk(slice any, setFunc func(*ChannelMembershipCreate, int)) *ChannelMembershipCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ChannelMembershipCreateBulk{err: fmt.Errorf("calling to ChannelMembershipClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ChannelMembershipCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ChannelMembershipCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ChannelMembership.
+func (c *ChannelMembershipClient) Update() *ChannelMembershipUpdate {
+	mutation := newChannelMembershipMutation(c.config, OpUpdate)
+	return &ChannelMembershipUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ChannelMembershipClient) UpdateOne(_m *ChannelMembership) *ChannelMembershipUpdateOne {
+	mutation := newChannelMembershipMutation(c.config, OpUpdateOne, withChannelMembership(_m))
+	return &ChannelMembershipUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ChannelMembershipClient) UpdateOneID(id xid.ID) *ChannelMembershipUpdateOne {
+	mutation := newChannelMembershipMutation(c.config, OpUpdateOne, withChannelMembershipID(id))
+	return &ChannelMembershipUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ChannelMembership.
+func (c *ChannelMembershipClient) Delete() *ChannelMembershipDelete {
+	mutation := newChannelMembershipMutation(c.config, OpDelete)
+	return &ChannelMembershipDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ChannelMembershipClient) DeleteOne(_m *ChannelMembership) *ChannelMembershipDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ChannelMembershipClient) DeleteOneID(id xid.ID) *ChannelMembershipDeleteOne {
+	builder := c.Delete().Where(channelmembership.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ChannelMembershipDeleteOne{builder}
+}
+
+// Query returns a query builder for ChannelMembership.
+func (c *ChannelMembershipClient) Query() *ChannelMembershipQuery {
+	return &ChannelMembershipQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeChannelMembership},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ChannelMembership entity by its id.
+func (c *ChannelMembershipClient) Get(ctx context.Context, id xid.ID) (*ChannelMembership, error) {
+	return c.Query().Where(channelmembership.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ChannelMembershipClient) GetX(ctx context.Context, id xid.ID) *ChannelMembership {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryChannel queries the channel edge of a ChannelMembership.
+func (c *ChannelMembershipClient) QueryChannel(_m *ChannelMembership) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channelmembership.Table, channelmembership.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, channelmembership.ChannelTable, channelmembership.ChannelColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAccount queries the account edge of a ChannelMembership.
+func (c *ChannelMembershipClient) QueryAccount(_m *ChannelMembership) *AccountQuery {
+	query := (&AccountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(channelmembership.Table, channelmembership.FieldID, id),
+			sqlgraph.To(account.Table, account.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, channelmembership.AccountTable, channelmembership.AccountColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ChannelMembershipClient) Hooks() []Hook {
+	return c.hooks.ChannelMembership
+}
+
+// Interceptors returns the client interceptors.
+func (c *ChannelMembershipClient) Interceptors() []Interceptor {
+	return c.inters.ChannelMembership
+}
+
+func (c *ChannelMembershipClient) mutate(ctx context.Context, m *ChannelMembershipMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ChannelMembershipCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ChannelMembershipUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ChannelMembershipUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ChannelMembershipDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ChannelMembership mutation op: %q", m.Op())
 	}
 }
 
@@ -3708,6 +4538,22 @@ func (c *NodeClient) QueryOwner(_m *Node) *AccountQuery {
 	return query
 }
 
+// QueryChannel queries the channel edge of a Node.
+func (c *NodeClient) QueryChannel(_m *Node) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(node.Table, node.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, node.ChannelTable, node.ChannelColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryParent queries the parent edge of a Node.
 func (c *NodeClient) QueryParent(_m *Node) *NodeQuery {
 	query := (&NodeClient{config: c.config}).Query()
@@ -4074,6 +4920,171 @@ func (c *NotificationClient) mutate(ctx context.Context, m *NotificationMutation
 	}
 }
 
+// PollVoteClient is a client for the PollVote schema.
+type PollVoteClient struct {
+	config
+}
+
+// NewPollVoteClient returns a client for the PollVote from the given config.
+func NewPollVoteClient(c config) *PollVoteClient {
+	return &PollVoteClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `pollvote.Hooks(f(g(h())))`.
+func (c *PollVoteClient) Use(hooks ...Hook) {
+	c.hooks.PollVote = append(c.hooks.PollVote, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `pollvote.Intercept(f(g(h())))`.
+func (c *PollVoteClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PollVote = append(c.inters.PollVote, interceptors...)
+}
+
+// Create returns a builder for creating a PollVote entity.
+func (c *PollVoteClient) Create() *PollVoteCreate {
+	mutation := newPollVoteMutation(c.config, OpCreate)
+	return &PollVoteCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PollVote entities.
+func (c *PollVoteClient) CreateBulk(builders ...*PollVoteCreate) *PollVoteCreateBulk {
+	return &PollVoteCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PollVoteClient) MapCreateBulk(slice any, setFunc func(*PollVoteCreate, int)) *PollVoteCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PollVoteCreateBulk{err: fmt.Errorf("calling to PollVoteClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PollVoteCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PollVoteCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PollVote.
+func (c *PollVoteClient) Update() *PollVoteUpdate {
+	mutation := newPollVoteMutation(c.config, OpUpdate)
+	return &PollVoteUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PollVoteClient) UpdateOne(_m *PollVote) *PollVoteUpdateOne {
+	mutation := newPollVoteMutation(c.config, OpUpdateOne, withPollVote(_m))
+	return &PollVoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PollVoteClient) UpdateOneID(id xid.ID) *PollVoteUpdateOne {
+	mutation := newPollVoteMutation(c.config, OpUpdateOne, withPollVoteID(id))
+	return &PollVoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PollVote.
+func (c *PollVoteClient) Delete() *PollVoteDelete {
+	mutation := newPollVoteMutation(c.config, OpDelete)
+	return &PollVoteDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PollVoteClient) DeleteOne(_m *PollVote) *PollVoteDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PollVoteClient) DeleteOneID(id xid.ID) *PollVoteDeleteOne {
+	builder := c.Delete().Where(pollvote.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PollVoteDeleteOne{builder}
+}
+
+// Query returns a query builder for PollVote.
+func (c *PollVoteClient) Query() *PollVoteQuery {
+	return &PollVoteQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePollVote},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PollVote entity by its id.
+func (c *PollVoteClient) Get(ctx context.Context, id xid.ID) (*PollVote, error) {
+	return c.Query().Where(pollvote.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PollVoteClient) GetX(ctx context.Context, id xid.ID) *PollVote {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAccount queries the account edge of a PollVote.
+func (c *PollVoteClient) QueryAccount(_m *PollVote) *AccountQuery {
+	query := (&AccountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(pollvote.Table, pollvote.FieldID, id),
+			sqlgraph.To(account.Table, account.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, pollvote.AccountTable, pollvote.AccountColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPost queries the post edge of a PollVote.
+func (c *PollVoteClient) QueryPost(_m *PollVote) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(pollvote.Table, pollvote.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, pollvote.PostTable, pollvote.PostColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PollVoteClient) Hooks() []Hook {
+	return c.hooks.PollVote
+}
+
+// Interceptors returns the client interceptors.
+func (c *PollVoteClient) Interceptors() []Interceptor {
+	return c.inters.PollVote
+}
+
+func (c *PollVoteClient) mutate(ctx context.Context, m *PollVoteMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PollVoteCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PollVoteUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PollVoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PollVoteDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PollVote mutation op: %q", m.Op())
+	}
+}
+
 // PostClient is a client for the Post schema.
 type PostClient struct {
 	config
@@ -4214,6 +5225,22 @@ func (c *PostClient) QueryCategory(_m *Post) *CategoryQuery {
 	return query
 }
 
+// QueryChannel queries the channel edge of a Post.
+func (c *PostClient) QueryChannel(_m *Post) *ChannelQuery {
+	query := (&ChannelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(channel.Table, channel.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, post.ChannelTable, post.ChannelColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryTags queries the tags edge of a Post.
 func (c *PostClient) QueryTags(_m *Post) *TagQuery {
 	query := (&TagClient{config: c.config}).Query()
@@ -4287,6 +5314,38 @@ func (c *PostClient) QueryReplies(_m *Post) *PostQuery {
 			sqlgraph.From(post.Table, post.FieldID, id),
 			sqlgraph.To(post.Table, post.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, post.RepliesTable, post.RepliesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReference queries the reference edge of a Post.
+func (c *PostClient) QueryReference(_m *Post) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, post.ReferenceTable, post.ReferenceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryShares queries the shares edge of a Post.
+func (c *PostClient) QueryShares(_m *Post) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, post.SharesTable, post.SharesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -4431,6 +5490,38 @@ func (c *PostClient) QueryPostReads(_m *Post) *PostReadQuery {
 			sqlgraph.From(post.Table, post.FieldID, id),
 			sqlgraph.To(postread.Table, postread.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, post.PostReadsTable, post.PostReadsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPollVotes queries the poll_votes edge of a Post.
+func (c *PostClient) QueryPollVotes(_m *Post) *PollVoteQuery {
+	query := (&PollVoteClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(pollvote.Table, pollvote.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, post.PollVotesTable, post.PollVotesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySentiment queries the sentiment edge of a Post.
+func (c *PostClient) QuerySentiment(_m *Post) *PostSentimentQuery {
+	query := (&PostSentimentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(postsentiment.Table, postsentiment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, post.SentimentTable, post.SentimentColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -4625,6 +5716,155 @@ func (c *PostReadClient) mutate(ctx context.Context, m *PostReadMutation) (Value
 		return (&PostReadDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown PostRead mutation op: %q", m.Op())
+	}
+}
+
+// PostSentimentClient is a client for the PostSentiment schema.
+type PostSentimentClient struct {
+	config
+}
+
+// NewPostSentimentClient returns a client for the PostSentiment from the given config.
+func NewPostSentimentClient(c config) *PostSentimentClient {
+	return &PostSentimentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `postsentiment.Hooks(f(g(h())))`.
+func (c *PostSentimentClient) Use(hooks ...Hook) {
+	c.hooks.PostSentiment = append(c.hooks.PostSentiment, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `postsentiment.Intercept(f(g(h())))`.
+func (c *PostSentimentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PostSentiment = append(c.inters.PostSentiment, interceptors...)
+}
+
+// Create returns a builder for creating a PostSentiment entity.
+func (c *PostSentimentClient) Create() *PostSentimentCreate {
+	mutation := newPostSentimentMutation(c.config, OpCreate)
+	return &PostSentimentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PostSentiment entities.
+func (c *PostSentimentClient) CreateBulk(builders ...*PostSentimentCreate) *PostSentimentCreateBulk {
+	return &PostSentimentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PostSentimentClient) MapCreateBulk(slice any, setFunc func(*PostSentimentCreate, int)) *PostSentimentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PostSentimentCreateBulk{err: fmt.Errorf("calling to PostSentimentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PostSentimentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PostSentimentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PostSentiment.
+func (c *PostSentimentClient) Update() *PostSentimentUpdate {
+	mutation := newPostSentimentMutation(c.config, OpUpdate)
+	return &PostSentimentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PostSentimentClient) UpdateOne(_m *PostSentiment) *PostSentimentUpdateOne {
+	mutation := newPostSentimentMutation(c.config, OpUpdateOne, withPostSentiment(_m))
+	return &PostSentimentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PostSentimentClient) UpdateOneID(id xid.ID) *PostSentimentUpdateOne {
+	mutation := newPostSentimentMutation(c.config, OpUpdateOne, withPostSentimentID(id))
+	return &PostSentimentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PostSentiment.
+func (c *PostSentimentClient) Delete() *PostSentimentDelete {
+	mutation := newPostSentimentMutation(c.config, OpDelete)
+	return &PostSentimentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PostSentimentClient) DeleteOne(_m *PostSentiment) *PostSentimentDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PostSentimentClient) DeleteOneID(id xid.ID) *PostSentimentDeleteOne {
+	builder := c.Delete().Where(postsentiment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PostSentimentDeleteOne{builder}
+}
+
+// Query returns a query builder for PostSentiment.
+func (c *PostSentimentClient) Query() *PostSentimentQuery {
+	return &PostSentimentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePostSentiment},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PostSentiment entity by its id.
+func (c *PostSentimentClient) Get(ctx context.Context, id xid.ID) (*PostSentiment, error) {
+	return c.Query().Where(postsentiment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PostSentimentClient) GetX(ctx context.Context, id xid.ID) *PostSentiment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPost queries the post edge of a PostSentiment.
+func (c *PostSentimentClient) QueryPost(_m *PostSentiment) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(postsentiment.Table, postsentiment.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, postsentiment.PostTable, postsentiment.PostColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PostSentimentClient) Hooks() []Hook {
+	return c.hooks.PostSentiment
+}
+
+// Interceptors returns the client interceptors.
+func (c *PostSentimentClient) Interceptors() []Interceptor {
+	return c.inters.PostSentiment
+}
+
+func (c *PostSentimentClient) mutate(ctx context.Context, m *PostSentimentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PostSentimentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PostSentimentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PostSentimentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PostSentimentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PostSentiment mutation op: %q", m.Op())
 	}
 }
 
@@ -5469,6 +6709,171 @@ func (c *ReactClient) mutate(ctx context.Context, m *ReactMutation) (Value, erro
 	}
 }
 
+// ReplyAdminQueueClient is a client for the ReplyAdminQueue schema.
+type ReplyAdminQueueClient struct {
+	config
+}
+
+// NewReplyAdminQueueClient returns a client for the ReplyAdminQueue from the given config.
+func NewReplyAdminQueueClient(c config) *ReplyAdminQueueClient {
+	return &ReplyAdminQueueClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `replyadminqueue.Hooks(f(g(h())))`.
+func (c *ReplyAdminQueueClient) Use(hooks ...Hook) {
+	c.hooks.ReplyAdminQueue = append(c.hooks.ReplyAdminQueue, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `replyadminqueue.Intercept(f(g(h())))`.
+func (c *ReplyAdminQueueClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ReplyAdminQueue = append(c.inters.ReplyAdminQueue, interceptors...)
+}
+
+// Create returns a builder for creating a ReplyAdminQueue entity.
+func (c *ReplyAdminQueueClient) Create() *ReplyAdminQueueCreate {
+	mutation := newReplyAdminQueueMutation(c.config, OpCreate)
+	return &ReplyAdminQueueCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ReplyAdminQueue entities.
+func (c *ReplyAdminQueueClient) CreateBulk(builders ...*ReplyAdminQueueCreate) *ReplyAdminQueueCreateBulk {
+	return &ReplyAdminQueueCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ReplyAdminQueueClient) MapCreateBulk(slice any, setFunc func(*ReplyAdminQueueCreate, int)) *ReplyAdminQueueCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ReplyAdminQueueCreateBulk{err: fmt.Errorf("calling to ReplyAdminQueueClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ReplyAdminQueueCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ReplyAdminQueueCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ReplyAdminQueue.
+func (c *ReplyAdminQueueClient) Update() *ReplyAdminQueueUpdate {
+	mutation := newReplyAdminQueueMutation(c.config, OpUpdate)
+	return &ReplyAdminQueueUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ReplyAdminQueueClient) UpdateOne(_m *ReplyAdminQueue) *ReplyAdminQueueUpdateOne {
+	mutation := newReplyAdminQueueMutation(c.config, OpUpdateOne, withReplyAdminQueue(_m))
+	return &ReplyAdminQueueUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ReplyAdminQueueClient) UpdateOneID(id xid.ID) *ReplyAdminQueueUpdateOne {
+	mutation := newReplyAdminQueueMutation(c.config, OpUpdateOne, withReplyAdminQueueID(id))
+	return &ReplyAdminQueueUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ReplyAdminQueue.
+func (c *ReplyAdminQueueClient) Delete() *ReplyAdminQueueDelete {
+	mutation := newReplyAdminQueueMutation(c.config, OpDelete)
+	return &ReplyAdminQueueDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ReplyAdminQueueClient) DeleteOne(_m *ReplyAdminQueue) *ReplyAdminQueueDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ReplyAdminQueueClient) DeleteOneID(id xid.ID) *ReplyAdminQueueDeleteOne {
+	builder := c.Delete().Where(replyadminqueue.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ReplyAdminQueueDeleteOne{builder}
+}
+
+// Query returns a query builder for ReplyAdminQueue.
+func (c *ReplyAdminQueueClient) Query() *ReplyAdminQueueQuery {
+	return &ReplyAdminQueueQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeReplyAdminQueue},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ReplyAdminQueue entity by its id.
+func (c *ReplyAdminQueueClient) Get(ctx context.Context, id xid.ID) (*ReplyAdminQueue, error) {
+	return c.Query().Where(replyadminqueue.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ReplyAdminQueueClient) GetX(ctx context.Context, id xid.ID) *ReplyAdminQueue {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryReply queries the reply edge of a ReplyAdminQueue.
+func (c *ReplyAdminQueueClient) QueryReply(_m *ReplyAdminQueue) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(replyadminqueue.Table, replyadminqueue.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, replyadminqueue.ReplyTable, replyadminqueue.ReplyColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryThread queries the thread edge of a ReplyAdminQueue.
+func (c *ReplyAdminQueueClient) QueryThread(_m *ReplyAdminQueue) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(replyadminqueue.Table, replyadminqueue.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, replyadminqueue.ThreadTable, replyadminqueue.ThreadColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ReplyAdminQueueClient) Hooks() []Hook {
+	return c.hooks.ReplyAdminQueue
+}
+
+// Interceptors returns the client interceptors.
+func (c *ReplyAdminQueueClient) Interceptors() []Interceptor {
+	return c.inters.ReplyAdminQueue
+}
+
+func (c *ReplyAdminQueueClient) mutate(ctx context.Context, m *ReplyAdminQueueMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ReplyAdminQueueCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ReplyAdminQueueUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ReplyAdminQueueUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ReplyAdminQueueDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ReplyAdminQueue mutation op: %q", m.Op())
+	}
+}
+
 // ReportClient is a client for the Report schema.
 type ReportClient struct {
 	config
@@ -6265,18 +7670,20 @@ func (c *TagClient) mutate(ctx context.Context, m *TagMutation) (Value, error) {
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Account, AccountFollow, AccountRoles, Asset, Authentication, Category,
-		Collection, CollectionNode, CollectionPost, Email, Event, EventParticipant,
-		Invitation, LikePost, Link, MentionProfile, Node, Notification, Post, PostRead,
-		Property, PropertySchema, PropertySchemaField, Question, React, Report, Role,
-		Session, Setting, Tag []ent.Hook
+		Account, AccountFollow, AccountRoles, AdminReplyTime, Asset, AuditLog,
+		Authentication, Category, Channel, ChannelMembership, Collection,
+		CollectionNode, CollectionPost, Email, Event, EventParticipant, Invitation,
+		LikePost, Link, MentionProfile, Node, Notification, PollVote, Post, PostRead,
+		PostSentiment, Property, PropertySchema, PropertySchemaField, Question, React,
+		ReplyAdminQueue, Report, Role, Session, Setting, Tag []ent.Hook
 	}
 	inters struct {
-		Account, AccountFollow, AccountRoles, Asset, Authentication, Category,
-		Collection, CollectionNode, CollectionPost, Email, Event, EventParticipant,
-		Invitation, LikePost, Link, MentionProfile, Node, Notification, Post, PostRead,
-		Property, PropertySchema, PropertySchemaField, Question, React, Report, Role,
-		Session, Setting, Tag []ent.Interceptor
+		Account, AccountFollow, AccountRoles, AdminReplyTime, Asset, AuditLog,
+		Authentication, Category, Channel, ChannelMembership, Collection,
+		CollectionNode, CollectionPost, Email, Event, EventParticipant, Invitation,
+		LikePost, Link, MentionProfile, Node, Notification, PollVote, Post, PostRead,
+		PostSentiment, Property, PropertySchema, PropertySchemaField, Question, React,
+		ReplyAdminQueue, Report, Role, Session, Setting, Tag []ent.Interceptor
 	}
 )
 

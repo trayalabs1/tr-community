@@ -15,7 +15,7 @@ export function ThreadIndexView(props: Props) {
   if (form.formState.isLoading) return <Unready />;
 
   return (
-    <LStack>
+    <LStack px="4">
       <styled.form
         display="flex"
         w="full"

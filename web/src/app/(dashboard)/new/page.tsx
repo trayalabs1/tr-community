@@ -7,6 +7,8 @@ import { ComposeScreen } from "src/screens/compose/ComposeScreen";
 
 const QuerySchema = z.object({
   id: z.string().optional(),
+  channel: z.string().optional(),
+  category: z.string().optional(),
 });
 
 type Props = {
@@ -16,5 +18,11 @@ type Props = {
 export default function Page(props: Props) {
   const searchParams = use(props.searchParams);
   const params = QuerySchema.parse(searchParams);
-  return <ComposeScreen editing={params.id} />;
+  return (
+    <ComposeScreen
+      editing={params.id}
+      channelID={params.channel}
+      categoryID={params.category}
+    />
+  );
 }

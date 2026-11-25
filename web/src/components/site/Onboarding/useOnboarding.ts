@@ -38,10 +38,11 @@ export function useOnboarding() {
     ? onboardingStatus !== "requires_first_account"
     : onboardingStatus === "requires_first_account";
 
-  const showOnboarding =
-    isOnboarding(onboardingStatus) &&
-    !isComposingNewThread &&
-    isOnboardingAccount;
+  // const showOnboarding =
+  //   isOnboarding(onboardingStatus) &&
+  //   !isComposingNewThread &&
+  //   isOnboardingAccount;
+  const showOnboarding = false;
 
   return {
     showOnboarding,

@@ -25,6 +25,10 @@ export type NodeListParams = {
    */
   page?: PaginationQueryParameter;
   /**
+   * Filter nodes by channel ID.
+   */
+  channel?: Identifier;
+  /**
    * List this node and all child nodes.
    */
   node_id?: Identifier;

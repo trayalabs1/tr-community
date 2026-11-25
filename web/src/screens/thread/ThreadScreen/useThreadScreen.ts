@@ -18,7 +18,6 @@ import { useConfirmation } from "@/components/site/useConfirmation";
 import { useBeacon } from "@/lib/beacon/useBeacon";
 import { useReportContext } from "@/lib/report/useReportContext";
 import { useThreadMutations } from "@/lib/thread/mutation";
-import { withUndo } from "@/lib/thread/undo";
 import { hasPermission } from "@/utils/permissions";
 
 export type Props = {
@@ -26,6 +25,9 @@ export type Props = {
   initialPage?: number;
   slug: string;
   thread: ThreadGetResponse;
+  channelID?: string;
+  channelName?: string;
+  backToChannelFeed?: boolean;
 };
 
 export const FormSchema = z.object({
@@ -85,6 +87,19 @@ export function useThreadScreen({
       },
     },
   );
+
+  const handlePinChange = async (pinned: boolean) => {
+    const mutator = (threadData?: ThreadGetResponse) => {
+      if (!threadData) return;
+      return {
+        ...threadData,
+        pinned: pinned ? 1 : 0,
+      };
+    };
+
+    await mutate(mutator, { revalidate: false });
+    await threadUpdate(slug, { pinned: pinned ? 1 : 0 });
+  };
 
   useBeacon(DatagraphItemKind.thread, data?.id);
 
@@ -172,21 +187,13 @@ export function useThreadScreen({
   async function handleDeleteThread() {
     await handle(
       async () => {
-        await withUndo({
-          message: "Thread deleted",
-          duration: 5000,
-          toastId: `thread-${thread.id}`,
-          action: async () => {
-            await deleteReply(thread.id);
-            await resolveReport();
-            if (reportId) {
-              router.push(`/reports`);
-            } else {
-              router.push("/");
-            }
-          },
-          onUndo: () => {},
-        });
+        await deleteReply(thread.id);
+        await resolveReport();
+        if (reportId) {
+          router.push(`/reports`);
+        } else {
+          router.push("/");
+        }
       },
       {
         cleanup: async () => {
@@ -216,6 +223,7 @@ export function useThreadScreen({
       handleEditAndAccept,
       handleConfirmDelete,
       handleCancelDelete,
+      handlePinChange,
     },
   };
 }

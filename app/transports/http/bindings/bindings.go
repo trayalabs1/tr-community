@@ -65,15 +65,20 @@ type Bindings struct {
 	Info
 	Beacon
 	Admin
+	*Analytics
 	Roles
 	Authentication
 	WebAuthn
 	PhoneAuth
+	TrayaAuth
+	Username
 	Accounts
 	Invitations
 	Notifications
 	Reports
+	ReplyQueue
 	Profiles
+	Channels
 	Categories
 	Tags
 	Posts
@@ -82,6 +87,7 @@ type Bindings struct {
 	Reacts
 	Assets
 	Likes
+	Polls
 	Collections
 	Nodes
 	Links
@@ -99,15 +105,20 @@ func bindingsProviders() fx.Option {
 		NewInfo,
 		NewBeacon,
 		NewAdmin,
+		NewAnalytics,
 		NewRoles,
 		NewAuthentication,
 		NewWebAuthn,
 		NewPhoneAuth,
+		NewTrayaAuth,
+		NewUsername,
 		NewAccounts,
 		NewInvitations,
 		NewNotifications,
 		NewReports,
+		NewReplyQueue,
 		NewProfiles,
+		NewChannels,
 		NewCategories,
 		NewTags,
 		NewPosts,
@@ -116,6 +127,7 @@ func bindingsProviders() fx.Option {
 		NewReacts,
 		NewAssets,
 		NewLikes,
+		NewPolls,
 		NewCollections,
 		NewNodes,
 		NewLinks,

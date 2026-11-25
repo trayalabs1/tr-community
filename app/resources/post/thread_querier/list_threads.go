@@ -2,6 +2,7 @@ package thread_querier
 
 import (
 	"context"
+	"fmt"
 	"math"
 
 	"entgo.io/ent/dialect/sql"
@@ -29,6 +30,7 @@ import (
 	"github.com/Southclaws/storyden/internal/ent/collection"
 	"github.com/Southclaws/storyden/internal/ent/link"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
+	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
 	ent_react "github.com/Southclaws/storyden/internal/ent/react"
 	ent_tag "github.com/Southclaws/storyden/internal/ent/tag"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/kv"
@@ -50,13 +52,17 @@ func (d *Querier) List(
 	}
 
 	query := d.db.Post.Query().Where(ent_post.RootPostIDIsNil())
+	queryOptions := threadListOptions{
+		q: query,
+	}
 
 	for _, fn := range opts {
-		fn(query)
+		fn(&queryOptions)
 	}
 
 	query.
 		WithCategory().
+		WithChannel().
 		WithAuthor().
 		WithAssets(func(aq *ent.AssetQuery) {
 			aq.Order(ent_asset.ByUpdatedAt(), ent_asset.ByCreatedAt())
@@ -68,11 +74,78 @@ func (d *Querier) List(
 			lq.WithFaviconImage().WithPrimaryImage()
 			lq.WithAssets().Order(link.ByCreatedAt(sql.OrderDesc()))
 		}).
-		Order(ent.Desc(ent_post.FieldLastReplyAt))
+		WithSentiment()
 
-	total, err := query.Count(ctx)
+	total, err := query.Clone().Count(ctx)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	if queryOptions.useSentimentRanking {
+		// engagement_bonus (likes ×2, replies ×0.5) is intentionally omitted here —
+		// the per-row correlated subqueries were measured to add significant
+		// per-request latency at scale (see feed-ranking-v4 benchmark). Engagement
+		// is instead folded into the stored rank_score by a periodic job
+		// (app/services/sentiment/ranker_job).
+		weights, err := d.settings.Get(ctx)
+		if err != nil {
+			return nil, fault.Wrap(err, fctx.With(ctx))
+		}
+		feedRanking := weights.Services.OrZero().FeedRanking.OrZero()
+
+		freshnessHalflifeSeconds := feedRanking.FreshnessHalflifeHours.Or(24.0) * 3600.0
+		formatMultiplier := feedRanking.FormatMultiplier.Or(2.5)
+		sentimentMultiplier := feedRanking.SentimentMultiplier.Or(0.1)
+
+		// Weight values below are admin-controlled float64s from settings, never
+		// user input, so interpolating them as numeric literals (matching the
+		// rest of this expression's existing style) carries no injection risk.
+		finalScoreExpr := fmt.Sprintf(`(
+			COALESCE(%%[1]s, 0)
+		)
+		* EXP(-EXTRACT(EPOCH FROM (NOW() - %%[3]s)) / %g)
+		* (CASE WHEN EXISTS (
+			SELECT 1 FROM post_assets pa
+			JOIN assets a ON a.id = pa.asset_id
+			WHERE pa.post_id = %%[2]s AND a.mime_type LIKE 'image/%%%%'
+		) THEN %g ELSE 1.0 END)
+		* (CASE %%[4]s
+			WHEN 'negative' THEN %g
+			ELSE 1.0
+		END)`, freshnessHalflifeSeconds, formatMultiplier, sentimentMultiplier)
+
+		if queryOptions.ignorePinned {
+			query.Modify(func(s *sql.Selector) {
+				t := sql.Table(ent_post_sentiment.Table)
+				s.LeftJoin(t).On(s.C(ent_post.FieldID), t.C(ent_post_sentiment.FieldPostID))
+				rankScoreCol := t.C(ent_post_sentiment.FieldRankScore)
+				sentimentCol := t.C(ent_post_sentiment.FieldSentimentTag)
+				postIDCol := s.C(ent_post.FieldID)
+				createdAtCol := s.C(ent_post.FieldCreatedAt)
+				s.OrderExpr(
+					sql.Expr(fmt.Sprintf(finalScoreExpr, rankScoreCol, postIDCol, createdAtCol, sentimentCol)+" DESC"),
+					sql.Expr(createdAtCol+" DESC"),
+				)
+			})
+		} else {
+			query.Modify(func(s *sql.Selector) {
+				t := sql.Table(ent_post_sentiment.Table)
+				s.LeftJoin(t).On(s.C(ent_post.FieldID), t.C(ent_post_sentiment.FieldPostID))
+				rankScoreCol := t.C(ent_post_sentiment.FieldRankScore)
+				sentimentCol := t.C(ent_post_sentiment.FieldSentimentTag)
+				postIDCol := s.C(ent_post.FieldID)
+				createdAtCol := s.C(ent_post.FieldCreatedAt)
+				s.OrderExpr(
+					sql.Expr(s.C(ent_post.FieldPinnedRank)+" DESC"),
+					sql.Expr(fmt.Sprintf(finalScoreExpr, rankScoreCol, postIDCol, createdAtCol, sentimentCol)+" DESC"),
+					sql.Expr(createdAtCol+" DESC"),
+				)
+			})
+		}
+	} else {
+		query.Modify(func(s *sql.Selector) {
+			s.OrderExpr(sql.Expr(s.C(ent_post.FieldCreatedAt) + " DESC"))
+		})
 	}
 
 	query.
@@ -284,6 +357,7 @@ func (d *Querier) GetMany(ctx context.Context, threadIDs []post.ID, accountID op
 				ent_post.IDIn(idList...),
 			).
 			WithCategory().
+			WithChannel().
 			WithLink(func(lq *ent.LinkQuery) {
 				lq.WithFaviconImage().WithPrimaryImage()
 			}).

@@ -133,6 +133,11 @@ tasks:
     cmds:
       - go run ./cmd/seed
 
+  seed-usernames:
+    desc: Manually seed Redis with usernames from database (force reseed)
+    cmds:
+      - go run ./cmd/seed-usernames
+
   # -
   # End to end tests
   # -

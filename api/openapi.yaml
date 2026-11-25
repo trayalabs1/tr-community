@@ -281,6 +281,86 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorised" }
         "200": { $ref: "#/components/responses/AdminSettingsUpdateOK" }
 
+  /admin/audit-events:
+    get:
+      operationId: AuditEventList
+      description: |
+        List audit events for the installation. Audit events track important
+        actions taken by accounts with elevated permissions such as admin
+        accounts and moderators. It also provides error logs for system internal
+        components that could not be responded to the client directly such as
+        background job failures and configuration issues.
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/PaginationQuery"
+        - $ref: "#/components/parameters/AuditEventTypeFilterQuery"
+        - $ref: "#/components/parameters/AuditEventTimeRangeQuery"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/AuditEventListOK" }
+
+  /admin/audit-events/{audit_event_id}:
+    get:
+      operationId: AuditEventGet
+      description: Retrieve a specific audit event by ID.
+      tags: [admin]
+      parameters: [{ $ref: "#/components/parameters/AuditEventIDParam" }]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/AuditEventGetOK" }
+
+  /admin/actions:
+    post:
+      operationId: ModerationActionCreate
+      description: Create a new moderation action such as a ban or content purge.
+      tags: [admin]
+      requestBody: { $ref: "#/components/requestBodies/ModerationActionCreate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "201": { $ref: "#/components/responses/AuditEventCreatedOK" }
+
+  /admin/temp-handles/regenerate:
+    post:
+      operationId: AdminRegenerateTempHandles
+      description: |
+        Regenerate handles for accounts that still carry a temporary handle
+        (those with a `temp_` prefix assigned during signup) using the current
+        handle generation logic. Requires ADMINISTRATOR permission.
+
+        Processes a single bounded batch using keyset pagination so the operation
+        can be run safely over very large tables without long-running requests or
+        heavy load. Start with no cursor, then repeat the call passing the
+        returned `next_cursor` until it is absent. The operation is idempotent and
+        resumable: each successfully updated row stops matching the temporary
+        prefix, so the set of remaining rows shrinks monotonically.
+      tags: [admin]
+      parameters:
+        - in: query
+          name: limit
+          description: Maximum number of accounts to process in this batch.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5000
+            default: 500
+        - in: query
+          name: after
+          description: Keyset cursor; pass the `next_cursor` from the previous batch.
+          schema:
+            type: string
+            format: xid
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "200": { $ref: "#/components/responses/AdminRegenerateTempHandlesOK" }
+
   /admin/bans/{account_handle}:
     post:
       operationId: AdminAccountBanCreate
@@ -333,6 +413,121 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "204": { $ref: "#/components/responses/NoContent" }
+
+  /admin/reply-queue:
+    get:
+      operationId: AdminReplyQueueList
+      description: |
+        List non-admin replies pending admin attention. Requires ADMINISTRATOR
+        permission. Supports pagination and date range filtering.
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/PaginationQuery"
+        - name: created_after
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: created_before
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "200": { $ref: "#/components/responses/AdminReplyQueueListOK" }
+
+  /admin/reply-queue/{reply_queue_id}:
+    delete:
+      operationId: AdminReplyQueueDismiss
+      description: |
+        Dismiss a reply queue entry. Permanently deletes the entry.
+        Requires ADMINISTRATOR permission.
+      tags: [admin]
+      parameters:
+        - name: reply_queue_id
+          in: path
+          required: true
+          schema: { $ref: "#/components/schemas/Identifier" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "204": { $ref: "#/components/responses/NoContent" }
+
+  /admin/admins:
+    get:
+      operationId: AdminAccountList
+      description: |
+        List all accounts considered administrators, for use in admin-facing
+        filter controls. Requires ADMINISTRATOR permission.
+      tags: [admin]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "200": { $ref: "#/components/responses/AdminAccountListOK" }
+
+  /admin/admin-replies:
+    get:
+      operationId: AdminReplyList
+      description: |
+        List replies authored by administrators, optionally filtered to a single
+        admin and a reply-date range. Used by the Queue screen's "Admin Replies"
+        tab to audit which posts a given admin has responded to. The date range
+        filters on the reply's own creation time, not the thread's.
+        Requires ADMINISTRATOR permission.
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/PaginationQuery"
+        - name: replied_by
+          in: query
+          description: |
+            Only return replies authored by this account. When omitted, replies
+            from all administrators are returned.
+          schema: { $ref: "#/components/schemas/Identifier" }
+        - name: created_after
+          in: query
+          description: Only return replies created at or after this time.
+          schema:
+            type: string
+            format: date-time
+        - name: created_before
+          in: query
+          description: Only return replies created at or before this time.
+          schema:
+            type: string
+            format: date-time
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "200": { $ref: "#/components/responses/AdminReplyListOK" }
+
+  /admin/analytics:
+    get:
+      operationId: AdminAnalyticsGet
+      summary: Get analytics dashboard data
+      tags: [admin]
+      parameters:
+        - in: query
+          name: start
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: end
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200": { $ref: "#/components/responses/AdminAnalyticsGetOK" }
+        default: { $ref: "#/components/responses/InternalServerError" }
 
   #
   #                 888
@@ -679,6 +874,86 @@ paths:
         default: { $ref: "#/components/responses/InternalServerError" }
         "400": { $ref: "#/components/responses/BadRequest" }
         "200": { $ref: "#/components/responses/AuthSuccessOK" }
+
+  /auth/traya:
+    post:
+      operationId: AuthTrayaToken
+      description: |
+        Authenticate with a Traya API token. This endpoint verifies the token
+        with the Traya API server, creates or retrieves the user account, and
+        assigns the user to appropriate channels based on their kit count.
+      tags: [auth]
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Traya authentication token
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/AuthSuccessOK" }
+
+  /auth/username/check:
+    get:
+      operationId: UsernameCheck
+      description: Check if a username is available
+      tags: [auth]
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 20
+            pattern: "^[a-zA-Z0-9_-]+$"
+          description: Username to check availability for
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "200":
+          description: Username availability status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [available]
+                properties:
+                  available:
+                    type: boolean
+                    description: Whether the username is available
+
+  /auth/username:
+    post:
+      operationId: UsernameSet
+      description: |
+        Set username for the authenticated account (first-time only).
+        This endpoint can only be used once per account to set a permanent
+        username, replacing the temporary handle assigned during signup.
+      tags: [auth]
+      security: [browser: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 20
+                  pattern: "^[a-zA-Z0-9_-]+$"
+                  description: Desired username (letters, numbers, underscores, hyphens)
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/AccountUpdateOK" }
 
   /auth/access-keys:
     get:
@@ -1168,6 +1443,10 @@ paths:
       parameters:
         - $ref: "#/components/parameters/SearchQuery"
         - $ref: "#/components/parameters/PaginationQuery"
+        - $ref: "#/components/parameters/ProfilesSortByQuery"
+        - $ref: "#/components/parameters/ProfilesRoleFilterQuery"
+        - $ref: "#/components/parameters/ProfilesJoinRangeQuery"
+        - $ref: "#/components/parameters/ProfilesInvitedByQuery"
       responses:
         default: { $ref: "#/components/responses/InternalServerError" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -1235,6 +1514,505 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorised" }
         "200": { $ref: "#/components/responses/ProfileFollowingGetOK" }
         "304": { $ref: "#/components/responses/NotModified" }
+
+  #
+  #          888                                        888
+  #          888                                        888
+  #          888                                        888
+  #  .d8888b 88888b.   8888b.  88888b.  88888b.   .d88888 .d8888b
+  # d88P"    888 "88b     "88b 888 "88b 888 "88b d88" 888 88K
+  # 888      888  888 .d888888 888  888 888  888 888  888 "Y8888b.
+  # Y88b.    888  888 888  888 888  888 888  888 Y88b 888      X88
+  #  "Y8888P 888  888 "Y888888 888  888 888  888  "Y88888  88888P'
+  #
+
+  /channels:
+    get:
+      operationId: ChannelList
+      description: Get all channels that the authenticated user has access to.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/ChannelListOK" }
+    post:
+      operationId: ChannelCreate
+      description: Create a new channel. The creator automatically becomes the channel owner.
+      tags: [channels]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelInitialProps"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/ChannelGetOK" }
+
+  /channels/{channelID}:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    get:
+      operationId: ChannelGet
+      description: Get a specific channel by ID.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelGetOK" }
+    patch:
+      operationId: ChannelUpdate
+      description: Update a channel's properties. Requires owner or admin role.
+      tags: [channels]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelMutableProps"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelGetOK" }
+    delete:
+      operationId: ChannelDelete
+      description: Delete a channel. Requires owner role. This will also delete all associated content.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { description: OK }
+
+  /channels/{channelID}/members:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    get:
+      operationId: ChannelMemberList
+      description: List all members of a channel. Requires membership in the channel.
+      tags: [channels]
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Number of members per page
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelMemberListOK" }
+    post:
+      operationId: ChannelMemberAdd
+      description: Add a member to a channel. Requires owner or admin role.
+      tags: [channels]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelMemberAdd"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelMemberOK" }
+
+  /channels/{channelID}/membership/me:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    get:
+      operationId: ChannelMembershipGet
+      description: Get the authenticated user's membership in a channel.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelMemberOK" }
+
+  /channels/{channelID}/members/{accountID}:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+      - $ref: "#/components/parameters/AccountID"
+    patch:
+      operationId: ChannelMemberUpdateRole
+      description: Update a member's role in a channel. Requires owner or admin role.
+      tags: [channels]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelMemberRoleUpdate"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelMemberOK" }
+    delete:
+      operationId: ChannelMemberRemove
+      description: Remove a member from a channel. Requires owner or admin role.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { description: OK }
+
+  /channels/{channelID}/join:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    post:
+      operationId: ChannelJoin
+      description: Join a public channel as a member. Only works for public channels.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelMemberOK" }
+
+  /channels/{channelID}/leave:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    post:
+      operationId: ChannelLeave
+      description: Leave a channel. Cannot leave if you are the only owner.
+      tags: [channels]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { description: OK }
+
+  /channels/{channelID}/categories:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    get:
+      operationId: ChannelCategoryList
+      description: Get all categories in a channel.
+      tags: [channels, categories]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "200": { $ref: "#/components/responses/CategoryListOK" }
+    post:
+      operationId: ChannelCategoryCreate
+      description: Create a category in a channel.
+      tags: [channels, categories]
+      requestBody: { $ref: "#/components/requestBodies/CategoryCreate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "200": { $ref: "#/components/responses/CategoryCreateOK" }
+
+  /channels/{channelID}/categories/{category_slug}:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+      - $ref: "#/components/parameters/CategorySlugParam"
+    get:
+      operationId: ChannelCategoryGet
+      description: Get a specific category in a channel.
+      tags: [channels, categories]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "304": { $ref: "#/components/responses/NotModified" }
+        "200": { $ref: "#/components/responses/CategoryGetOK" }
+    patch:
+      operationId: ChannelCategoryUpdate
+      description: Update a category in a channel.
+      tags: [channels, categories]
+      requestBody: { $ref: "#/components/requestBodies/CategoryUpdate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/CategoryUpdateOK" }
+    delete:
+      operationId: ChannelCategoryDelete
+      description: Delete a category. Posts will be moved to target category.
+      tags: [channels, categories]
+      requestBody: { $ref: "#/components/requestBodies/CategoryDelete" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/CategoryDeleteOK" }
+
+  /channels/{channelID}/categories/{category_slug}/position:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+      - $ref: "#/components/parameters/CategorySlugParam"
+    patch:
+      operationId: ChannelCategoryUpdatePosition
+      description: Update category position in the tree for drag-and-drop.
+      tags: [channels, categories]
+      requestBody: { $ref: "#/components/requestBodies/CategoryUpdatePosition" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/CategoryListOK" }
+
+  /channels/{channelID}/threads:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    post:
+      operationId: ChannelThreadCreate
+      description: Create a new thread within a channel category.
+      tags: [channels, threads]
+      requestBody: { $ref: "#/components/requestBodies/ThreadCreate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadCreateOK" }
+    get:
+      operationId: ChannelThreadList
+      description: Get a list of threads in a channel.
+      tags: [channels, threads]
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/PaginationQuery"
+        - name: author
+          description: Show only results created by this user.
+          required: false
+          in: query
+          schema: { $ref: "#/components/schemas/AccountHandle" }
+        - $ref: "#/components/parameters/VisibilityParam"
+        - name: tags
+          description: Show only results with these tags
+          required: false
+          in: query
+          schema: { $ref: "#/components/schemas/TagListIDs" }
+        - $ref: "#/components/parameters/CategorySlugListQuery"
+        - name: created_after
+          description: Show only threads created after this date/time.
+          required: false
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: created_before
+          description: Show only threads created before this date/time.
+          required: false
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: exclude_bah
+          description: Exclude posts with post_category BAH from results.
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: exclude_feedback
+          description: Exclude posts with post_category feedback from results.
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: primary_topics
+          description: |
+            Show only posts whose AI-classified primary topic matches one of
+            these values (e.g. "HAIRFALL CONCERNS", "PRODUCTS & TREATMENT").
+            Multiple instances filter by any of the values.
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadListOK" }
+
+  /channels/{channelID}/threads/stats/daily-users:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    get:
+      operationId: ChannelThreadStatsDailyUsers
+      description: |
+        Get the count of unique authors who created threads in this channel
+        today (IST). Used to render social-proof UI such as "N users posted
+        today" above the post creation box. Requires an authenticated session.
+      tags: [channels, threads]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadStatsDailyUsersOK" }
+
+  /channels/{channelID}/threads/personalized:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    get:
+      operationId: ChannelThreadListPersonalized
+      description: |
+        Personalised top-of-feed for a channel. Returns the requester's own
+        threads from the last 24 hours (across all visibilities) plus, for each
+        of those threads, up to two recent published threads from other users
+        that share the same primary topic and sentiment tag. Both arrays are
+        empty when the requester has no recent threads.
+      tags: [channels, threads]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ChannelPersonalizedFeedOK" }
+
+  /channels/{channelID}/threads/{thread_mark}:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+      - $ref: "#/components/parameters/ThreadMarkParam"
+    get:
+      operationId: ChannelThreadGet
+      summary: Get a thread from a channel.
+      description: Get information about a thread in a channel including its posts.
+      tags: [channels, threads]
+      parameters:
+        - $ref: "#/components/parameters/PaginationQuery"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadGet" }
+        "304": { $ref: "#/components/responses/NotModified" }
+    patch:
+      operationId: ChannelThreadUpdate
+      description: Update a thread in a channel.
+      tags: [channels, threads]
+      requestBody: { $ref: "#/components/requestBodies/ThreadUpdate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ThreadUpdateOK" }
+    delete:
+      operationId: ChannelThreadDelete
+      description: Delete a thread in a channel.
+      tags: [channels, threads]
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { description: OK }
+
+  /channels/{channelID}/threads/{thread_mark}/replies:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+      - $ref: "#/components/parameters/ThreadMarkParam"
+    post:
+      operationId: ChannelReplyCreate
+      description: Create a new reply within a thread in a channel.
+      tags: [channels, threads, replies]
+      requestBody: { $ref: "#/components/requestBodies/ReplyCreate" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ReplyCreateOK" }
+
+  /channels/{channelID}/scoring/score-unscored:
+    parameters:
+      - $ref: "#/components/parameters/ChannelID"
+    post:
+      operationId: ChannelScoreUnscored
+      summary: Find and enqueue unscored posts in a channel for sentiment scoring.
+      description: |
+        Finds all published root posts in the channel that have not yet been
+        scored and enqueues them for asynchronous sentiment scoring. Optionally
+        includes posts that previously failed scoring. Supports date range
+        filtering to target specific time windows.
+      tags: [channels, admin]
+      parameters:
+        - name: include_failed
+          description: Also re-enqueue posts whose scoring previously failed.
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: created_after
+          description: Only include posts created after this date/time.
+          required: false
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: created_before
+          description: Only include posts created before this date/time.
+          required: false
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          description: Maximum number of posts to enqueue in this batch.
+          required: false
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "200": { $ref: "#/components/responses/ScoreUnscoredOK" }
 
   #
   #                   888                                      d8b
@@ -1387,6 +2165,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/SearchQuery"
         - $ref: "#/components/parameters/PaginationQuery"
+        - $ref: "#/components/parameters/ThreadsIgnorePinnedQuery"
         - name: author
           description: Show only results creeated by this user.
           required: false
@@ -1399,6 +2178,83 @@ paths:
           in: query
           schema: { $ref: "#/components/schemas/TagListIDs" }
         - $ref: "#/components/parameters/CategorySlugListQuery"
+        - name: created_after
+          description: Show only threads created after this date/time.
+          required: false
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: created_before
+          description: Show only threads created before this date/time.
+          required: false
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: no_replies
+          description: Show only threads that have no replies.
+          required: false
+          in: query
+          schema:
+            type: boolean
+        - name: no_likes
+          description: Show only threads that have no likes.
+          required: false
+          in: query
+          schema:
+            type: boolean
+        - name: exclude_bah
+          description: Exclude posts with post_category BAH from results.
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: exclude_feedback
+          description: Exclude posts with post_category feedback from results.
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: bah_only
+          description: Show only posts with post_category BAH.
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: post_categories
+          description: |
+            Show only posts whose meta.post_category matches one of these values
+            (e.g. BAH, feedback). Multiple instances filter by any of the values.
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - name: sentiments
+          description: |
+            Show only posts whose AI sentiment tag matches one of these values
+            (positive, neutral, negative). Multiple instances filter by any.
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - name: channel_ids
+          description: |
+            Show only threads in these channels. Multiple instances of this
+            parameter filter by any of the channels. If not provided, threads
+            from all channels are returned.
+          required: false
+          in: query
+          schema:
+            type: array
+            items: { $ref: "#/components/schemas/Identifier" }
       responses:
         default: { $ref: "#/components/responses/InternalServerError" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -1470,6 +2326,73 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "401": { $ref: "#/components/responses/Unauthorised" }
         "200": { $ref: "#/components/responses/ReplyCreateOK" }
+
+  /threads/replies/bulk:
+    post:
+      operationId: ReplyCreateMany
+      description: |
+        Create replies on many threads in a single request. Each item targets a
+        thread by its mark and carries its own body, so different threads may
+        receive different replies. Items that fail are skipped and reported in
+        the response count.
+      tags: [replies]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [thread_mark, body]
+                    properties:
+                      thread_mark: { $ref: "#/components/schemas/ThreadMark" }
+                      body: { $ref: "#/components/schemas/PostContent" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/ReplyCreateManyOK" }
+
+  /threads/{thread_mark}/poll:
+    get:
+      operationId: ThreadGetPoll
+      summary: Get poll status for a thread
+      tags: [threads]
+      security:
+        - {}
+        - browser: []
+      parameters:
+        - $ref: '#/components/parameters/ThreadMarkParam'
+      responses:
+        200:
+          $ref: '#/components/responses/ThreadGetPollOK'
+        default:
+          $ref: '#/components/responses/InternalServerError'
+
+  /threads/{thread_mark}/poll/vote:
+    post:
+      operationId: ThreadVotePoll
+      summary: Cast a vote on a poll
+      tags: [threads]
+      security:
+        - browser: []
+      parameters:
+        - $ref: '#/components/parameters/ThreadMarkParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PollVoteBody'
+      responses:
+        200:
+          $ref: '#/components/responses/ThreadVotePollOK'
+        default:
+          $ref: '#/components/responses/InternalServerError'
 
   #
   #                            888
@@ -1646,6 +2569,30 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorised" }
         "200": { description: OK }
 
+  /likes/posts:
+    put:
+      operationId: LikePostAddMany
+      description: |
+        Add a like/vote to many posts in a single request on behalf of the
+        authenticated account. Idempotent per post. Posts that fail to be liked
+        are skipped and reported in the response count.
+      tags: [likes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [post_ids]
+              properties:
+                post_ids:
+                  type: array
+                  items: { $ref: "#/components/schemas/Identifier" }
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/LikePostAddManyOK" }
+
   /likes/profiles/{account_handle}:
     get:
       operationId: LikeProfileGet
@@ -1729,6 +2676,22 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "401": { $ref: "#/components/responses/Unauthorised" }
         "200": { description: OK }
+
+  /collections/default/posts/{post_id}:
+    put:
+      operationId: CollectionAddPostToDefault
+      description: |
+        Add a post to the authenticated account's default collection, creating
+        the default collection first if it does not exist yet. Enables one-tap
+        saving without requiring the user to pick or create a collection.
+      tags: [collections]
+      parameters:
+        - $ref: "#/components/parameters/PostIDParam"
+      responses:
+        default: { $ref: "#/components/responses/InternalServerError" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "401": { $ref: "#/components/responses/Unauthorised" }
+        "200": { $ref: "#/components/responses/CollectionAddPostOK" }
 
   /collections/{collection_mark}/posts/{post_id}:
     put:
@@ -1821,6 +2784,11 @@ paths:
       parameters:
         - $ref: "#/components/parameters/SearchQuery"
         - $ref: "#/components/parameters/PaginationQuery"
+        - name: channel
+          description: Filter nodes by channel ID.
+          required: false
+          in: query
+          schema: { $ref: "#/components/schemas/Identifier" }
         - name: node_id
           description: List this node and all child nodes.
           required: false
@@ -2391,6 +3359,31 @@ components:
         type: integer
         x-go-type: int64
 
+    AuditEventTypeFilterQuery:
+      description: Audit event type filter query
+      name: types
+      in: query
+      explode: true
+      schema:
+        type: array
+        items: { $ref: "#/components/schemas/AuditEventType" }
+
+    AuditEventTimeRangeQuery:
+      description: Audit event time range query
+      name: range
+      in: query
+      schema:
+        type: string
+        format: iso8601-interval
+
+    AuditEventIDParam:
+      description: Audit event ID
+      in: path
+      name: audit_event_id
+      required: true
+      schema:
+        $ref: "#/components/schemas/Identifier"
+
     RoleIDParam:
       description: Role ID
       in: path
@@ -2403,6 +3396,22 @@ components:
       description: Access key ID.
       in: path
       name: access_key_id
+      required: true
+      schema:
+        $ref: "#/components/schemas/Identifier"
+
+    ChannelID:
+      description: Channel ID.
+      in: path
+      name: channelID
+      required: true
+      schema:
+        $ref: "#/components/schemas/Identifier"
+
+    AccountID:
+      description: Account ID.
+      in: path
+      name: accountID
       required: true
       schema:
         $ref: "#/components/schemas/Identifier"
@@ -2423,6 +3432,39 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/AccountHandle"
+
+    ProfilesSortByQuery:
+      description: Profiles sort by query
+      name: sort
+      in: query
+      schema:
+        type: string
+
+    ProfilesRoleFilterQuery:
+      description: Profiles role filter query
+      name: roles
+      in: query
+      explode: true
+      schema:
+        type: array
+        items: { $ref: "#/components/schemas/Identifier" }
+
+    ProfilesJoinRangeQuery:
+      description: Profiles join range query
+      name: joined
+      in: query
+      schema:
+        type: string
+        format: iso8601-interval
+
+    ProfilesInvitedByQuery:
+      description: Profiles invited by query (account handles)
+      name: invited_by
+      in: query
+      explode: true
+      schema:
+        type: array
+        items: { $ref: "#/components/schemas/AccountHandle" }
 
     AccountHandleQueryParam:
       description: Account handle.
@@ -2657,6 +3699,18 @@ components:
       schema:
         type: string
 
+    ThreadsIgnorePinnedQuery:
+      description: |
+        When set to true, pinned threads will be ignored in the results and the
+        result will be ordered entirely by the most recent reply. By default,
+        this is not set and pinned threads will appear at the top of the first
+        page.
+      name: ignore_pinned
+      in: query
+      required: false
+      schema:
+        type: boolean
+
     CategorySlugParam:
       description: Unique category URL slug.
       name: category_slug
@@ -2832,6 +3886,11 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/AdminSettingsMutableProps" }
+
+    ModerationActionCreate:
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ModerationActionInitialProps" }
 
     RoleCreate:
       content:
@@ -3143,6 +4202,27 @@ components:
           schema:
             $ref: "#/components/schemas/AdminSettingsProps"
 
+    AuditEventListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuditEventListResult"
+
+    AuditEventGetOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuditEvent"
+
+    AuditEventCreatedOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuditEventProps"
+
     RoleCreateOK:
       description: OK
       content:
@@ -3244,6 +4324,13 @@ components:
           schema:
             $ref: "#/components/schemas/Account"
 
+    AdminRegenerateTempHandlesOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AdminRegenerateTempHandlesResult"
+
     AccountEmailUpdateOK:
       description: OK
       content:
@@ -3323,6 +4410,34 @@ components:
           schema:
             $ref: "#/components/schemas/ReportListResult"
 
+    AdminReplyQueueListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReplyQueueListResult"
+
+    AdminReplyListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PaginatedReplyList"
+
+    AdminAccountListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AdminAccountListResult"
+
+    AdminAnalyticsGetOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AdminAnalyticsGetOKBody"
+
     ReportUpdateOK:
       description: OK
       content:
@@ -3388,6 +4503,34 @@ components:
           schema:
             $ref: "#/components/schemas/Category"
 
+    ChannelListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ChannelListResult"
+
+    ChannelGetOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Channel"
+
+    ChannelMemberListOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ChannelMemberListResult"
+
+    ChannelMemberOK:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ChannelMember"
+
     CategoryListOK:
       description: OK
       content:
@@ -3430,6 +4573,24 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/ThreadListResult" }
 
+    ThreadStatsDailyUsersOK:
+      description: Count of unique authors who posted threads today (IST).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ThreadStatsDailyUsersResult" }
+
+    ChannelPersonalizedFeedOK:
+      description: Personalised top-of-feed payload for a channel.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ChannelPersonalizedFeed" }
+
+    ScoreUnscoredOK:
+      description: Posts have been enqueued for scoring.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ScoreUnscoredResult" }
+
     ThreadGet:
       description: The information about a thread and its posts.
       headers: { <<: *cache_response_headers }
@@ -3443,6 +4604,35 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Reply"
+
+    ReplyCreateManyOK:
+      description: Result of a bulk reply operation.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [requested, created]
+            properties:
+              requested:
+                type: integer
+                description: Number of reply items in the request.
+              created:
+                type: integer
+                description: Number of replies successfully created.
+
+    ThreadGetPollOK:
+      description: Poll status for a thread.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PollStatus'
+
+    ThreadVotePollOK:
+      description: Updated poll status after voting.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PollStatus'
 
     PostUpdateOK:
       description: Post updated successfully.
@@ -3490,6 +4680,21 @@ components:
             required: [likes]
             properties:
               likes: { $ref: "#/components/schemas/ItemLikeList" }
+
+    LikePostAddManyOK:
+      description: Result of a bulk like operation.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [requested, liked]
+            properties:
+              requested:
+                type: integer
+                description: Number of post IDs in the request.
+              liked:
+                type: integer
+                description: Number of posts successfully liked.
 
     LikeProfileGetOK:
       description: Likes that an account has given.
@@ -3748,6 +4953,29 @@ components:
     #  "Y8888P"   "Y88P"  888  888  888 888  888  888  "Y88P"  888  888
     #
 
+    AdminRegenerateTempHandlesResult:
+      type: object
+      required: [processed, updated, skipped, failed]
+      properties:
+        processed:
+          type: integer
+          description: Number of temporary-handle accounts examined in this batch.
+        updated:
+          type: integer
+          description: Number of handles successfully regenerated in this batch.
+        skipped:
+          type: integer
+          description: Number of accounts skipped (no usable name to derive a handle).
+        failed:
+          type: integer
+          description: Number of accounts that failed to update in this batch.
+        next_cursor:
+          type: string
+          format: xid
+          description: |
+            Cursor to pass as `after` for the next batch. Absent when the table
+            has been fully drained and no further batches remain.
+
     Identifier:
       type: string
       format: xid
@@ -3802,6 +5030,7 @@ components:
         - authentication_mode
         - capabilities
         - onboarding_status
+        - color_mode
       properties:
         title:
           type: string
@@ -3811,6 +5040,8 @@ components:
           $ref: "#/components/schemas/PostContent"
         accent_colour:
           type: string
+        color_mode:
+          $ref: "#/components/schemas/ColorMode"
         onboarding_status:
           $ref: "#/components/schemas/OnboardingStatus"
         authentication_mode:
@@ -3846,11 +5077,18 @@ components:
 
     Visibility:
       type: string
+      description: |
+        - draft: Items only accessible by the owner.
+        - unlisted: Items not publicly listed but reachable via direct link or collection.
+        - review: Items only accessible by the owner and admins (the moderation queue).
+        - published: Items published globally and searchable.
+        - archived: Items dismissed by an admin from the review queue. Hidden from every channel feed; visible only to the original owner.
       enum:
         - draft
         - unlisted
         - review
         - published
+        - archived
 
     VisibilityMutationProps:
       type: object
@@ -3984,6 +5222,13 @@ components:
       description: The title of a thread.
       example: Hello world!
 
+    PinnedRank:
+      type: integer
+      description: |
+        If the post is pinned, this indicates its rank among other pinned
+        threads. Lower numbers are pinned higher up. A value of zero indicates
+        that the post is not pinned.
+
     PostContent:
       description: |
         The body text of a post within a thread. The type is either a string or
@@ -4078,6 +5323,8 @@ components:
       properties:
         moderation:
           $ref: "#/components/schemas/ModerationServiceSettings"
+        feed_ranking:
+          $ref: "#/components/schemas/FeedRankingServiceSettings"
 
     ModerationServiceSettings:
       type: object
@@ -4105,6 +5352,203 @@ components:
             any posts that contain them.
           items:
             type: string
+
+    FeedRankingServiceSettings:
+      type: object
+      description: |
+        Weights used by the v4 feed ranking formula. w_positivity, w_feed_value,
+        w_quality, and w_category feed into a post's rank_score at LLM
+        classification time and only affect newly-scored posts.
+        freshness_halflife_hours, format_multiplier, and sentiment_multiplier
+        are applied live at feed-read time. like_weight and reply_weight are
+        applied by the daily job that folds engagement into rank_score.
+      properties:
+        w_positivity:
+          type: number
+          format: double
+          description: |
+            Weight applied to a post's LLM-derived positivity_score (0-100)
+            when computing rank_score.
+        w_feed_value:
+          type: number
+          format: double
+          description: |
+            Weight applied to a post's LLM-derived feed_value_score (0-100)
+            when computing rank_score.
+        w_quality:
+          type: number
+          format: double
+          description: |
+            Weight applied to the body-length-derived quality_score (25-100)
+            when computing rank_score.
+        w_category:
+          type: number
+          format: double
+          description: |
+            Weight applied to the category boost (only nonzero for positive
+            sentiment) when computing rank_score.
+        freshness_halflife_hours:
+          type: number
+          format: double
+          description: |
+            The number of hours over which a post's freshness multiplier
+            decays. Applied live at feed-read time.
+        format_multiplier:
+          type: number
+          format: double
+          description: |
+            Multiplier applied at feed-read time to posts that have at least
+            one image asset attached.
+        sentiment_multiplier:
+          type: number
+          format: double
+          description: |
+            Multiplier applied at feed-read time to posts with negative
+            sentiment.
+        like_weight:
+          type: number
+          format: double
+          description: |
+            Weight applied per like by the daily engagement job that folds
+            likes/replies from the last 24 hours into rank_score.
+        reply_weight:
+          type: number
+          format: double
+          description: |
+            Weight applied per reply by the daily engagement job that folds
+            likes/replies from the last 24 hours into rank_score.
+
+    AuditEvent:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/AuditEventProps"
+        - $ref: "#/components/schemas/AuditEventTypeProps"
+
+    AuditEventType:
+      type: string
+      enum:
+        - thread_deleted
+        - thread_reply_deleted
+        - account_suspended
+        - account_unsuspended
+        - account_content_purged
+
+    AuditEventProps:
+      required: [id, type, timestamp]
+      properties:
+        id: { $ref: "#/components/schemas/Identifier" }
+        type: { $ref: "#/components/schemas/AuditEventType" }
+        timestamp:
+          type: string
+          format: date-time
+        enacted_by:
+          $ref: "#/components/schemas/ProfileReference"
+
+    AuditEventTypeProps:
+      type: object
+      discriminator:
+        propertyName: type
+        mapping:
+          thread_deleted: "#/components/schemas/AuditEventThreadDeleted"
+          thread_reply_deleted: "#/components/schemas/AuditEventThreadReplyDeleted"
+          account_suspended: "#/components/schemas/AuditEventAccountSuspended"
+          account_unsuspended: "#/components/schemas/AuditEventAccountUnsuspended"
+          account_content_purged: "#/components/schemas/AuditEventAccountContentPurged"
+      oneOf:
+        - $ref: "#/components/schemas/AuditEventThreadDeleted"
+        - $ref: "#/components/schemas/AuditEventThreadReplyDeleted"
+        - $ref: "#/components/schemas/AuditEventAccountSuspended"
+        - $ref: "#/components/schemas/AuditEventAccountUnsuspended"
+        - $ref: "#/components/schemas/AuditEventAccountContentPurged"
+
+    AuditEventThreadDeleted:
+      type: object
+      required: [type, thread_id]
+      properties:
+        type: { $ref: "#/components/schemas/AuditEventType" }
+        thread_id: { $ref: "#/components/schemas/Identifier" }
+
+    AuditEventThreadReplyDeleted:
+      type: object
+      required: [type, reply_id]
+      properties:
+        type: { $ref: "#/components/schemas/AuditEventType" }
+        reply_id: { $ref: "#/components/schemas/Identifier" }
+
+    AuditEventAccountSuspended:
+      type: object
+      required: [type, account_id]
+      properties:
+        type: { $ref: "#/components/schemas/AuditEventType" }
+        account_id: { $ref: "#/components/schemas/Identifier" }
+
+    AuditEventAccountUnsuspended:
+      type: object
+      required: [type, account_id]
+      properties:
+        type: { $ref: "#/components/schemas/AuditEventType" }
+        account_id: { $ref: "#/components/schemas/Identifier" }
+
+    AuditEventAccountContentPurged:
+      type: object
+      required: [type, account_id]
+      properties:
+        type: { $ref: "#/components/schemas/AuditEventType" }
+        account_id: { $ref: "#/components/schemas/Identifier" }
+        included:
+          $ref: "#/components/schemas/ModerationActionPurgeAccountContentTypeList"
+
+    AuditEventList:
+      type: array
+      items:
+        $ref: "#/components/schemas/AuditEvent"
+
+    AuditEventListResult:
+      type: object
+      required: [events]
+      allOf:
+        - { $ref: "#/components/schemas/PaginatedResult" }
+        - type: object
+          properties:
+            events: { $ref: "#/components/schemas/AuditEventList" }
+
+    ModerationActionInitialProps:
+      type: object
+      discriminator:
+        propertyName: action
+        mapping:
+          purge_account: "#/components/schemas/ModerationActionCreatePurgeAccount"
+      oneOf:
+        - $ref: "#/components/schemas/ModerationActionCreatePurgeAccount"
+
+    ModerationActionCreatePurgeAccount:
+      description: |
+        A moderation action to purge content created by a specific account.
+      type: object
+      required: [account_id, action, include]
+      properties:
+        action:
+          type: string
+          enum: [purge_account]
+        account_id: { $ref: "#/components/schemas/Identifier" }
+        include:
+          $ref: "#/components/schemas/ModerationActionPurgeAccountContentTypeList"
+
+    ModerationActionPurgeAccountContentTypeList:
+      type: array
+      items:
+        $ref: "#/components/schemas/ModerationActionPurgeAccountContentType"
+
+    ModerationActionPurgeAccountContentType:
+      type: string
+      enum:
+        - threads
+        - replies
+        - reacts
+        - likes
+        - nodes
+        - collections
+        - profile_bio
 
     #
     # 8888888b.          888
@@ -4258,6 +5702,14 @@ components:
         - email
         - phone
 
+    ColorMode:
+      type: string
+      enum:
+        - light
+        - dark
+        - system
+      default: system
+
     AuthProvider:
       type: object
       required: [provider, name]
@@ -4369,6 +5821,9 @@ components:
       properties:
         id:
           type: string
+        needs_username:
+          type: boolean
+          description: Indicates if the user must set a username before continuing
 
     OAuthCallback:
       type: object
@@ -5026,6 +6481,157 @@ components:
           properties:
             reports: { $ref: "#/components/schemas/ReportList" }
 
+    AdminAnalyticsGetOKBody:
+      type: object
+      required:
+        [
+          channel_onboardings,
+          channel_posts,
+          admin_reply_times,
+          admin_threads_replied,
+          threads_replied_summary,
+        ]
+      properties:
+        channel_onboardings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChannelAnalyticsStat"
+        channel_posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChannelAnalyticsStat"
+        admin_reply_times:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminReplyTimeStat"
+        admin_threads_replied:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminThreadsRepliedStat"
+        threads_replied_summary:
+          $ref: "#/components/schemas/ThreadsRepliedSummary"
+
+    ThreadsRepliedSummary:
+      type: object
+      description: |
+        Distinct threads that received an admin reply in the period. The
+        direct and to-reply counts can overlap (a thread may have both kinds
+        of reply) so they do not necessarily sum to the total.
+      required:
+        [threads_replied, threads_replied_direct, threads_replied_to_reply]
+      properties:
+        threads_replied:
+          type: integer
+          description: Distinct threads with any admin reply.
+        threads_replied_direct:
+          type: integer
+          description: Distinct threads with an admin reply made directly to the thread.
+        threads_replied_to_reply:
+          type: integer
+          description: Distinct threads with an admin reply made to another reply.
+
+    AdminThreadsRepliedStat:
+      type: object
+      required:
+        [
+          admin_handle,
+          threads_replied,
+          threads_replied_direct,
+          threads_replied_to_reply,
+        ]
+      properties:
+        admin_handle:
+          type: string
+        threads_replied:
+          type: integer
+        threads_replied_direct:
+          type: integer
+        threads_replied_to_reply:
+          type: integer
+
+    ChannelAnalyticsStat:
+      type: object
+      required: [channel_name, count]
+      properties:
+        channel_name:
+          type: string
+        count:
+          type: integer
+
+    AdminReplyTimeStat:
+      type: object
+      required: [admin_handle, avg_time_minutes]
+      properties:
+        admin_handle:
+          type: string
+        avg_time_minutes:
+          type: number
+          format: double
+
+    ReplyQueueEntry:
+      type: object
+      required: [id, reply_id, thread_id, channel_id, content_snippet, created_at]
+      properties:
+        id:
+          $ref: "#/components/schemas/Identifier"
+        reply_id:
+          $ref: "#/components/schemas/Identifier"
+        thread_id:
+          $ref: "#/components/schemas/Identifier"
+        channel_id:
+          $ref: "#/components/schemas/Identifier"
+        content_snippet:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    ReplyQueueList:
+      type: array
+      items: { $ref: "#/components/schemas/ReplyQueueEntry" }
+
+    ReplyQueueListResult:
+      type: object
+      allOf:
+        - { $ref: "#/components/schemas/PaginatedResult" }
+        - type: object
+          required: [reply_queue_entries]
+          properties:
+            reply_queue_entries: { $ref: "#/components/schemas/ReplyQueueList" }
+
+    PollOptionStatus:
+      type: object
+      required: [id, text, votes]
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        votes:
+          type: integer
+
+    PollStatus:
+      type: object
+      required: [total_votes, options]
+      properties:
+        total_votes:
+          type: integer
+        user_vote:
+          type: string
+          nullable: true
+          description: option_id the authenticated user voted for, null if not voted
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/PollOptionStatus'
+
+    PollVoteBody:
+      type: object
+      required: [option_id]
+      properties:
+        option_id:
+          type: string
+
     ReportProps:
       type: object
       properties:
@@ -5172,6 +6778,14 @@ components:
       type: array
       items: { $ref: "#/components/schemas/PublicProfile" }
 
+    AdminAccountListResult:
+      type: object
+      required: [admins]
+      properties:
+        admins:
+          type: array
+          items: { $ref: "#/components/schemas/ProfileReference" }
+
     ProfileFollowersList:
       type: array
       items: { $ref: "#/components/schemas/ProfileReference" }
@@ -5198,6 +6812,195 @@ components:
 
     #
     #  .d8888b.           888
+    #  .d8888b 888                                        888
+    # d88P  Y88b888                                        888
+    # 888    888888                                        888
+    # 888       88888b.  8888b. 88888b. 88888b.  .d88b. 888 .d8888b
+    # 888       888 "88b    "88b888 "88b888 "88bd8P  Y8b888 88K
+    # 888    888888  888.d888888888  888888  88888888888888 "Y8888b.
+    # Y88b  d88P888  888888  888888  888888  888Y8b.    888      X88
+    #  "Y8888P" 888  888"Y888888888  888888  888 "Y8888 888  88888P'
+    #
+
+    Channel:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/CommonProperties"
+        - type: object
+          required: [name, slug, description, visibility]
+          properties:
+            name:
+              type: string
+              description: The display name of the channel
+            slug:
+              type: string
+              description: URL-friendly identifier for the channel
+            description:
+              type: string
+              description: Description of the channel's purpose
+            visibility:
+              type: string
+              enum: [public, private]
+              description: Channel visibility - public channels are discoverable, private are invite-only
+            cover_image:
+              $ref: "#/components/schemas/Asset"
+            icon:
+              $ref: "#/components/schemas/Asset"
+            meta:
+              $ref: "#/components/schemas/Metadata"
+            member_count:
+              type: integer
+              description: Number of members in the channel (includes inflated value for display)
+
+    ChannelReference:
+      type: object
+      description: A minimal reference to a channel.
+      required: [id, name, slug]
+      properties:
+        id: { $ref: "#/components/schemas/Identifier" }
+        name:
+          type: string
+          description: The display name of the channel
+        slug:
+          type: string
+          description: URL-friendly identifier for the channel
+
+    ChannelList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Channel"
+
+    ChannelListResult:
+      type: object
+      required: [channels]
+      properties:
+        channels:
+          $ref: "#/components/schemas/ChannelList"
+
+    ChannelInitialProps:
+      type: object
+      required: [name, slug, description]
+      properties:
+        name:
+          type: string
+          description: The display name of the channel
+          minLength: 1
+          maxLength: 100
+        slug:
+          type: string
+          description: URL-friendly identifier for the channel
+          minLength: 1
+          maxLength: 100
+          pattern: "^[a-z0-9-]+$"
+        description:
+          type: string
+          description: Description of the channel's purpose
+          maxLength: 500
+        visibility:
+          type: string
+          enum: [public, private]
+          default: public
+          description: Channel visibility - public channels are discoverable, private are invite-only
+
+    ChannelMutableProps:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The display name of the channel
+          minLength: 1
+          maxLength: 100
+        slug:
+          type: string
+          description: URL-friendly identifier for the channel
+          minLength: 1
+          maxLength: 100
+          pattern: "^[a-z0-9-]+$"
+        description:
+          type: string
+          description: Description of the channel's purpose
+          maxLength: 500
+        visibility:
+          type: string
+          enum: [public, private]
+          description: Channel visibility
+        cover_image:
+          type: string
+          description: Asset ID for cover image. Set to null to remove.
+          nullable: true
+        icon:
+          type: string
+          description: Asset ID for icon. Set to null to remove.
+          nullable: true
+        meta:
+          $ref: "#/components/schemas/Metadata"
+
+    ChannelMember:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/CommonProperties"
+        - type: object
+          required: [channel_id, account, role]
+          properties:
+            channel_id:
+              $ref: "#/components/schemas/Identifier"
+              description: The channel this membership belongs to
+            account:
+              $ref: "#/components/schemas/ProfileReference"
+              description: The account that is a member
+            role:
+              type: string
+              enum: [owner, admin, moderator, member]
+              description: >
+                The role of the member in the channel.
+                - owner: Full control, can delete channel
+                - admin: Can manage members and settings
+                - moderator: Can moderate content
+                - member: Basic membership
+
+    ChannelMemberList:
+      type: array
+      items:
+        $ref: "#/components/schemas/ChannelMember"
+
+    ChannelMemberListResult:
+      type: object
+      required: [members, total, page, limit]
+      properties:
+        members:
+          $ref: "#/components/schemas/ChannelMemberList"
+        total:
+          type: integer
+          description: Total number of members in the channel
+        page:
+          type: integer
+          description: Current page number
+        limit:
+          type: integer
+          description: Number of members per page
+
+    ChannelMemberAdd:
+      type: object
+      required: [account_id, role]
+      properties:
+        account_id:
+          $ref: "#/components/schemas/Identifier"
+          description: The account ID to add as a member
+        role:
+          type: string
+          enum: [admin, moderator, member]
+          default: member
+          description: The role to assign to the new member. Cannot assign owner role.
+
+    ChannelMemberRoleUpdate:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [owner, admin, moderator, member]
+          description: The new role for the member
+
     # d88P  Y88b          888
     # 888    888          888
     # 888         8888b.  888888 .d88b.   .d88b.   .d88b.  888d888 888  888
@@ -5525,17 +7328,25 @@ components:
       required: [title]
       properties:
         title: { $ref: "#/components/schemas/ThreadTitle" }
+        pinned: { $ref: "#/components/schemas/PinnedRank" }
         body: { $ref: "#/components/schemas/PostContent" }
         tags: { $ref: "#/components/schemas/TagNameList" }
         meta: { $ref: "#/components/schemas/Metadata" }
         category: { $ref: "#/components/schemas/Identifier" }
         visibility: { $ref: "#/components/schemas/Visibility" }
         url: { $ref: "#/components/schemas/URL" }
+        reference_post_id:
+          $ref: "#/components/schemas/Identifier"
+          description: |
+            When set, this thread is a share that features the referenced
+            thread in this thread's channel. The body acts as the share
+            subtitle. Requires ADMINISTRATOR permission.
 
     ThreadMutableProps:
       type: object
       properties:
         title: { $ref: "#/components/schemas/ThreadTitle" }
+        pinned: { $ref: "#/components/schemas/PinnedRank" }
         body: { $ref: "#/components/schemas/PostContent" }
         tags: { $ref: "#/components/schemas/TagNameList" }
         meta: { $ref: "#/components/schemas/Metadata" }
@@ -5563,19 +7374,59 @@ components:
         - tags
         - reply_status
         - collections
+        - channel_id
       properties:
-        pinned:
-          type: boolean
-          description: Whether the thread is pinned in this category.
+        pinned: { $ref: "#/components/schemas/PinnedRank" }
         read_status: { $ref: "#/components/schemas/ReadStatus" }
         reply_status: { $ref: "#/components/schemas/ReplyStatus" }
         category: { $ref: "#/components/schemas/CategoryReference" }
         link: { $ref: "#/components/schemas/LinkReference" }
         tags: { $ref: "#/components/schemas/TagReferenceList" }
+        channel_id: { $ref: "#/components/schemas/Identifier" }
+        channel:
+          $ref: "#/components/schemas/ChannelReference"
+          description: |
+            The thread's home channel (name + slug). Populated on single-thread
+            reads so a shared card can name the source channel without a
+            separate membership-gated channel lookup.
+        reference_post_id:
+          $ref: "#/components/schemas/Identifier"
+          description: |
+            Present when this thread is a share: the id of the referenced
+            original thread. Clients fetch the referenced thread's content
+            separately (via ThreadGet) to render the shared card.
+        shared_to_channel_ids:
+          type: array
+          items: { $ref: "#/components/schemas/Identifier" }
+          description: |
+            Channels this thread has been shared into, resolved from the shares
+            that reference it. A thread is reachable by members of its home
+            channel or of any channel listed here, so deep-link gating can
+            allow a viewer who only shares a destination channel with it.
+            Empty for a share row itself, since shares cannot be re-shared.
+            Only populated on single-thread reads; list endpoints omit it to
+            avoid a per-row lookup across a page of threads.
         last_reply_at:
           type: string
           format: date-time
           description: The time of the last reply to the thread.
+        quick_reply_chips: { $ref: "#/components/schemas/QuickReplyChips" }
+
+    QuickReplyChips:
+      type: object
+      description: |
+        Suggested one-tap reply texts surfaced above the composer for posts
+        the server has classified as clearly positive in specific topics.
+        Absent on posts that do not qualify.
+      required: [candidates]
+      properties:
+        candidates:
+          type: array
+          items:
+            type: string
+          description: |
+            Up to 3 candidate reply strings. Clients should pick at most 2
+            to display, ideally chosen at random per render.
 
     ReadStatus:
       description: |
@@ -5623,6 +7474,60 @@ components:
           properties:
             threads: { $ref: "#/components/schemas/ThreadList" }
 
+    ThreadStatsDailyUsersResult:
+      type: object
+      description: Count of unique authors who created threads today (IST).
+      required: [count]
+      properties:
+        count:
+          description: Number of distinct accounts that created at least one thread today.
+          type: integer
+
+    ChannelPersonalizedSimilarGroup:
+      type: object
+      required: [for_thread_id, threads]
+      properties:
+        for_thread_id:
+          $ref: "#/components/schemas/Identifier"
+        threads:
+          $ref: "#/components/schemas/ThreadList"
+
+    ChannelPersonalizedFeed:
+      type: object
+      required: [self_recent, similar]
+      description: |
+        Personalised top-of-feed payload for a channel. self_recent contains
+        threads created by the requester within the last 24 hours regardless of
+        visibility. similar contains, for each entry in self_recent, up to two
+        recent published threads from other users that share the same primary
+        topic and sentiment tag.
+      properties:
+        self_recent:
+          $ref: "#/components/schemas/ThreadList"
+        similar:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChannelPersonalizedSimilarGroup"
+
+    ScoreUnscoredResult:
+      type: object
+      description: Result of enqueuing unscored posts for sentiment scoring.
+      required:
+        - success
+        - posts_enqueued
+        - duration_ms
+      properties:
+        success:
+          type: boolean
+          description: Whether the operation completed successfully.
+        posts_enqueued:
+          type: integer
+          description: Number of posts enqueued for scoring.
+        duration_ms:
+          type: integer
+          format: int64
+          description: Time taken to complete the operation in milliseconds.
+
     #
     # 8888888b.                   888
     # 888   Y88b                  888
@@ -5668,6 +7573,11 @@ components:
         root_id: { $ref: "#/components/schemas/Identifier" }
         root_slug: { $ref: "#/components/schemas/ThreadMark" }
         reply_to: { $ref: "#/components/schemas/Reply" }
+        cohort_channel:
+          $ref: "#/components/schemas/ChannelReference"
+          description: |
+            The reply author's most recent channel membership, shown as a tag
+            beside the reply to distinguish which cohort is replying.
 
     ReplyInitialProps:
       type: object
@@ -5916,11 +7826,16 @@ components:
 
     CollectionAdditionalProps:
       type: object
-      required: [item_count, has_queried_item]
+      required: [item_count, has_queried_item, is_default]
       properties:
         item_count:
           type: integer
         has_queried_item:
+          type: boolean
+        is_default:
+          description: |
+            Indicates this is the account's default collection, used for
+            one-tap saves when the user has not chosen a specific collection.
           type: boolean
 
     CollectionList:
@@ -6055,6 +7970,7 @@ components:
         - assets
         - description
         - owner
+        - channel
         - hide_child_tree
         - tags
         - visibility
@@ -6068,6 +7984,7 @@ components:
         primary_image: { $ref: "#/components/schemas/Asset" }
         content: { $ref: "#/components/schemas/PostContent" }
         owner: { $ref: "#/components/schemas/ProfileReference" }
+        channel: { $ref: "#/components/schemas/ChannelReference" }
         parent: { $ref: "#/components/schemas/Node" }
         hide_child_tree:
           description: |
@@ -6110,6 +8027,10 @@ components:
         description: { $ref: "#/components/schemas/NodeDescription" }
         primary_image_asset_id: { $ref: "#/components/schemas/AssetID" }
         content: { $ref: "#/components/schemas/PostContent" }
+        channel:
+          allOf:
+            - { $ref: "#/components/schemas/Identifier" }
+          nullable: true
         parent: { $ref: "#/components/schemas/NodeSlug" }
         hide_child_tree:
           type: boolean
@@ -6135,6 +8056,7 @@ components:
         primary_image_asset_id:
           { $ref: "#/components/schemas/NullableIdentifier" }
         content: { $ref: "#/components/schemas/PostContent" }
+        channel: { $ref: "#/components/schemas/Slug" }
         parent: { $ref: "#/components/schemas/NodeSlug" }
         hide_child_tree:
           type: boolean

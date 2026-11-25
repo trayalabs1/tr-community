@@ -168,6 +168,6 @@ func (p *Provider) Login(ctx context.Context, state, code string) (*account.Acco
 	authName := fmt.Sprintf("Keycloak (%s)", emailAddr.Address)
 
 	return p.register.GetOrCreateViaEmail(
-		ctx, service, authName, idToken.Subject, tok.AccessToken, handle, name, *emailAddr,
+		ctx, service, authName, idToken.Subject, tok.AccessToken, handle, name, *emailAddr, false,
 	)
 }

@@ -11,6 +11,7 @@ import type {
   AccessKeyCreateBody,
   AccessKeyCreateOKResponse,
   AccessKeyListOKResponse,
+  AccountUpdateOKResponse,
   AuthEmailBody,
   AuthEmailPasswordBody,
   AuthEmailPasswordResetBody,
@@ -25,11 +26,15 @@ import type {
   AuthProviderListOKResponse,
   AuthProviderLogoutParams,
   AuthSuccessOKResponse,
+  AuthTrayaTokenParams,
   NoContentResponse,
   OAuthProviderCallbackBody,
   PhoneRequestCodeBody,
   PhoneRequestCodeParams,
   PhoneSubmitCodeBody,
+  UsernameCheck200,
+  UsernameCheckParams,
+  UsernameSetBody,
   WebAuthnGetAssertionOKResponse,
   WebAuthnMakeAssertionBody,
   WebAuthnMakeCredentialBody,
@@ -635,6 +640,103 @@ export const phoneSubmitCode = async (
       body: JSON.stringify(phoneSubmitCodeBody),
     },
   );
+};
+
+/**
+ * Authenticate with a Traya API token. This endpoint verifies the token
+with the Traya API server, creates or retrieves the user account, and
+assigns the user to appropriate channels based on their kit count.
+
+ */
+export type authTrayaTokenResponse = {
+  data: AuthSuccessOKResponse;
+  status: number;
+};
+
+export const getAuthTrayaTokenUrl = (params: AuthTrayaTokenParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/auth/traya?${normalizedParams.toString()}`
+    : `/auth/traya`;
+};
+
+export const authTrayaToken = async (
+  params: AuthTrayaTokenParams,
+  options?: RequestInit,
+): Promise<authTrayaTokenResponse> => {
+  return fetcher<Promise<authTrayaTokenResponse>>(
+    getAuthTrayaTokenUrl(params),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+/**
+ * Check if a username is available
+ */
+export type usernameCheckResponse = {
+  data: UsernameCheck200;
+  status: number;
+};
+
+export const getUsernameCheckUrl = (params: UsernameCheckParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/auth/username/check?${normalizedParams.toString()}`
+    : `/auth/username/check`;
+};
+
+export const usernameCheck = async (
+  params: UsernameCheckParams,
+  options?: RequestInit,
+): Promise<usernameCheckResponse> => {
+  return fetcher<Promise<usernameCheckResponse>>(getUsernameCheckUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * Set username for the authenticated account (first-time only).
+This endpoint can only be used once per account to set a permanent
+username, replacing the temporary handle assigned during signup.
+
+ */
+export type usernameSetResponse = {
+  data: AccountUpdateOKResponse;
+  status: number;
+};
+
+export const getUsernameSetUrl = () => {
+  return `/auth/username`;
+};
+
+export const usernameSet = async (
+  usernameSetBody: UsernameSetBody,
+  options?: RequestInit,
+): Promise<usernameSetResponse> => {
+  return fetcher<Promise<usernameSetResponse>>(getUsernameSetUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(usernameSetBody),
+  });
 };
 
 /**

@@ -10,10 +10,27 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
 import type {
   AccountGetOKResponse,
   AdminAccessKeyListOKResponse,
+  AdminAccountListOKResponse,
+  AdminAnalyticsGetOKResponse,
+  AdminAnalyticsGetParams,
+  AdminRegenerateTempHandlesOKResponse,
+  AdminRegenerateTempHandlesParams,
+  AdminReplyListOKResponse,
+  AdminReplyListParams,
+  AdminReplyQueueListOKResponse,
+  AdminReplyQueueListParams,
   AdminSettingsGetOKResponse,
   AdminSettingsUpdateBody,
   AdminSettingsUpdateOKResponse,
+  AuditEventCreatedOKResponse,
+  AuditEventGetOKResponse,
+  AuditEventListOKResponse,
+  AuditEventListParams,
+  ChannelScoreUnscoredParams,
+  Identifier,
+  ModerationActionCreateBody,
   NoContentResponse,
+  ScoreUnscoredOKResponse,
 } from "../openapi-schema";
 import { fetcher } from "../server";
 
@@ -64,6 +81,154 @@ export const adminSettingsUpdate = async (
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...options?.headers },
       body: JSON.stringify(adminSettingsUpdateBody),
+    },
+  );
+};
+
+/**
+ * List audit events for the installation. Audit events track important
+actions taken by accounts with elevated permissions such as admin
+accounts and moderators. It also provides error logs for system internal
+components that could not be responded to the client directly such as
+background job failures and configuration issues.
+
+ */
+export type auditEventListResponse = {
+  data: AuditEventListOKResponse;
+  status: number;
+};
+
+export const getAuditEventListUrl = (params?: AuditEventListParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["types"];
+
+    if (value instanceof Array && explodeParameters.includes(key)) {
+      value.forEach((v) =>
+        normalizedParams.append(key, v === null ? "null" : v.toString()),
+      );
+      return;
+    }
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/admin/audit-events?${normalizedParams.toString()}`
+    : `/admin/audit-events`;
+};
+
+export const auditEventList = async (
+  params?: AuditEventListParams,
+  options?: RequestInit,
+): Promise<auditEventListResponse> => {
+  return fetcher<Promise<auditEventListResponse>>(
+    getAuditEventListUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Retrieve a specific audit event by ID.
+ */
+export type auditEventGetResponse = {
+  data: AuditEventGetOKResponse;
+  status: number;
+};
+
+export const getAuditEventGetUrl = (auditEventId: string) => {
+  return `/admin/audit-events/${auditEventId}`;
+};
+
+export const auditEventGet = async (
+  auditEventId: string,
+  options?: RequestInit,
+): Promise<auditEventGetResponse> => {
+  return fetcher<Promise<auditEventGetResponse>>(
+    getAuditEventGetUrl(auditEventId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Create a new moderation action such as a ban or content purge.
+ */
+export type moderationActionCreateResponse = {
+  data: AuditEventCreatedOKResponse;
+  status: number;
+};
+
+export const getModerationActionCreateUrl = () => {
+  return `/admin/actions`;
+};
+
+export const moderationActionCreate = async (
+  moderationActionCreateBody: ModerationActionCreateBody,
+  options?: RequestInit,
+): Promise<moderationActionCreateResponse> => {
+  return fetcher<Promise<moderationActionCreateResponse>>(
+    getModerationActionCreateUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(moderationActionCreateBody),
+    },
+  );
+};
+
+/**
+ * Regenerate handles for accounts that still carry a temporary handle
+(those with a `temp_` prefix assigned during signup) using the current
+handle generation logic. Requires ADMINISTRATOR permission.
+
+Processes a single bounded batch using keyset pagination so the operation
+can be run safely over very large tables without long-running requests or
+heavy load. Start with no cursor, then repeat the call passing the
+returned `next_cursor` until it is absent. The operation is idempotent and
+resumable: each successfully updated row stops matching the temporary
+prefix, so the set of remaining rows shrinks monotonically.
+
+ */
+export type adminRegenerateTempHandlesResponse = {
+  data: AdminRegenerateTempHandlesOKResponse;
+  status: number;
+};
+
+export const getAdminRegenerateTempHandlesUrl = (
+  params?: AdminRegenerateTempHandlesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/admin/temp-handles/regenerate?${normalizedParams.toString()}`
+    : `/admin/temp-handles/regenerate`;
+};
+
+export const adminRegenerateTempHandles = async (
+  params?: AdminRegenerateTempHandlesParams,
+  options?: RequestInit,
+): Promise<adminRegenerateTempHandlesResponse> => {
+  return fetcher<Promise<adminRegenerateTempHandlesResponse>>(
+    getAdminRegenerateTempHandlesUrl(params),
+    {
+      ...options,
+      method: "POST",
     },
   );
 };
@@ -171,6 +336,214 @@ export const adminAccessKeyDelete = async (
     {
       ...options,
       method: "DELETE",
+    },
+  );
+};
+
+/**
+ * List non-admin replies pending admin attention. Requires ADMINISTRATOR
+permission. Supports pagination and date range filtering.
+
+ */
+export type adminReplyQueueListResponse = {
+  data: AdminReplyQueueListOKResponse;
+  status: number;
+};
+
+export const getAdminReplyQueueListUrl = (
+  params?: AdminReplyQueueListParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/admin/reply-queue?${normalizedParams.toString()}`
+    : `/admin/reply-queue`;
+};
+
+export const adminReplyQueueList = async (
+  params?: AdminReplyQueueListParams,
+  options?: RequestInit,
+): Promise<adminReplyQueueListResponse> => {
+  return fetcher<Promise<adminReplyQueueListResponse>>(
+    getAdminReplyQueueListUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Dismiss a reply queue entry. Permanently deletes the entry.
+Requires ADMINISTRATOR permission.
+
+ */
+export type adminReplyQueueDismissResponse = {
+  data: NoContentResponse;
+  status: number;
+};
+
+export const getAdminReplyQueueDismissUrl = (replyQueueId: Identifier) => {
+  return `/admin/reply-queue/${replyQueueId}`;
+};
+
+export const adminReplyQueueDismiss = async (
+  replyQueueId: Identifier,
+  options?: RequestInit,
+): Promise<adminReplyQueueDismissResponse> => {
+  return fetcher<Promise<adminReplyQueueDismissResponse>>(
+    getAdminReplyQueueDismissUrl(replyQueueId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+/**
+ * List all accounts considered administrators, for use in admin-facing
+filter controls. Requires ADMINISTRATOR permission.
+
+ */
+export type adminAccountListResponse = {
+  data: AdminAccountListOKResponse;
+  status: number;
+};
+
+export const getAdminAccountListUrl = () => {
+  return `/admin/admins`;
+};
+
+export const adminAccountList = async (
+  options?: RequestInit,
+): Promise<adminAccountListResponse> => {
+  return fetcher<Promise<adminAccountListResponse>>(getAdminAccountListUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+/**
+ * List replies authored by administrators, optionally filtered to a single
+admin and a reply-date range. Used by the Queue screen's "Admin Replies"
+tab to audit which posts a given admin has responded to. The date range
+filters on the reply's own creation time, not the thread's.
+Requires ADMINISTRATOR permission.
+
+ */
+export type adminReplyListResponse = {
+  data: AdminReplyListOKResponse;
+  status: number;
+};
+
+export const getAdminReplyListUrl = (params?: AdminReplyListParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/admin/admin-replies?${normalizedParams.toString()}`
+    : `/admin/admin-replies`;
+};
+
+export const adminReplyList = async (
+  params?: AdminReplyListParams,
+  options?: RequestInit,
+): Promise<adminReplyListResponse> => {
+  return fetcher<Promise<adminReplyListResponse>>(
+    getAdminReplyListUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * @summary Get analytics dashboard data
+ */
+export type adminAnalyticsGetResponse = {
+  data: AdminAnalyticsGetOKResponse;
+  status: number;
+};
+
+export const getAdminAnalyticsGetUrl = (params: AdminAnalyticsGetParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/admin/analytics?${normalizedParams.toString()}`
+    : `/admin/analytics`;
+};
+
+export const adminAnalyticsGet = async (
+  params: AdminAnalyticsGetParams,
+  options?: RequestInit,
+): Promise<adminAnalyticsGetResponse> => {
+  return fetcher<Promise<adminAnalyticsGetResponse>>(
+    getAdminAnalyticsGetUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+/**
+ * Finds all published root posts in the channel that have not yet been
+scored and enqueues them for asynchronous sentiment scoring. Optionally
+includes posts that previously failed scoring. Supports date range
+filtering to target specific time windows.
+
+ * @summary Find and enqueue unscored posts in a channel for sentiment scoring.
+ */
+export type channelScoreUnscoredResponse = {
+  data: ScoreUnscoredOKResponse;
+  status: number;
+};
+
+export const getChannelScoreUnscoredUrl = (
+  channelID: string,
+  params?: ChannelScoreUnscoredParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  return normalizedParams.size
+    ? `/channels/${channelID}/scoring/score-unscored?${normalizedParams.toString()}`
+    : `/channels/${channelID}/scoring/score-unscored`;
+};
+
+export const channelScoreUnscored = async (
+  channelID: string,
+  params?: ChannelScoreUnscoredParams,
+  options?: RequestInit,
+): Promise<channelScoreUnscoredResponse> => {
+  return fetcher<Promise<channelScoreUnscoredResponse>>(
+    getChannelScoreUnscoredUrl(channelID, params),
+    {
+      ...options,
+      method: "POST",
     },
   );
 };

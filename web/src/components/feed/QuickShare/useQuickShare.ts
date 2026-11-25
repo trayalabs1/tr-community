@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -11,11 +12,17 @@ import { NO_CATEGORY_VALUE } from "@/components/category/CategorySelect/useCateg
 import { useFeedMutations } from "@/lib/feed/mutation";
 import { useClickAway } from "@/utils/useClickAway";
 
+import { PromptItem } from "@/components/feed/PromptNudge/prompts";
+
 export type Props = {
   initialSession?: Account;
   initialCategory?: Category | null;
   showCategorySelect: boolean;
+  channelID?: string;
+  promptNudges?: PromptItem[];
 };
+
+export const DEFAULT_PLACEHOLDER = "Share a thought, a link, something cool...";
 
 export const FormSchema = z.object({
   body: z.string(),
@@ -23,7 +30,8 @@ export const FormSchema = z.object({
 });
 export type Form = z.infer<typeof FormSchema>;
 
-export function useQuickShare({ initialCategory }: Props) {
+export function useQuickShare({ initialCategory, channelID }: Props) {
+  const router = useRouter();
   const session = useSession();
   const [editing, setEditing] = useState(false);
   const [postURL, setPostURL] = useState<string | null>(null);
@@ -32,6 +40,7 @@ export function useQuickShare({ initialCategory }: Props) {
   >(null);
   const formRef = useClickAway<HTMLFormElement>(() => setEditing(false));
   const [resetKey, setResetKey] = useState("");
+  const [placeholder, setPlaceholder] = useState(DEFAULT_PLACEHOLDER);
 
   const form = useForm<Form>({
     resolver: zodResolver(FormSchema),
@@ -72,14 +81,19 @@ export function useQuickShare({ initialCategory }: Props) {
     }
   }, [postURL]);
 
-  const { createThread, revalidate } = useFeedMutations(session, {
-    categories:
-      initialCategory === undefined
-        ? undefined
-        : initialCategory === null
-          ? ["null"]
-          : [initialCategory.slug],
-  });
+  const { createThread, revalidate } = useFeedMutations(
+    session,
+    {
+      categories:
+        initialCategory === undefined
+          ? undefined
+          : initialCategory === null
+            ? ["null"]
+            : [initialCategory.slug],
+    },
+    channelID,
+    router,
+  );
 
   const handlePost = form.handleSubmit((data: Form) => {
     handle(
@@ -99,7 +113,7 @@ export function useQuickShare({ initialCategory }: Props) {
             : title
           : title;
 
-        if (!title) {
+        if (!title && !hasImage(parsed)) {
           throw new Error("Cannot post an empty thread.");
         }
 
@@ -134,6 +148,12 @@ export function useQuickShare({ initialCategory }: Props) {
     setEditing(true);
   }
 
+  function applyPrompt(text: string) {
+    setPlaceholder(text);
+    setEditing(true);
+    formRef.current?.querySelector<HTMLElement>("[contenteditable]")?.focus();
+  }
+
   return {
     form,
     state: {
@@ -141,10 +161,12 @@ export function useQuickShare({ initialCategory }: Props) {
       editing,
       hydratedLink,
       resetKey,
+      placeholder,
     },
     handlers: {
       handleFocus,
       handlePost,
+      applyPrompt,
     },
   };
 }
@@ -163,6 +185,12 @@ function getFirstURL(html: Document) {
   return href;
 }
 
+// An image-only post carries no text to derive a title from, so the text
+// requirement is waived when the body has at least one image.
+function hasImage(html: Document) {
+  return html.querySelector("body img") !== null;
+}
+
 function splitTitleBody(html: Document) {
   const bodyEl = html.querySelector("body");
 
@@ -172,6 +200,10 @@ function splitTitleBody(html: Document) {
   const firstChild = bodyEl?.querySelector("p")?.childNodes[0] as Node;
 
   if (!firstChild) {
+    if (hasImage(html)) {
+      return { title: "", body: bodyEl?.getHTML() ?? "", isFallback: false };
+    }
+
     throw new Error("Not enough text content to post a new thread.");
   }
 
@@ -218,6 +250,10 @@ function splitTitleBody(html: Document) {
 
   // We want something of substance to post a new thread. This may bug out tho.
   if (!title) {
+    if (hasImage(html)) {
+      return { title: "", body: bodyEl?.getHTML() ?? "", isFallback: false };
+    }
+
     throw new Error("Not enough text content to post a new thread.");
   }
 

@@ -22,6 +22,7 @@ export const DefaultSettings = {
   description: "A forum for the modern age.",
   content: "",
   accent_colour: FALLBACK_COLOUR,
+  color_mode: "light" as const,
   onboarding_status: "complete",
   authentication_mode: AuthMode.handle,
   capabilities: [],

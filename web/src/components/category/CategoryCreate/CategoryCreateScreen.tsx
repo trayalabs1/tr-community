@@ -1,6 +1,7 @@
 import { createListCollection } from "@ark-ui/react";
 
 import { useCategoryList } from "src/api/openapi-client/categories";
+import { useChannelCategoryList } from "src/api/openapi-client/channels";
 
 import { AssetUploadEditor } from "@/components/asset/AssetUploadEditor/AssetUploadEditor";
 import { ColourPickerField } from "@/components/ui/ColourPickerField";
@@ -25,7 +26,21 @@ export function CategoryCreateScreen(props: CategoryCreateProps) {
   const { register, onSubmit, control, handleImageUpload } =
     useCategoryCreate(props);
 
-  const { data: categoryListResult } = useCategoryList();
+  // Use channel-specific categories if channelID is provided
+  const channelCategories = useChannelCategoryList(props.channelID || "", {
+    swr: {
+      enabled: !!props.channelID,
+    },
+  });
+  const globalCategories = useCategoryList({
+    swr: {
+      enabled: !props.channelID,
+    },
+  });
+
+  const { data: categoryListResult } = props.channelID
+    ? channelCategories
+    : globalCategories;
   const categories = categoryListResult?.categories || [];
 
   const categoryCollection = createListCollection({

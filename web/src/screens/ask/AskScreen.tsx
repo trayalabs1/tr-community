@@ -172,7 +172,7 @@ export function Ask() {
   }
 
   return (
-    <LStack>
+    <LStack px="4">
       <styled.form
         className={hstack({ w: "full", gap: "0" })}
         onSubmit={fetchAnswer}

@@ -42,6 +42,13 @@ export function useContentComposerMarkdown(props: ContentComposerProps) {
   }, [props.resetKey]);
 
   useEffect(() => {
+    if (props.autoFocus) {
+      textareaRef.current?.focus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (props.disabled || showPreview) return;
 
     const textarea = textareaRef.current;

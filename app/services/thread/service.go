@@ -4,6 +4,7 @@ package thread
 
 import (
 	"context"
+	"log/slog"
 	"net/url"
 
 	"github.com/Southclaws/opt"
@@ -19,6 +20,7 @@ import (
 	"github.com/Southclaws/storyden/app/resources/post/thread_cache"
 	"github.com/Southclaws/storyden/app/resources/post/thread_querier"
 	"github.com/Southclaws/storyden/app/resources/post/thread_writer"
+	"github.com/Southclaws/storyden/app/resources/settings"
 	"github.com/Southclaws/storyden/app/resources/tag/tag_ref"
 	"github.com/Southclaws/storyden/app/resources/tag/tag_writer"
 	"github.com/Southclaws/storyden/app/resources/visibility"
@@ -27,6 +29,9 @@ import (
 	"github.com/Southclaws/storyden/app/services/moderation"
 	"github.com/Southclaws/storyden/app/services/report/system_report"
 	"github.com/Southclaws/storyden/app/services/semdex"
+	"github.com/Southclaws/storyden/internal/config"
+	"github.com/Southclaws/storyden/internal/ent"
+	"github.com/Southclaws/storyden/internal/infrastructure/cache"
 	"github.com/Southclaws/storyden/internal/infrastructure/instrumentation/spanner"
 	"github.com/Southclaws/storyden/internal/infrastructure/pubsub"
 )
@@ -57,16 +62,28 @@ type Service interface {
 		threadID post.ID,
 		pageParams pagination.Parameters,
 	) (*thread.Thread, error)
+
+	// Personalized returns the requester's recent threads in a channel and
+	// similar published threads from other users.
+	Personalized(ctx context.Context, channelID xid.ID) (*PersonalizedFeed, error)
+
+	// DailyUsersCount returns the number of unique authors who posted threads
+	// in the given channel today (IST), cached in-memory for 5 minutes per
+	// channel.
+	DailyUsersCount(ctx context.Context, channelID xid.ID) (int, error)
 }
 
 type Partial struct {
-	Title      opt.Optional[string]
-	Content    opt.Optional[datagraph.Content]
-	Category   opt.Optional[xid.ID]
-	Tags       opt.Optional[tag_ref.Names]
-	Visibility opt.Optional[visibility.Visibility]
-	URL        opt.Optional[url.URL]
-	Meta       opt.Optional[map[string]any]
+	Title       opt.Optional[string]
+	Content     opt.Optional[datagraph.Content]
+	Category    opt.Optional[xid.ID]
+	Tags        opt.Optional[tag_ref.Names]
+	Visibility  opt.Optional[visibility.Visibility]
+	URL         opt.Optional[url.URL]
+	Meta        opt.Optional[map[string]any]
+	ChannelID   opt.Optional[xid.ID]
+	Pinned      opt.Optional[int]
+	ReferenceID opt.Optional[xid.ID]
 }
 
 func (p Partial) Opts() (opts []thread_writer.Option) {
@@ -75,6 +92,9 @@ func (p Partial) Opts() (opts []thread_writer.Option) {
 	p.Category.Call(func(v xid.ID) { opts = append(opts, thread_writer.WithCategory(xid.ID(v))) })
 	p.Visibility.Call(func(v visibility.Visibility) { opts = append(opts, thread_writer.WithVisibility(v)) })
 	p.Meta.Call(func(v map[string]any) { opts = append(opts, thread_writer.WithMeta(v)) })
+	p.ChannelID.Call(func(v xid.ID) { opts = append(opts, thread_writer.WithChannel(v)) })
+	p.Pinned.Call(func(v int) { opts = append(opts, thread_writer.WithPinned(v)) })
+	p.ReferenceID.Call(func(v xid.ID) { opts = append(opts, thread_writer.WithReference(v)) })
 	return
 }
 
@@ -85,24 +105,32 @@ func Build() fx.Option {
 }
 
 type service struct {
-	ins spanner.Instrumentation
+	ins    spanner.Instrumentation
+	logger *slog.Logger
 
-	accountQuery   *account_querier.Querier
-	threadQuerier  *thread_querier.Querier
-	threadWriter   *thread_writer.Writer
-	tagWriter      *tag_writer.Writer
-	fetcher        *fetcher.Fetcher
-	recommender    semdex.Recommender
-	bus            *pubsub.Bus
-	mentioner      *mentioner.Mentioner
-	cpm            *moderation.Manager
-	cache          *thread_cache.Cache
-	systemReporter *system_report.Manager
+	db               *ent.Client
+	accountQuery     *account_querier.Querier
+	threadQuerier    *thread_querier.Querier
+	threadWriter     *thread_writer.Writer
+	tagWriter        *tag_writer.Writer
+	fetcher          *fetcher.Fetcher
+	recommender      semdex.Recommender
+	bus              *pubsub.Bus
+	mentioner        *mentioner.Mentioner
+	cpm              *moderation.Manager
+	cache            *thread_cache.Cache
+	cacheStore       cache.Store
+	systemReporter   *system_report.Manager
+	settings         *settings.SettingsRepository
+	feedCacheDisable bool
 }
 
 func New(
 	ins spanner.Builder,
+	logger *slog.Logger,
+	cfg config.Config,
 
+	db *ent.Client,
 	accountQuery *account_querier.Querier,
 	threadQuerier *thread_querier.Querier,
 	threadWriter *thread_writer.Writer,
@@ -113,21 +141,28 @@ func New(
 	mentioner *mentioner.Mentioner,
 	cpm *moderation.Manager,
 	cache *thread_cache.Cache,
+	cacheStore cache.Store,
 	systemReporter *system_report.Manager,
+	settingsRepo *settings.SettingsRepository,
 ) Service {
 	return &service{
-		ins: ins.Build(),
+		ins:    ins.Build(),
+		logger: logger,
 
-		accountQuery:   accountQuery,
-		threadQuerier:  threadQuerier,
-		threadWriter:   threadWriter,
-		tagWriter:      tagWriter,
-		fetcher:        fetcher,
-		recommender:    recommender,
-		bus:            bus,
-		mentioner:      mentioner,
-		cpm:            cpm,
-		cache:          cache,
-		systemReporter: systemReporter,
+		db:               db,
+		accountQuery:     accountQuery,
+		threadQuerier:    threadQuerier,
+		threadWriter:     threadWriter,
+		tagWriter:        tagWriter,
+		fetcher:          fetcher,
+		recommender:      recommender,
+		bus:              bus,
+		mentioner:        mentioner,
+		cpm:              cpm,
+		cache:            cache,
+		cacheStore:       cacheStore,
+		systemReporter:   systemReporter,
+		settings:         settingsRepo,
+		feedCacheDisable: cfg.FeedCacheDisable,
 	}
 }

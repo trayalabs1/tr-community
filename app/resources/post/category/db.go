@@ -93,6 +93,12 @@ func WithParent(id *CategoryID) Option {
 	}
 }
 
+func WithChannelID(id xid.ID) Option {
+	return func(cm *ent.CategoryMutation) {
+		cm.SetChannelID(id)
+	}
+}
+
 type MoveOptions struct {
 	ParentProvided bool
 	ParentID       *CategoryID
@@ -100,7 +106,7 @@ type MoveOptions struct {
 	After          *CategoryID
 }
 
-func (d *Repository) CreateCategory(ctx context.Context, name, desc, colour string, sort int, admin bool, opts ...Option) (*Category, error) {
+func (d *Repository) CreateCategory(ctx context.Context, name, desc, colour string, sort int, admin bool, channelID xid.ID, opts ...Option) (*Category, error) {
 	create := d.db.Category.Create()
 	mutation := create.Mutation()
 
@@ -110,6 +116,7 @@ func (d *Repository) CreateCategory(ctx context.Context, name, desc, colour stri
 	mutation.SetColour(colour)
 	mutation.SetSort(sort)
 	mutation.SetAdmin(admin)
+	mutation.SetChannelID(channelID)
 
 	for _, fn := range opts {
 		fn(mutation)
@@ -162,7 +169,9 @@ func (p CategoryThreadsResults) Map() CategoryThreadsMap {
 }
 
 func (d *Repository) GetCategories(ctx context.Context, admin bool) ([]*Category, error) {
-	filters := []predicate.Category{}
+	filters := []predicate.Category{
+		category.ChannelID(xid.ID{}), // Only global categories (empty channel_id)
+	}
 
 	if !admin {
 		filters = append(filters, category.AdminEQ(false))
@@ -171,6 +180,48 @@ func (d *Repository) GetCategories(ctx context.Context, admin bool) ([]*Category
 	categories, err := d.db.Category.
 		Query().
 		Where(filters...).
+		WithPosts(func(pq *ent.PostQuery) {
+			pq.
+				Where(
+					post.RootPostIDIsNil(),
+					post.DeletedAtIsNil(),
+					post.VisibilityEQ(post.VisibilityPublished),
+				).
+				WithAuthor().
+				Limit(5).
+				Order(ent.Desc(post.FieldUpdatedAt))
+		}).
+		WithCoverImage(func(aq *ent.AssetQuery) {
+			aq.WithParent()
+		}).
+		Order(ent.Asc(category.FieldSort)).
+		All(ctx)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+
+	if len(categories) == 0 {
+		return []*Category{}, nil
+	}
+
+	var replies CategoryThreadsResults
+	err = d.raw.SelectContext(ctx, &replies, postsCountManyQuery)
+	if err != nil {
+		return nil, fault.Wrap(err, fctx.With(ctx))
+	}
+	categoryPosts := replies.Map()
+
+	return dt.Map(categories, func(in *ent.Category) *Category {
+		category := FromModel(in)
+		category.PostCount = categoryPosts[in.ID].PostCount
+		return category
+	}), nil
+}
+
+func (d *Repository) GetCategoriesByChannel(ctx context.Context, channelID xid.ID) ([]*Category, error) {
+	categories, err := d.db.Category.
+		Query().
+		Where(category.ChannelID(channelID)).
 		WithPosts(func(pq *ent.PostQuery) {
 			pq.
 				Where(

@@ -8,6 +8,7 @@ The Storyden API does not adhere to semantic versioning but instead applies a ro
  * OpenAPI spec version: v1.25.13-canary
  */
 import type { AuthMode } from "./authMode";
+import type { ColorMode } from "./colorMode";
 import type { InstanceCapabilityList } from "./instanceCapabilityList";
 import type { Metadata } from "./metadata";
 import type { OnboardingStatus } from "./onboardingStatus";
@@ -20,6 +21,7 @@ export interface Info {
   accent_colour: string;
   authentication_mode: AuthMode;
   capabilities: InstanceCapabilityList;
+  color_mode: ColorMode;
   content: PostContent;
   description: string;
   metadata?: Metadata;

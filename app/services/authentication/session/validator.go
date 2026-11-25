@@ -15,12 +15,12 @@ import (
 
 type Validator struct {
 	tokenRepo      token.Repository
-	accountQuerier *account_querier.Querier
+	accountQuerier account_querier.SessionAccountLoader
 	roleQuerier    *role_querier.Querier
 	akRepo         *access_key.Repository
 }
 
-func NewValidator(tokenRepo token.Repository, accountQuerier *account_querier.Querier, roleQuerier *role_querier.Querier, akRepo *access_key.Repository) *Validator {
+func NewValidator(tokenRepo token.Repository, accountQuerier account_querier.SessionAccountLoader, roleQuerier *role_querier.Querier, akRepo *access_key.Repository) *Validator {
 	return &Validator{
 		tokenRepo:      tokenRepo,
 		accountQuerier: accountQuerier,
@@ -57,7 +57,7 @@ func (v *Validator) ValidateSessionToken(ctx context.Context, raw string) (conte
 	}
 
 	// TODO: Cache-backed repository for accounts.
-	acc, err := v.accountQuerier.GetByID(ctx, tv.AccountID)
+	acc, err := v.accountQuerier.GetByIDForSession(ctx, tv.AccountID)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}
@@ -91,7 +91,7 @@ func (v *Validator) ValidateAccessKeyToken(ctx context.Context, raw string) (con
 	}
 
 	// TODO: Cache-backed repository for accounts.
-	acc, err := v.accountQuerier.GetByID(ctx, ar.Account.ID)
+	acc, err := v.accountQuerier.GetByIDForSession(ctx, ar.Account.ID)
 	if err != nil {
 		return nil, fault.Wrap(err, fctx.With(ctx))
 	}

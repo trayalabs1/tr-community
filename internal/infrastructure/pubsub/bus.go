@@ -255,13 +255,20 @@ func (b *Bus) MustPublishMany(ctx context.Context, events ...any) error {
 }
 
 func (b *Bus) SendCommand(ctx context.Context, command any) error {
+	commandType := fmt.Sprintf("%T", command)
+	b.logger.Info("sending command to bus",
+		slog.String("command_type", commandType),
+	)
 	if err := b.commandBus.Send(ctx, command); err != nil {
 		b.logger.Error("failed to send command",
-			slog.String("command_type", fmt.Sprintf("%T", command)),
+			slog.String("command_type", commandType),
 			slog.String("error", err.Error()),
 		)
 		return fault.Wrap(err, fctx.With(ctx))
 	}
+	b.logger.Info("command sent to bus",
+		slog.String("command_type", commandType),
+	)
 	return nil
 }
 

@@ -35,6 +35,8 @@ const (
 	FieldParentCategoryID = "parent_category_id"
 	// FieldCoverImageAssetID holds the string denoting the cover_image_asset_id field in the database.
 	FieldCoverImageAssetID = "cover_image_asset_id"
+	// FieldChannelID holds the string denoting the channel_id field in the database.
+	FieldChannelID = "channel_id"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
 	// EdgePosts holds the string denoting the posts edge name in mutations.
@@ -45,6 +47,8 @@ const (
 	EdgeChildren = "children"
 	// EdgeCoverImage holds the string denoting the cover_image edge name in mutations.
 	EdgeCoverImage = "cover_image"
+	// EdgeChannel holds the string denoting the channel edge name in mutations.
+	EdgeChannel = "channel"
 	// Table holds the table name of the category in the database.
 	Table = "categories"
 	// PostsTable is the table that holds the posts relation/edge.
@@ -69,6 +73,13 @@ const (
 	CoverImageInverseTable = "assets"
 	// CoverImageColumn is the table column denoting the cover_image relation/edge.
 	CoverImageColumn = "cover_image_asset_id"
+	// ChannelTable is the table that holds the channel relation/edge.
+	ChannelTable = "categories"
+	// ChannelInverseTable is the table name for the Channel entity.
+	// It exists in this package in order to avoid circular dependency with the "channel" package.
+	ChannelInverseTable = "channels"
+	// ChannelColumn is the table column denoting the channel relation/edge.
+	ChannelColumn = "channel_id"
 )
 
 // Columns holds all SQL columns for category fields.
@@ -84,6 +95,7 @@ var Columns = []string{
 	FieldAdmin,
 	FieldParentCategoryID,
 	FieldCoverImageAssetID,
+	FieldChannelID,
 	FieldMetadata,
 }
 
@@ -176,6 +188,11 @@ func ByCoverImageAssetID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCoverImageAssetID, opts...).ToFunc()
 }
 
+// ByChannelID orders the results by the channel_id field.
+func ByChannelID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldChannelID, opts...).ToFunc()
+}
+
 // ByPostsCount orders the results by posts count.
 func ByPostsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -217,6 +234,13 @@ func ByCoverImageField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newCoverImageStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByChannelField orders the results by channel field.
+func ByChannelField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newChannelStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newPostsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -243,5 +267,12 @@ func newCoverImageStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CoverImageInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, CoverImageTable, CoverImageColumn),
+	)
+}
+func newChannelStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ChannelInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ChannelTable, ChannelColumn),
 	)
 }

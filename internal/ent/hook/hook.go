@@ -45,6 +45,18 @@ func (f AccountRolesFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AccountRolesMutation", m)
 }
 
+// The AdminReplyTimeFunc type is an adapter to allow the use of ordinary
+// function as AdminReplyTime mutator.
+type AdminReplyTimeFunc func(context.Context, *ent.AdminReplyTimeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AdminReplyTimeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AdminReplyTimeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdminReplyTimeMutation", m)
+}
+
 // The AssetFunc type is an adapter to allow the use of ordinary
 // function as Asset mutator.
 type AssetFunc func(context.Context, *ent.AssetMutation) (ent.Value, error)
@@ -55,6 +67,18 @@ func (f AssetFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AssetMutation", m)
+}
+
+// The AuditLogFunc type is an adapter to allow the use of ordinary
+// function as AuditLog mutator.
+type AuditLogFunc func(context.Context, *ent.AuditLogMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AuditLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AuditLogMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AuditLogMutation", m)
 }
 
 // The AuthenticationFunc type is an adapter to allow the use of ordinary
@@ -79,6 +103,30 @@ func (f CategoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CategoryMutation", m)
+}
+
+// The ChannelFunc type is an adapter to allow the use of ordinary
+// function as Channel mutator.
+type ChannelFunc func(context.Context, *ent.ChannelMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ChannelFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ChannelMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ChannelMutation", m)
+}
+
+// The ChannelMembershipFunc type is an adapter to allow the use of ordinary
+// function as ChannelMembership mutator.
+type ChannelMembershipFunc func(context.Context, *ent.ChannelMembershipMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ChannelMembershipFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ChannelMembershipMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ChannelMembershipMutation", m)
 }
 
 // The CollectionFunc type is an adapter to allow the use of ordinary
@@ -225,6 +273,18 @@ func (f NotificationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NotificationMutation", m)
 }
 
+// The PollVoteFunc type is an adapter to allow the use of ordinary
+// function as PollVote mutator.
+type PollVoteFunc func(context.Context, *ent.PollVoteMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PollVoteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PollVoteMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PollVoteMutation", m)
+}
+
 // The PostFunc type is an adapter to allow the use of ordinary
 // function as Post mutator.
 type PostFunc func(context.Context, *ent.PostMutation) (ent.Value, error)
@@ -247,6 +307,18 @@ func (f PostReadFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PostReadMutation", m)
+}
+
+// The PostSentimentFunc type is an adapter to allow the use of ordinary
+// function as PostSentiment mutator.
+type PostSentimentFunc func(context.Context, *ent.PostSentimentMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PostSentimentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PostSentimentMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PostSentimentMutation", m)
 }
 
 // The PropertyFunc type is an adapter to allow the use of ordinary
@@ -307,6 +379,18 @@ func (f ReactFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReactMutation", m)
+}
+
+// The ReplyAdminQueueFunc type is an adapter to allow the use of ordinary
+// function as ReplyAdminQueue mutator.
+type ReplyAdminQueueFunc func(context.Context, *ent.ReplyAdminQueueMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ReplyAdminQueueFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ReplyAdminQueueMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReplyAdminQueueMutation", m)
 }
 
 // The ReportFunc type is an adapter to allow the use of ordinary

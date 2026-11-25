@@ -15,14 +15,26 @@ type AccountFollow func(*sql.Selector)
 // AccountRoles is the predicate function for accountroles builders.
 type AccountRoles func(*sql.Selector)
 
+// AdminReplyTime is the predicate function for adminreplytime builders.
+type AdminReplyTime func(*sql.Selector)
+
 // Asset is the predicate function for asset builders.
 type Asset func(*sql.Selector)
+
+// AuditLog is the predicate function for auditlog builders.
+type AuditLog func(*sql.Selector)
 
 // Authentication is the predicate function for authentication builders.
 type Authentication func(*sql.Selector)
 
 // Category is the predicate function for category builders.
 type Category func(*sql.Selector)
+
+// Channel is the predicate function for channel builders.
+type Channel func(*sql.Selector)
+
+// ChannelMembership is the predicate function for channelmembership builders.
+type ChannelMembership func(*sql.Selector)
 
 // Collection is the predicate function for collection builders.
 type Collection func(*sql.Selector)
@@ -60,11 +72,17 @@ type Node func(*sql.Selector)
 // Notification is the predicate function for notification builders.
 type Notification func(*sql.Selector)
 
+// PollVote is the predicate function for pollvote builders.
+type PollVote func(*sql.Selector)
+
 // Post is the predicate function for post builders.
 type Post func(*sql.Selector)
 
 // PostRead is the predicate function for postread builders.
 type PostRead func(*sql.Selector)
+
+// PostSentiment is the predicate function for postsentiment builders.
+type PostSentiment func(*sql.Selector)
 
 // Property is the predicate function for property builders.
 type Property func(*sql.Selector)
@@ -80,6 +98,9 @@ type Question func(*sql.Selector)
 
 // React is the predicate function for react builders.
 type React func(*sql.Selector)
+
+// ReplyAdminQueue is the predicate function for replyadminqueue builders.
+type ReplyAdminQueue func(*sql.Selector)
 
 // Report is the predicate function for report builders.
 type Report func(*sql.Selector)

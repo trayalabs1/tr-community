@@ -36,6 +36,8 @@ type Collection struct {
 	CoverAssetID *xid.ID `json:"cover_asset_id,omitempty"`
 	// Visibility holds the value of the "visibility" field.
 	Visibility collection.Visibility `json:"visibility,omitempty"`
+	// IsDefault holds the value of the "is_default" field.
+	IsDefault bool `json:"is_default,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CollectionQuery when eager-loading is set.
 	Edges               CollectionEdges `json:"edges"`
@@ -127,6 +129,8 @@ func (*Collection) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case collection.FieldCoverAssetID:
 			values[i] = &sql.NullScanner{S: new(xid.ID)}
+		case collection.FieldIsDefault:
+			values[i] = new(sql.NullBool)
 		case collection.FieldName, collection.FieldSlug, collection.FieldDescription, collection.FieldVisibility:
 			values[i] = new(sql.NullString)
 		case collection.FieldCreatedAt, collection.FieldUpdatedAt, collection.FieldIndexedAt:
@@ -206,6 +210,12 @@ func (_m *Collection) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field visibility", values[i])
 			} else if value.Valid {
 				_m.Visibility = collection.Visibility(value.String)
+			}
+		case collection.FieldIsDefault:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_default", values[i])
+			} else if value.Valid {
+				_m.IsDefault = value.Bool
 			}
 		case collection.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -309,6 +319,9 @@ func (_m *Collection) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("visibility=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Visibility))
+	builder.WriteString(", ")
+	builder.WriteString("is_default=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsDefault))
 	builder.WriteByte(')')
 	return builder.String()
 }

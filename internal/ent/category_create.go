@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Southclaws/storyden/internal/ent/asset"
 	"github.com/Southclaws/storyden/internal/ent/category"
+	"github.com/Southclaws/storyden/internal/ent/channel"
 	"github.com/Southclaws/storyden/internal/ent/post"
 	"github.com/rs/xid"
 )
@@ -150,6 +151,12 @@ func (_c *CategoryCreate) SetNillableCoverImageAssetID(v *xid.ID) *CategoryCreat
 	return _c
 }
 
+// SetChannelID sets the "channel_id" field.
+func (_c *CategoryCreate) SetChannelID(v xid.ID) *CategoryCreate {
+	_c.mutation.SetChannelID(v)
+	return _c
+}
+
 // SetMetadata sets the "metadata" field.
 func (_c *CategoryCreate) SetMetadata(v map[string]interface{}) *CategoryCreate {
 	_c.mutation.SetMetadata(v)
@@ -236,6 +243,11 @@ func (_c *CategoryCreate) SetNillableCoverImageID(id *xid.ID) *CategoryCreate {
 // SetCoverImage sets the "cover_image" edge to the Asset entity.
 func (_c *CategoryCreate) SetCoverImage(v *Asset) *CategoryCreate {
 	return _c.SetCoverImageID(v.ID)
+}
+
+// SetChannel sets the "channel" edge to the Channel entity.
+func (_c *CategoryCreate) SetChannel(v *Channel) *CategoryCreate {
+	return _c.SetChannelID(v.ID)
 }
 
 // Mutation returns the CategoryMutation object of the builder.
@@ -329,10 +341,16 @@ func (_c *CategoryCreate) check() error {
 	if _, ok := _c.mutation.Admin(); !ok {
 		return &ValidationError{Name: "admin", err: errors.New(`ent: missing required field "Category.admin"`)}
 	}
+	if _, ok := _c.mutation.ChannelID(); !ok {
+		return &ValidationError{Name: "channel_id", err: errors.New(`ent: missing required field "Category.channel_id"`)}
+	}
 	if v, ok := _c.mutation.ID(); ok {
 		if err := category.IDValidator(v.String()); err != nil {
 			return &ValidationError{Name: "id", err: fmt.Errorf(`ent: validator failed for field "Category.id": %w`, err)}
 		}
+	}
+	if len(_c.mutation.ChannelIDs()) == 0 {
+		return &ValidationError{Name: "channel", err: errors.New(`ent: missing required edge "Category.channel"`)}
 	}
 	return nil
 }
@@ -470,6 +488,23 @@ func (_c *CategoryCreate) createSpec() (*Category, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.CoverImageAssetID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ChannelIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   category.ChannelTable,
+			Columns: []string{category.ChannelColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(channel.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ChannelID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -647,6 +682,18 @@ func (u *CategoryUpsert) UpdateCoverImageAssetID() *CategoryUpsert {
 // ClearCoverImageAssetID clears the value of the "cover_image_asset_id" field.
 func (u *CategoryUpsert) ClearCoverImageAssetID() *CategoryUpsert {
 	u.SetNull(category.FieldCoverImageAssetID)
+	return u
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *CategoryUpsert) SetChannelID(v xid.ID) *CategoryUpsert {
+	u.Set(category.FieldChannelID, v)
+	return u
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *CategoryUpsert) UpdateChannelID() *CategoryUpsert {
+	u.SetExcluded(category.FieldChannelID)
 	return u
 }
 
@@ -863,6 +910,20 @@ func (u *CategoryUpsertOne) UpdateCoverImageAssetID() *CategoryUpsertOne {
 func (u *CategoryUpsertOne) ClearCoverImageAssetID() *CategoryUpsertOne {
 	return u.Update(func(s *CategoryUpsert) {
 		s.ClearCoverImageAssetID()
+	})
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *CategoryUpsertOne) SetChannelID(v xid.ID) *CategoryUpsertOne {
+	return u.Update(func(s *CategoryUpsert) {
+		s.SetChannelID(v)
+	})
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *CategoryUpsertOne) UpdateChannelID() *CategoryUpsertOne {
+	return u.Update(func(s *CategoryUpsert) {
+		s.UpdateChannelID()
 	})
 }
 
@@ -1249,6 +1310,20 @@ func (u *CategoryUpsertBulk) UpdateCoverImageAssetID() *CategoryUpsertBulk {
 func (u *CategoryUpsertBulk) ClearCoverImageAssetID() *CategoryUpsertBulk {
 	return u.Update(func(s *CategoryUpsert) {
 		s.ClearCoverImageAssetID()
+	})
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *CategoryUpsertBulk) SetChannelID(v xid.ID) *CategoryUpsertBulk {
+	return u.Update(func(s *CategoryUpsert) {
+		s.SetChannelID(v)
+	})
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *CategoryUpsertBulk) UpdateChannelID() *CategoryUpsertBulk {
+	return u.Update(func(s *CategoryUpsert) {
+		s.UpdateChannelID()
 	})
 }
 

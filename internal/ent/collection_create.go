@@ -124,6 +124,20 @@ func (_c *CollectionCreate) SetNillableVisibility(v *collection.Visibility) *Col
 	return _c
 }
 
+// SetIsDefault sets the "is_default" field.
+func (_c *CollectionCreate) SetIsDefault(v bool) *CollectionCreate {
+	_c.mutation.SetIsDefault(v)
+	return _c
+}
+
+// SetNillableIsDefault sets the "is_default" field if the given value is not nil.
+func (_c *CollectionCreate) SetNillableIsDefault(v *bool) *CollectionCreate {
+	if v != nil {
+		_c.SetIsDefault(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *CollectionCreate) SetID(v xid.ID) *CollectionCreate {
 	_c.mutation.SetID(v)
@@ -253,6 +267,10 @@ func (_c *CollectionCreate) defaults() {
 		v := collection.DefaultVisibility
 		_c.mutation.SetVisibility(v)
 	}
+	if _, ok := _c.mutation.IsDefault(); !ok {
+		v := collection.DefaultIsDefault
+		_c.mutation.SetIsDefault(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := collection.DefaultID()
 		_c.mutation.SetID(v)
@@ -280,6 +298,9 @@ func (_c *CollectionCreate) check() error {
 		if err := collection.VisibilityValidator(v); err != nil {
 			return &ValidationError{Name: "visibility", err: fmt.Errorf(`ent: validator failed for field "Collection.visibility": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.IsDefault(); !ok {
+		return &ValidationError{Name: "is_default", err: errors.New(`ent: missing required field "Collection.is_default"`)}
 	}
 	if v, ok := _c.mutation.ID(); ok {
 		if err := collection.IDValidator(v.String()); err != nil {
@@ -349,6 +370,10 @@ func (_c *CollectionCreate) createSpec() (*Collection, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Visibility(); ok {
 		_spec.SetField(collection.FieldVisibility, field.TypeEnum, value)
 		_node.Visibility = value
+	}
+	if value, ok := _c.mutation.IsDefault(); ok {
+		_spec.SetField(collection.FieldIsDefault, field.TypeBool, value)
+		_node.IsDefault = value
 	}
 	if nodes := _c.mutation.OwnerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -578,6 +603,18 @@ func (u *CollectionUpsert) UpdateVisibility() *CollectionUpsert {
 	return u
 }
 
+// SetIsDefault sets the "is_default" field.
+func (u *CollectionUpsert) SetIsDefault(v bool) *CollectionUpsert {
+	u.Set(collection.FieldIsDefault, v)
+	return u
+}
+
+// UpdateIsDefault sets the "is_default" field to the value that was provided on create.
+func (u *CollectionUpsert) UpdateIsDefault() *CollectionUpsert {
+	u.SetExcluded(collection.FieldIsDefault)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -745,6 +782,20 @@ func (u *CollectionUpsertOne) SetVisibility(v collection.Visibility) *Collection
 func (u *CollectionUpsertOne) UpdateVisibility() *CollectionUpsertOne {
 	return u.Update(func(s *CollectionUpsert) {
 		s.UpdateVisibility()
+	})
+}
+
+// SetIsDefault sets the "is_default" field.
+func (u *CollectionUpsertOne) SetIsDefault(v bool) *CollectionUpsertOne {
+	return u.Update(func(s *CollectionUpsert) {
+		s.SetIsDefault(v)
+	})
+}
+
+// UpdateIsDefault sets the "is_default" field to the value that was provided on create.
+func (u *CollectionUpsertOne) UpdateIsDefault() *CollectionUpsertOne {
+	return u.Update(func(s *CollectionUpsert) {
+		s.UpdateIsDefault()
 	})
 }
 
@@ -1082,6 +1133,20 @@ func (u *CollectionUpsertBulk) SetVisibility(v collection.Visibility) *Collectio
 func (u *CollectionUpsertBulk) UpdateVisibility() *CollectionUpsertBulk {
 	return u.Update(func(s *CollectionUpsert) {
 		s.UpdateVisibility()
+	})
+}
+
+// SetIsDefault sets the "is_default" field.
+func (u *CollectionUpsertBulk) SetIsDefault(v bool) *CollectionUpsertBulk {
+	return u.Update(func(s *CollectionUpsert) {
+		s.SetIsDefault(v)
+	})
+}
+
+// UpdateIsDefault sets the "is_default" field to the value that was provided on create.
+func (u *CollectionUpsertBulk) UpdateIsDefault() *CollectionUpsertBulk {
+	return u.Update(func(s *CollectionUpsert) {
+		s.UpdateIsDefault()
 	})
 }
 

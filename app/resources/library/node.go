@@ -45,6 +45,7 @@ type Node struct {
 	Description     opt.Optional[string]
 	PrimaryImage    opt.Optional[asset.Asset]
 	Owner           profile.Ref
+	ChannelID       xid.ID
 	Parent          opt.Optional[Node]
 	Properties      opt.Optional[PropertyTable]
 	ChildProperties opt.Optional[PropertySchema]

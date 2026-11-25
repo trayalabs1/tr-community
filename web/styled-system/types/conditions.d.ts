@@ -196,9 +196,9 @@ export interface Conditions {
 	"_dark": string
 	/** `.light &` */
 	"_light": string
-	/** `@media (prefers-color-scheme: dark)` */
+	/** `[data-color-mode="dark"] &, :where(:root:not([data-color-mode])) @media (prefers-color-scheme: dark)` */
 	"_osDark": string
-	/** `@media (prefers-color-scheme: light)` */
+	/** `[data-color-mode="light"] &, :where(:root:not([data-color-mode])) @media (prefers-color-scheme: light)` */
 	"_osLight": string
 	/** `@media (forced-colors: active)` */
 	"_highContrast": string
