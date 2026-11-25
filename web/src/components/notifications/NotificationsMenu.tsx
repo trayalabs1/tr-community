@@ -2,8 +2,8 @@ import { useCallback, useState } from "react";
 import { Portal } from "@ark-ui/react";
 import Link from "next/link";
 
-import { useSession } from "@/auth";
 import { Permission } from "@/api/openapi-schema";
+import { useSettingsContext } from "@/components/site/SettingsContext/SettingsContext";
 import { MemberAvatar } from "@/components/member/MemberBadge/MemberAvatar";
 import { Button } from "@/components/ui/button";
 import { ArchiveIcon } from "@/components/ui/icons/Archive";
@@ -24,8 +24,10 @@ export function NotificationsMenu(props: Props) {
   // For admins the list is only fetched once they first open the menu, so it
   // is not requested on every page load (admins have long notification
   // histories). It stays enabled afterwards so the SWR cache is reused and
-  // mark-as-read updates keep working. Other members fetch eagerly.
-  const session = useSession();
+  // mark-as-read updates keep working. Other members fetch eagerly. The
+  // session comes from the server-seeded context so the admin check is
+  // already correct on first render.
+  const { session } = useSettingsContext();
   const lazy = hasPermission(session, Permission.ADMINISTRATOR);
   const [opened, setOpened] = useState(false);
   const { ready, error, data, handlers } = useNotifications({
