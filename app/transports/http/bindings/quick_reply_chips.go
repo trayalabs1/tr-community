@@ -25,8 +25,8 @@ var buildAHabitChips = []string{
 const doubtChannelSlug = "traya-explorers"
 
 var doubtChannelChips = []string{
-	"Same doubt",
-	"Helpful",
+	"Same doubt 🤔",
+	"Helpful 👍",
 }
 
 func quickReplyChipsFor(t *thread.Thread) *openapi.QuickReplyChips {
