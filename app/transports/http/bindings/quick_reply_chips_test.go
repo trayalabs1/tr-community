@@ -15,7 +15,7 @@ import (
 func TestQuickReplyChipsForDoubtChannel(t *testing.T) {
 	chips := quickReplyChipsFor(&thread.Thread{Channel: opt.New(channel.Channel{Slug: doubtChannelSlug})})
 	require.NotNil(t, chips)
-	assert.Equal(t, []string{"Same doubt", "Helpful"}, chips.Candidates)
+	assert.Equal(t, []string{"Same doubt 🤔", "Helpful 👍"}, chips.Candidates)
 
 	bah := quickReplyChipsFor(&thread.Thread{
 		Channel: opt.New(channel.Channel{Slug: doubtChannelSlug}),
