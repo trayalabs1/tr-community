@@ -1,5 +1,6 @@
 "use client";
 
+import { PostImages } from "@/components/post/PostImages/PostImages";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSWRConfig } from "swr";
@@ -204,9 +205,13 @@ export function SharePostScreen({
             {previewCopy}
           </styled.p>
 
-          {previewImages.map((src) => (
-            <styled.img key={src} src={src} alt={previewAlt} w="full" />
-          ))}
+          {isGenericShare ? (
+            <PostImages images={previewImages} />
+          ) : (
+            previewImages.map((src) => (
+              <styled.img key={src} src={src} alt={previewAlt} w="full" />
+            ))
+          )}
         </VStack>
 
         {error && (
