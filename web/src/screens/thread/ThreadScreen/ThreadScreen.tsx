@@ -16,6 +16,7 @@ import { LikeButton } from "@/components/post/LikeButton/LikeButton";
 import { ExpandableText } from "@/components/post/ExpandableText";
 import { BookmarkPill } from "@/components/post/BookmarkPill";
 import { CategoryBadge } from "@/components/category/CategoryBadge";
+import { CohortBadge } from "@/components/category/CohortBadge";
 import {
   MessageSquareIcon,
   MessageSquareTextIcon,
@@ -186,18 +187,21 @@ export function ThreadScreen(props: Props) {
               </Link>
 
               <VStack alignItems="start" gap="0.5" flex="1" minW="0">
-                <Link href={`/m/${thread.author.handle}`} style={{ textDecoration: "none" }}>
-                  <styled.span
-                    fontWeight="bold"
-                    style={{
-                      fontSize: "14px",
-                      lineHeight: "20px",
-                      color: "#404040",
-                    }}
-                  >
-                    {thread.author.name || `@${thread.author.handle}`}
-                  </styled.span>
-                </Link>
+                <HStack gap="2" alignItems="center">
+                  <Link href={`/m/${thread.author.handle}`} style={{ textDecoration: "none" }}>
+                    <styled.span
+                      fontWeight="bold"
+                      style={{
+                        fontSize: "14px",
+                        lineHeight: "20px",
+                        color: "#404040",
+                      }}
+                    >
+                      {thread.author.name || `@${thread.author.handle}`}
+                    </styled.span>
+                  </Link>
+                  {thread.cohort_channel && <CohortBadge channel={thread.cohort_channel} />}
+                </HStack>
                 <styled.span style={{ fontSize: "12px", lineHeight: "16px", color: "#999999", letterSpacing: "0.24px" }}>
                   {formatDateTime(thread.createdAt)}
                 </styled.span>

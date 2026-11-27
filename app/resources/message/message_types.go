@@ -300,3 +300,7 @@ type EventSettingsUpdated struct {
 type CommandScorePostSentiment struct {
 	PostID post.ID
 }
+
+type EventThreadSentimentScored struct {
+	ID post.ID
+}

@@ -144,6 +144,7 @@ func newEntClient(lc fx.Lifecycle, tf tracing.Factory, cfg config.Config, db *sq
 				schema.WithApplyHook(migrateReplyVisibility()),
 				schema.WithApplyHook(createPostCategoryIndex()),
 				schema.WithApplyHook(createShareComboIndex()),
+				schema.WithApplyHook(createCrosspostSourceIndex()),
 				schema.WithApplyHook(createThreadEdgeIndex()),
 			); err != nil {
 				return fault.Wrap(err, fctx.With(ctx))
@@ -369,6 +370,27 @@ func createShareComboIndex() schema.ApplyHook {
 			`, []any{}, nil)
 			if err != nil {
 				return fault.Wrap(err, fmsg.With("failed to create share combo index"))
+			}
+
+			return nil
+		})
+	}
+}
+
+func createCrosspostSourceIndex() schema.ApplyHook {
+	return func(next schema.Applier) schema.Applier {
+		return schema.ApplyFunc(func(ctx context.Context, conn dialect.ExecQuerier, plan *migrate.Plan) error {
+			if err := next.Apply(ctx, conn, plan); err != nil {
+				return err
+			}
+
+			err := conn.Exec(ctx, `
+				CREATE UNIQUE INDEX IF NOT EXISTS post_crosspost_source
+				ON posts ((metadata->>'crosspost_source_id'))
+				WHERE deleted_at IS NULL AND metadata->>'crosspost_source_id' IS NOT NULL
+			`, []any{}, nil)
+			if err != nil {
+				return fault.Wrap(err, fmsg.With("failed to create crosspost source index"))
 			}
 
 			return nil

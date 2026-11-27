@@ -50,6 +50,7 @@ import (
 	"github.com/Southclaws/storyden/app/services/system/instance_info"
 	"github.com/Southclaws/storyden/app/services/tag/autotagger"
 	"github.com/Southclaws/storyden/app/services/thread"
+	"github.com/Southclaws/storyden/app/services/thread/crosspost"
 	"github.com/Southclaws/storyden/app/services/thread_mark"
 )
 
@@ -67,6 +68,7 @@ func Build() fx.Option {
 		channel.Build(),
 		channel_membership.Build(),
 		thread.Build(),
+		crosspost.Build(),
 		reply.Build(),
 		report.Build(),
 		post_liker.Build(),

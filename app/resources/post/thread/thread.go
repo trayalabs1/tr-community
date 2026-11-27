@@ -53,6 +53,8 @@ type Thread struct {
 	// membership-gated lookup.
 	Channel opt.Optional[channel.Channel]
 
+	CohortChannel opt.Optional[channel.Channel]
+
 	// SharedToChannelIDs lists the channels this thread has been shared into,
 	// resolved from the shares that reference it. A viewer who can reach any of
 	// these channels can reach the thread, which is what deep-link gating needs.
@@ -162,6 +164,7 @@ func Map(m *ent.Post) (*Thread, error) {
 		Category:        sentimentCategory,
 		ReferencePostID: mapReferencePostID(m),
 		Channel:         mapChannel(m),
+		CohortChannel:   mapCohortChannel(m),
 	}, nil
 }
 
@@ -181,6 +184,21 @@ func mapChannel(m *ent.Post) opt.Optional[channel.Channel] {
 		return opt.NewEmpty[channel.Channel]()
 	}
 	return opt.New(*channel.FromModel(m.Edges.Channel))
+}
+
+func mapCohortChannel(m *ent.Post) opt.Optional[channel.Channel] {
+	name, _ := m.Metadata[post.MetaCrosspostSourceChannelName].(string)
+	if name == "" {
+		return opt.NewEmpty[channel.Channel]()
+	}
+	slug, _ := m.Metadata[post.MetaCrosspostSourceChannelSlug].(string)
+	idStr, _ := m.Metadata[post.MetaCrosspostSourceChannelID].(string)
+	id, _ := xid.FromString(idStr)
+	return opt.New(channel.Channel{
+		ID:   channel.ChannelID(id),
+		Name: name,
+		Slug: slug,
+	})
 }
 
 func Mapper(
@@ -264,6 +282,7 @@ func Mapper(
 			Category:        sentimentCategory,
 			ReferencePostID: mapReferencePostID(m),
 			Channel:         mapChannel(m),
+			CohortChannel:   mapCohortChannel(m),
 		}, nil
 	}
 }
