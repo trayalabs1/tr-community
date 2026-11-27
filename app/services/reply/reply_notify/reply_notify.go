@@ -43,7 +43,12 @@ func Build() fx.Option {
 					return err
 				}
 
-				if evt.ReplyAuthorID != evt.ThreadAuthorID {
+				isCrosspost, err := postQuerier.IsCrosspost(ctx, evt.ThreadID)
+				if err != nil {
+					return err
+				}
+
+				if evt.ReplyAuthorID != evt.ThreadAuthorID && !isCrosspost {
 					err := notifier.Send(ctx,
 						evt.ThreadAuthorID,
 						opt.New(evt.ReplyAuthorID),
@@ -58,7 +63,7 @@ func Build() fx.Option {
 					errs = append(errs, sendMoengage(ctx, logger, moengageSender, accountQuerier, evt.ThreadAuthorID, evt.ReplyAuthorID, channelID, evt.ThreadID))
 				}
 
-				if rtid, ok := evt.ReplyToAuthorID.Get(); ok && rtid != evt.ReplyAuthorID {
+				if rtid, ok := evt.ReplyToAuthorID.Get(); ok && rtid != evt.ReplyAuthorID && !(isCrosspost && rtid == evt.ThreadAuthorID) {
 					err := notifier.Send(ctx,
 						rtid,
 						opt.New(evt.ReplyAuthorID),

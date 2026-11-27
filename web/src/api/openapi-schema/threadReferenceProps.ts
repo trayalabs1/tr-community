@@ -25,6 +25,11 @@ separate membership-gated channel lookup.
  */
   channel?: ChannelReference;
   channel_id: Identifier;
+  /** Present on threads cross-posted from a customer cohort channel:
+the cohort the original author belongs to, shown as a tag beside
+the author's handle.
+ */
+  cohort_channel?: ChannelReference;
   /** The time of the last reply to the thread. */
   last_reply_at?: string;
   link?: LinkReference;

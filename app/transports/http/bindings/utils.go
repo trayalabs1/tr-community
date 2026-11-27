@@ -109,6 +109,7 @@ func serialiseThreadReference(t *thread.Thread) openapi.ThreadReference {
 		Collections:     serialiseCollectionStatus(t.Collections),
 		Link:            opt.Map(t.WebLink, serialiseLinkRef).Ptr(),
 		QuickReplyChips: quickReplyChipsFor(t),
+		CohortChannel:   opt.Map(t.CohortChannel, serialiseChannelReference).Ptr(),
 	}
 }
 
@@ -148,6 +149,7 @@ func serialiseThread(t *thread.Thread) openapi.Thread {
 		Channel:            opt.Map(t.Channel, serialiseChannelReference).Ptr(),
 		ReferencePostId:    opt.Map(t.ReferencePostID, func(id post.ID) openapi.Identifier { return openapi.Identifier(id.String()) }).Ptr(),
 		SharedToChannelIds: serialiseSharedToChannelIDs(t.SharedToChannelIDs),
+		CohortChannel:      opt.Map(t.CohortChannel, serialiseChannelReference).Ptr(),
 		Likes:              serialiseLikeStatus(&t.Likes),
 		Collections:        serialiseCollectionStatus(t.Collections),
 		CreatedAt:          t.CreatedAt,

@@ -9,28 +9,33 @@ import (
 	"github.com/rs/xid"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/Southclaws/storyden/app/resources/message"
 	"github.com/Southclaws/storyden/app/resources/post"
 	"github.com/Southclaws/storyden/app/services/sentiment/scorer"
 	"github.com/Southclaws/storyden/internal/ent"
 	ent_post "github.com/Southclaws/storyden/internal/ent/post"
 	ent_post_sentiment "github.com/Southclaws/storyden/internal/ent/postsentiment"
+	"github.com/Southclaws/storyden/internal/infrastructure/pubsub"
 )
 
 type sentimentConsumer struct {
 	logger *slog.Logger
 	db     *ent.Client
 	scorer *scorer.Scorer
+	bus    *pubsub.Bus
 }
 
 func newSentimentConsumer(
 	logger *slog.Logger,
 	db *ent.Client,
 	scorer *scorer.Scorer,
+	bus *pubsub.Bus,
 ) *sentimentConsumer {
 	return &sentimentConsumer{
 		logger: logger,
 		db:     db,
 		scorer: scorer,
+		bus:    bus,
 	}
 }
 
@@ -86,6 +91,8 @@ func (c *sentimentConsumer) scorePost(ctx context.Context, postID post.ID) error
 		slog.String("category", string(result.Category)),
 		slog.Float64("rank_score", rankScore),
 	)
+
+	c.bus.Publish(ctx, &message.EventThreadSentimentScored{ID: postID})
 
 	return nil
 }

@@ -56,7 +56,9 @@ func (s *service) List(ctx context.Context,
 	opts.CreatedBefore.Call(func(value time.Time) { q = append(q, thread_querier.HasCreatedDateBefore(value)) })
 	opts.CreatedAfter.Call(func(value time.Time) { q = append(q, thread_querier.HasCreatedDateAfter(value)) })
 	opts.UpdatedBefore.Call(func(value time.Time) { q = append(q, thread_querier.HasUpdatedDateBefore(value)) })
-	opts.AccountID.Call(func(a account.AccountID) { q = append(q, thread_querier.HasAuthor(a)) })
+	opts.AccountID.Call(func(a account.AccountID) {
+		q = append(q, thread_querier.HasAuthor(a), thread_querier.NotCrosspost())
+	})
 	opts.Tags.Call(func(a []xid.ID) { q = append(q, thread_querier.HasTags(a)) })
 	opts.Categories.Call(func(cf thread_querier.CategoryFilter) { q = append(q, thread_querier.HasCategories(cf)) })
 	opts.ChannelID.Call(func(channelID xid.ID) { q = append(q, thread_querier.HasChannel(channelID)) })
