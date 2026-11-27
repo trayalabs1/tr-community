@@ -14,6 +14,7 @@ import { hasPermission } from "@/utils/permissions";
 import { getAvatarColor, getAuthorAvatarStyle } from "@/utils/avatar-colors";
 
 import { CategoryBadge } from "../category/CategoryBadge";
+import { CohortBadge } from "../category/CohortBadge";
 import { PostReviewBadge } from "../thread/PostReviewBadge";
 import { ThreadMenu } from "../thread/ThreadMenu/ThreadMenu";
 import { DeleteConfirmSheet } from "../thread/ThreadMenu/DeleteConfirmSheet";
@@ -139,24 +140,27 @@ export const ThreadReferenceCard = memo(
             </ProfileHoverTooltip>
 
             <styled.div display="flex" flexDir="column" gap="0.5" flex="1" minW="0">
-              <Link href={`/m/${thread.author.handle}`} style={{ textDecoration: "none" }}>
-                <styled.p
-                  fontWeight="bold"
-                  style={{
-                    margin: "0",
-                    color: "#404040",
-                    fontSize: "14px",
-                    lineHeight: "20px",
-                    transition: "color 0.2s ease-in-out",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    cursor: "pointer",
-                  }}
-                >
-                  {thread.author.name || `@${thread.author.handle}`}
-                </styled.p>
-              </Link>
+              <styled.div display="flex" alignItems="center" gap="2" minW="0">
+                <Link href={`/m/${thread.author.handle}`} style={{ textDecoration: "none" }}>
+                  <styled.p
+                    fontWeight="bold"
+                    style={{
+                      margin: "0",
+                      color: "#404040",
+                      fontSize: "14px",
+                      lineHeight: "20px",
+                      transition: "color 0.2s ease-in-out",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {thread.author.name || `@${thread.author.handle}`}
+                  </styled.p>
+                </Link>
+                {thread.cohort_channel && <CohortBadge channel={thread.cohort_channel} />}
+              </styled.div>
               <styled.p
                 fontSize="xs"
                 color="fg.muted"

@@ -43,6 +43,16 @@ func Build() fx.Option {
 					return nil
 				}
 
+				if evt.PostID == evt.RootPostID {
+					isCrosspost, err := postQuerier.IsCrosspost(ctx, evt.PostID)
+					if err != nil {
+						return err
+					}
+					if isCrosspost {
+						return nil
+					}
+				}
+
 				itemKind := datagraph.KindPost
 				if evt.PostID != evt.RootPostID {
 					itemKind = datagraph.KindReply

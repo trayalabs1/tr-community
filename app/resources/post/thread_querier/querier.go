@@ -4,12 +4,14 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"github.com/Southclaws/dt"
 	"github.com/Southclaws/opt"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/xid"
 
 	"github.com/Southclaws/storyden/app/resources/account"
+	"github.com/Southclaws/storyden/app/resources/post"
 	"github.com/Southclaws/storyden/app/resources/post/thread"
 	"github.com/Southclaws/storyden/app/resources/settings"
 	"github.com/Southclaws/storyden/app/resources/visibility"
@@ -255,6 +257,17 @@ func HasUpdatedDateBefore(t time.Time) Query {
 func HasAuthor(id account.AccountID) Query {
 	return func(q *threadListOptions) {
 		q.q.Where(ent_post.HasAuthorWith(ent_account.ID(xid.ID(id))))
+	}
+}
+
+func NotCrosspost() Query {
+	return func(q *threadListOptions) {
+		q.q.Where(func(s *sql.Selector) {
+			s.Where(sql.Or(
+				sql.IsNull(s.C(ent_post.FieldMetadata)),
+				sql.Not(sqljson.HasKey(ent_post.FieldMetadata, sqljson.Path(post.MetaCrosspostSourceID))),
+			))
+		})
 	}
 }
 
